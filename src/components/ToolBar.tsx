@@ -1,6 +1,6 @@
 import React from "react";
-import { useUIState, useUIActions } from "../store/workspaceStore";
-import type { Tool } from "../store/workspaceStore";
+import { useUIState, useUIActions } from "../stores/workspaceStore";
+import type { Tool } from "../stores/workspaceStore";
 
 interface ToolButtonProps {
   label: string;

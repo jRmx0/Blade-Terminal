@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { useCanvasData, useUIState } from "../store/workspaceStore";
+import { useCanvasData, useUIState } from "../stores/workspaceStore";
 
 interface TabProps {
   label: string;

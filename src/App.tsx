@@ -1,4 +1,4 @@
-import "./index.css";
+import "./styles/index.css";
 import { WorkspaceLayout } from "./components/WorkspaceLayout";
 
 export function App() {
