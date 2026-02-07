@@ -1,5 +1,5 @@
 ---
-name: project-structure
+name: project-structuring
 description: Guides proper file organization and architecture for the Blade Terminal project. Use when creating new files, moving/refactoring existing code, reviewing code structure, or ensuring code follows the established directory conventions for components, features, hooks, stores, and utilities.
 compatibility: Designed for blade-terminal codebase - React/TypeScript project using Bun
 metadata:
