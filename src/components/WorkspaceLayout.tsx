@@ -4,6 +4,7 @@ import { ToolBar } from "./ToolBar";
 import { LeftPanel } from "./LeftPanel";
 import { RightInspector } from "./RightInspector";
 import { StatusBar } from "./StatusBar";
+import { WorkspaceCanvas } from "./WorkspaceCanvas";
 
 /**
  * WorkspaceLayout Component
@@ -45,52 +46,8 @@ export function WorkspaceLayout() {
           <LeftPanel />
         </div>
 
-        {/* Center Canvas Area - Placeholder for Konva */}
-        <div
-          style={{
-            backgroundColor: "var(--canvas-bg)",
-            backgroundImage: `
-              linear-gradient(var(--canvas-grid) 1px, transparent 1px),
-              linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px)
-            `,
-            backgroundSize: "20px 20px",
-            backgroundPosition: "0 0",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          {/* Placeholder message for Phase 4 Konva canvas */}
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              textAlign: "center",
-              pointerEvents: "none",
-            }}
-          >
-            <h2
-              style={{
-                color: "var(--color-text-secondary)",
-                fontSize: "1rem",
-                marginBottom: "0.5rem",
-                opacity: 0.6,
-              }}
-            >
-              Canvas Area
-            </h2>
-            <p
-              style={{
-                color: "var(--color-text-tertiary)",
-                fontSize: "0.875rem",
-                opacity: 0.4,
-              }}
-            >
-              Phase 4: Konva canvas will be rendered here
-            </p>
-          </div>
-        </div>
+        {/* Center Canvas Area - Konva canvas */}
+        <WorkspaceCanvas />
 
         {/* Right Inspector Panel */}
         <div style={{ overflow: "hidden" }}>
