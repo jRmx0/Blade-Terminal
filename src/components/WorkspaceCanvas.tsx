@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Stage, Layer, Rect, Line } from "react-konva";
-import { useCanvasData, useUIState, toKonvaPoints } from "../stores/workspaceStore";
+import { useCanvasData, useUIState, toKonvaPoints } from "../stores/workspace/workspaceStore";
 
 /**
  * WorkspaceCanvas Component

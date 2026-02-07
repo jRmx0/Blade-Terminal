@@ -1,5 +1,5 @@
 import React from "react";
-import { useUIState, useCanvasData } from "../stores/workspaceStore";
+import { useUIState, useCanvasData } from "../stores/workspace/workspaceStore";
 
 /**
  * StatusBar Component
