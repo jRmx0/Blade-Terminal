@@ -76,7 +76,7 @@ function DropdownMenu({ label, items }: DropdownMenuProps) {
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-1.5 text-sm hover:bg-[var(--color-bg-interactive)] rounded transition-colors"
+        className="px-3 py-1.5 text-sm font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-interactive)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)] rounded transition-colors duration-150"
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label={`${label} menu`}
@@ -102,7 +102,7 @@ function DropdownMenu({ label, items }: DropdownMenuProps) {
               role="menuitem"
               onClick={handleMenuItemClick}
               onKeyDown={(e) => handleMenuKeyDown(index, e)}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--color-bg-interactive)] transition-colors"
+              className="w-full text-left px-3 py-2 text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-bg-interactive)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent)] transition-colors duration-150 first:rounded-t last:rounded-b"
             >
               {item}
             </button>
@@ -130,7 +130,7 @@ export function TopMenuBar() {
       }}
     >
       {/* Left side: Menus */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-1">
         <DropdownMenu
           label="File"
           items={[
@@ -168,7 +168,7 @@ export function TopMenuBar() {
       </div>
 
       {/* Center: Environment Title */}
-      <h1 className="text-sm font-semibold text-[var(--color-text-primary)]">
+      <h1 className="text-sm font-semibold text-[var(--color-text-primary)] flex-1 text-center">
         Blade of Grass - Workspace
       </h1>
 

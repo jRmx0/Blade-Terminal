@@ -22,10 +22,10 @@ function Tab({ label, id, controlsId, isActive, onClick, onKeyDown, tabRef }: Ta
       tabIndex={isActive ? 0 : -1}
       onClick={onClick}
       onKeyDown={onKeyDown}
-      className={`px-3 py-2 text-xs font-medium transition-colors border-b-2 ${
+      className={`px-3 py-2 text-xs font-medium transition-all duration-150 border-b-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)] ${
         isActive
           ? "text-[var(--color-accent)] border-[var(--color-accent)]"
-          : "text-[var(--color-text-secondary)] border-transparent hover:text-[var(--color-text-primary)]"
+          : "text-[var(--color-text-secondary)] border-transparent hover:text-[var(--color-text-primary)] hover:border-[var(--color-border)]"
       }`}
     >
       {label}
@@ -86,12 +86,12 @@ export function RightInspector() {
     >
       {/* Header */}
       <div
-        className="px-3 py-2 border-b border-[var(--color-border)]"
+        className="px-3 py-2.5 border-b border-[var(--color-border)]"
         style={{
           backgroundColor: "var(--color-bg-tertiary)",
         }}
       >
-        <h2 className="text-xs font-bold text-[var(--color-text-primary)]">
+        <h2 className="text-xs font-bold text-[var(--color-text-primary)] tracking-wider">
           INSPECTOR
         </h2>
       </div>
@@ -130,35 +130,35 @@ export function RightInspector() {
             role="tabpanel"
             aria-labelledby="tab-properties"
           >
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
-              <h3 className="text-xs font-semibold text-[var(--color-text-primary)] mb-2">
-                Active Tool
+              <h3 className="text-xs font-bold text-[var(--color-text-primary)] mb-2 tracking-wider">
+                ACTIVE TOOL
               </h3>
-              <p className="text-xs text-[var(--color-text-secondary)]">
+              <p className="text-xs text-[var(--color-text-secondary)] bg-[var(--color-bg-tertiary)] px-2.5 py-1.5 rounded">
                 {activeTool.charAt(0).toUpperCase() + activeTool.slice(1)}
               </p>
             </div>
 
             {zones.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-[var(--color-text-primary)] mb-2">
-                  Zones ({zones.length})
+                <h3 className="text-xs font-bold text-[var(--color-text-primary)] mb-2 tracking-wider">
+                  ZONES ({zones.length})
                 </h3>
-                <div className="space-y-1 text-xs">
+                <div className="space-y-1.5 text-xs">
                   {zones.slice(0, 3).map((zone) => (
                     <div
                       key={zone.id}
-                      className="p-2 bg-[var(--color-bg-tertiary)] rounded text-[var(--color-text-secondary)] truncate"
+                      className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)] text-[var(--color-text-secondary)] truncate hover:bg-[var(--color-bg-interactive)] transition-colors"
                     >
-                      <strong>{zone.name}</strong>
-                      <div className="text-[0.65rem] opacity-75">
+                      <div className="font-semibold text-[var(--color-text-primary)] truncate">{zone.name}</div>
+                      <div className="text-[0.65rem] opacity-75 font-mono">
                         {zone.width}×{zone.height} @ ({zone.x}, {zone.y})
                       </div>
                     </div>
                   ))}
                   {zones.length > 3 && (
-                    <p className="text-[0.65rem] text-[var(--color-text-tertiary)]">
+                    <p className="text-[0.65rem] text-[var(--color-text-tertiary)] px-1">
                       +{zones.length - 3} more
                     </p>
                   )}
@@ -168,24 +168,23 @@ export function RightInspector() {
 
             {obstacles.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-[var(--color-text-primary)] mb-2">
-                  Obstacles ({obstacles.length})
+                <h3 className="text-xs font-bold text-[var(--color-text-primary)] mb-2 tracking-wider">
+                  OBSTACLES ({obstacles.length})
                 </h3>
-                <div className="space-y-1 text-xs">
+                <div className="space-y-1.5 text-xs">
                   {obstacles.slice(0, 3).map((obstacle) => (
                     <div
                       key={obstacle.id}
-                      className="p-2 bg-[var(--color-bg-tertiary)] rounded text-[var(--color-text-secondary)] truncate"
+                      className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)] text-[var(--color-text-secondary)] truncate hover:bg-[var(--color-bg-interactive)] transition-colors"
                     >
-                      <strong>{obstacle.name}</strong>
-                      <div className="text-[0.65rem] opacity-75">
-                        {obstacle.width}×{obstacle.height} @ ({obstacle.x},{" "}
-                        {obstacle.y})
+                      <div className="font-semibold text-[var(--color-text-primary)] truncate">{obstacle.name}</div>
+                      <div className="text-[0.65rem] opacity-75 font-mono">
+                        {obstacle.width}×{obstacle.height} @ ({obstacle.x}, {obstacle.y})
                       </div>
                     </div>
                   ))}
                   {obstacles.length > 3 && (
-                    <p className="text-[0.65rem] text-[var(--color-text-tertiary)]">
+                    <p className="text-[0.65rem] text-[var(--color-text-tertiary)] px-1">
                       +{obstacles.length - 3} more
                     </p>
                   )}
@@ -195,23 +194,23 @@ export function RightInspector() {
 
             {paths.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-[var(--color-text-primary)] mb-2">
-                  Paths ({paths.length})
+                <h3 className="text-xs font-bold text-[var(--color-text-primary)] mb-2 tracking-wider">
+                  PATHS ({paths.length})
                 </h3>
-                <div className="space-y-1 text-xs">
+                <div className="space-y-1.5 text-xs">
                   {paths.slice(0, 3).map((path) => (
                     <div
                       key={path.id}
-                      className="p-2 bg-[var(--color-bg-tertiary)] rounded text-[var(--color-text-secondary)]"
+                      className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-interactive)] transition-colors"
                     >
-                      <strong>{path.name}</strong>
+                      <div className="font-semibold text-[var(--color-text-primary)]">{path.name}</div>
                       <div className="text-[0.65rem] opacity-75">
                         {path.points.length} points
                       </div>
                     </div>
                   ))}
                   {paths.length > 3 && (
-                    <p className="text-[0.65rem] text-[var(--color-text-tertiary)]">
+                    <p className="text-[0.65rem] text-[var(--color-text-tertiary)] px-1">
                       +{paths.length - 3} more
                     </p>
                   )}
@@ -222,9 +221,8 @@ export function RightInspector() {
             {zones.length === 0 &&
               obstacles.length === 0 &&
               paths.length === 0 && (
-                <p className="text-xs text-[var(--color-text-tertiary)]">
-                  No objects selected. Draw items on the canvas to view
-                  properties.
+                <p className="text-xs text-[var(--color-text-tertiary)] italic">
+                  No objects selected. Draw items on the canvas to view properties.
                 </p>
               )}
           </div>
@@ -237,46 +235,42 @@ export function RightInspector() {
             role="tabpanel"
             aria-labelledby="tab-results"
           >
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
-              <h3 className="text-xs font-semibold text-[var(--color-text-primary)] mb-2">
-                Pathfinding Results
+              <h3 className="text-xs font-bold text-[var(--color-text-primary)] mb-2 tracking-wider">
+                PATHFINDING RESULTS
               </h3>
-              <div className="space-y-2 text-xs text-[var(--color-text-secondary)]">
-                <div className="p-2 bg-[var(--color-bg-tertiary)] rounded">
-                  <div className="font-mono text-[0.65rem]">Path Length: —</div>
+              <div className="space-y-1.5 text-xs text-[var(--color-text-secondary)]">
+                <div className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)]">
+                  <div className="font-mono text-[0.7rem] text-[var(--color-text-secondary)]">Path Length: —</div>
                 </div>
-                <div className="p-2 bg-[var(--color-bg-tertiary)] rounded">
-                  <div className="font-mono text-[0.65rem]">Nodes Explored: —</div>
+                <div className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)]">
+                  <div className="font-mono text-[0.7rem] text-[var(--color-text-secondary)]">Nodes Explored: —</div>
                 </div>
-                <div className="p-2 bg-[var(--color-bg-tertiary)] rounded">
-                  <div className="font-mono text-[0.65rem]">Compute Time: —</div>
+                <div className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)]">
+                  <div className="font-mono text-[0.7rem] text-[var(--color-text-secondary)]">Compute Time: —</div>
                 </div>
               </div>
             </div>
 
             <div>
-              <h3 className="text-xs font-semibold text-[var(--color-text-primary)] mb-2">
-                Metrics
+              <h3 className="text-xs font-bold text-[var(--color-text-primary)] mb-2 tracking-wider">
+                METRICS
               </h3>
-              <div className="space-y-2 text-xs text-[var(--color-text-secondary)]">
-                <div className="p-2 bg-[var(--color-bg-tertiary)] rounded">
-                  <div className="font-mono text-[0.65rem]">Total Area: —</div>
+              <div className="space-y-1.5 text-xs text-[var(--color-text-secondary)]">
+                <div className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)]">
+                  <div className="font-mono text-[0.7rem] text-[var(--color-text-secondary)]">Total Area: —</div>
                 </div>
-                <div className="p-2 bg-[var(--color-bg-tertiary)] rounded">
-                  <div className="font-mono text-[0.65rem]">
-                    Walkable Area: —
-                  </div>
+                <div className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)]">
+                  <div className="font-mono text-[0.7rem] text-[var(--color-text-secondary)]">Walkable Area: —</div>
                 </div>
-                <div className="p-2 bg-[var(--color-bg-tertiary)] rounded">
-                  <div className="font-mono text-[0.65rem]">
-                    Obstruction %: —
-                  </div>
+                <div className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)]">
+                  <div className="font-mono text-[0.7rem] text-[var(--color-text-secondary)]">Obstruction %: —</div>
                 </div>
               </div>
             </div>
 
-            <button className="w-full px-3 py-2 bg-[var(--color-accent)] text-[var(--color-bg-primary)] rounded text-xs font-semibold hover:bg-[var(--color-accent-hover)] transition-colors">
+            <button className="w-full px-3 py-2.5 bg-[var(--color-accent)] text-[var(--color-bg-primary)] rounded font-semibold text-xs hover:bg-[var(--color-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] transition-all duration-150 shadow-sm hover:shadow-md">
               Run Analysis
             </button>
           </div>

@@ -10,10 +10,10 @@ interface ToolButtonProps {
 
 function ToolButton({ label, isActive, onClick }: ToolButtonProps) {
   const baseClasses =
-    "px-3 py-2 rounded transition-colors text-sm flex items-center gap-2 hover:bg-[var(--color-bg-interactive)]";
+    "px-3 py-2 rounded font-medium text-sm flex items-center gap-2 transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)]";
   const activeClasses = isActive
-    ? "bg-[var(--color-accent)] text-[var(--color-bg-primary)] font-semibold"
-    : "text-[var(--color-text-primary)]";
+    ? "bg-[var(--color-accent)] text-[var(--color-bg-primary)] shadow-md"
+    : "text-[var(--color-text-primary)] hover:bg-[var(--color-bg-interactive)] active:bg-[var(--color-border-focus)]";
 
   return (
     <button
@@ -22,7 +22,9 @@ function ToolButton({ label, isActive, onClick }: ToolButtonProps) {
       title={label}
       aria-pressed={isActive}
     >
-      <span className="inline-block w-4 h-4 rounded bg-[var(--color-border)]" />
+      <span className={`inline-block w-4 h-4 rounded transition-colors duration-150 ${
+        isActive ? "bg-[var(--color-bg-primary)] opacity-70" : "bg-[var(--color-border)]"
+      }`} />
       <span>{label}</span>
     </button>
   );
@@ -81,10 +83,10 @@ export function ToolBar() {
       <div className="flex items-center gap-2">
         <button
           onClick={toggleGrid}
-          className={`px-3 py-2 rounded text-xs transition-colors ${
+          className={`px-3 py-2 rounded font-medium text-xs transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)] ${
             gridVisible
-              ? "bg-[var(--color-accent)] text-[var(--color-bg-primary)]"
-              : "text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-interactive)]"
+              ? "bg-[var(--color-accent)] text-[var(--color-bg-primary)] shadow-md"
+              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-interactive)] active:bg-[var(--color-border-focus)]"
           }`}
           title="Toggle Grid"
           aria-pressed={gridVisible}
@@ -94,10 +96,10 @@ export function ToolBar() {
 
         <button
           onClick={toggleMeasurements}
-          className={`px-3 py-2 rounded text-xs transition-colors ${
+          className={`px-3 py-2 rounded font-medium text-xs transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)] ${
             measurementsVisible
-              ? "bg-[var(--color-accent)] text-[var(--color-bg-primary)]"
-              : "text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-interactive)]"
+              ? "bg-[var(--color-accent)] text-[var(--color-bg-primary)] shadow-md"
+              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-interactive)] active:bg-[var(--color-border-focus)]"
           }`}
           title="Toggle Measurements"
           aria-pressed={measurementsVisible}
@@ -107,12 +109,11 @@ export function ToolBar() {
 
         <button
           onClick={toggleTestMode}
-          className={`px-3 py-2 rounded text-xs transition-colors ${
+          className={`px-3 py-2 rounded font-medium text-xs transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)] ${
             testMode
-              ? "text-[var(--color-bg-primary)]"
-              : "text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-interactive)]"
+              ? "text-[var(--color-bg-primary)] shadow-md bg-[var(--color-test-mode)]"
+              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-interactive)] active:bg-[var(--color-border-focus)]"
           }`}
-          style={testMode ? { backgroundColor: "var(--color-test-mode)" } : {}}
           title="Toggle Test Mode"
           aria-pressed={testMode}
         >

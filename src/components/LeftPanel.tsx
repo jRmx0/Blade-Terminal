@@ -17,14 +17,14 @@ function AccordionSection({
     <div className="border-t border-[var(--color-border)] first:border-t-0">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between py-3 px-3 hover:bg-[var(--color-bg-interactive)] transition-colors"
+        className="w-full flex items-center justify-between py-3 px-3 hover:bg-[var(--color-bg-interactive)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent)] transition-colors duration-150"
         aria-expanded={isOpen}
       >
         <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
           {title}
         </h3>
         <span
-          className="text-[var(--color-text-secondary)]"
+          className="text-[var(--color-text-secondary)] text-lg flex-shrink-0"
           style={{
             transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
             transition: "transform 150ms ease",
@@ -34,7 +34,7 @@ function AccordionSection({
         </span>
       </button>
       {isOpen && (
-        <div className="px-3 pb-3 space-y-2 border-t border-[var(--color-border)] text-xs">
+        <div className="px-3 py-2 space-y-3 border-t border-[var(--color-border)] text-xs bg-[var(--color-bg-tertiary)]">
           {children}
         </div>
       )}
@@ -71,12 +71,12 @@ export function LeftPanel() {
     >
       {/* Header */}
       <div
-        className="px-3 py-2 border-b border-[var(--color-border)]"
+        className="px-3 py-2.5 border-b border-[var(--color-border)]"
         style={{
           backgroundColor: "var(--color-bg-tertiary)",
         }}
       >
-        <h2 className="text-xs font-bold text-[var(--color-text-primary)]">
+        <h2 className="text-xs font-bold text-[var(--color-text-primary)] tracking-wider">
           WORKSPACE
         </h2>
       </div>
@@ -89,43 +89,43 @@ export function LeftPanel() {
           onToggle={() => toggleSection("environment")}
         >
           <div>
-            <label className="block text-[var(--color-text-secondary)] mb-1">
+            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
               Workspace Name
             </label>
             <input
               type="text"
               placeholder="Default Workspace"
-              className="w-full px-2 py-1 text-xs"
+              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
             />
           </div>
           <div>
-            <label className="block text-[var(--color-text-secondary)] mb-1">
+            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
               Grid Size
             </label>
             <input
               type="number"
               placeholder="20"
-              className="w-full px-2 py-1 text-xs"
+              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
             />
           </div>
           <div>
-            <label className="block text-[var(--color-text-secondary)] mb-1">
+            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
               Canvas Width
             </label>
             <input
               type="number"
               placeholder="800"
-              className="w-full px-2 py-1 text-xs"
+              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
             />
           </div>
           <div>
-            <label className="block text-[var(--color-text-secondary)] mb-1">
+            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
               Canvas Height
             </label>
             <input
               type="number"
               placeholder="600"
-              className="w-full px-2 py-1 text-xs"
+              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
             />
           </div>
         </AccordionSection>
@@ -136,10 +136,10 @@ export function LeftPanel() {
           onToggle={() => toggleSection("algorithm")}
         >
           <div>
-            <label className="block text-[var(--color-text-secondary)] mb-1">
+            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
               Algorithm Type
             </label>
-            <select className="w-full px-2 py-1 text-xs">
+            <select className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]">
               <option>A*</option>
               <option>Dijkstra</option>
               <option>BFS</option>
@@ -147,19 +147,19 @@ export function LeftPanel() {
             </select>
           </div>
           <div>
-            <label className="block text-[var(--color-text-secondary)] mb-1">
+            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
               Heuristic
             </label>
-            <select className="w-full px-2 py-1 text-xs">
+            <select className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]">
               <option>Euclidean</option>
               <option>Manhattan</option>
               <option>Chebyshev</option>
             </select>
           </div>
           <div>
-            <label className="flex items-center gap-2 text-[var(--color-text-secondary)] cursor-pointer">
-              <input type="checkbox" className="w-3 h-3" defaultChecked />
-              <span>Allow Diagonal</span>
+            <label className="flex items-center gap-2 text-[var(--color-text-primary)] cursor-pointer hover:text-[var(--color-accent)] transition-colors">
+              <input type="checkbox" className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]" defaultChecked />
+              <span className="font-medium">Allow Diagonal</span>
             </label>
           </div>
         </AccordionSection>
@@ -170,29 +170,29 @@ export function LeftPanel() {
           onToggle={() => toggleSection("api")}
         >
           <div>
-            <label className="block text-[var(--color-text-secondary)] mb-1">
+            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
               API Endpoint
             </label>
             <input
               type="text"
               placeholder="http://localhost:3000"
-              className="w-full px-2 py-1 text-xs"
+              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)] font-mono"
             />
           </div>
           <div>
-            <label className="block text-[var(--color-text-secondary)] mb-1">
+            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
               Timeout (ms)
             </label>
             <input
               type="number"
               placeholder="5000"
-              className="w-full px-2 py-1 text-xs"
+              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
             />
           </div>
           <div>
-            <label className="flex items-center gap-2 text-[var(--color-text-secondary)] cursor-pointer">
-              <input type="checkbox" className="w-3 h-3" />
-              <span>Auto Connect</span>
+            <label className="flex items-center gap-2 text-[var(--color-text-primary)] cursor-pointer hover:text-[var(--color-accent)] transition-colors">
+              <input type="checkbox" className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]" />
+              <span className="font-medium">Auto Connect</span>
             </label>
           </div>
         </AccordionSection>
@@ -203,30 +203,21 @@ export function LeftPanel() {
           onToggle={() => toggleSection("advanced")}
         >
           <div>
-            <label className="block text-[var(--color-text-secondary)] mb-1">
-              Snap to Grid
-            </label>
-            <label className="flex items-center gap-2 text-[var(--color-text-secondary)] cursor-pointer">
-              <input type="checkbox" className="w-3 h-3" defaultChecked />
-              <span>Enabled</span>
+            <label className="flex items-center gap-2 text-[var(--color-text-primary)] cursor-pointer hover:text-[var(--color-accent)] transition-colors">
+              <input type="checkbox" className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]" defaultChecked />
+              <span className="font-medium">Snap to Grid</span>
             </label>
           </div>
           <div>
-            <label className="block text-[var(--color-text-secondary)] mb-1">
-              Show Coordinates
-            </label>
-            <label className="flex items-center gap-2 text-[var(--color-text-secondary)] cursor-pointer">
-              <input type="checkbox" className="w-3 h-3" defaultChecked />
-              <span>Enabled</span>
+            <label className="flex items-center gap-2 text-[var(--color-text-primary)] cursor-pointer hover:text-[var(--color-accent)] transition-colors">
+              <input type="checkbox" className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]" defaultChecked />
+              <span className="font-medium">Show Coordinates</span>
             </label>
           </div>
           <div>
-            <label className="block text-[var(--color-text-secondary)] mb-1">
-              Anti-aliasing
-            </label>
-            <label className="flex items-center gap-2 text-[var(--color-text-secondary)] cursor-pointer">
-              <input type="checkbox" className="w-3 h-3" defaultChecked />
-              <span>Enabled</span>
+            <label className="flex items-center gap-2 text-[var(--color-text-primary)] cursor-pointer hover:text-[var(--color-accent)] transition-colors">
+              <input type="checkbox" className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]" defaultChecked />
+              <span className="font-medium">Anti-aliasing</span>
             </label>
           </div>
         </AccordionSection>
