@@ -1,5 +1,5 @@
 ---
-name: project-structuring
+name: structure-project
 description: Guides proper file organization for the Blade Terminal single-page PWA (client-only) with local IndexedDB (Dexie) storage. Use when creating new files, moving/refactoring code, reviewing structure, or ensuring conventions for features, components, hooks, stores, utilities, and the local data layer.
 compatibility: Designed for blade-terminal - Client-only PWA using Bun/React and IndexedDB (Dexie). The server/ folder is a local data-access layer (not a network server).
 metadata:
