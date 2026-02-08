@@ -10,30 +10,25 @@ export function StatusBar() {
   const { zones, obstacles, paths } = useCanvasData();
 
   return (
-    <div
-      className="flex items-center justify-between"
-      style={{
-        height: "1.875rem",
-        backgroundColor: "var(--color-bg-secondary)",
-        borderTop: "1px solid var(--color-border)",
-        paddingLeft: "1.25rem",
-        paddingRight: "1.25rem",
-        fontSize: "0.8125rem",
-        color: "var(--color-text-secondary)",
-      }}
-    >
+    <div className="flex items-center justify-between h-7 bg-zinc-800 border-t border-gray-700 px-5 text-[0.8125rem] text-gray-400">
       {/* Left: Status info */}
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-1.5">
-          <span className="text-[var(--color-text-tertiary)]">Tool:</span>
-          <span className="text-[var(--color-text-primary)] font-medium">{activeTool}</span>
+          <span className="text-gray-500">Tool:</span>
+          <span className="text-gray-200 font-medium">{activeTool}</span>
         </div>
-        <div className="w-px h-3.5 bg-[var(--color-border)]" />
-        <span className={testMode ? "text-[var(--color-test-mode)] font-medium" : "text-[var(--color-text-secondary)]"}>
+        <div className="w-px h-3.5 bg-gray-700" />
+        <span
+          className={testMode ? "text-amber-700 font-medium" : "text-gray-400"}
+        >
           {testMode ? "●" : "○"} {testMode ? "Test Mode" : "Normal Mode"}
         </span>
-        <div className="w-px h-3.5 bg-[var(--color-border)]" />
-        <span className={gridVisible ? "text-[var(--color-accent)] font-medium" : "text-[var(--color-text-secondary)]"}>
+        <div className="w-px h-3.5 bg-gray-700" />
+        <span
+          className={
+            gridVisible ? "text-teal-600 font-medium" : "text-gray-400"
+          }
+        >
           Grid: {gridVisible ? "ON" : "OFF"}
         </span>
       </div>
@@ -41,36 +36,33 @@ export function StatusBar() {
       {/* Center: Legend */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5">
-          <div
-            className="w-3 h-3 border-2 rounded-sm"
-            style={{ borderColor: "var(--color-accent)" }}
-          />
-          <span className="text-[var(--color-text-secondary)]">{zones.length}</span>
-          <span className="text-[var(--color-text-tertiary)] text-[0.75rem]">Zone{zones.length !== 1 ? "s" : ""}</span>
+          <div className="w-3 h-3 border-2 rounded-sm border-teal-600" />
+          <span className="text-gray-400">{zones.length}</span>
+          <span className="text-gray-500 text-[0.75rem]">
+            Zone{zones.length !== 1 ? "s" : ""}
+          </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div
-            className="w-3 h-3 border-2 rounded-sm"
-            style={{ borderColor: "var(--color-obstacle)" }}
-          />
-          <span className="text-[var(--color-text-secondary)]">{obstacles.length}</span>
-          <span className="text-[var(--color-text-tertiary)] text-[0.75rem]">Obstacle{obstacles.length !== 1 ? "s" : ""}</span>
+          <div className="w-3 h-3 border-2 rounded-sm border-red-500" />
+          <span className="text-gray-400">{obstacles.length}</span>
+          <span className="text-gray-500 text-[0.75rem]">
+            Obstacle{obstacles.length !== 1 ? "s" : ""}
+          </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div
-            className="w-3 h-3 border-2 rounded-sm"
-            style={{ borderColor: "var(--color-path)" }}
-          />
-          <span className="text-[var(--color-text-secondary)]">{paths.length}</span>
-          <span className="text-[var(--color-text-tertiary)] text-[0.75rem]">Path{paths.length !== 1 ? "s" : ""}</span>
+          <div className="w-3 h-3 border-2 rounded-sm border-green-500" />
+          <span className="text-gray-400">{paths.length}</span>
+          <span className="text-gray-500 text-[0.75rem]">
+            Path{paths.length !== 1 ? "s" : ""}
+          </span>
         </div>
       </div>
 
       {/* Right: Zoom and info */}
       <div className="flex items-center gap-2">
-        <span className="text-[var(--color-text-secondary)]">Zoom: 100%</span>
-        <div className="w-px h-3.5 bg-[var(--color-border)]" />
-        <span className="text-[var(--color-accent)] font-medium">Ready</span>
+        <span className="text-gray-400">Zoom: 100%</span>
+        <div className="w-px h-3.5 bg-gray-700" />
+        <span className="text-teal-600 font-medium">Ready</span>
       </div>
     </div>
   );

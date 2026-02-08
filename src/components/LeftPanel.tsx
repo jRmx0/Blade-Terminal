@@ -14,17 +14,15 @@ function AccordionSection({
   children,
 }: AccordionSectionProps) {
   return (
-    <div className="border-t border-[var(--color-border)] first:border-t-0">
+    <div className="border-t border-gray-700 first:border-t-0">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between py-3 px-3 hover:bg-[var(--color-bg-interactive)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent)] transition-colors duration-150"
+        className="w-full flex items-center justify-between py-3 px-3 hover:bg-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-teal-600 transition-colors duration-150"
         aria-expanded={isOpen}
       >
-        <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
-          {title}
-        </h3>
+        <h3 className="text-sm font-semibold text-gray-200">{title}</h3>
         <span
-          className="text-[var(--color-text-secondary)] text-lg flex-shrink-0"
+          className="text-gray-400 text-lg flex-shrink-0"
           style={{
             transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
             transition: "transform 150ms ease",
@@ -34,7 +32,7 @@ function AccordionSection({
         </span>
       </button>
       {isOpen && (
-        <div className="px-3 py-2 space-y-3 border-t border-[var(--color-border)] text-xs bg-[var(--color-bg-tertiary)]">
+        <div className="px-3 py-2 space-y-3 border-t border-gray-700 text-xs bg-zinc-700">
           {children}
         </div>
       )}
@@ -48,7 +46,7 @@ function AccordionSection({
  */
 export function LeftPanel() {
   const [openSections, setOpenSections] = useState<Set<string>>(
-    new Set(["environment", "algorithm"])
+    new Set(["environment", "algorithm"]),
   );
 
   const toggleSection = (section: string) => {
@@ -62,70 +60,59 @@ export function LeftPanel() {
   };
 
   return (
-    <div
-      className="flex flex-col overflow-hidden"
-      style={{
-        backgroundColor: "var(--color-bg-secondary)",
-        borderRight: "1px solid var(--color-border)",
-      }}
-    >
+    <div className="flex flex-col overflow-hidden bg-zinc-800 border-r border-gray-700">
       {/* Header */}
-      <div
-        className="px-3 py-2.5 border-b border-[var(--color-border)]"
-        style={{
-          backgroundColor: "var(--color-bg-tertiary)",
-        }}
-      >
-        <h2 className="text-xs font-bold text-[var(--color-text-primary)] tracking-wider">
+      <div className="px-3 py-2.5 border-b border-gray-700 bg-zinc-700">
+        <h2 className="text-xs font-bold text-gray-200 tracking-wider">
           WORKSPACE
         </h2>
       </div>
 
       {/* Scrollable accordion content */}
-      <div style={{ overflowY: "auto", flex: 1 }}>
+      <div className="overflow-y-auto flex-1">
         <AccordionSection
           title="Environment"
           isOpen={openSections.has("environment")}
           onToggle={() => toggleSection("environment")}
         >
           <div>
-            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
+            <label className="block text-gray-400 font-medium mb-1.5">
               Workspace Name
             </label>
             <input
               type="text"
               placeholder="Default Workspace"
-              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
+              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-teal-600 focus-visible:ring-1 focus-visible:ring-teal-600"
             />
           </div>
           <div>
-            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
+            <label className="block text-gray-400 font-medium mb-1.5">
               Grid Size
             </label>
             <input
               type="number"
               placeholder="20"
-              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
+              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-teal-600 focus-visible:ring-1 focus-visible:ring-teal-600"
             />
           </div>
           <div>
-            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
+            <label className="block text-gray-400 font-medium mb-1.5">
               Canvas Width
             </label>
             <input
               type="number"
               placeholder="800"
-              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
+              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-teal-600 focus-visible:ring-1 focus-visible:ring-teal-600"
             />
           </div>
           <div>
-            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
+            <label className="block text-gray-400 font-medium mb-1.5">
               Canvas Height
             </label>
             <input
               type="number"
               placeholder="600"
-              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
+              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-teal-600 focus-visible:ring-1 focus-visible:ring-teal-600"
             />
           </div>
         </AccordionSection>
@@ -136,10 +123,10 @@ export function LeftPanel() {
           onToggle={() => toggleSection("algorithm")}
         >
           <div>
-            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
+            <label className="block text-gray-400 font-medium mb-1.5">
               Algorithm Type
             </label>
-            <select className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]">
+            <select className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-teal-600 focus-visible:ring-1 focus-visible:ring-teal-600">
               <option>A*</option>
               <option>Dijkstra</option>
               <option>BFS</option>
@@ -147,18 +134,22 @@ export function LeftPanel() {
             </select>
           </div>
           <div>
-            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
+            <label className="block text-gray-400 font-medium mb-1.5">
               Heuristic
             </label>
-            <select className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]">
+            <select className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-teal-600 focus-visible:ring-1 focus-visible:ring-teal-600">
               <option>Euclidean</option>
               <option>Manhattan</option>
               <option>Chebyshev</option>
             </select>
           </div>
           <div>
-            <label className="flex items-center gap-2 text-[var(--color-text-primary)] cursor-pointer hover:text-[var(--color-accent)] transition-colors">
-              <input type="checkbox" className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]" defaultChecked />
+            <label className="flex items-center gap-2 text-gray-200 cursor-pointer hover:text-teal-600 transition-colors">
+              <input
+                type="checkbox"
+                className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-teal-600"
+                defaultChecked
+              />
               <span className="font-medium">Allow Diagonal</span>
             </label>
           </div>
@@ -170,28 +161,31 @@ export function LeftPanel() {
           onToggle={() => toggleSection("api")}
         >
           <div>
-            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
+            <label className="block text-gray-400 font-medium mb-1.5">
               API Endpoint
             </label>
             <input
               type="text"
               placeholder="http://localhost:3000"
-              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)] font-mono"
+              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-teal-600 focus-visible:ring-1 focus-visible:ring-teal-600 font-mono"
             />
           </div>
           <div>
-            <label className="block text-[var(--color-text-secondary)] font-medium mb-1.5">
+            <label className="block text-gray-400 font-medium mb-1.5">
               Timeout (ms)
             </label>
             <input
               type="number"
               placeholder="5000"
-              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
+              className="w-full px-2.5 py-1.5 text-xs rounded focus-visible:outline-none focus-visible:border-teal-600 focus-visible:ring-1 focus-visible:ring-teal-600"
             />
           </div>
           <div>
-            <label className="flex items-center gap-2 text-[var(--color-text-primary)] cursor-pointer hover:text-[var(--color-accent)] transition-colors">
-              <input type="checkbox" className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]" />
+            <label className="flex items-center gap-2 text-gray-200 cursor-pointer hover:text-teal-600 transition-colors">
+              <input
+                type="checkbox"
+                className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-teal-600"
+              />
               <span className="font-medium">Auto Connect</span>
             </label>
           </div>
@@ -203,20 +197,32 @@ export function LeftPanel() {
           onToggle={() => toggleSection("advanced")}
         >
           <div>
-            <label className="flex items-center gap-2 text-[var(--color-text-primary)] cursor-pointer hover:text-[var(--color-accent)] transition-colors">
-              <input type="checkbox" className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]" defaultChecked />
+            <label className="flex items-center gap-2 text-gray-200 cursor-pointer hover:text-teal-600 transition-colors">
+              <input
+                type="checkbox"
+                className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-teal-600"
+                defaultChecked
+              />
               <span className="font-medium">Snap to Grid</span>
             </label>
           </div>
           <div>
-            <label className="flex items-center gap-2 text-[var(--color-text-primary)] cursor-pointer hover:text-[var(--color-accent)] transition-colors">
-              <input type="checkbox" className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]" defaultChecked />
+            <label className="flex items-center gap-2 text-gray-200 cursor-pointer hover:text-teal-600 transition-colors">
+              <input
+                type="checkbox"
+                className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-teal-600"
+                defaultChecked
+              />
               <span className="font-medium">Show Coordinates</span>
             </label>
           </div>
           <div>
-            <label className="flex items-center gap-2 text-[var(--color-text-primary)] cursor-pointer hover:text-[var(--color-accent)] transition-colors">
-              <input type="checkbox" className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]" defaultChecked />
+            <label className="flex items-center gap-2 text-gray-200 cursor-pointer hover:text-teal-600 transition-colors">
+              <input
+                type="checkbox"
+                className="w-3.5 h-3.5 rounded focus-visible:outline-2 focus-visible:outline-teal-600"
+                defaultChecked
+              />
               <span className="font-medium">Anti-aliasing</span>
             </label>
           </div>

@@ -16,15 +16,7 @@ import { WorkspaceCanvas } from "./WorkspaceCanvas";
  */
 export function WorkspaceLayout() {
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: "var(--color-bg-primary)",
-      }}
-    >
+    <div className="w-full h-full flex flex-col bg-zinc-900">
       {/* Top Menu & Toolbar */}
       <div>
         <TopMenuBar />
@@ -32,17 +24,9 @@ export function WorkspaceLayout() {
       </div>
 
       {/* Main Content Area */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "280px 1fr 300px",
-          flex: 1,
-          overflow: "hidden",
-          gap: 0,
-        }}
-      >
+      <div className="grid grid-cols-[280px_1fr_300px] flex-1 overflow-hidden gap-0">
         {/* Left Panel */}
-        <div style={{ overflow: "hidden" }}>
+        <div className="overflow-hidden">
           <LeftPanel />
         </div>
 
@@ -50,7 +34,7 @@ export function WorkspaceLayout() {
         <WorkspaceCanvas />
 
         {/* Right Inspector Panel */}
-        <div style={{ overflow: "hidden" }}>
+        <div className="overflow-hidden">
           <RightInspector />
         </div>
       </div>

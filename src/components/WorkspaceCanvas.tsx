@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Stage, Layer, Rect, Line } from "react-konva";
-import { useCanvasData, useUIState, toKonvaPoints } from "../stores/workspace/workspaceStore";
+import {
+  useCanvasData,
+  useUIState,
+  toKonvaPoints,
+} from "../stores/workspace/workspaceStore";
 
 /**
  * WorkspaceCanvas Component
@@ -10,9 +14,9 @@ import { useCanvasData, useUIState, toKonvaPoints } from "../stores/workspace/wo
  * - Renders grid, zones, obstacles, and paths with CAD-like styling
  */
 
-// Canvas color constants (matching CSS variables in index.css)
-const CANVAS_BG = "#0f0f0f"; // --canvas-bg
-const CANVAS_GRID = "#2a2a2a"; // --canvas-grid
+// Canvas color constants
+const CANVAS_BG = "#0f0f0f";
+const CANVAS_GRID = "#2a2a2a";
 
 export function WorkspaceCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -62,7 +66,7 @@ export function WorkspaceCanvas() {
         stroke={CANVAS_GRID}
         strokeWidth={1}
         opacity={0.5}
-      />
+      />,
     );
   }
 
@@ -75,7 +79,7 @@ export function WorkspaceCanvas() {
         stroke={CANVAS_GRID}
         strokeWidth={1}
         opacity={0.5}
-      />
+      />,
     );
   }
 

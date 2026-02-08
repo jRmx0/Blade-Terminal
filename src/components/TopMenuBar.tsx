@@ -22,7 +22,8 @@ function DropdownMenu({ label, items }: DropdownMenuProps) {
 
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [isOpen]);
 
@@ -53,7 +54,10 @@ function DropdownMenu({ label, items }: DropdownMenuProps) {
   }, [isOpen]);
 
   // Handle keyboard navigation within menu
-  const handleMenuKeyDown = (index: number, e: React.KeyboardEvent<HTMLButtonElement>) => {
+  const handleMenuKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLButtonElement>,
+  ) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
       const nextIndex = index < items.length - 1 ? index + 1 : 0;
@@ -76,7 +80,7 @@ function DropdownMenu({ label, items }: DropdownMenuProps) {
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-1.5 text-sm font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-interactive)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)] rounded transition-colors duration-150"
+        className="px-3 py-1.5 text-sm font-medium text-gray-200 hover:bg-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-600 rounded transition-colors duration-150"
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label={`${label} menu`}
@@ -87,11 +91,7 @@ function DropdownMenu({ label, items }: DropdownMenuProps) {
         <div
           role="menu"
           aria-label={`${label} menu items`}
-          className="absolute left-0 mt-1 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded shadow-lg"
-          style={{
-            minWidth: "150px",
-            zIndex: "var(--z-dropdown)",
-          }}
+          className="absolute left-0 mt-1 bg-zinc-800 border border-gray-700 rounded shadow-lg min-w-[150px] z-[100]"
         >
           {items.map((item, index) => (
             <button
@@ -102,7 +102,7 @@ function DropdownMenu({ label, items }: DropdownMenuProps) {
               role="menuitem"
               onClick={handleMenuItemClick}
               onKeyDown={(e) => handleMenuKeyDown(index, e)}
-              className="w-full text-left px-3 py-2 text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-bg-interactive)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent)] transition-colors duration-150 first:rounded-t last:rounded-b"
+              className="w-full text-left px-3 py-2 text-sm text-gray-200 hover:bg-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-teal-600 transition-colors duration-150 first:rounded-t last:rounded-b"
             >
               {item}
             </button>
@@ -119,16 +119,7 @@ function DropdownMenu({ label, items }: DropdownMenuProps) {
  */
 export function TopMenuBar() {
   return (
-    <div
-      className="flex items-center justify-between"
-      style={{
-        height: "2.5rem",
-        backgroundColor: "var(--color-bg-secondary)",
-        borderBottom: "1px solid var(--color-border)",
-        paddingLeft: "1rem",
-        paddingRight: "1rem",
-      }}
-    >
+    <div className="flex items-center justify-between h-10 bg-zinc-800 border-b border-gray-700 px-4">
       {/* Left side: Menus */}
       <div className="flex items-center gap-1">
         <DropdownMenu
@@ -168,7 +159,7 @@ export function TopMenuBar() {
       </div>
 
       {/* Center: Environment Title */}
-      <h1 className="text-sm font-semibold text-[var(--color-text-primary)] flex-1 text-center">
+      <h1 className="text-sm font-semibold text-gray-200 flex-1 text-center">
         Blade of Grass - Workspace
       </h1>
 

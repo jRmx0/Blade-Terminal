@@ -11,7 +11,15 @@ interface TabProps {
   tabRef?: React.RefObject<HTMLButtonElement | null>;
 }
 
-function Tab({ label, id, controlsId, isActive, onClick, onKeyDown, tabRef }: TabProps) {
+function Tab({
+  label,
+  id,
+  controlsId,
+  isActive,
+  onClick,
+  onKeyDown,
+  tabRef,
+}: TabProps) {
   return (
     <button
       ref={tabRef}
@@ -22,10 +30,10 @@ function Tab({ label, id, controlsId, isActive, onClick, onKeyDown, tabRef }: Ta
       tabIndex={isActive ? 0 : -1}
       onClick={onClick}
       onKeyDown={onKeyDown}
-      className={`px-3 py-2 text-xs font-medium transition-all duration-150 border-b-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)] ${
+      className={`px-3 py-2 text-xs font-medium transition-all duration-150 border-b-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-600 ${
         isActive
-          ? "text-[var(--color-accent)] border-[var(--color-accent)]"
-          : "text-[var(--color-text-secondary)] border-transparent hover:text-[var(--color-text-primary)] hover:border-[var(--color-border)]"
+          ? "text-teal-600 border-teal-600"
+          : "text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-700"
       }`}
     >
       {label}
@@ -39,7 +47,7 @@ function Tab({ label, id, controlsId, isActive, onClick, onKeyDown, tabRef }: Ta
  */
 export function RightInspector() {
   const [activeTab, setActiveTab] = useState<"properties" | "results">(
-    "properties"
+    "properties",
   );
   const { zones, obstacles, paths } = useCanvasData();
   const { activeTool } = useUIState();
@@ -77,31 +85,16 @@ export function RightInspector() {
   };
 
   return (
-    <div
-      className="flex flex-col overflow-hidden"
-      style={{
-        backgroundColor: "var(--color-bg-secondary)",
-        borderLeft: "1px solid var(--color-border)",
-      }}
-    >
+    <div className="flex flex-col overflow-hidden bg-zinc-800 border-l border-gray-700">
       {/* Header */}
-      <div
-        className="px-3 py-2.5 border-b border-[var(--color-border)]"
-        style={{
-          backgroundColor: "var(--color-bg-tertiary)",
-        }}
-      >
-        <h2 className="text-xs font-bold text-[var(--color-text-primary)] tracking-wider">
+      <div className="px-3 py-2.5 border-b border-gray-700 bg-zinc-700">
+        <h2 className="text-xs font-bold text-gray-200 tracking-wider">
           INSPECTOR
         </h2>
       </div>
 
       {/* Tabs */}
-      <div
-        role="tablist"
-        className="flex border-b border-[var(--color-border)]"
-        style={{ backgroundColor: "var(--color-bg-secondary)" }}
-      >
+      <div role="tablist" className="flex border-b border-gray-700 bg-zinc-800">
         <Tab
           id="tab-properties"
           tabRef={propertiesTabRef}
@@ -123,157 +116,173 @@ export function RightInspector() {
       </div>
 
       {/* Content */}
-      <div style={{ overflowY: "auto", flex: 1, padding: "1rem" }}>
+      <div className="overflow-y-auto flex-1 p-4">
         {activeTab === "properties" && (
-          <div 
+          <div
             id="panel-properties"
             role="tabpanel"
             aria-labelledby="tab-properties"
           >
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-xs font-bold text-[var(--color-text-primary)] mb-2 tracking-wider">
-                ACTIVE TOOL
-              </h3>
-              <p className="text-xs text-[var(--color-text-secondary)] bg-[var(--color-bg-tertiary)] px-2.5 py-1.5 rounded">
-                {activeTool.charAt(0).toUpperCase() + activeTool.slice(1)}
-              </p>
-            </div>
-
-            {zones.length > 0 && (
+            <div className="space-y-4">
               <div>
-                <h3 className="text-xs font-bold text-[var(--color-text-primary)] mb-2 tracking-wider">
-                  ZONES ({zones.length})
+                <h3 className="text-xs font-bold text-gray-200 mb-2 tracking-wider">
+                  ACTIVE TOOL
                 </h3>
-                <div className="space-y-1.5 text-xs">
-                  {zones.slice(0, 3).map((zone) => (
-                    <div
-                      key={zone.id}
-                      className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)] text-[var(--color-text-secondary)] truncate hover:bg-[var(--color-bg-interactive)] transition-colors"
-                    >
-                      <div className="font-semibold text-[var(--color-text-primary)] truncate">{zone.name}</div>
-                      <div className="text-[0.65rem] opacity-75 font-mono">
-                        {zone.width}×{zone.height} @ ({zone.x}, {zone.y})
-                      </div>
-                    </div>
-                  ))}
-                  {zones.length > 3 && (
-                    <p className="text-[0.65rem] text-[var(--color-text-tertiary)] px-1">
-                      +{zones.length - 3} more
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {obstacles.length > 0 && (
-              <div>
-                <h3 className="text-xs font-bold text-[var(--color-text-primary)] mb-2 tracking-wider">
-                  OBSTACLES ({obstacles.length})
-                </h3>
-                <div className="space-y-1.5 text-xs">
-                  {obstacles.slice(0, 3).map((obstacle) => (
-                    <div
-                      key={obstacle.id}
-                      className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)] text-[var(--color-text-secondary)] truncate hover:bg-[var(--color-bg-interactive)] transition-colors"
-                    >
-                      <div className="font-semibold text-[var(--color-text-primary)] truncate">{obstacle.name}</div>
-                      <div className="text-[0.65rem] opacity-75 font-mono">
-                        {obstacle.width}×{obstacle.height} @ ({obstacle.x}, {obstacle.y})
-                      </div>
-                    </div>
-                  ))}
-                  {obstacles.length > 3 && (
-                    <p className="text-[0.65rem] text-[var(--color-text-tertiary)] px-1">
-                      +{obstacles.length - 3} more
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {paths.length > 0 && (
-              <div>
-                <h3 className="text-xs font-bold text-[var(--color-text-primary)] mb-2 tracking-wider">
-                  PATHS ({paths.length})
-                </h3>
-                <div className="space-y-1.5 text-xs">
-                  {paths.slice(0, 3).map((path) => (
-                    <div
-                      key={path.id}
-                      className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-interactive)] transition-colors"
-                    >
-                      <div className="font-semibold text-[var(--color-text-primary)]">{path.name}</div>
-                      <div className="text-[0.65rem] opacity-75">
-                        {path.points.length} points
-                      </div>
-                    </div>
-                  ))}
-                  {paths.length > 3 && (
-                    <p className="text-[0.65rem] text-[var(--color-text-tertiary)] px-1">
-                      +{paths.length - 3} more
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {zones.length === 0 &&
-              obstacles.length === 0 &&
-              paths.length === 0 && (
-                <p className="text-xs text-[var(--color-text-tertiary)] italic">
-                  No objects selected. Draw items on the canvas to view properties.
+                <p className="text-xs text-gray-400 bg-zinc-700 px-2.5 py-1.5 rounded">
+                  {activeTool.charAt(0).toUpperCase() + activeTool.slice(1)}
                 </p>
+              </div>
+
+              {zones.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-bold text-gray-200 mb-2 tracking-wider">
+                    ZONES ({zones.length})
+                  </h3>
+                  <div className="space-y-1.5 text-xs">
+                    {zones.slice(0, 3).map((zone) => (
+                      <div
+                        key={zone.id}
+                        className="p-2.5 bg-zinc-700 rounded border border-gray-700 text-gray-400 truncate hover:bg-zinc-600 transition-colors"
+                      >
+                        <div className="font-semibold text-gray-200 truncate">
+                          {zone.name}
+                        </div>
+                        <div className="text-[0.65rem] opacity-75 font-mono">
+                          {zone.width}×{zone.height} @ ({zone.x}, {zone.y})
+                        </div>
+                      </div>
+                    ))}
+                    {zones.length > 3 && (
+                      <p className="text-[0.65rem] text-gray-500 px-1">
+                        +{zones.length - 3} more
+                      </p>
+                    )}
+                  </div>
+                </div>
               )}
-          </div>
+
+              {obstacles.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-bold text-gray-200 mb-2 tracking-wider">
+                    OBSTACLES ({obstacles.length})
+                  </h3>
+                  <div className="space-y-1.5 text-xs">
+                    {obstacles.slice(0, 3).map((obstacle) => (
+                      <div
+                        key={obstacle.id}
+                        className="p-2.5 bg-zinc-700 rounded border border-gray-700 text-gray-400 truncate hover:bg-zinc-600 transition-colors"
+                      >
+                        <div className="font-semibold text-gray-200 truncate">
+                          {obstacle.name}
+                        </div>
+                        <div className="text-[0.65rem] opacity-75 font-mono">
+                          {obstacle.width}×{obstacle.height} @ ({obstacle.x},{" "}
+                          {obstacle.y})
+                        </div>
+                      </div>
+                    ))}
+                    {obstacles.length > 3 && (
+                      <p className="text-[0.65rem] text-gray-500 px-1">
+                        +{obstacles.length - 3} more
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {paths.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-bold text-gray-200 mb-2 tracking-wider">
+                    PATHS ({paths.length})
+                  </h3>
+                  <div className="space-y-1.5 text-xs">
+                    {paths.slice(0, 3).map((path) => (
+                      <div
+                        key={path.id}
+                        className="p-2.5 bg-zinc-700 rounded border border-gray-700 text-gray-400 hover:bg-zinc-600 transition-colors"
+                      >
+                        <div className="font-semibold text-gray-200">
+                          {path.name}
+                        </div>
+                        <div className="text-[0.65rem] opacity-75">
+                          {path.points.length} points
+                        </div>
+                      </div>
+                    ))}
+                    {paths.length > 3 && (
+                      <p className="text-[0.65rem] text-gray-500 px-1">
+                        +{paths.length - 3} more
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {zones.length === 0 &&
+                obstacles.length === 0 &&
+                paths.length === 0 && (
+                  <p className="text-xs text-gray-500 italic">
+                    No objects selected. Draw items on the canvas to view
+                    properties.
+                  </p>
+                )}
+            </div>
           </div>
         )}
 
         {activeTab === "results" && (
-          <div 
-            id="panel-results"
-            role="tabpanel"
-            aria-labelledby="tab-results"
-          >
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-xs font-bold text-[var(--color-text-primary)] mb-2 tracking-wider">
-                PATHFINDING RESULTS
-              </h3>
-              <div className="space-y-1.5 text-xs text-[var(--color-text-secondary)]">
-                <div className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)]">
-                  <div className="font-mono text-[0.7rem] text-[var(--color-text-secondary)]">Path Length: —</div>
-                </div>
-                <div className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)]">
-                  <div className="font-mono text-[0.7rem] text-[var(--color-text-secondary)]">Nodes Explored: —</div>
-                </div>
-                <div className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)]">
-                  <div className="font-mono text-[0.7rem] text-[var(--color-text-secondary)]">Compute Time: —</div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-xs font-bold text-[var(--color-text-primary)] mb-2 tracking-wider">
-                METRICS
-              </h3>
-              <div className="space-y-1.5 text-xs text-[var(--color-text-secondary)]">
-                <div className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)]">
-                  <div className="font-mono text-[0.7rem] text-[var(--color-text-secondary)]">Total Area: —</div>
-                </div>
-                <div className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)]">
-                  <div className="font-mono text-[0.7rem] text-[var(--color-text-secondary)]">Walkable Area: —</div>
-                </div>
-                <div className="p-2.5 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)]">
-                  <div className="font-mono text-[0.7rem] text-[var(--color-text-secondary)]">Obstruction %: —</div>
+          <div id="panel-results" role="tabpanel" aria-labelledby="tab-results">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-xs font-bold text-gray-200 mb-2 tracking-wider">
+                  PATHFINDING RESULTS
+                </h3>
+                <div className="space-y-1.5 text-xs text-gray-400">
+                  <div className="p-2.5 bg-zinc-700 rounded border border-gray-700">
+                    <div className="font-mono text-[0.7rem] text-gray-400">
+                      Path Length: —
+                    </div>
+                  </div>
+                  <div className="p-2.5 bg-zinc-700 rounded border border-gray-700">
+                    <div className="font-mono text-[0.7rem] text-gray-400">
+                      Nodes Explored: —
+                    </div>
+                  </div>
+                  <div className="p-2.5 bg-zinc-700 rounded border border-gray-700">
+                    <div className="font-mono text-[0.7rem] text-gray-400">
+                      Compute Time: —
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <button className="w-full px-3 py-2.5 bg-[var(--color-accent)] text-[var(--color-bg-primary)] rounded font-semibold text-xs hover:bg-[var(--color-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] transition-all duration-150 shadow-sm hover:shadow-md">
-              Run Analysis
-            </button>
-          </div>
+              <div>
+                <h3 className="text-xs font-bold text-gray-200 mb-2 tracking-wider">
+                  METRICS
+                </h3>
+                <div className="space-y-1.5 text-xs text-gray-400">
+                  <div className="p-2.5 bg-zinc-700 rounded border border-gray-700">
+                    <div className="font-mono text-[0.7rem] text-gray-400">
+                      Total Area: —
+                    </div>
+                  </div>
+                  <div className="p-2.5 bg-zinc-700 rounded border border-gray-700">
+                    <div className="font-mono text-[0.7rem] text-gray-400">
+                      Walkable Area: —
+                    </div>
+                  </div>
+                  <div className="p-2.5 bg-zinc-700 rounded border border-gray-700">
+                    <div className="font-mono text-[0.7rem] text-gray-400">
+                      Obstruction %: —
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button className="w-full px-3 py-2.5 bg-teal-600 text-zinc-900 rounded font-semibold text-xs hover:bg-teal-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 transition-all duration-150 shadow-sm hover:shadow-md">
+                Run Analysis
+              </button>
+            </div>
           </div>
         )}
       </div>

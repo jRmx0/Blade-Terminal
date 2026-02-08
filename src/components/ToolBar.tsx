@@ -10,10 +10,10 @@ interface ToolButtonProps {
 
 function ToolButton({ label, isActive, onClick }: ToolButtonProps) {
   const baseClasses =
-    "px-3 py-2 rounded font-medium text-sm flex items-center gap-2 transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)]";
+    "px-3 py-2 rounded font-medium text-sm flex items-center gap-2 transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-600";
   const activeClasses = isActive
-    ? "bg-[var(--color-accent)] text-[var(--color-bg-primary)] shadow-md"
-    : "text-[var(--color-text-primary)] hover:bg-[var(--color-bg-interactive)] active:bg-[var(--color-border-focus)]";
+    ? "bg-teal-600 text-zinc-900 shadow-md"
+    : "text-gray-200 hover:bg-zinc-600 active:bg-gray-600";
 
   return (
     <button
@@ -22,9 +22,11 @@ function ToolButton({ label, isActive, onClick }: ToolButtonProps) {
       title={label}
       aria-pressed={isActive}
     >
-      <span className={`inline-block w-4 h-4 rounded transition-colors duration-150 ${
-        isActive ? "bg-[var(--color-bg-primary)] opacity-70" : "bg-[var(--color-border)]"
-      }`} />
+      <span
+        className={`inline-block w-4 h-4 rounded transition-colors duration-150 ${
+          isActive ? "bg-zinc-900 opacity-70" : "bg-gray-700"
+        }`}
+      />
       <span>{label}</span>
     </button>
   );
@@ -49,26 +51,9 @@ export function ToolBar() {
   ];
 
   return (
-    <div
-      className="flex items-center justify-between"
-      style={{
-        height: "3rem",
-        backgroundColor: "var(--color-bg-secondary)",
-        borderBottom: "1px solid var(--color-border)",
-        paddingLeft: "1rem",
-        paddingRight: "1rem",
-        gap: "1rem",
-        overflowX: "auto",
-      }}
-    >
+    <div className="flex items-center justify-between h-12 bg-zinc-800 border-b border-gray-700 px-4 gap-4 overflow-x-auto">
       {/* Left: Tool buttons */}
-      <div
-        className="flex items-center gap-1"
-        style={{
-          borderRight: "1px solid var(--color-border)",
-          paddingRight: "1rem",
-        }}
-      >
+      <div className="flex items-center gap-1 border-r border-gray-700 pr-4">
         {tools.map((t) => (
           <ToolButton
             key={t.tool}
@@ -83,10 +68,10 @@ export function ToolBar() {
       <div className="flex items-center gap-2">
         <button
           onClick={toggleGrid}
-          className={`px-3 py-2 rounded font-medium text-xs transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)] ${
+          className={`px-3 py-2 rounded font-medium text-xs transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-600 ${
             gridVisible
-              ? "bg-[var(--color-accent)] text-[var(--color-bg-primary)] shadow-md"
-              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-interactive)] active:bg-[var(--color-border-focus)]"
+              ? "bg-teal-600 text-zinc-900 shadow-md"
+              : "text-gray-400 hover:text-gray-200 hover:bg-zinc-600 active:bg-gray-600"
           }`}
           title="Toggle Grid"
           aria-pressed={gridVisible}
@@ -96,10 +81,10 @@ export function ToolBar() {
 
         <button
           onClick={toggleMeasurements}
-          className={`px-3 py-2 rounded font-medium text-xs transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)] ${
+          className={`px-3 py-2 rounded font-medium text-xs transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-600 ${
             measurementsVisible
-              ? "bg-[var(--color-accent)] text-[var(--color-bg-primary)] shadow-md"
-              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-interactive)] active:bg-[var(--color-border-focus)]"
+              ? "bg-teal-600 text-zinc-900 shadow-md"
+              : "text-gray-400 hover:text-gray-200 hover:bg-zinc-600 active:bg-gray-600"
           }`}
           title="Toggle Measurements"
           aria-pressed={measurementsVisible}
@@ -109,10 +94,10 @@ export function ToolBar() {
 
         <button
           onClick={toggleTestMode}
-          className={`px-3 py-2 rounded font-medium text-xs transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)] ${
+          className={`px-3 py-2 rounded font-medium text-xs transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-600 ${
             testMode
-              ? "text-[var(--color-bg-primary)] shadow-md bg-[var(--color-test-mode)]"
-              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-interactive)] active:bg-[var(--color-border-focus)]"
+              ? "text-zinc-900 shadow-md bg-amber-700"
+              : "text-gray-400 hover:text-gray-200 hover:bg-zinc-600 active:bg-gray-600"
           }`}
           title="Toggle Test Mode"
           aria-pressed={testMode}
