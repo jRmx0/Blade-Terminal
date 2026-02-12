@@ -4,7 +4,7 @@ description: Guides proper file organization for the Blade Terminal single-page 
 compatibility: Designed for blade-terminal - Client-only PWA using Bun/React and IndexedDB (Dexie). The server/ folder is a local data-access layer (not a network server).
 metadata:
   author: jRmx0
-  version: "1.3"
+  version: "1.4"
 ---
 
 # Project Structure Guide
@@ -26,7 +26,7 @@ The primary frontend code lives in the `src` folder:
 
 ```
 src/
-├── app/                    # Application layer
+├── app/                   # Application layer
 │   ├── App.tsx            # Main application component
 │   └── main.tsx           # Application provider wrapping app with global providers
 ├── assets/                # Static files (images, fonts, etc.)
@@ -35,7 +35,6 @@ src/
 ├── features/              # Feature-based modules (see feature structure below)
 ├── hooks/                 # Shared hooks used across the entire application
 ├── layouts/               # Structural shell components defining spatial UI regions
-├── lib/                   # Reusable libraries preconfigured for the application
 ├── stores/                # Global state stores (Zustand, Redux, etc.)
 ├── testing/               # Test utilities and mocks
 ├── types/                 # Shared TypeScript types
