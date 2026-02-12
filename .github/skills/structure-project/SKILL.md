@@ -4,7 +4,7 @@ description: Guides proper file organization for the Blade Terminal single-page 
 compatibility: Designed for blade-terminal - Client-only PWA using Bun/React and IndexedDB (Dexie). The server/ folder is a local data-access layer (not a network server).
 metadata:
   author: jRmx0
-  version: "1.5"
+  version: "1.6"
 ---
 
 # Project Structure Guide
@@ -86,18 +86,21 @@ src/layouts/
     ├── Workbench.tsx       # Top-level layout component
     ├── activity-bar/
     │   └── ActivityBar.tsx
+    ├── application-header/
+    │   ├── ApplicationHeader.tsx
+    │   ├── menu-bar/
+    │   │   └── MenuBar.tsx
+    │   └── title-bar/
+    │       └── TitleBar.tsx
     ├── canvas-editor/
     │   └── CanvasEditorLayout.tsx
     ├── controls-side-bar/
     │   └── ControlsSideBar.tsx
     ├── inspector-side-bar/
     │   └── InspectorSideBar.tsx
-    ├── menu-bar/
-    │   └── MenuBar.tsx
-    ├── status-bar/
-    │   └── StatusBar.tsx
-    └── title-bar/
-        └── TitleBar.tsx
+    └── status-bar/
+        └── StatusBar.tsx
+
 ```
 
 Each regional layout can optionally include:
