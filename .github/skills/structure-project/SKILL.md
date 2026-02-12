@@ -4,7 +4,7 @@ description: Guides proper file organization for the Blade Terminal single-page 
 compatibility: Designed for blade-terminal - Client-only PWA using Bun/React and IndexedDB (Dexie). The server/ folder is a local data-access layer (not a network server).
 metadata:
   author: jRmx0
-  version: "1.4"
+  version: "1.5"
 ---
 
 # Project Structure Guide
@@ -82,28 +82,28 @@ Layouts are not features (no business logic, no data access) and not shared comp
 
 ```
 src/layouts/
-├── workbench/              # Root shell composing all regions
-│   └── Workbench.tsx
-├── title-bar/
-│   └── TitleBar.tsx
-├── menu-bar/
-│   └── MenuBar.tsx
-├── activity-bar/
-│   └── ActivityBar.tsx
-├── canvas-editor/
-│   └── CanvasEditorLayout.tsx
-├── controls-side-bar/
-│   └── ControlsSideBar.tsx
-├── inspector-side-bar/
-│   └── InspectorSideBar.tsx
-└── status-bar/
-    └── StatusBar.tsx
+└── workbench/              # Root shell composing all regional layouts
+    ├── Workbench.tsx       # Top-level layout component
+    ├── activity-bar/
+    │   └── ActivityBar.tsx
+    ├── canvas-editor/
+    │   └── CanvasEditorLayout.tsx
+    ├── controls-side-bar/
+    │   └── ControlsSideBar.tsx
+    ├── inspector-side-bar/
+    │   └── InspectorSideBar.tsx
+    ├── menu-bar/
+    │   └── MenuBar.tsx
+    ├── status-bar/
+    │   └── StatusBar.tsx
+    └── title-bar/
+        └── TitleBar.tsx
 ```
 
-Each layout module can optionally include:
+Each regional layout can optionally include:
 
 ```
-src/layouts/{region}/
+src/layouts/workbench/{region}/
 ├── {Region}.tsx           # Main layout component
 ├── hooks/                 # Layout-specific hooks (resize, collapse, drag)
 └── types.ts               # Slot definitions, region config types
@@ -119,7 +119,7 @@ src/layouts/{region}/
 **Example — ActivityBar composing multiple features:**
 
 ```tsx
-// src/layouts/activity-bar/ActivityBar.tsx
+// src/layouts/workbench/activity-bar/ActivityBar.tsx
 import { CanvasTools } from "@/features/canvas-editing/components/CanvasTools";
 import { CoverageLayers } from "@/features/coverage-planning/components/CoverageLayers";
 import { MapSelector } from "@/features/map-manager/components/MapSelector";
@@ -387,6 +387,6 @@ src/features/canvas-editor/
 Then compose in a layout:
 
 ```typescript
-// src/layouts/canvas-editor/CanvasEditorLayout.tsx
+// src/layouts/workbench/canvas-editor/CanvasEditorLayout.tsx
 import { CanvasEditor } from "@/features/canvas-editor/components/Canvas";
 ```
