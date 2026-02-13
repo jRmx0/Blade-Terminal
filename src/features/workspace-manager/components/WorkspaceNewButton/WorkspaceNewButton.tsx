@@ -1,10 +1,10 @@
-import MenuBarListButton from "../../../../components/MenuBarListButton/MenuBarListButton";
+import MenuBarItem from "../../../../components/MenuBarItem/MenuBarItem";
 
 export default function WorkspaceNewButton() {
   const handleClick = () => {};
 
   return (
-    <MenuBarListButton
+    <MenuBarItem
       label="New..."
       shortcut={["Ctrl", "N"]}
       onClick={handleClick}

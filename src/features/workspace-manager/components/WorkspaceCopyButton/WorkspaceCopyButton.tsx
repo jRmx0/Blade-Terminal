@@ -1,7 +1,7 @@
-import MenuBarListButton from "../../../../components/MenuBarListButton/MenuBarListButton";
+import MenuBarItem from "../../../../components/MenuBarItem/MenuBarItem";
 
 export default function WorkspaceCopyButton() {
   const handleClick = () => {};
 
-  return <MenuBarListButton label="Make a Copy..." onClick={handleClick} />;
+  return <MenuBarItem label="Make a Copy..." onClick={handleClick} />;
 }

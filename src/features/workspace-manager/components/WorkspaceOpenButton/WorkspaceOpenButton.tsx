@@ -1,10 +1,10 @@
-import MenuBarListButton from "../../../../components/MenuBarListButton/MenuBarListButton";
+import MenuBarItem from "../../../../components/MenuBarItem/MenuBarItem";
 
 export default function WorkspaceOpenButton() {
   const handleClick = () => {};
 
   return (
-    <MenuBarListButton
+    <MenuBarItem
       label="Open..."
       shortcut={["Ctrl", "O"]}
       onClick={handleClick}

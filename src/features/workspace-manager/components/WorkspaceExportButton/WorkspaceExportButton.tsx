@@ -1,7 +1,7 @@
-import MenuBarListButton from "../../../../components/MenuBarListButton/MenuBarListButton";
+import MenuBarItem from "../../../../components/MenuBarItem/MenuBarItem";
 
 export default function WorkspaceExportButton() {
   const handleClick = () => {};
 
-  return <MenuBarListButton label="Export..." onClick={handleClick} />;
+  return <MenuBarItem label="Export..." onClick={handleClick} />;
 }

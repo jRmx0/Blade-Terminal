@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 
-interface MenuBarListButtonProps {
+interface MenuBarItemProps {
   label: string;
   hasCheckmark?: boolean;
   defaultChecked?: boolean;
@@ -12,14 +12,14 @@ interface MenuBarListButtonProps {
   onClick?: () => void;
 }
 
-export default function MenuBarListButton({
+export default function MenuBarItem({
   label,
   hasCheckmark,
   defaultChecked = false,
   shortcut,
   submenu,
   onClick,
-}: MenuBarListButtonProps) {
+}: MenuBarItemProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [checked, setChecked] = useState(defaultChecked);
 

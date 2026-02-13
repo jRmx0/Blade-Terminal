@@ -1,13 +1,9 @@
-import MenuBarListButton from "../../../../components/MenuBarListButton/MenuBarListButton";
+import MenuBarItem from "../../../../components/MenuBarItem/MenuBarItem";
 
 export default function WorkspaceSaveButton() {
   const handleClick = () => {};
 
   return (
-    <MenuBarListButton
-      label="Save"
-      shortcut={["Ctrl", "S"]}
-      onClick={handleClick}
-    />
+    <MenuBarItem label="Save" shortcut={["Ctrl", "S"]} onClick={handleClick} />
   );
 }
