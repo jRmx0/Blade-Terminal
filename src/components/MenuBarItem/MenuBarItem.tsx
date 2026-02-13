@@ -34,18 +34,20 @@ export default function MenuBarItem({
   };
 
   return (
-    <div className="relative">
+    <div className="relative px-1">
       <button
         type="button"
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="flex items-center gap-2 px-3 py-1 w-full text-left text-sm text-gray-700 hover:bg-blue-100 rounded cursor-pointer select-none"
+        className="flex items-center gap-2 px-3 w-full text-left text-base text-gray-700 hover:bg-gray-200 rounded cursor-pointer select-none"
       >
         {/* Left: Checkmark space */}
         <div className="w-5 shrink-0">
           {hasCheckmark && (
-            <span className="text-sm leading-none">{checked ? "✓" : " "}</span>
+            <span className="text-base leading-none">
+              {checked ? "✓" : " "}
+            </span>
           )}
         </div>
 
@@ -54,7 +56,7 @@ export default function MenuBarItem({
 
         {/* Right: Shortcut or Arrow */}
         {(shortcutText || hasSubmenu) && (
-          <div className="text-xs text-gray-500 shrink-0">
+          <div className="text-base text-gray-500 shrink-0">
             {hasSubmenu ? "▶" : shortcutText}
           </div>
         )}
