@@ -27,7 +27,7 @@ export default function MenuBarButton({
       <button
         type="button"
         onClick={handleClick}
-        className="px-3 py-1 text-base text-gray-700 rounded hover:bg-gray-200 active:bg-gray-300"
+        className="px-3 py-1 text-base text-gray-700 rounded hover:bg-gray-200 active:bg-gray-300 cursor-pointer select-none"
       >
         {label}
       </button>
