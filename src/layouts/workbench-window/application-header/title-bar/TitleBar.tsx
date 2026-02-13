@@ -2,7 +2,7 @@ import WorkspaceNameField from "@/features/workspace-manager/components/Workspac
 
 export default function TitleBar() {
   return (
-    <div className="flex items-center px-2 py-1">
+    <div className="flex items-center">
       <WorkspaceNameField />
     </div>
   );

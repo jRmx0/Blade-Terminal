@@ -1,9 +1,17 @@
-export default function WorkspaceNameField() {
+interface WorkspaceNameFieldProps {
+  onClick?: () => void;
+}
+
+export default function WorkspaceNameField({
+  onClick,
+}: WorkspaceNameFieldProps) {
   return (
-    <input
-      type="text"
-      placeholder="Filename"
-      className="w-full px-2 py-1 text-sm text-gray-700 bg-white rounded outline-none"
-    />
+    <button
+      type="button"
+      onClick={onClick}
+      className="px-2 py-1 text-xl text-gray-700 bg-gray-100 rounded cursor-pointer select-none"
+    >
+      Untitled Workspace
+    </button>
   );
 }

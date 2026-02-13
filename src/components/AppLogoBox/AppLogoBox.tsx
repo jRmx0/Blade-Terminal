@@ -1,5 +1,9 @@
-import btLogo from "@/assets/bt.svg";
+import btHexLogo from "@/assets/bt-hex.svg";
 
 export default function AppLogoBox() {
-  return <img src={btLogo} alt="Blade Terminal" />;
+  return (
+    <div className="w-12 h-12 p-0.5 bg-white-500 rounded-lg">
+      <img src={btHexLogo} alt="Blade Terminal" className="w-full h-full" />
+    </div>
+  );
 }
