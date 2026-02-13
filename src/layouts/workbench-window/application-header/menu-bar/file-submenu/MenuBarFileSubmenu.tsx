@@ -1,11 +1,11 @@
-import WorkspaceNewButton from "@/features/workspace-manager/components/WorkspaceNewButton/WorkspaceNewButton";
-import WorkspaceSaveButton from "@/features/workspace-manager/components/WorkspaceSaveButton/WorkspaceSaveButton";
-import WorkspaceSaveAsButton from "@/features/workspace-manager/components/WorkspaceSaveAsButton/WorkspaceSaveAsButton";
-import WorkspaceRenameButton from "@/features/workspace-manager/components/WorkspaceRenameButton/WorkspaceRenameButton";
-import WorkspaceCopyButton from "@/features/workspace-manager/components/WorkspaceCopyButton/WorkspaceCopyButton";
-import WorkspaceImportButton from "@/features/workspace-manager/components/WorkspaceImportButton/WorkspaceImportButton";
-import WorkspaceExportButton from "@/features/workspace-manager/components/WorkspaceExportButton/WorkspaceExportButton";
-import WorkspaceCloseButton from "@/features/workspace-manager/components/WorkspaceCloseButton/WorkspaceCloseButton";
+import WorkspaceNewButton from "@/features/workspace-manager/components/menu-bar/WorkspaceNewButton/WorkspaceNewButton";
+import WorkspaceSaveButton from "@/features/workspace-manager/components/menu-bar/WorkspaceSaveButton/WorkspaceSaveButton";
+import WorkspaceSaveAsButton from "@/features/workspace-manager/components/menu-bar/WorkspaceSaveAsButton/WorkspaceSaveAsButton";
+import WorkspaceRenameButton from "@/features/workspace-manager/components/menu-bar/WorkspaceRenameButton/WorkspaceRenameButton";
+import WorkspaceCopyButton from "@/features/workspace-manager/components/menu-bar/WorkspaceCopyButton/WorkspaceCopyButton";
+import WorkspaceImportButton from "@/features/workspace-manager/components/menu-bar/WorkspaceImportButton/WorkspaceImportButton";
+import WorkspaceExportButton from "@/features/workspace-manager/components/menu-bar/WorkspaceExportButton/WorkspaceExportButton";
+import WorkspaceCloseButton from "@/features/workspace-manager/components/menu-bar/WorkspaceCloseButton/WorkspaceCloseButton";
 import MenuSeparator from "@/components/MenuSeparator/MenuSeparator";
 
 export default function MenuBarFileList() {
