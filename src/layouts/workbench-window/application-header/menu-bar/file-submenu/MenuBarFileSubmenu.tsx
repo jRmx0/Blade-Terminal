@@ -8,7 +8,7 @@ import WorkspaceExportButton from "@/features/workspace-manager/components/menu-
 import WorkspaceCloseButton from "@/features/workspace-manager/components/menu-bar/WorkspaceCloseButton/WorkspaceCloseButton";
 import MenuSeparator from "@/components/MenuSeparator/MenuSeparator";
 
-export default function MenuBarFileList() {
+export default function MenuBarFileSubmenu() {
   return (
     <div className="w-64 py-1 bg-gray-100">
       <WorkspaceNewButton />
