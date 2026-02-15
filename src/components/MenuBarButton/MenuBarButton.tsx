@@ -1,25 +1,45 @@
-import { useState } from "react";
 import type { ReactNode } from "react";
+import type { MenuId } from "@/types/menu";
+import { useMenuStore } from "@/stores/menuStore";
 
 interface MenuBarButtonProps {
+  menuId?: MenuId;
   label: string;
   submenu?: ReactNode;
   onClick?: () => void;
 }
 
 export default function MenuBarButton({
+  menuId,
   label,
   submenu,
   onClick,
 }: MenuBarButtonProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const { activeMenu, setActiveMenu } = useMenuStore();
+
   const hasSubmenu = !!submenu;
+  const isOpen = menuId ? activeMenu === menuId : false;
+  const isMenuMode = activeMenu !== null;
 
   const handleClick = () => {
     if (hasSubmenu) {
-      setIsOpen(!isOpen);
+      if (isOpen) {
+        setActiveMenu(null);
+      } else {
+        setActiveMenu(menuId || null);
+      }
     }
     onClick?.();
+  };
+
+  const shouldSwitchMenuOnHover = () => {
+    return hasSubmenu && isMenuMode && menuId && activeMenu !== menuId;
+  };
+
+  const handleMouseEnter = () => {
+    if (shouldSwitchMenuOnHover()) {
+      setActiveMenu(menuId as "file" | "view");
+    }
   };
 
   return (
@@ -27,6 +47,7 @@ export default function MenuBarButton({
       <button
         type="button"
         onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
         className="px-3 py-1 text-base text-gray-700 rounded hover:bg-gray-200 active:bg-gray-300 cursor-pointer select-none"
       >
         {label}

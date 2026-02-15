@@ -1,7 +1,6 @@
-// TODO: State management with zustand
-
 import { useState } from "react";
 import type { ReactNode } from "react";
+import { useMenuStore } from "@/stores/menuStore";
 
 interface MenuBarItemProps {
   label: string;
@@ -22,11 +21,14 @@ export default function MenuBarItem({
 }: MenuBarItemProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [checked, setChecked] = useState(defaultChecked);
+  const { setActiveMenu } = useMenuStore();
 
   const hasSubmenu = !!submenu;
   const shortcutText = shortcut?.join("+") || "";
 
   const handleClick = () => {
+    setActiveMenu(null);
+
     if (hasCheckmark) {
       setChecked(!checked);
     }
