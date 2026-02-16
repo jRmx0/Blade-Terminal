@@ -6,8 +6,8 @@ export default function UiInspectorButton() {
 
   return (
     <ToggleToolBarButton
-      titleOff="Open Inspector Panel"
-      titleOn="Close Inspector Panel"
+      titleOff="Expand inspector panel"
+      titleOn="Collapse inspector panel"
       iconOff="right_panel_open"
       iconOn="right_panel_close"
       isToggled={isToggled}

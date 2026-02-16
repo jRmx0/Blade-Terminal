@@ -6,8 +6,8 @@ export default function UiControlsButton() {
 
   return (
     <ToggleToolBarButton
-      titleOff="Open Controls Panel"
-      titleOn="Close Controls Panel"
+      titleOff="Expand controls panel"
+      titleOn="Collapse controls panel"
       iconOff="left_panel_open"
       iconOn="left_panel_close"
       isToggled={isToggled}
