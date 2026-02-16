@@ -1,4 +1,4 @@
-import MenuBarItem from "../../../../../components/MenuBarItem/MenuBarItem";
+import MenuBarItem from "@/components/MenuBarItem/MenuBarItem";
 
 export default function WorkspaceExportButton() {
   const handleClick = () => {};
