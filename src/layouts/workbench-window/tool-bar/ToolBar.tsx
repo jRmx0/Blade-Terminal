@@ -7,12 +7,16 @@ import ClearCppButton from "@/features/coverage-planning/components/ClearCppButt
 import OpenJobListButton from "@/features/job-runner/components/OpenJobListButton/OpenJobListButton";
 import UiInspectorButton from "@/features/ui-manager/components/tool-bar/UiInspectorButton/UiInspectorButton";
 import ToolSeparator from "@/components/ToolSeparator/ToolSeparator";
+import EditButton from "@/features/canvas-editing/components/tool-bar/EditButton/EditButton";
 
 export default function ToolBar() {
   return (
     <div className="flex items-center justify-between gap-3 px-3 py-1 bg-gray-100 border-b border-gray-300">
       <div className="flex items-center gap-2">
         <UiControlsButton />
+        <ToolSeparator />
+
+        <EditButton />
         <ToolSeparator />
 
         <AddZoneButton />
