@@ -27,7 +27,9 @@ export default function MenuBarItem({
   const shortcutText = shortcut?.join("+") || "";
 
   const handleClick = () => {
-    setActiveMenu(null);
+    if (!hasSubmenu) {
+      setActiveMenu(null);
+    }
 
     if (hasCheckmark) {
       setChecked(!checked);
@@ -35,13 +37,23 @@ export default function MenuBarItem({
     onClick?.();
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setActiveMenu(null);
+    }
+  };
+
   return (
-    <div className="relative px-1">
+    <div
+      className="relative px-1"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <button
         type="button"
         onClick={handleClick}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onKeyDown={handleKeyDown}
         className="flex items-center gap-2 px-3 w-full text-left text-base text-gray-700 hover:bg-gray-200 rounded cursor-pointer select-none"
       >
         {/* Left: Checkmark space */}
