@@ -2,8 +2,8 @@ import UiControlsButton from "@/features/ui-manager/components/tool-bar/UiContro
 import AddZoneButton from "@/features/canvas-editing/components/tool-bar/AddZoneButton/AddZoneButton";
 import AddObstacleButton from "@/features/canvas-editing/components/tool-bar/AddObstacleButton/AddObstacleButton";
 import DeleteButton from "@/features/canvas-editing/components/tool-bar/DeleteButton/DeleteButton";
-import ExecuteCppButton from "@/features/coverage-planning/components/ExecuteCppButton/ExecuteCppButton";
-import ClearCppButton from "@/features/coverage-planning/components/ClearCppButton/ClearCppButton";
+import ExecuteCppButton from "@/features/coverage-planning/components/tool-bar/ExecuteCppButton/ExecuteCppButton";
+import ClearCppButton from "@/features/coverage-planning/components/tool-bar/ClearCppButton/ClearCppButton";
 import OpenJobListButton from "@/features/job-runner/components/OpenJobListButton/OpenJobListButton";
 import UiInspectorButton from "@/features/ui-manager/components/tool-bar/UiInspectorButton/UiInspectorButton";
 import ToolSeparator from "@/components/ToolSeparator/ToolSeparator";
