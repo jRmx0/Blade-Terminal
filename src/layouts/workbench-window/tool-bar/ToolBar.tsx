@@ -6,7 +6,7 @@ import ExecuteCppButton from "@/features/coverage-planning/components/tool-bar/E
 import ClearCppButton from "@/features/coverage-planning/components/tool-bar/ClearCppButton/ClearCppButton";
 import OpenJobListButton from "@/features/job-runner/components/OpenJobListButton/OpenJobListButton";
 import UiInspectorButton from "@/features/ui-manager/components/tool-bar/UiInspectorButton/UiInspectorButton";
-import ToolSeparator from "@/components/ToolSeparator/ToolSeparator";
+import ToolSeparator from "@/components/ToolBarSeparator/ToolBarSeparator";
 import EditButton from "@/features/canvas-editing/components/tool-bar/EditButton/EditButton";
 
 export default function ToolBar() {

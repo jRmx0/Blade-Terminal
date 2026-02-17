@@ -1,5 +1,5 @@
 import { useState } from "react";
-import ToggleToolBarButton from "@/components/ToggleToolBarButton/ToggleToolBarButton";
+import ToggleToolBarButton from "@/components/ToolBarToggleButton/ToolBarToggleButton";
 
 export default function UiControlsButton() {
   const [isToggled, setIsToggled] = useState(false);
