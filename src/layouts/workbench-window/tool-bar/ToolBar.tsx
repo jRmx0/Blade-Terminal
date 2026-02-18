@@ -4,7 +4,7 @@ import AddObstacleButton from "@/features/canvas-editing/components/tool-bar/Add
 import DeleteButton from "@/features/canvas-editing/components/tool-bar/DeleteButton/DeleteButton";
 import ExecuteCppButton from "@/features/coverage-planning/components/tool-bar/ExecuteCppButton/ExecuteCppButton";
 import ClearCppButton from "@/features/coverage-planning/components/tool-bar/ClearCppButton/ClearCppButton";
-import OpenJobListButton from "@/features/job-runner/components/OpenJobListButton/OpenJobListButton";
+import OpenJobListButton from "@/features/job-runner/components/tool-bar/OpenJobListButton/OpenJobListButton";
 import UiInspectorButton from "@/features/ui-manager/components/tool-bar/UiInspectorButton/UiInspectorButton";
 import ToolSeparator from "@/components/ToolBarSeparator/ToolBarSeparator";
 import EditButton from "@/features/canvas-editing/components/tool-bar/EditButton/EditButton";
