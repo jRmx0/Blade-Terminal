@@ -76,12 +76,16 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
 
       <div
         ref={resizeHandleRef}
-        className={`absolute right-0 top-0 bottom-0 cursor-col-resize transition-all select-none ${
-          isResizing
-            ? "w-1 bg-gray-400"
-            : "border-r border-gray-300 hover:w-1 hover:bg-gray-400"
-        }`}
-      />
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize select-none group"
+      >
+        <div
+          className={`absolute right-0 top-0 bottom-0 pointer-events-none transition-[width,background-color] ${
+            isResizing
+              ? "w-1 bg-gray-400"
+              : "w-px bg-gray-300 group-hover:w-1 group-hover:bg-gray-400"
+          }`}
+        />
+      </div>
     </div>
   );
 }
