@@ -7,7 +7,9 @@ export default function WorkbenchWindow() {
     <div className="flex flex-col w-full h-full">
       <ApplicationHeader />
       <ToolBar />
-      <ControlsPanel />
+      <div className="flex flex-1 overflow-hidden">
+        <ControlsPanel />
+      </div>
     </div>
   );
 }

@@ -15,7 +15,7 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
   return (
     <div
       style={{ width: `${width}px` }}
-      className="flex flex-col h-full bg-gray-50 border-l border-gray-200 overflow-auto"
+      className="flex flex-col h-full bg-gray-50 border-r border-gray-200 overflow-auto"
     >
       {children}
     </div>
