@@ -11,10 +11,13 @@ export default function AlgoSection() {
 
   return (
     <div className="flex flex-col gap-1">
-      <ControlsPanelSectionTitle sectionId="algo" title="Algorithm" />
+      <ControlsPanelSectionTitle
+        sectionId="algo"
+        title="Coverage Path Planning"
+      />
 
       {isExpanded && (
-        <div className="flex flex-col">
+        <div className="flex flex-col pl-1">
           <AlgoSelect />
           <PathWidthInput />
           <PathOverlapInput />
