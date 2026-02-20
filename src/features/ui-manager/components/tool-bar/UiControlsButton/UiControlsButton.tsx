@@ -1,8 +1,9 @@
-import { useState } from "react";
 import ToggleToolBarButton from "@/components/ToolBarToggleButton/ToolBarToggleButton";
+import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
 
 export default function UiControlsButton() {
-  const [isToggled, setIsToggled] = useState(false);
+  const isVisible = useUiControlsPanelStore((state) => state.isVisible);
+  const setVisibility = useUiControlsPanelStore((state) => state.setVisibility);
 
   return (
     <ToggleToolBarButton
@@ -10,8 +11,8 @@ export default function UiControlsButton() {
       titleOn="Collapse controls panel"
       iconOff="left_panel_open"
       iconOn="left_panel_close"
-      isToggled={isToggled}
-      onChange={setIsToggled}
+      isToggled={isVisible}
+      onChange={setVisibility}
     />
   );
 }
