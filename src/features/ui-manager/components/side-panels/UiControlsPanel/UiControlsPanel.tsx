@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
 
 interface UiControlsPanelProps {
@@ -10,10 +10,9 @@ const MAX_WIDTH = 600;
 
 export default function UiControlsPanel({ children }: UiControlsPanelProps) {
   const isVisible = useUiControlsPanelStore((state) => state.isVisible);
-  const isResizing = useUiControlsPanelStore((state) => state.isResizing);
   const width = useUiControlsPanelStore((state) => state.width);
   const setWidth = useUiControlsPanelStore((state) => state.setWidth);
-  const setResizing = useUiControlsPanelStore((state) => state.setResizing);
+  const [isResizing, setResizing] = useState(false);
 
   const resizeHandleRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
@@ -25,7 +24,7 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
       if (e.target === resizeHandleRef.current) {
         isDraggingRef.current = true;
         startXRef.current = e.clientX;
-        startWidthRef.current = width;
+        startWidthRef.current = useUiControlsPanelStore.getState().width;
         setResizing(true);
         document.body.style.cursor = "col-resize";
         document.body.style.userSelect = "none";
@@ -61,7 +60,7 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [width, setWidth]);
+  }, [setWidth]);
 
   if (!isVisible) {
     return null;
