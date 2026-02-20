@@ -1,5 +1,5 @@
 import UiControlsPanel from "@/features/ui-manager/components/side-panels/UiControlsPanel/UiControlsPanel";
-import AlgoSection from "../../../features/coverage-planning/components/AlgoSection/AlgoSection";
+import AlgoSection from "../../../features/coverage-planning/components/controls-panel/AlgoSection/AlgoSection";
 
 export default function ControlsPanel() {
   return (

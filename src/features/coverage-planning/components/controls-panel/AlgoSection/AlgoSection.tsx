@@ -1,7 +1,7 @@
 import { useControlsPanelStore } from "@/stores/controlsPanelStore";
-import AlgoSelect from "@/features/coverage-planning/components/AlgoSection/AlgoSelect/AlgoSelect";
-import PathWidthInput from "@/features/coverage-planning/components/AlgoSection/PathWidthInput/PathWidthInput";
-import PathOverlapInput from "@/features/coverage-planning/components/AlgoSection/PathOverlapInput/PathOverlapInput";
+import AlgoSelect from "@/features/coverage-planning/components/controls-panel/AlgoSection/AlgoSelect/AlgoSelect";
+import PathWidthInput from "@/features/coverage-planning/components/controls-panel/AlgoSection/PathWidthInput/PathWidthInput";
+import PathOverlapInput from "@/features/coverage-planning/components/controls-panel/AlgoSection/PathOverlapInput/PathOverlapInput";
 
 export default function AlgoSection() {
   const isExpanded = useControlsPanelStore(
