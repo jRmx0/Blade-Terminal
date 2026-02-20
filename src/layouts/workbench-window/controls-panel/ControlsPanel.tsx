@@ -1,13 +1,11 @@
 import UiControlsPanel from "@/features/ui-manager/components/side-panels/UiControlsPanel/UiControlsPanel";
-import AlgoSectionTitle from "./algo-section/AlgoSectionTitle";
-import AlgoSectionSubmenu from "./algo-section/AlgoSectionSubmenu";
+import AlgoSection from "../../../features/coverage-planning/components/AlgoSection/AlgoSection";
 
 export default function ControlsPanel() {
   return (
     <UiControlsPanel>
       <div className="flex flex-col gap-2 p-3">
-        <AlgoSectionTitle />
-        <AlgoSectionSubmenu />
+        <AlgoSection />
       </div>
     </UiControlsPanel>
   );
