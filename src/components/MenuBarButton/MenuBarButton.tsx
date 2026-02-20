@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { MenuId } from "@/types/menu";
+import type { MenuId } from "@/types/menuTypes";
 import { useMenuStore } from "@/stores/menuStore";
 
 interface MenuBarButtonProps {

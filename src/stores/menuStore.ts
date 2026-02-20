@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { MenuId, MenuState } from "@/types/menu";
+import type { MenuId, MenuState } from "@/types/menuTypes";
 
 export const useMenuStore = create<MenuState>((set) => ({
   activeMenu: null,

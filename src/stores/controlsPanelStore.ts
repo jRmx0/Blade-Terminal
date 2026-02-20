@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { ControlsPanelState, ControlsPanelSectionId } from "@/types/controlsPanel";
+import type { ControlsPanelState, ControlsPanelSectionId } from "@/types/controlsPanelTypes";
 
 export const useControlsPanelStore = create<ControlsPanelState>((set) => ({
     expandedSections: {

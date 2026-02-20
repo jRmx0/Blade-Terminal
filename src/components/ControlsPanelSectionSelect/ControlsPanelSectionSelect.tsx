@@ -1,4 +1,4 @@
-import type { ControlsPanelSectionSelectProps } from "@/types/controlsPanel";
+import type { ControlsPanelSectionSelectProps } from "@/types/controlsPanelTypes";
 
 export default function ControlsPanelSectionSelect({
   label,

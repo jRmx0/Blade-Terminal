@@ -1,5 +1,5 @@
 import { useControlsPanelStore } from "@/stores/controlsPanelStore";
-import type { ControlsPanelSectionTitleProps } from "@/types/controlsPanel";
+import type { ControlsPanelSectionTitleProps } from "@/types/controlsPanelTypes";
 
 export default function ControlsPanelSectionTitle({
   sectionId,

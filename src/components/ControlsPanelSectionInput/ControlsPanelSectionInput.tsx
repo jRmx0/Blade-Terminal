@@ -1,4 +1,4 @@
-import type { ControlsPanelSectionInputProps } from "@/types/controlsPanel";
+import type { ControlsPanelSectionInputProps } from "@/types/controlsPanelTypes";
 
 export default function ControlsPanelSectionInput({
   label,

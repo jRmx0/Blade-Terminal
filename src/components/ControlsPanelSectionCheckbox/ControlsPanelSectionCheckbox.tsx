@@ -1,4 +1,4 @@
-import type { ControlsPanelSectionCheckboxProps } from "@/types/controlsPanel";
+import type { ControlsPanelSectionCheckboxProps } from "@/types/controlsPanelTypes";
 
 export default function ControlsPanelSectionCheckbox({
   label,

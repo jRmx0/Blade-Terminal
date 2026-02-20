@@ -1,10 +1,10 @@
-import type { ControlsPanelSectionButtonProps } from "@/types/controlsPanel";
+import type { ControlsPanelSectionButtonProps } from "@/types/controlsPanelTypes";
 
 export default function ControlsPanelSectionButton({
   label,
   onClick,
   disabled = false,
-  variant = 'default',
+  variant = "default",
 }: ControlsPanelSectionButtonProps) {
   const baseStyles =
     "w-full px-3 py-2 rounded text-sm font-medium cursor-pointer select-none transition-colors";
@@ -13,7 +13,7 @@ export default function ControlsPanelSectionButton({
   const dangerStyles =
     "text-red-700 bg-red-50 hover:bg-red-100 active:bg-red-200 disabled:text-red-300 disabled:bg-red-50 disabled:cursor-not-allowed";
 
-  const variantStyles = variant === 'danger' ? dangerStyles : defaultStyles;
+  const variantStyles = variant === "danger" ? dangerStyles : defaultStyles;
   const className = `${baseStyles} ${variantStyles}`;
 
   return (
