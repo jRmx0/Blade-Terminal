@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 // TODO: Remove mock data - replace with real algorithm options from backend
 const MOCK_ALGORITHMS = [
+    { value: "", label: "" },
     { value: "grid", label: "Grid Coverage" },
     { value: "spiral", label: "Spiral Coverage" },
     { value: "sweep", label: "Sweep Coverage" },

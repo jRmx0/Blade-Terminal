@@ -69,7 +69,7 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
   return (
     <div
       style={{ width: `${width}px` }}
-      className="relative flex flex-col h-full bg-gray-50 overflow-auto"
+      className="relative flex flex-col h-full bg-gray-100 overflow-auto"
     >
       {children}
 

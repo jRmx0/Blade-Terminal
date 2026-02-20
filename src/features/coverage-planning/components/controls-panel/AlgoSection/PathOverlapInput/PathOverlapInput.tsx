@@ -11,7 +11,6 @@ export default function PathOverlapInput() {
       value={pathOverlap.toString()}
       onChange={(value) => setPathOverlap(Math.max(0, parseFloat(value) || 0))}
       type="number"
-      placeholder="e.g., 5"
     />
   );
 }

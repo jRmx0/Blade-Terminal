@@ -14,7 +14,6 @@ export default function AlgoSelect() {
       value={selectedAlgo}
       onChange={setSelectedAlgo}
       options={algorithms}
-      placeholder="Select algorithm..."
     />
   );
 }

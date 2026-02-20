@@ -11,7 +11,6 @@ export default function PathWidthInput() {
       value={pathWidth.toString()}
       onChange={(value) => setPathWidth(Math.max(0, parseFloat(value) || 0))}
       type="number"
-      placeholder="e.g., 20"
     />
   );
 }
