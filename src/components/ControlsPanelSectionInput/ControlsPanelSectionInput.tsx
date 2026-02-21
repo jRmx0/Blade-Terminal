@@ -8,15 +8,15 @@ export default function ControlsPanelSectionInput({
   type = "text",
 }: ControlsPanelSectionInputProps) {
   return (
-    <div className="flex flex-col gap-2 px-3 py-2">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+    <fieldset className="border bg-white border-gray-300 rounded px-2 pt-0.5 pb-1 mx-3 my-1">
+      <legend className="text-xs text-gray-500 px-1">{label}</legend>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="px-2 py-1 rounded border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+        className="px-1 w-full text-sm bg-white focus:outline-none disabled:text-gray-400 disabled:cursor-not-allowed"
       />
-    </div>
+    </fieldset>
   );
 }
