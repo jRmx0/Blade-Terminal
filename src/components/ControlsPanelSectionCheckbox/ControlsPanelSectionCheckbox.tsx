@@ -7,7 +7,7 @@ export default function ControlsPanelSectionCheckbox({
   disabled = false,
 }: ControlsPanelSectionCheckboxProps) {
   return (
-    <label className="flex items-center gap-3 px-3 py-2 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer select-none transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+    <label className="flex items-center gap-3 px-3 py-2 rounded text-sm font-medium text-gray-700 hover:bg-gray-200 cursor-pointer select-none transition-colors disabled:cursor-not-allowed disabled:opacity-50">
       <input
         type="checkbox"
         checked={checked}

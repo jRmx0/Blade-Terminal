@@ -9,7 +9,7 @@ interface UiControlsPanelState {
 
 export const useUiControlsPanelStore = create<UiControlsPanelState>((set) => ({
     isVisible: true,
-    width: 200, // Default width in pixels
+    width: 250, // Default width in pixels
     setVisibility: (visible) => set({ isVisible: visible }),
     setWidth: (width) => set({ width }),
 }));

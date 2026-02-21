@@ -11,10 +11,7 @@ export default function AlgoSection() {
 
   return (
     <div className="flex flex-col gap-1">
-      <ControlsPanelSectionTitle
-        sectionId="algo"
-        title="Coverage Path Planning"
-      />
+      <ControlsPanelSectionTitle sectionId="algo" title="Coverage Path" />
 
       {isExpanded && (
         <div className="flex flex-col pl-1">
