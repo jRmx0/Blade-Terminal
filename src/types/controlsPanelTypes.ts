@@ -1,4 +1,4 @@
-export type ControlsPanelSectionId = "general" | "env" | "algo" | "debug";
+export type ControlsPanelSectionId = "general" | "algo" | "env" | "object" | "debug";
 
 export interface ControlsPanelState {
   expandedSections: Record<ControlsPanelSectionId, boolean>;

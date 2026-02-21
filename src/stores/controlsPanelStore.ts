@@ -4,8 +4,9 @@ import type { ControlsPanelState, ControlsPanelSectionId } from "@/types/control
 export const useControlsPanelStore = create<ControlsPanelState>((set) => ({
     expandedSections: {
         general: true,
-        env: false,
-        algo: false,
+        algo: true,
+        env: true,
+        object: true,
         debug: false,
     },
 
