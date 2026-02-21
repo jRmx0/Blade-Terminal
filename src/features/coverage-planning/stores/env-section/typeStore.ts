@@ -2,8 +2,11 @@ import { create } from "zustand";
 
 // TODO: Remove mock data - replace with real type options from backend
 const MOCK_TYPES = [
+    { value: "", label: "" },
     { value: "offline", label: "Off-Line" },
     { value: "online", label: "On-Line" },
+    { value: "any (default: offline)", label: "Any (default: Off-Line)" },
+    { value: "any (default: online)", label: "Any (default: On-Line)" },
 ];
 
 interface TypeState {
