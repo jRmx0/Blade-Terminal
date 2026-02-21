@@ -3,7 +3,7 @@ import { create } from "zustand";
 // TODO: Remove mock data - replace with real format options from backend
 const MOCK_FORMATS = [
     { value: "polygon", label: "Polygon" },
-    { value: "base", label: "Base" },
+    { value: "grid", label: "Grid" },
 ];
 
 interface FormatState {
