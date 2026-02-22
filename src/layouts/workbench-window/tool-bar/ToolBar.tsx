@@ -1,13 +1,13 @@
 import UiControlsButton from "@/features/ui-manager/components/tool-bar/UiControlsButton/UiControlsButton";
-import AddZoneButton from "@/features/canvas-editing/components/tool-bar/AddZoneButton/AddZoneButton";
-import AddObstacleButton from "@/features/canvas-editing/components/tool-bar/AddObstacleButton/AddObstacleButton";
-import DeleteButton from "@/features/canvas-editing/components/tool-bar/DeleteButton/DeleteButton";
-import ExecuteCppButton from "@/features/coverage-planning/components/tool-bar/ExecuteCppButton/ExecuteCppButton";
-import ClearCppButton from "@/features/coverage-planning/components/tool-bar/ClearCppButton/ClearCppButton";
+import AddZoneButton from "@/features/canvas-editing/components/tool-bar/AddZoneButton";
+import AddObstacleButton from "@/features/canvas-editing/components/tool-bar/AddObstacleButton";
+import DeleteButton from "@/features/canvas-editing/components/tool-bar/DeleteButton";
+import ExecuteCppButton from "@/features/coverage-planning/components/tool-bar/ExecuteCppButton";
+import ClearCppButton from "@/features/coverage-planning/components/tool-bar/ClearCppButton";
 import OpenJobListButton from "@/features/job-runner/components/tool-bar/OpenJobListButton/OpenJobListButton";
 import UiInspectorButton from "@/features/ui-manager/components/tool-bar/UiInspectorButton/UiInspectorButton";
 import ToolSeparator from "@/components/tool-bar/ToolBarSeparator";
-import EditButton from "@/features/canvas-editing/components/tool-bar/EditButton/EditButton";
+import EditButton from "@/features/canvas-editing/components/tool-bar/EditButton";
 
 export default function ToolBar() {
   return (

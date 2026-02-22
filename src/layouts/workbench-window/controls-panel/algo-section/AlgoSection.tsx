@@ -1,7 +1,7 @@
 import ControlsPanelSection from "@/components/controls-panel/ControlsPanelSection";
-import AlgoSelect from "@/features/coverage-planning/components/controls-panel/AlgoSection/AlgoSelect/AlgoSelect";
-import PathWidthInput from "@/features/coverage-planning/components/controls-panel/AlgoSection/PathWidthInput/PathWidthInput";
-import PathOverlapInput from "@/features/coverage-planning/components/controls-panel/AlgoSection/PathOverlapInput/PathOverlapInput";
+import AlgoSelect from "@/features/coverage-planning/components/controls-panel/algo-section/AlgoSelect";
+import PathWidthInput from "@/features/coverage-planning/components/controls-panel/algo-section/PathWidthInput";
+import PathOverlapInput from "@/features/coverage-planning/components/controls-panel/algo-section/PathOverlapInput";
 
 export default function AlgoSection() {
   return (
