@@ -1,17 +1,19 @@
 import MenuBarItem from "@/components/MenuBarItem/MenuBarItem";
+import { useUiInspectorPanelStore } from "@/features/ui-manager/stores/uiInspectorPanelStore";
 
 export default function UiInspectorButton() {
-  const handleClick = () => {
-    // TODO: Toggle inspector side panel visibility
-  };
+  const isVisible = useUiInspectorPanelStore((state) => state.isVisible);
+  const setVisibility = useUiInspectorPanelStore(
+    (state) => state.setVisibility,
+  );
 
   return (
     <MenuBarItem
       label="Inspector"
       shortcut={["Ctrl", "Alt", "I"]}
       hasCheckmark
-      defaultChecked={true}
-      onClick={handleClick}
+      defaultChecked={isVisible}
+      onClick={() => setVisibility(!isVisible)}
     />
   );
 }

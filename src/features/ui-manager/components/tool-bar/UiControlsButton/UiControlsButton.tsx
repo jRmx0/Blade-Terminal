@@ -1,9 +1,14 @@
 import ToggleToolBarButton from "@/components/ToolBarToggleButton/ToolBarToggleButton";
 import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
+import { useShortcut } from "@/hooks/useShortcut";
 
 export default function UiControlsButton() {
   const isVisible = useUiControlsPanelStore((state) => state.isVisible);
   const setVisibility = useUiControlsPanelStore((state) => state.setVisibility);
+
+  useShortcut("controls.toggle", "Ctrl+Alt+C", () =>
+    setVisibility(!useUiControlsPanelStore.getState().isVisible),
+  );
 
   return (
     <ToggleToolBarButton
