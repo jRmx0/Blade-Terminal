@@ -1,6 +1,6 @@
 import ToggleToolBarButton from "@/components/tool-bar/ToolBarToggleButton";
 import { useUiInspectorPanelStore } from "@/features/ui-manager/stores/uiInspectorPanelStore";
-import { useShortcut } from "@/hooks/useShortcut";
+import { useShortcut } from "@/hooks/shortcut-manager/useShortcut";
 
 export default function UiInspectorButton() {
   const isVisible = useUiInspectorPanelStore((state) => state.isVisible);

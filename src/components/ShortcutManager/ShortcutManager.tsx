@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { shortcutRegistry } from "@/hooks/useShortcut";
+import { shortcutRegistry } from "@/hooks/shortcut-manager/useShortcut";
 import { matchesShortcut } from "@/utils/parseShortcut";
 import { useShortcutStore } from "@/stores/shortcutStore";
 import { useMenuStore } from "@/stores/menuStore";
