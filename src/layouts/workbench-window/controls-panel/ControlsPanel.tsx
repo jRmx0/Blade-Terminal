@@ -1,7 +1,7 @@
 import UiControlsPanel from "@/features/ui-manager/components/side-panels/UiControlsPanel/UiControlsPanel";
-import AlgoSection from "../../../features/coverage-planning/components/controls-panel/AlgoSection/AlgoSection";
-import EnvSection from "@/features/coverage-planning/components/controls-panel/EnvSection/EnvSection";
-import ObjectSection from "@/features/coverage-planning/components/controls-panel/ObjectSection/ObjectSection";
+import AlgoSection from "./algo-section/AlgoSection";
+import EnvSection from "@/layouts/workbench-window/controls-panel/env-section/EnvSection";
+import ObjectSection from "@/layouts/workbench-window/controls-panel/object-section/ObjectSection";
 
 export default function ControlsPanel() {
   return (
