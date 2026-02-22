@@ -1,8 +1,11 @@
-import { useState } from "react";
 import ToggleToolBarButton from "@/components/ToolBarToggleButton/ToolBarToggleButton";
+import { useUiInspectorPanelStore } from "@/features/ui-manager/stores/uiInspectorPanelStore";
 
 export default function UiInspectorButton() {
-  const [isToggled, setIsToggled] = useState(false);
+  const isVisible = useUiInspectorPanelStore((state) => state.isVisible);
+  const setVisibility = useUiInspectorPanelStore(
+    (state) => state.setVisibility,
+  );
 
   return (
     <ToggleToolBarButton
@@ -10,8 +13,8 @@ export default function UiInspectorButton() {
       titleOn="Collapse inspector panel"
       iconOff="right_panel_open"
       iconOn="right_panel_close"
-      isToggled={isToggled}
-      onChange={setIsToggled}
+      isToggled={isVisible}
+      onChange={setVisibility}
     />
   );
 }
