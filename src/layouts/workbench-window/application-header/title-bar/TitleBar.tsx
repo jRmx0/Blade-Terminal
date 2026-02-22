@@ -1,4 +1,4 @@
-import WorkspaceNameField from "@/features/workspace-manager/components/WorkspaceNameField/WorkspaceNameField";
+import WorkspaceNameField from "@/features/workspace-manager/components/app-header/WorkspaceNameField";
 
 export default function TitleBar() {
   return (

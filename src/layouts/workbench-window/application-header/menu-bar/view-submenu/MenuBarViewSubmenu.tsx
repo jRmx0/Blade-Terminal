@@ -3,9 +3,9 @@ import CanvasZoomInButton from "@/features/canvas-editing/components/menu-bar/Ca
 import CanvasZoomOutButton from "@/features/canvas-editing/components/menu-bar/CanvasZoomOutButton";
 import CanvasToggleGridButton from "@/features/canvas-editing/components/menu-bar/CanvasToggleGridButton";
 import MenuSeparator from "@/components/menu-bar/MenuBarSeparator";
-import UiInspectorButton from "@/features/ui-manager/components/menu-bar/UiInspectorButton/UiInspectorButton";
-import UiControlsButton from "@/features/ui-manager/components/menu-bar/UiControlsButton/UiControlsButton";
-import UiStatusBarButton from "@/features/ui-manager/components/menu-bar/UiStatusBarButton/UiStatusBarButton";
+import UiInspectorButton from "@/features/ui-manager/components/menu-bar/UiInspectorButton";
+import UiControlsButton from "@/features/ui-manager/components/menu-bar/UiControlsButton";
+import UiStatusBarButton from "@/features/ui-manager/components/menu-bar/UiStatusBarButton";
 
 export default function MenuBarViewSubmenu() {
   return (

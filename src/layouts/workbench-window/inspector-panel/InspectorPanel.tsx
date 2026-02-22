@@ -1,4 +1,4 @@
-import UiInspectorPanel from "@/features/ui-manager/components/side-panels/UiInspectorPanel/UiInspectorPanel";
+import UiInspectorPanel from "@/features/ui-manager/components/side-panels/UiInspectorPanel";
 import CoverageSection from "./coverage-section/CoverageSection";
 import EnvSection from "./env-section/EnvSection";
 import ObjectSection from "./object-section/ObjectSection";
