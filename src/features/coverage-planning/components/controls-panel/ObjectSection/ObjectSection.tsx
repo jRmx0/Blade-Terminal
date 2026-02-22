@@ -8,7 +8,7 @@ export default function ObjectSection() {
   );
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col">
       <ControlsPanelSectionTitle sectionId="object" title="Object" />
 
       {isExpanded && (

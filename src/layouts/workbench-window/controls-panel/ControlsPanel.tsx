@@ -6,7 +6,7 @@ import ObjectSection from "@/features/coverage-planning/components/controls-pane
 export default function ControlsPanel() {
   return (
     <UiControlsPanel>
-      <div className="flex flex-col gap-2 p-1">
+      <div>
         <AlgoSection />
         <EnvSection />
         <ObjectSection />

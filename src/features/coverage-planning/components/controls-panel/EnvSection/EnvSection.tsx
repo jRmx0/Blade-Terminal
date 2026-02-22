@@ -9,7 +9,7 @@ export default function EnvSection() {
   );
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col">
       <ControlsPanelSectionTitle sectionId="env" title="Environment" />
 
       {isExpanded && (
