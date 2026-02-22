@@ -1,4 +1,4 @@
-import AppLogoBox from "@/components/AppLogoBox/AppLogoBox";
+import AppLogoBox from "@/components/app-header/AppLogoBox";
 import TitleBar from "./title-bar/TitleBar";
 import MenuBar from "./menu-bar/MenuBar";
 

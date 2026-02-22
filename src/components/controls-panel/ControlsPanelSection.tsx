@@ -1,5 +1,5 @@
 import { useControlsPanelStore } from "@/stores/controlsPanelStore";
-import ControlsPanelSectionTitle from "@/components/ControlsPanelSectionTitle/ControlsPanelSectionTitle";
+import ControlsPanelSectionTitle from "@/components/controls-panel/ControlsPanelSectionTitle";
 import type { ControlsPanelSectionId } from "@/types/controlsPanelTypes";
 
 interface ControlsPanelSectionProps {

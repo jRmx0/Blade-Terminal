@@ -1,4 +1,4 @@
-import MenuBarItem from "@/components/MenuBarItem/MenuBarItem";
+import MenuBarItem from "@/components/menu-bar/MenuBarItem";
 import { useUiStatusBarStore } from "@/features/ui-manager/stores/uiStatusBarStore";
 
 export default function UiStatusBarButton() {

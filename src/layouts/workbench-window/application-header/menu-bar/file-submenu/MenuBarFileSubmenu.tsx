@@ -6,7 +6,7 @@ import WorkspaceCopyButton from "@/features/workspace-manager/components/menu-ba
 import WorkspaceImportButton from "@/features/workspace-manager/components/menu-bar/WorkspaceImportButton/WorkspaceImportButton";
 import WorkspaceExportButton from "@/features/workspace-manager/components/menu-bar/WorkspaceExportButton/WorkspaceExportButton";
 import WorkspaceCloseButton from "@/features/workspace-manager/components/menu-bar/WorkspaceCloseButton/WorkspaceCloseButton";
-import MenuSeparator from "@/components/MenuBarSeparator/MenuBarSeparator";
+import MenuSeparator from "@/components/menu-bar/MenuBarSeparator";
 import WorkspaceOpenButton from "@/features/workspace-manager/components/menu-bar/WorkspaceOpenButton/WorkspaceOpenButton";
 
 export default function MenuBarFileSubmenu() {

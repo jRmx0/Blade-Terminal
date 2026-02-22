@@ -1,4 +1,4 @@
-import MenuBarItem from "@/components/MenuBarItem/MenuBarItem";
+import MenuBarItem from "@/components/menu-bar/MenuBarItem";
 
 export default function CanvasZoomInButton() {
   const handleClick = () => {

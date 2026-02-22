@@ -1,4 +1,4 @@
-import MenuBarItem from "@/components/MenuBarItem/MenuBarItem";
+import MenuBarItem from "@/components/menu-bar/MenuBarItem";
 import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
 
 export default function UiControlsButton() {

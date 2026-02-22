@@ -1,4 +1,4 @@
-import ToggleToolBarButton from "@/components/ToolBarToggleButton/ToolBarToggleButton";
+import ToggleToolBarButton from "@/components/tool-bar/ToolBarToggleButton";
 import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
 import { useShortcut } from "@/hooks/useShortcut";
 

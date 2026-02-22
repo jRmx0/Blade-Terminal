@@ -1,4 +1,4 @@
-import ControlsPanelSection from "@/components/ControlsPanelSection/ControlsPanelSection";
+import ControlsPanelSection from "@/components/controls-panel/ControlsPanelSection";
 import GlobalTypeSelection from "@/features/coverage-planning/components/controls-panel/EnvSection/GlobalTypeSelect/GlobalTypeSelect";
 import FormatSelection from "@/features/coverage-planning/components/controls-panel/EnvSection/FormatSelect/FormatSelect";
 

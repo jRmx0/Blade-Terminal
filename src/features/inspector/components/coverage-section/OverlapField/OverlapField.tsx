@@ -1,4 +1,4 @@
-import InspectorPanelSectionField from "@/components/InspectorPanelSectionField/InspectorPanelSectionField";
+import InspectorPanelSectionField from "@/components/inspector-panel/InspectorPanelSectionField";
 
 export default function RedundanceField() {
   return (

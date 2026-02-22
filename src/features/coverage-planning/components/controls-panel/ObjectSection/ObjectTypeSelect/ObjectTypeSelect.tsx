@@ -1,5 +1,5 @@
 import { useObjectTypeStore } from "@/features/coverage-planning/stores/env-section/objectTypeStore";
-import ControlsPanelSectionSelect from "@/components/ControlsPanelSectionSelect/ControlsPanelSectionSelect";
+import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
 
 export default function TypeSelection() {
   const selectedType = useObjectTypeStore((state) => state.selectedObjectType);

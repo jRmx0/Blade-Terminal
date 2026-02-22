@@ -1,4 +1,4 @@
-import InspectorPanelSection from "@/components/InspectorPanelSection/InspectorPanelSection";
+import InspectorPanelSection from "@/components/inspector-panel/InspectorPanelSection";
 import ObstacleSumField from "@/features/inspector/components/env-section/ObstacleSumField/ObstacleSumField";
 import ZoneSumField from "@/features/inspector/components/env-section/ZoneSumField/ZoneSumField";
 

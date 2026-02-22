@@ -2,7 +2,7 @@ import CanvasResetViewButton from "@/features/canvas-editing/components/menu-bar
 import CanvasZoomInButton from "@/features/canvas-editing/components/menu-bar/CanvasZoomInButton/CanvasZoomInButton";
 import CanvasZoomOutButton from "@/features/canvas-editing/components/menu-bar/CanvasZoomOutButton/CanvasZoomOutButton";
 import CanvasToggleGridButton from "@/features/canvas-editing/components/menu-bar/CanvasToggleGridButton/CanvasToggleGridButton";
-import MenuSeparator from "@/components/MenuBarSeparator/MenuBarSeparator";
+import MenuSeparator from "@/components/menu-bar/MenuBarSeparator";
 import UiInspectorButton from "@/features/ui-manager/components/menu-bar/UiInspectorButton/UiInspectorButton";
 import UiControlsButton from "@/features/ui-manager/components/menu-bar/UiControlsButton/UiControlsButton";
 import UiStatusBarButton from "@/features/ui-manager/components/menu-bar/UiStatusBarButton/UiStatusBarButton";

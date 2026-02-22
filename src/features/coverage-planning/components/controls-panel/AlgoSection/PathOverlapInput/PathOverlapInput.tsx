@@ -1,5 +1,5 @@
 import { usePathOverlapStore } from "@/features/coverage-planning/stores/algo-section/pathOverlapStore";
-import ControlsPanelSectionInput from "@/components/ControlsPanelSectionInput/ControlsPanelSectionInput";
+import ControlsPanelSectionInput from "@/components/controls-panel/ControlsPanelSectionInput";
 
 export default function PathOverlapInput() {
   const pathOverlap = usePathOverlapStore((state) => state.pathOverlap);

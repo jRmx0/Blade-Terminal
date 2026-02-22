@@ -1,4 +1,4 @@
-import MenuBarItem from "@/components/MenuBarItem/MenuBarItem";
+import MenuBarItem from "@/components/menu-bar/MenuBarItem";
 import { useUiInspectorPanelStore } from "@/features/ui-manager/stores/uiInspectorPanelStore";
 
 export default function UiInspectorButton() {

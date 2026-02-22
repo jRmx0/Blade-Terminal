@@ -1,5 +1,5 @@
 import { useFormatStore } from "@/features/coverage-planning/stores/env-section/formatStore";
-import ControlsPanelSectionSelect from "@/components/ControlsPanelSectionSelect/ControlsPanelSectionSelect";
+import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
 
 export default function FormatSelection() {
   const selectedFormat = useFormatStore((state) => state.selectedFormat);

@@ -1,4 +1,4 @@
-import InspectorPanelSectionTitle from "@/components/InspectorPanelSectionTitle/InspectorPanelSectionTitle";
+import InspectorPanelSectionTitle from "@/components/inspector-panel/InspectorPanelSectionTitle";
 
 interface InspectorPanelSectionProps {
   title: string;

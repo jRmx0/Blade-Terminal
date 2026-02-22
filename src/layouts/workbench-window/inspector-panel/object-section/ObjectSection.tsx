@@ -1,4 +1,4 @@
-import InspectorPanelSection from "@/components/InspectorPanelSection/InspectorPanelSection";
+import InspectorPanelSection from "@/components/inspector-panel/InspectorPanelSection";
 import TypeField from "@/features/inspector/components/object-section/TypeField/TypeField";
 import CategoryField from "@/features/inspector/components/object-section/CategoryField/CategoryField";
 import GrossAreaField from "@/features/inspector/components/object-section/GrossAreaField/GrossAreaField";

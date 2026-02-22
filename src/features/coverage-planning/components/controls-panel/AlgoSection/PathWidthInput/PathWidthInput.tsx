@@ -1,5 +1,5 @@
 import { usePathWidthStore } from "@/features/coverage-planning/stores/algo-section/pathWidthStore";
-import ControlsPanelSectionInput from "@/components/ControlsPanelSectionInput/ControlsPanelSectionInput";
+import ControlsPanelSectionInput from "@/components/controls-panel/ControlsPanelSectionInput";
 
 export default function PathWidthInput() {
   const pathWidth = usePathWidthStore((state) => state.pathWidth);

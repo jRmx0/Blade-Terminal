@@ -1,4 +1,4 @@
-import ToolBarButton from "@/components/ToolBarButton/ToolBarButton";
+import ToolBarButton from "@/components/tool-bar/ToolBarButton";
 
 export default function ExecuteCppButton() {
   return (

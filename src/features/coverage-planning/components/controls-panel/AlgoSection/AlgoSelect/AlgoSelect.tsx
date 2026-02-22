@@ -1,5 +1,5 @@
 import { useAlgoSelectionStore } from "@/features/coverage-planning/stores/algo-section/algoSelectionStore";
-import ControlsPanelSectionSelect from "@/components/ControlsPanelSectionSelect/ControlsPanelSectionSelect";
+import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
 
 export default function AlgoSelect() {
   const selectedAlgo = useAlgoSelectionStore((state) => state.selectedAlgo);

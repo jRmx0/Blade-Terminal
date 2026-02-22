@@ -1,4 +1,4 @@
-import MenuBarButton from "@/components/MenuBarButton/MenuBarButton";
+import MenuBarButton from "@/components/menu-bar/MenuBarButton";
 import MenuBarFileSubmenu from "./MenuBarFileSubmenu";
 
 export default function MenuBarFileButton() {

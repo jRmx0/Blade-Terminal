@@ -1,5 +1,5 @@
 import { useGlobalTypeStore } from "@/features/coverage-planning/stores/env-section/globalTypeStore";
-import ControlsPanelSectionSelect from "@/components/ControlsPanelSectionSelect/ControlsPanelSectionSelect";
+import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
 
 export default function GlobalTypeSelection() {
   const selectedGlobalType = useGlobalTypeStore(
