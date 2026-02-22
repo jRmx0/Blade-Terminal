@@ -15,7 +15,7 @@ export default function ControlsPanelSectionTitle({
       type="button"
       title={title}
       onClick={() => toggleSection(sectionId)}
-      className="w-full flex items-center gap-2 px-1 py-2 rounded text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 cursor-pointer select-none"
+      className="w-full flex items-center gap-2 px-1 py-2 rounded text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-200 active:bg-gray-300 cursor-pointer select-none"
     >
       <span className="material-symbols-outlined w-5 h-5 flex items-center justify-center">
         {isExpanded ? "expand_less" : "expand_more"}

@@ -18,12 +18,10 @@ export default function ControlsPanelSection({
   );
 
   return (
-    <div className="flex flex-col">
+    <div className={`flex flex-col${isExpanded ? " pb-2" : ""}`}>
       <ControlsPanelSectionTitle sectionId={sectionId} title={title} />
 
-      {isExpanded && (
-        <div className="flex flex-col pl-1">{children}</div>
-      )}
+      {isExpanded && <div className="flex flex-col pl-1">{children}</div>}
     </div>
   );
 }
