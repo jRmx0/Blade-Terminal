@@ -2,6 +2,7 @@ import ApplicationHeader from "./application-header/ApplicationHeader";
 import ToolBar from "./tool-bar/ToolBar";
 import ControlsPanel from "./controls-panel/ControlsPanel";
 import InspectorPanel from "./inspector-panel/InspectorPanel";
+import StatusBar from "./status-bar/StatusBar";
 
 export default function WorkbenchWindow() {
   return (
@@ -13,6 +14,7 @@ export default function WorkbenchWindow() {
         <div className="flex-1 overflow-hidden select-none" />
         <InspectorPanel />
       </div>
+      <StatusBar />
     </div>
   );
 }

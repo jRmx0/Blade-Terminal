@@ -1,17 +1,16 @@
 import MenuBarItem from "@/components/MenuBarItem/MenuBarItem";
+import { useUiStatusBarStore } from "@/features/ui-manager/stores/uiStatusBarStore";
 
 export default function UiStatusBarButton() {
-  const handleClick = () => {
-    // TODO: Toggle status bar visibility
-  };
+  const isVisible = useUiStatusBarStore((state) => state.isVisible);
+  const setVisibility = useUiStatusBarStore((state) => state.setVisibility);
 
   return (
     <MenuBarItem
       label="Status Bar"
-      shortcut={["Ctrl", "Alt", "S"]}
       hasCheckmark
-      defaultChecked={true}
-      onClick={handleClick}
+      defaultChecked={isVisible}
+      onClick={() => setVisibility(!isVisible)}
     />
   );
 }
