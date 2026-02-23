@@ -1,15 +1,10 @@
 import MenuBarItem from "@/components/menu-bar/MenuBarItem";
+import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 
 export default function CanvasZoomInButton() {
-  const handleClick = () => {
-    // TODO: Increase canvas zoom level
-  };
+  const zoomIn = useCanvasViewStore((s) => s.zoomIn);
 
   return (
-    <MenuBarItem
-      label="Zoom In"
-      shortcut={["Ctrl", "+"]}
-      onClick={handleClick}
-    />
+    <MenuBarItem label="Zoom In" shortcut={["Ctrl", "+"]} onClick={zoomIn} />
   );
 }

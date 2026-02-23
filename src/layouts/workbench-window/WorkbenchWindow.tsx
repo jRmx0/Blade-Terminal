@@ -3,6 +3,7 @@ import ToolBar from "./tool-bar/ToolBar";
 import ControlsPanel from "./controls-panel/ControlsPanel";
 import InspectorPanel from "./inspector-panel/InspectorPanel";
 import StatusBar from "./status-bar/StatusBar";
+import CanvasEditorLayout from "./canvas-editor/CanvasEditorLayout";
 
 export default function WorkbenchWindow() {
   return (
@@ -11,7 +12,7 @@ export default function WorkbenchWindow() {
       <ToolBar />
       <div className="flex flex-1 overflow-hidden">
         <ControlsPanel />
-        <div className="flex-1 overflow-hidden select-none" />
+        <CanvasEditorLayout />
         <InspectorPanel />
       </div>
       <StatusBar />

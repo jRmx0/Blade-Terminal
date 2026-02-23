@@ -1,9 +1,8 @@
 import MenuBarItem from "@/components/menu-bar/MenuBarItem";
+import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 
 export default function CanvasResetViewButton() {
-  const handleClick = () => {
-    // TODO: Reset canvas view to default pan/zoom
-  };
+  const resetView = useCanvasViewStore((s) => s.resetView);
 
-  return <MenuBarItem label="Reset View" onClick={handleClick} />;
+  return <MenuBarItem label="Reset View" onClick={resetView} />;
 }

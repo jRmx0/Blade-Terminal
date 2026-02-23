@@ -1,15 +1,10 @@
 import MenuBarItem from "@/components/menu-bar/MenuBarItem";
+import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 
 export default function CanvasZoomOutButton() {
-  const handleClick = () => {
-    // TODO: Decrease canvas zoom level
-  };
+  const zoomOut = useCanvasViewStore((s) => s.zoomOut);
 
   return (
-    <MenuBarItem
-      label="Zoom Out"
-      shortcut={["Ctrl", "-"]}
-      onClick={handleClick}
-    />
+    <MenuBarItem label="Zoom Out" shortcut={["Ctrl", "-"]} onClick={zoomOut} />
   );
 }
