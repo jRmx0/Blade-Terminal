@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { shortcutRegistry } from "@/hooks/shortcut-manager/useShortcut";
 import { matchesShortcut } from "@/utils/parseShortcut";
-import { useShortcutStore } from "@/stores/shortcutStore";
 import { useMenuStore } from "@/stores/menuStore";
 
 /**
@@ -11,11 +10,8 @@ import { useMenuStore } from "@/stores/menuStore";
 export default function ShortcutManager() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const { activeContexts } = useShortcutStore.getState();
-
       for (const [, entry] of shortcutRegistry) {
         if (!matchesShortcut(e, entry.parsed)) continue;
-        if (entry.context && !activeContexts.includes(entry.context)) continue;
 
         e.preventDefault();
 
