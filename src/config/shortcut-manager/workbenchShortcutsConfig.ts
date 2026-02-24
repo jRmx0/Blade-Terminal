@@ -1,7 +1,6 @@
 import type { ShortcutBindingConfig, ShortcutDisplayConfig } from "@/types/shortcutTypes";
 
 export type { ShortcutBindingConfig, ShortcutDisplayConfig };
-export type WorkbenchShortcutConfig = ShortcutDisplayConfig | ShortcutBindingConfig;
 
 export const WORKBENCH_SHORTCUTS = {
     "controls.toggle": {
