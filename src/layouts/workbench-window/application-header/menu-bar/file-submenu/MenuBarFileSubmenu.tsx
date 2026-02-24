@@ -11,7 +11,7 @@ import WorkspaceOpenButton from "@/features/workspace-manager/components/menu-ba
 
 export default function MenuBarFileSubmenu() {
   return (
-    <div className="w-64 py-1 bg-gray-100">
+    <div className="w-80 py-1 bg-gray-100">
       <WorkspaceNewButton />
       <WorkspaceOpenButton />
 
