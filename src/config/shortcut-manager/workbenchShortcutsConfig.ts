@@ -1,13 +1,6 @@
-interface ShortcutDisplayConfig {
-    /** Display tokens shown in MenuBarItem (e.g. ["Ctrl", "Alt", "C"]) */
-    shortcut: string[];
-}
+import type { ShortcutBindingConfig, ShortcutDisplayConfig } from "@/types/shortcutTypes";
 
-interface ShortcutBindingConfig extends ShortcutDisplayConfig {
-    /** Shortcut string consumed by useShortcut / parseShortcut (e.g. "Ctrl+Alt+C") */
-    keys: string;
-}
-
+export type { ShortcutBindingConfig, ShortcutDisplayConfig };
 export type WorkbenchShortcutConfig = ShortcutDisplayConfig | ShortcutBindingConfig;
 
 export const WORKBENCH_SHORTCUTS = {
