@@ -8,12 +8,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
-import ShortcutManager from "@/components/ShortcutManager/ShortcutManager";
 
 const elem = document.getElementById("root")!;
 const app = (
   <StrictMode>
-    <ShortcutManager />
     <App />
   </StrictMode>
 );
