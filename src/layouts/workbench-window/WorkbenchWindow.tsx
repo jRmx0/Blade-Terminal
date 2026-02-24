@@ -4,8 +4,11 @@ import ControlsPanel from "./controls-panel/ControlsPanel";
 import InspectorPanel from "./inspector-panel/InspectorPanel";
 import StatusBar from "./status-bar/StatusBar";
 import CanvasEditorLayout from "./canvas-editor/CanvasEditorLayout";
+import { useWorkbenchShortcuts } from "@/hooks/shortcut-manager/useWorkbenchShortcuts";
 
 export default function WorkbenchWindow() {
+  useWorkbenchShortcuts();
+
   return (
     <div className="flex flex-col w-full h-full">
       <ApplicationHeader />
