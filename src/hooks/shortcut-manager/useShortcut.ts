@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { parseShortcut, type ParsedShortcut } from "@/utils/parseShortcut";
 
 export interface ShortcutEntry {
@@ -29,14 +29,17 @@ export function useShortcut(
     keys: string,
     handler: () => void,
 ) {
+    const handlerRef = useRef(handler);
+    handlerRef.current = handler;
+
     useEffect(() => {
         shortcutRegistry.set(id, {
             parsed: parseShortcut(keys),
-            handler,
+            handler: () => handlerRef.current(),
         });
 
         return () => {
             shortcutRegistry.delete(id);
         };
-    }, [id, keys, handler]);
+    }, [id, keys]);
 }
