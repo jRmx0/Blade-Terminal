@@ -5,6 +5,6 @@ export default function CanvasZoomInButton() {
   const zoomIn = useCanvasViewStore((s) => s.zoomIn);
 
   return (
-    <MenuBarItem label="Zoom In" shortcut={["Ctrl", "+"]} onClick={zoomIn} />
+    <MenuBarItem label="Zoom In" shortcut={["Alt", "+"]} onClick={zoomIn} />
   );
 }

@@ -7,7 +7,6 @@ export default function CanvasToggleGridButton() {
   return (
     <MenuBarItem
       label="Toggle Grid"
-      shortcut={["Ctrl", "G"]}
       hasCheckmark
       defaultChecked={gridVisible}
       onClick={toggleGrid}

@@ -19,7 +19,6 @@ export default function ShortcutManager() {
 
         e.preventDefault();
 
-        // Close any open menu before executing the action
         useMenuStore.getState().setActiveMenu(null);
 
         entry.handler();

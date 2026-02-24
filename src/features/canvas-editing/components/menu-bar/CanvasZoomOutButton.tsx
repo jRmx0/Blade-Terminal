@@ -5,6 +5,6 @@ export default function CanvasZoomOutButton() {
   const zoomOut = useCanvasViewStore((s) => s.zoomOut);
 
   return (
-    <MenuBarItem label="Zoom Out" shortcut={["Ctrl", "-"]} onClick={zoomOut} />
+    <MenuBarItem label="Zoom Out" shortcut={["Alt", "-"]} onClick={zoomOut} />
   );
 }
