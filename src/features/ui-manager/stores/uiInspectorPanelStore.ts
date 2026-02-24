@@ -10,7 +10,7 @@ interface UiInspectorPanelState {
 export const useUiInspectorPanelStore = create<UiInspectorPanelState>(
     (set) => ({
         isVisible: true,
-        width: 250,
+        width: 300,
         setVisibility: (visible) => set({ isVisible: visible }),
         setWidth: (width) => set({ width }),
     }),
