@@ -10,19 +10,19 @@ import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewS
  * as long as the workbench is rendered and automatically cleaned up on unmount.
  */
 export function useWorkbenchShortcuts() {
-    useShortcut("controls.toggle", S["controls.toggle"].keys!, () =>
+    useShortcut("controls.toggle", S["controls.toggle"].keys, () =>
         useUiControlsPanelStore
             .getState()
             .setVisibility(!useUiControlsPanelStore.getState().isVisible),
     );
 
-    useShortcut("inspector.toggle", S["inspector.toggle"].keys!, () =>
+    useShortcut("inspector.toggle", S["inspector.toggle"].keys, () =>
         useUiInspectorPanelStore
             .getState()
             .setVisibility(!useUiInspectorPanelStore.getState().isVisible),
     );
 
-    useShortcut("canvas.reset-view", S["canvas.reset-view"].keys!, () =>
+    useShortcut("canvas.reset-view", S["canvas.reset-view"].keys, () =>
         useCanvasViewStore.getState().resetView(),
     );
 }
