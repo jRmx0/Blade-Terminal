@@ -3,8 +3,6 @@ import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import {
     COLOR_ZONE_STROKE,
     COLOR_OBSTACLE_STROKE,
-    COLOR_DRAWING_PREVIEW_ZONE_EDGE,
-    COLOR_DRAWING_PREVIEW_OBSTACLE_EDGE,
 } from "@/config/canvas-editing/canvasConfig";
 
 interface CanvasDrawingPreviewLayerProps {
@@ -24,9 +22,10 @@ export function CanvasDrawingPreviewLayer({
 
     if (!isDrawing || drawingPoints.length === 0) return null;
 
-    const drawColor = activeTool === "addZone" ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE;
+    const drawColor =
+        activeTool === "addZone" ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE;
     const previewEdgeColor =
-        activeTool === "addZone" ? COLOR_DRAWING_PREVIEW_ZONE_EDGE : COLOR_DRAWING_PREVIEW_OBSTACLE_EDGE;
+        activeTool === "addZone" ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE;
     const lastPoint = drawingPoints[drawingPoints.length - 1];
 
     return (

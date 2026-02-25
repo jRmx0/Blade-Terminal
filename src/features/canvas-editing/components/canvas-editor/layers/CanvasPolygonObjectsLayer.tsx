@@ -1,5 +1,8 @@
 import { Layer, Line } from "react-konva";
-import type { CanvasObject, ActiveTool } from "@/features/canvas-editing/types/canvas";
+import type {
+    CanvasObject,
+    ActiveTool,
+} from "@/features/canvas-editing/types/canvas";
 import {
     COLOR_ZONE_FILL,
     COLOR_ZONE_STROKE,
