@@ -29,9 +29,14 @@ export function CanvasPolygonObjectsLayer({
 }: CanvasPolygonObjectsLayerProps) {
     const canInteract = activeTool === "select" || activeTool === "delete";
 
+    const sortedObjects = [...objects].sort((a, b) => {
+        if (a.category === b.category) return 0;
+        return a.category === "zone" ? -1 : 1;
+    });
+
     return (
         <Layer>
-            {objects.map((obj) => {
+            {sortedObjects.map((obj) => {
                 const isZone = obj.category === "zone";
                 const isSelected = obj.id === selectedObjectId;
 
