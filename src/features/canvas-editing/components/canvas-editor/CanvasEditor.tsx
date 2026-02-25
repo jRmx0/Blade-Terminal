@@ -8,6 +8,7 @@ import { useCanvasSize } from "@/features/canvas-editing/hooks/canvas-editor/use
 import { useCanvasPanning } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasPanning";
 import { useCanvasZoom } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasZoom";
 import { useCanvasDrawing } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasDrawing";
+import { useCanvasMidpointDrag } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasMidpointDrag";
 import { useCanvasKeyboard } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasKeyboard";
 import { CanvasGridLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasGridLayer";
 import { CanvasPolygonObjectsLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasPolygonObjectsLayer";
@@ -56,6 +57,13 @@ export default function CanvasEditor() {
     cancelDrawing,
   } = useCanvasDrawing({ activeTool, stageRef, clearSelection, addObject });
 
+  const {
+    isMidpointDragging,
+    handleMidpointMouseDown,
+    handleMidpointDragMouseMove,
+    handleMidpointDragEnd,
+  } = useCanvasMidpointDrag({ stageRef, insertVertex, updateVertex });
+
   const { handleKeyDown } = useCanvasKeyboard({
     activeTool,
     drawingPointsCount: drawingPoints.length,
@@ -72,20 +80,31 @@ export default function CanvasEditor() {
     containerRef.current?.focus();
   }, [activeTool, containerRef]);
 
-  // Compose mouse move: panning + drawing preview
+  // Compose mouse move: panning + drawing preview + midpoint drag
   const handleMouseMove = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
       handlePanMouseMove(e);
       updateDrawingMousePosition(e);
+      handleMidpointDragMouseMove(e);
     },
-    [handlePanMouseMove, updateDrawingMousePosition],
+    [handlePanMouseMove, updateDrawingMousePosition, handleMidpointDragMouseMove],
   );
 
-  // Compose mouse leave: panning + drawing preview
+  // Compose mouse up: panning + midpoint drag
+  const handleMouseUp = useCallback(
+    (e: Konva.KonvaEventObject<MouseEvent>) => {
+      handlePanMouseUp(e);
+      handleMidpointDragEnd();
+    },
+    [handlePanMouseUp, handleMidpointDragEnd],
+  );
+
+  // Compose mouse leave: panning + drawing preview + midpoint drag
   const handleMouseLeave = useCallback(() => {
     handlePanMouseLeave();
     clearDrawingMousePosition();
-  }, [handlePanMouseLeave, clearDrawingMousePosition]);
+    handleMidpointDragEnd();
+  }, [handlePanMouseLeave, clearDrawingMousePosition, handleMidpointDragEnd]);
 
   const selectedObject =
     activeTool === "select" && selectedObjectId
@@ -98,7 +117,7 @@ export default function CanvasEditor() {
     <div
       ref={containerRef}
       className="w-full h-full bg-white overflow-hidden outline-none"
-      style={{ cursor: isPanning ? "grabbing" : isDrawing ? "crosshair" : "default" }}
+      style={{ cursor: isPanning || isMidpointDragging ? "grabbing" : isDrawing ? "crosshair" : "default" }}
       tabIndex={0}
       onKeyDown={handleKeyDown}
       onContextMenu={(e) => e.preventDefault()}
@@ -113,7 +132,7 @@ export default function CanvasEditor() {
         scaleY={scale}
         onMouseDown={handlePanMouseDown}
         onMouseMove={handleMouseMove}
-        onMouseUp={handlePanMouseUp}
+        onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
         onClick={handleStageClick}
         onContextMenu={handlePolygonClose}
@@ -145,15 +164,7 @@ export default function CanvasEditor() {
             setDraggingVertexIndex(null);
             updateVertex(objectId, i, x, y);
           }}
-          onEdgeMidpointDragStart={(objectId, afterIndex, midX, midY) =>
-            insertVertex(objectId, afterIndex, midX, midY)
-          }
-          onEdgeMidpointDragMove={(objectId, afterIndex, x, y) =>
-            updateVertex(objectId, afterIndex + 1, x, y)
-          }
-          onEdgeMidpointDragEnd={(objectId, afterIndex, x, y) =>
-            updateVertex(objectId, afterIndex + 1, x, y)
-          }
+          onEdgeMidpointMouseDown={handleMidpointMouseDown}
         />
 
         <CanvasDrawingPreviewLayer

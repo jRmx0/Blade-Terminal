@@ -1,5 +1,6 @@
 import { Layer, Circle } from "react-konva";
 import type { CanvasObject, ActiveTool } from "@/features/canvas-editing/types/canvas";
+import { computeEdgeMidpoints } from "@/features/canvas-editing/utils/canvasGeometry";
 import {
     COLOR_ZONE_STROKE,
     COLOR_OBSTACLE_STROKE,
@@ -19,9 +20,7 @@ interface CanvasVertexHandlesLayerProps {
     onVertexDragStart: (index: number) => void;
     onVertexDragMove: (objectId: string, index: number, x: number, y: number) => void;
     onVertexDragEnd: (objectId: string, index: number, x: number, y: number) => void;
-    onEdgeMidpointDragStart: (objectId: string, afterIndex: number, midX: number, midY: number) => void;
-    onEdgeMidpointDragMove: (objectId: string, afterIndex: number, x: number, y: number) => void;
-    onEdgeMidpointDragEnd: (objectId: string, afterIndex: number, x: number, y: number) => void;
+    onEdgeMidpointMouseDown: (objectId: string, afterIndex: number, midX: number, midY: number) => void;
 }
 
 export function CanvasVertexHandlesLayer({
@@ -34,21 +33,18 @@ export function CanvasVertexHandlesLayer({
     onVertexDragStart,
     onVertexDragMove,
     onVertexDragEnd,
-    onEdgeMidpointDragStart,
-    onEdgeMidpointDragMove,
-    onEdgeMidpointDragEnd,
+    onEdgeMidpointMouseDown,
 }: CanvasVertexHandlesLayerProps) {
     const isLayerListening = activeTool === "select" && selectedObject !== null;
+
+    const edgeMidpoints = selectedObject ? computeEdgeMidpoints(selectedObject.vertices) : [];
 
     return (
         <Layer listening={isLayerListening}>
             {selectedObject?.vertices.map((v, i) => {
-                const nextI = (i + 1) % selectedObject.vertices.length;
-                const next = selectedObject.vertices[nextI];
-                if (!next) return null;
+                const mid = edgeMidpoints[i];
+                if (!mid) return null;
 
-                const midX = (v.x + next.x) / 2;
-                const midY = (v.y + next.y) / 2;
                 const accentColor =
                     selectedObject.category === "zone" ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE;
                 const isActiveVertex = selectedVertexIndex === i || draggingVertexIndex === i;
@@ -73,16 +69,16 @@ export function CanvasVertexHandlesLayer({
                     />,
                     <Circle
                         key={`edge-midpoint-handle-${v.id}`}
-                        x={midX}
-                        y={midY}
+                        x={mid.x}
+                        y={mid.y}
                         radius={4 / scale}
                         fill={COLOR_EDGE_MIDPOINT_FILL}
                         stroke={COLOR_EDGE_MIDPOINT_STROKE}
                         strokeWidth={1.5 / scale}
-                        draggable
-                        onDragStart={() => onEdgeMidpointDragStart(selectedObject.id, i, midX, midY)}
-                        onDragMove={(e) => onEdgeMidpointDragMove(selectedObject.id, i, e.target.x(), e.target.y())}
-                        onDragEnd={(e) => onEdgeMidpointDragEnd(selectedObject.id, i, e.target.x(), e.target.y())}
+                        onMouseDown={(e) => {
+                            e.cancelBubble = true;
+                            onEdgeMidpointMouseDown(selectedObject.id, i, mid.x, mid.y);
+                        }}
                     />,
                 ];
             })}
