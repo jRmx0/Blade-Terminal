@@ -1,22 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Stage, Layer, Line, Circle } from "react-konva";
+import { Stage } from "react-konva";
 import type Konva from "konva";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
-import {
-  GRID_SPACING,
-  ZOOM_MIN,
-  ZOOM_MAX,
-  ZOOM_FACTOR,
-  COLOR_GRID,
-  COLOR_ZONE_STROKE,
-  COLOR_ZONE_FILL,
-  COLOR_OBSTACLE_STROKE,
-  COLOR_OBSTACLE_FILL,
-  COLOR_VERTEX_FILL,
-  COLOR_VERTEX_SELECTED_STROKE,
-} from "@/config/canvas-editing/canvasConfig";
+import { ZOOM_MIN, ZOOM_MAX, ZOOM_FACTOR } from "@/config/canvas-editing/canvasConfig";
+import { CanvasGridLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasGridLayer";
+import { CanvasPolygonObjectsLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasPolygonObjectsLayer";
+import { CanvasVertexHandlesLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasVertexHandlesLayer";
+import { CanvasDrawingPreviewLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasDrawingPreviewLayer";
 
 export default function CanvasEditor() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -241,65 +233,20 @@ export default function CanvasEditor() {
     [activeTool, drawingPoints, addObject],
   );
 
-  // ─── Grid lines ───────────────────────────────────────────────────
-  const gridLines = (() => {
-    if (!gridVisible || size.width === 0) return null;
-
-    const worldLeft = -position.x / scale;
-    const worldTop = -position.y / scale;
-    const worldRight = (size.width - position.x) / scale;
-    const worldBottom = (size.height - position.y) / scale;
-
-    const startX = Math.floor(worldLeft / GRID_SPACING) * GRID_SPACING;
-    const startY = Math.floor(worldTop / GRID_SPACING) * GRID_SPACING;
-
-    const lines = [];
-    for (let x = startX; x <= worldRight + GRID_SPACING; x += GRID_SPACING) {
-      lines.push(
-        <Line
-          key={`gv-${x}`}
-          points={[x, worldTop - GRID_SPACING, x, worldBottom + GRID_SPACING]}
-          stroke={COLOR_GRID}
-          strokeWidth={1 / scale}
-          listening={false}
-        />,
-      );
-    }
-    for (let y = startY; y <= worldBottom + GRID_SPACING; y += GRID_SPACING) {
-      lines.push(
-        <Line
-          key={`gh-${y}`}
-          points={[worldLeft - GRID_SPACING, y, worldRight + GRID_SPACING, y]}
-          stroke={COLOR_GRID}
-          strokeWidth={1 / scale}
-          listening={false}
-        />,
-      );
-    }
-    return lines;
-  })();
-
-  // ─── Derived: selected object ─────────────────────────────────────
   const selectedObject =
     activeTool === "select" && selectedObjectId
       ? (objects.find((o) => o.id === selectedObjectId) ?? null)
       : null;
 
   const isDrawing = activeTool === "addZone" || activeTool === "addObstacle";
-  const drawColor =
-    activeTool === "addZone" ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE;
 
-  // ─── Render ───────────────────────────────────────────────────────
   return (
     <div
       ref={containerRef}
       className="w-full h-full bg-white overflow-hidden outline-none"
-      style={{
-        cursor: isPanning ? "grabbing" : isDrawing ? "crosshair" : "default",
-      }}
+      style={{ cursor: isPanning ? "grabbing" : isDrawing ? "crosshair" : "default" }}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      // Prevent native context menu on right-click anywhere in the canvas
       onContextMenu={(e) => e.preventDefault()}
     >
       <Stage
@@ -318,164 +265,49 @@ export default function CanvasEditor() {
         onContextMenu={handleContextMenu}
         onWheel={handleWheel}
       >
-        {/* ── Layer 1: Grid ───────────────────────────────────────── */}
-        <Layer listening={false}>{gridLines}</Layer>
+        {gridVisible && (
+          <CanvasGridLayer position={position} scale={scale} size={size} />
+        )}
 
-        {/* ── Layer 2: Polygon objects ────────────────────────────── */}
-        <Layer>
-          {objects.map((obj) => {
-            const isZone = obj.category === "zone";
-            const isSelected = obj.id === selectedObjectId;
-            const canInteract =
-              activeTool === "select" || activeTool === "delete";
-            return (
-              <Line
-                key={obj.id}
-                points={obj.vertices.flatMap((v) => [v.x, v.y])}
-                closed
-                fill={isZone ? COLOR_ZONE_FILL : COLOR_OBSTACLE_FILL}
-                stroke={isZone ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE}
-                strokeWidth={(isSelected ? 2.5 : 1.5) / scale}
-                listening={canInteract}
-                hitStrokeWidth={8 / scale}
-                onClick={(e) => {
-                  e.cancelBubble = true;
-                  if (activeTool === "delete") {
-                    deleteObject(obj.id);
-                  } else if (activeTool === "select") {
-                    selectObject(obj.id);
-                  }
-                }}
-              />
-            );
-          })}
-        </Layer>
+        <CanvasPolygonObjectsLayer
+          objects={objects}
+          selectedObjectId={selectedObjectId}
+          activeTool={activeTool}
+          scale={scale}
+          onSelectObject={selectObject}
+          onDeleteObject={deleteObject}
+        />
 
-        {/* ── Layer 3: Vertex + edge-midpoint handles (select mode) ── */}
-        <Layer listening={activeTool === "select" && selectedObject !== null}>
-          {selectedObject?.vertices.map((v, i) => {
-            const nextI = (i + 1) % selectedObject.vertices.length;
-            const next = selectedObject.vertices[nextI];
-            if (!next) return null;
-            const midX = (v.x + next.x) / 2;
-            const midY = (v.y + next.y) / 2;
-            const accentColor =
-              selectedObject.category === "zone"
-                ? COLOR_ZONE_STROKE
-                : COLOR_OBSTACLE_STROKE;
+        <CanvasVertexHandlesLayer
+          selectedObject={selectedObject}
+          activeTool={activeTool}
+          scale={scale}
+          selectedVertexIndex={selectedVertexIndex}
+          draggingVertexIndex={draggingVertexIndex}
+          onVertexClick={(i) => selectVertex(selectedVertexIndex === i ? null : i)}
+          onVertexDragStart={(i) => setDraggingVertexIndex(i)}
+          onVertexDragMove={(objectId, i, x, y) => updateVertex(objectId, i, x, y)}
+          onVertexDragEnd={(objectId, i, x, y) => {
+            setDraggingVertexIndex(null);
+            updateVertex(objectId, i, x, y);
+          }}
+          onEdgeMidpointDragStart={(objectId, afterIndex, midX, midY) =>
+            insertVertex(objectId, afterIndex, midX, midY)
+          }
+          onEdgeMidpointDragMove={(objectId, afterIndex, x, y) =>
+            updateVertex(objectId, afterIndex + 1, x, y)
+          }
+          onEdgeMidpointDragEnd={(objectId, afterIndex, x, y) =>
+            updateVertex(objectId, afterIndex + 1, x, y)
+          }
+        />
 
-            return [
-              // Vertex handle
-              <Circle
-                key={`vh-${v.id}`}
-                x={v.x}
-                y={v.y}
-                radius={6 / scale}
-                fill={COLOR_VERTEX_FILL}
-                stroke={selectedVertexIndex === i || draggingVertexIndex === i ? COLOR_VERTEX_SELECTED_STROKE : accentColor}
-                strokeWidth={selectedVertexIndex === i || draggingVertexIndex === i ? 3 / scale : 2 / scale}
-                draggable
-                onClick={(e) => {
-                  e.cancelBubble = true;
-                  selectVertex(selectedVertexIndex === i ? null : i);
-                }}
-                onDragStart={() => setDraggingVertexIndex(i)}
-                onDragMove={(e) => {
-                  updateVertex(
-                    selectedObject.id,
-                    i,
-                    e.target.x(),
-                    e.target.y(),
-                  );
-                }}
-                onDragEnd={(e) => {
-                  setDraggingVertexIndex(null);
-                  updateVertex(
-                    selectedObject.id,
-                    i,
-                    e.target.x(),
-                    e.target.y(),
-                  );
-                }}
-              />,
-
-              // Edge midpoint handle — drag inserts a new vertex splitting the edge
-              <Circle
-                key={`em-${v.id}`}
-                x={midX}
-                y={midY}
-                radius={4 / scale}
-                fill="rgba(255,255,255,0.8)"
-                stroke="#94a3b8"
-                strokeWidth={1.5 / scale}
-                draggable
-                onDragStart={() => {
-                  // Immediately insert a vertex at the midpoint; drag continues to move it
-                  insertVertex(selectedObject.id, i, midX, midY);
-                }}
-                onDragMove={(e) => {
-                  // New vertex sits at index i+1 after insertion
-                  updateVertex(
-                    selectedObject.id,
-                    i + 1,
-                    e.target.x(),
-                    e.target.y(),
-                  );
-                }}
-                onDragEnd={(e) => {
-                  updateVertex(
-                    selectedObject.id,
-                    i + 1,
-                    e.target.x(),
-                    e.target.y(),
-                  );
-                }}
-              />,
-            ];
-          })}
-        </Layer>
-
-        {/* ── Layer 4: Drawing preview ────────────────────────────── */}
-        <Layer listening={false}>
-          {isDrawing && drawingPoints.length > 0 && (
-            <>
-              {/* Placed vertices line */}
-              <Line
-                points={drawingPoints.flatMap((p) => [p.x, p.y])}
-                stroke={drawColor}
-                strokeWidth={2 / scale}
-                closed={false}
-                dash={[6 / scale, 3 / scale]}
-              />
-
-              {/* Live preview edge (last point → cursor) */}
-              {mousePos &&
-                (() => {
-                  const lastPt = drawingPoints[drawingPoints.length - 1];
-                  if (!lastPt) return null;
-                  return (
-                    <Line
-                      points={[lastPt.x, lastPt.y, mousePos.x, mousePos.y]}
-                      stroke={activeTool === "addZone" ? "#93c5fd" : "#fca5a5"}
-                      strokeWidth={1.5 / scale}
-                      dash={[4 / scale, 4 / scale]}
-                    />
-                  );
-                })()}
-
-              {/* Vertex dots */}
-              {drawingPoints.map((p, idx) => (
-                <Circle
-                  key={`dp-${idx}`}
-                  x={p.x}
-                  y={p.y}
-                  radius={4 / scale}
-                  fill={drawColor}
-                />
-              ))}
-            </>
-          )}
-        </Layer>
+        <CanvasDrawingPreviewLayer
+          activeTool={activeTool}
+          drawingPoints={drawingPoints}
+          mousePos={mousePos}
+          scale={scale}
+        />
       </Stage>
     </div>
   );

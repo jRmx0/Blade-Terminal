@@ -15,3 +15,9 @@ export const COLOR_OBSTACLE_FILL = "rgba(239,68,68,0.18)";
 
 export const COLOR_VERTEX_FILL = "#ffffff";
 export const COLOR_VERTEX_SELECTED_STROKE = "#2b7fff";
+
+export const COLOR_EDGE_MIDPOINT_FILL = "rgba(255,255,255,0.8)";
+export const COLOR_EDGE_MIDPOINT_STROKE = "#94a3b8";
+
+export const COLOR_DRAWING_PREVIEW_ZONE_EDGE = "#93c5fd";
+export const COLOR_DRAWING_PREVIEW_OBSTACLE_EDGE = "#fca5a5";
