@@ -26,6 +26,7 @@ export default function CanvasEditor() {
   const isPanningRef = useRef(false);
   const panLastPosRef = useRef({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false); // for cursor only
+  const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
 
   const [size, setSize] = useState({ width: 0, height: 0 });
 
@@ -378,6 +379,7 @@ export default function CanvasEditor() {
                   e.cancelBubble = true;
                   selectVertex(selectedVertexIndex === i ? null : i);
                 }}
+                onDragStart={() => setDraggingVertexIndex(i)}
                 onDragMove={(e) => {
                   updateVertex(
                     selectedObject.id,
@@ -387,6 +389,7 @@ export default function CanvasEditor() {
                   );
                 }}
                 onDragEnd={(e) => {
+                  setDraggingVertexIndex(null);
                   updateVertex(
                     selectedObject.id,
                     i,
