@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { CanvasObject, CanvasVertex, ObjectCategory } from "@/features/canvas-editing/types/canvas";
+import type { CanvasObject, CanvasVertex, ObjectCategory, ObjectType } from "@/features/canvas-editing/types/canvas";
 
 let _idCounter = 1000;
 function nextId() {
@@ -14,6 +14,7 @@ const SAMPLE_OBJECTS: CanvasObject[] = [
     {
         id: "sample-zone-1",
         category: "zone",
+        type: "off-line",
         vertices: [
             makeVertex(120, 100),
             makeVertex(320, 100),
@@ -24,6 +25,7 @@ const SAMPLE_OBJECTS: CanvasObject[] = [
     {
         id: "sample-obstacle-1",
         category: "obstacle",
+        type: "off-line",
         vertices: [
             makeVertex(180, 150),
             makeVertex(260, 150),
@@ -37,7 +39,7 @@ interface CanvasObjectState {
     selectedObjectId: string | null;
     selectedVertexIndex: number | null;
 
-    addObject: (category: ObjectCategory, points: { x: number; y: number }[]) => void;
+    addObject: (category: ObjectCategory, points: { x: number; y: number }[], type: ObjectType) => void;
     deleteObject: (id: string) => void;
     selectObject: (id: string) => void;
     clearSelection: () => void;
@@ -52,13 +54,14 @@ export const useCanvasObjectStore = create<CanvasObjectState>((set, get) => ({
     selectedObjectId: null,
     selectedVertexIndex: null,
 
-    addObject: (category, points) =>
+    addObject: (category, points, type) =>
         set((state) => ({
             objects: [
                 ...state.objects,
                 {
                     id: nextId(),
                     category,
+                    type,
                     vertices: points.map((p) => makeVertex(p.x, p.y)),
                 },
             ],

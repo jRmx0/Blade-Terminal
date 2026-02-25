@@ -222,6 +222,7 @@ export default function CanvasEditor() {
         addObject(
           activeTool === "addZone" ? "zone" : "obstacle",
           drawingPoints,
+          "off-line",
         );
         setDrawingPoints([]);
         setMousePos(null);
