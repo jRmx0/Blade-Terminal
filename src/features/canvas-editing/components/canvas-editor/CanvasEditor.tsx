@@ -4,11 +4,19 @@ import type Konva from "konva";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
-
-const GRID_SPACING = 40;
-const ZOOM_MIN = 0.1;
-const ZOOM_MAX = 8;
-const ZOOM_FACTOR = 1.15;
+import {
+  GRID_SPACING,
+  ZOOM_MIN,
+  ZOOM_MAX,
+  ZOOM_FACTOR,
+  COLOR_GRID,
+  COLOR_ZONE_STROKE,
+  COLOR_ZONE_FILL,
+  COLOR_OBSTACLE_STROKE,
+  COLOR_OBSTACLE_FILL,
+  COLOR_VERTEX_FILL,
+  COLOR_VERTEX_SELECTED_STROKE,
+} from "@/config/canvas-editing/canvasConfig";
 
 export default function CanvasEditor() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -250,7 +258,7 @@ export default function CanvasEditor() {
         <Line
           key={`gv-${x}`}
           points={[x, worldTop - GRID_SPACING, x, worldBottom + GRID_SPACING]}
-          stroke="#e2e8f0"
+          stroke={COLOR_GRID}
           strokeWidth={1 / scale}
           listening={false}
         />,
@@ -261,7 +269,7 @@ export default function CanvasEditor() {
         <Line
           key={`gh-${y}`}
           points={[worldLeft - GRID_SPACING, y, worldRight + GRID_SPACING, y]}
-          stroke="#e2e8f0"
+          stroke={COLOR_GRID}
           strokeWidth={1 / scale}
           listening={false}
         />,
@@ -277,7 +285,8 @@ export default function CanvasEditor() {
       : null;
 
   const isDrawing = activeTool === "addZone" || activeTool === "addObstacle";
-  const drawColor = activeTool === "addZone" ? "#3b82f6" : "#ef4444";
+  const drawColor =
+    activeTool === "addZone" ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE;
 
   // ─── Render ───────────────────────────────────────────────────────
   return (
@@ -323,8 +332,8 @@ export default function CanvasEditor() {
                 key={obj.id}
                 points={obj.vertices.flatMap((v) => [v.x, v.y])}
                 closed
-                fill={isZone ? "rgba(59,130,246,0.18)" : "rgba(239,68,68,0.18)"}
-                stroke={isZone ? "#3b82f6" : "#ef4444"}
+                fill={isZone ? COLOR_ZONE_FILL : COLOR_OBSTACLE_FILL}
+                stroke={isZone ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE}
                 strokeWidth={(isSelected ? 2.5 : 1.5) / scale}
                 listening={canInteract}
                 hitStrokeWidth={8 / scale}
@@ -350,7 +359,9 @@ export default function CanvasEditor() {
             const midX = (v.x + next.x) / 2;
             const midY = (v.y + next.y) / 2;
             const accentColor =
-              selectedObject.category === "zone" ? "#3b82f6" : "#ef4444";
+              selectedObject.category === "zone"
+                ? COLOR_ZONE_STROKE
+                : COLOR_OBSTACLE_STROKE;
 
             return [
               // Vertex handle
@@ -359,9 +370,9 @@ export default function CanvasEditor() {
                 x={v.x}
                 y={v.y}
                 radius={6 / scale}
-                fill={selectedVertexIndex === i ? "#f59e0b" : "#ffffff"}
-                stroke={selectedVertexIndex === i ? "#d97706" : accentColor}
-                strokeWidth={2 / scale}
+                fill={COLOR_VERTEX_FILL}
+                stroke={selectedVertexIndex === i || draggingVertexIndex === i ? COLOR_VERTEX_SELECTED_STROKE : accentColor}
+                strokeWidth={selectedVertexIndex === i || draggingVertexIndex === i ? 3 / scale : 2 / scale}
                 draggable
                 onClick={(e) => {
                   e.cancelBubble = true;

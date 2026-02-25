@@ -1,8 +1,5 @@
 import { create } from "zustand";
-
-const ZOOM_STEP = 0.1;
-const ZOOM_MIN = 0.1;
-const ZOOM_MAX = 8;
+import { ZOOM_STEP, ZOOM_MIN, ZOOM_MAX } from "@/config/canvas-editing/canvasConfig";
 
 interface CanvasViewState {
     position: { x: number; y: number };
