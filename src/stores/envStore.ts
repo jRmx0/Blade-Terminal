@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { ENV_FORMAT, OBJECT_TYPE } from "@/config/enums";
 import type { Environment } from "@/types/envTypes";
-import { getSaveMode } from "@/stores/saveModeStore";
+import { getSaveMode, useSaveModeStore } from "@/stores/saveModeStore";
 import { saveEnvironment, getEnvironment, getNextEnvironmentId } from "@server/db/environments";
 
 interface EnvState {
@@ -29,8 +29,11 @@ const INITIAL_ENV: Environment = {
 };
 
 function autosave(env: Environment) {
-    if (getSaveMode() === "autosave") {
+    const mode = getSaveMode();
+    if (mode === "autosave") {
         saveEnvironment(env).catch(console.error);
+    } else if (mode === "manual") {
+        useSaveModeStore.getState().markDirty();
     }
 }
 
