@@ -1,7 +1,7 @@
 import type { Table } from "dexie";
 import { db } from "./db";
 import type { Environment } from "@/types/envTypes";
-import { WORKSPACE_NAME_MAX_LENGTH } from "@/config/db-ops/databaseConstraintsConfig";
+import { WORKSPACE_NAME_MAX_LENGTH, ENV_ID_PREFIX } from "@/config/db-ops/databaseConstraintsConfig";
 
 export const environmentsTable: Table<Environment, string> = db.table("environments");
 
@@ -32,9 +32,10 @@ export async function deleteEnvironment(id: string): Promise<void> {
 export async function getNextEnvironmentId(): Promise<string> {
     const all = await environmentsTable.toArray();
     const max = all.reduce((acc, env) => {
-        const match = env.id.match(/^env-(\d+)$/);
+        const prefix = ENV_ID_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const match = env.id.match(new RegExp(`^${prefix}(\\d+)$`));
         const n = match?.[1] ? parseInt(match[1], 10) : 0;
         return Math.max(acc, n);
     }, 0);
-    return `env-${max + 1}`;
+    return `${ENV_ID_PREFIX}${max + 1}`;
 }
