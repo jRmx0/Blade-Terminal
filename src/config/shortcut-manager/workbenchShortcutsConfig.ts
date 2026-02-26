@@ -37,4 +37,12 @@ export const WORKBENCH_SHORTCUTS = {
         keys: "D",
         shortcut: ["D"],
     } satisfies ShortcutBindingConfig,
+    "canvas.undo": {
+        keys: "Ctrl+Z",
+        shortcut: ["Ctrl", "Z"],
+    } satisfies ShortcutBindingConfig,
+    "canvas.redo": {
+        keys: "Ctrl+Y",
+        shortcut: ["Ctrl", "Y"],
+    } satisfies ShortcutBindingConfig,
 };
