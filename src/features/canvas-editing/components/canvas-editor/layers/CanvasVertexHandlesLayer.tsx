@@ -21,6 +21,7 @@ interface CanvasVertexHandlesLayerProps {
     onVertexDragMove: (objectId: string, index: number, x: number, y: number) => void;
     onVertexDragEnd: (objectId: string, index: number, x: number, y: number) => void;
     onEdgeMidpointMouseDown: (objectId: string, afterIndex: number, midX: number, midY: number) => void;
+    onHandleHoverChange: (hovered: boolean) => void;
 }
 
 export function CanvasVertexHandlesLayer({
@@ -34,6 +35,7 @@ export function CanvasVertexHandlesLayer({
     onVertexDragMove,
     onVertexDragEnd,
     onEdgeMidpointMouseDown,
+    onHandleHoverChange,
 }: CanvasVertexHandlesLayerProps) {
     const isLayerListening = activeTool === "select" && selectedObject !== null;
 
@@ -66,6 +68,8 @@ export function CanvasVertexHandlesLayer({
                         onDragStart={() => onVertexDragStart(i)}
                         onDragMove={(e) => onVertexDragMove(selectedObject.id, i, e.target.x(), e.target.y())}
                         onDragEnd={(e) => onVertexDragEnd(selectedObject.id, i, e.target.x(), e.target.y())}
+                        onMouseEnter={() => onHandleHoverChange(true)}
+                        onMouseLeave={() => onHandleHoverChange(false)}
                     />,
                     <Circle
                         key={`edge-midpoint-handle-${v.id}`}
@@ -79,6 +83,8 @@ export function CanvasVertexHandlesLayer({
                             e.cancelBubble = true;
                             onEdgeMidpointMouseDown(selectedObject.id, i, mid.x, mid.y);
                         }}
+                        onMouseEnter={() => onHandleHoverChange(true)}
+                        onMouseLeave={() => onHandleHoverChange(false)}
                     />,
                 ];
             })}

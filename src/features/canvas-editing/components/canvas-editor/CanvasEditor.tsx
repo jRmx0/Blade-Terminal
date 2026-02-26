@@ -18,6 +18,7 @@ import { CanvasDrawingPreviewLayer } from "@/features/canvas-editing/components/
 export default function CanvasEditor() {
   const stageRef = useRef<Konva.Stage>(null);
   const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
+  const [isHoveringHandle, setIsHoveringHandle] = useState(false);
 
   const { position, scale, gridVisible, setPosition, setScale } = useCanvasViewStore();
   const { activeTool, setActiveTool } = useCanvasToolStore();
@@ -113,11 +114,17 @@ export default function CanvasEditor() {
 
   const isDrawing = activeTool === "addZone" || activeTool === "addObstacle";
 
+  function resolveCursor() {
+    if (isPanning) return "grabbing";
+    if (isMidpointDragging || isHoveringHandle || draggingVertexIndex !== null || isDrawing) return "crosshair";
+    return "default";
+  }
+
   return (
     <div
       ref={containerRef}
       className="w-full h-full bg-white overflow-hidden outline-none"
-      style={{ cursor: isPanning || isMidpointDragging ? "grabbing" : isDrawing ? "crosshair" : "default" }}
+      style={{ cursor: resolveCursor() }}
       tabIndex={0}
       onKeyDown={handleKeyDown}
       onContextMenu={(e) => e.preventDefault()}
@@ -165,6 +172,7 @@ export default function CanvasEditor() {
             updateVertex(objectId, i, x, y);
           }}
           onEdgeMidpointMouseDown={handleMidpointMouseDown}
+          onHandleHoverChange={setIsHoveringHandle}
         />
 
         <CanvasDrawingPreviewLayer
