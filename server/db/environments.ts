@@ -1,6 +1,7 @@
 import type { Table } from "dexie";
 import { db } from "./db";
 import type { Environment } from "@/types/envTypes";
+import { WORKSPACE_NAME_MAX_LENGTH } from "@/config/db-ops/databaseConstraintsConfig";
 
 export const environmentsTable: Table<Environment, string> = db.table("environments");
 
@@ -13,7 +14,11 @@ export async function getAllEnvironments(): Promise<Environment[]> {
 }
 
 export async function saveEnvironment(env: Environment): Promise<void> {
-    await environmentsTable.put(env);
+    const record: Environment = {
+        ...env,
+        name: env.name.slice(0, WORKSPACE_NAME_MAX_LENGTH),
+    };
+    await environmentsTable.put(record);
 }
 
 export async function deleteEnvironment(id: string): Promise<void> {

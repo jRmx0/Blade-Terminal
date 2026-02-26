@@ -1,27 +1,23 @@
 import { useEffect, useRef, useState } from "react";
+import { useEnvStore } from "@/stores/envStore";
+import { WORKSPACE_NAME_MAX_LENGTH } from "@/config/db-ops/databaseConstraintsConfig";
 
-interface WorkspaceNameFieldProps {
-  initialName?: string;
-  onChange?: (name: string) => void;
-}
+export default function WorkspaceNameField() {
+  const name = useEnvStore((state) => state.env.name);
+  const setName = useEnvStore((state) => state.setName);
 
-export default function WorkspaceNameField({
-  initialName = "Untitled Workspace",
-  onChange,
-}: WorkspaceNameFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(initialName);
-  const [draft, setDraft] = useState(initialName);
+  const [draft, setDraft] = useState(name);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isEditing) {
+      setDraft(name);
       inputRef.current?.select();
     }
   }, [isEditing]);
 
   function startEditing() {
-    setDraft(name);
     setIsEditing(true);
   }
 
@@ -29,7 +25,6 @@ export default function WorkspaceNameField({
     const trimmed = draft.trim() || name;
     setName(trimmed);
     setIsEditing(false);
-    onChange?.(trimmed);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -45,7 +40,7 @@ export default function WorkspaceNameField({
         ref={inputRef}
         type="text"
         value={draft}
-        maxLength={100}
+        maxLength={WORKSPACE_NAME_MAX_LENGTH}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={handleKeyDown}
