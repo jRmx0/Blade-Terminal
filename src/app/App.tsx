@@ -1,7 +1,15 @@
+import { useEffect } from "react";
 import WorkbenchWindow from "@/layouts/workbench-window/WorkbenchWindow";
 import ShortcutManager from "@/components/ShortcutManager/ShortcutManager";
+import { useEnvStore } from "@/stores/envStore";
 
 export function App() {
+  const init = useEnvStore((state) => state.init);
+
+  useEffect(() => {
+    init();
+  }, []);
+
   return (
     <>
       <ShortcutManager />

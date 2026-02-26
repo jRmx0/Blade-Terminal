@@ -2,10 +2,12 @@ import { create } from "zustand";
 import { ENV_FORMAT, OBJECT_TYPE } from "@/config/enums";
 import type { Environment } from "@/types/envTypes";
 import { getSaveMode } from "@/stores/saveModeStore";
-import { saveEnvironment, getEnvironment } from "@server/db/environments";
+import { saveEnvironment, getEnvironment, getNextEnvironmentId } from "@server/db/environments";
 
 interface EnvState {
     env: Environment;
+    /** Resolves the correct id from IndexedDB and sets it on the initial env. Call once at app startup. */
+    init: () => Promise<void>;
     setName: (name: string) => void;
     incrementZoneCount: () => void;
     decrementZoneCount: () => void;
@@ -19,7 +21,7 @@ interface EnvState {
 
 const INITIAL_ENV: Environment = {
     id: "env-1",
-    name: "Default Environment",
+    name: "Untitled Environment",
     format: ENV_FORMAT.POLYGON,
     type: OBJECT_TYPE.OFFLINE,
     zoneObjectCount: 0,
@@ -34,6 +36,11 @@ function autosave(env: Environment) {
 
 export const useEnvStore = create<EnvState>((set, get) => ({
     env: INITIAL_ENV,
+
+    init: async () => {
+        const id = await getNextEnvironmentId();
+        set((state) => ({ env: { ...state.env, id } }));
+    },
 
     setName: (name) => {
         set((state) => {
