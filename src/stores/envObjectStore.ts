@@ -3,6 +3,13 @@ import { OBJECT_TYPE } from "@/config/enums";
 import type { ObjectCategory } from "@/config/enums";
 import type { EnvObject } from "@/types/envTypes";
 import { useEnvStore } from "@/stores/envStore";
+import { getSaveMode } from "@/stores/saveModeStore";
+import {
+    saveEnvObject,
+    saveEnvObjects,
+    deleteEnvObject as dbDeleteEnvObject,
+    getEnvObjectsByEnvironment,
+} from "@server/db/env-objects";
 
 let _idCounter = 0;
 function nextId() {
@@ -30,6 +37,12 @@ interface EnvObjectState {
      * vertexCount and area in sync without envObjectStore knowing about vertices.
      */
     updateCachedFields: (id: string, vertexCount: number, area: number) => void;
+
+    /** Manual save: persists all current objects to IndexedDB. */
+    save: () => Promise<void>;
+
+    /** Loads all objects for the given environment from IndexedDB. */
+    loadByEnvironment: (environmentId: string) => Promise<void>;
 }
 
 export const useEnvObjectStore = create<EnvObjectState>((set, get) => ({
@@ -51,6 +64,8 @@ export const useEnvObjectStore = create<EnvObjectState>((set, get) => ({
         if (category === "zone") incrementZoneCount();
         else incrementObstacleCount();
 
+        if (getSaveMode() === "autosave") saveEnvObject(newObject).catch(console.error);
+
         return id;
     },
 
@@ -62,13 +77,29 @@ export const useEnvObjectStore = create<EnvObjectState>((set, get) => ({
             const { decrementZoneCount, decrementObstacleCount } = useEnvStore.getState();
             if (obj.category === "zone") decrementZoneCount();
             else decrementObstacleCount();
+
+            if (getSaveMode() === "autosave") dbDeleteEnvObject(id).catch(console.error);
         }
     },
 
-    updateCachedFields: (id, vertexCount, area) =>
+    updateCachedFields: (id, vertexCount, area) => {
         set((state) => ({
             objects: state.objects.map((o) =>
                 o.id === id ? { ...o, vertexCount, area } : o
             ),
-        })),
+        }));
+        if (getSaveMode() === "autosave") {
+            const obj = get().objects.find((o) => o.id === id);
+            if (obj) saveEnvObject(obj).catch(console.error);
+        }
+    },
+
+    save: async () => {
+        await saveEnvObjects(get().objects);
+    },
+
+    loadByEnvironment: async (environmentId) => {
+        const objects = await getEnvObjectsByEnvironment(environmentId);
+        set({ objects });
+    },
 }));

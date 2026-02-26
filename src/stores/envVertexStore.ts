@@ -2,6 +2,13 @@ import { create } from "zustand";
 import type { EnvVertex } from "@/types/envTypes";
 import { useEnvObjectStore } from "@/stores/envObjectStore";
 import { computePolygonArea } from "@/utils/geometry";
+import { getSaveMode } from "@/stores/saveModeStore";
+import {
+    saveEnvVertex,
+    saveEnvVertices,
+    deleteEnvVertex as dbDeleteEnvVertex,
+    getEnvVerticesByObject,
+} from "@server/db/env-vertices";
 
 let _idCounter = 0;
 function nextId() {
@@ -61,6 +68,12 @@ interface EnvVertexState {
 
     /** Removes all vertices belonging to a given object. */
     deleteObjectVertices: (objectId: string) => void;
+
+    /** Manual save: persists all current vertices to IndexedDB. */
+    save: () => Promise<void>;
+
+    /** Loads all vertices for the given object IDs from IndexedDB. Merges with existing in-memory vertices. */
+    loadByObjectIds: (objectIds: string[]) => Promise<void>;
 }
 
 export const useEnvVertexStore = create<EnvVertexState>((set, get) => ({
@@ -85,6 +98,12 @@ export const useEnvVertexStore = create<EnvVertexState>((set, get) => ({
             return { vertices: [...updated, newVertex] };
         });
         syncObjectCache(objectId, get().vertices);
+        if (getSaveMode() === "autosave") {
+            const newVertex = get().vertices.find((v) => v.id === id)!;
+            const updatedTail = get().vertices.find((v) => v.nextVertexId === id);
+            const toSave = updatedTail ? [updatedTail, newVertex] : [newVertex];
+            saveEnvVertices(toSave).catch(console.error);
+        }
         return id;
     },
 
@@ -105,6 +124,10 @@ export const useEnvVertexStore = create<EnvVertexState>((set, get) => ({
             return { vertices: [...updated, newVertex] };
         });
         syncObjectCache(objectId, get().vertices);
+        if (getSaveMode() === "autosave") {
+            const affected = get().vertices.filter((v) => v.id === id || v.id === afterVertexId);
+            saveEnvVertices(affected).catch(console.error);
+        }
         return id;
     },
 
@@ -120,6 +143,11 @@ export const useEnvVertexStore = create<EnvVertexState>((set, get) => ({
             return { vertices: updated };
         });
         syncObjectCache(target.objectId, get().vertices);
+        if (getSaveMode() === "autosave") {
+            dbDeleteEnvVertex(id).catch(console.error);
+            const prev = get().vertices.find((v) => v.nextVertexId === target.nextVertexId);
+            if (prev) saveEnvVertex(prev).catch(console.error);
+        }
     },
 
     updateVertex: (id, x, y) => {
@@ -129,11 +157,28 @@ export const useEnvVertexStore = create<EnvVertexState>((set, get) => ({
             vertices: state.vertices.map((v) => v.id === id ? { ...v, x, y } : v),
         }));
         syncObjectCache(target.objectId, get().vertices);
+        if (getSaveMode() === "autosave") {
+            const updated = get().vertices.find((v) => v.id === id)!;
+            saveEnvVertex(updated).catch(console.error);
+        }
     },
 
     deleteObjectVertices: (objectId) => {
         set((state) => ({
             vertices: state.vertices.filter((v) => v.objectId !== objectId),
         }));
+    },
+
+    save: async () => {
+        await saveEnvVertices(get().vertices);
+    },
+
+    loadByObjectIds: async (objectIds) => {
+        const results = await Promise.all(objectIds.map((id) => getEnvVerticesByObject(id)));
+        const loaded = results.flat();
+        set((state) => {
+            const others = state.vertices.filter((v) => !objectIds.includes(v.objectId));
+            return { vertices: [...others, ...loaded] };
+        });
     },
 }));
