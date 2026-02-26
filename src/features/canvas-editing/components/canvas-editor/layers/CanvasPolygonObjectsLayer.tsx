@@ -38,7 +38,7 @@ export function CanvasPolygonObjectsLayer({
         <Layer>
             {sortedObjects.map((obj) => {
                 const isZone = obj.category === "zone";
-                const isSelected = obj.id === selectedObjectId;
+                const isSelected = obj.id === selectedObjectId && activeTool === "select";
 
                 return (
                     <Line

@@ -1,8 +1,10 @@
 import ToolBarButton from "@/components/tool-bar/ToolBarButton";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
+import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 
 export default function DeleteButton() {
   const { activeTool, setActiveTool } = useCanvasToolStore();
+  const clearSelection = useCanvasObjectStore((s) => s.clearSelection);
   const isActive = activeTool === "delete";
   const isDisabled = activeTool !== null && !isActive;
 
@@ -12,7 +14,10 @@ export default function DeleteButton() {
       icon="delete"
       isActive={isActive}
       isDisabled={isDisabled}
-      onClick={() => setActiveTool(isActive ? null : "delete")}
+      onClick={() => {
+        if (isActive) clearSelection();
+        setActiveTool(isActive ? null : "delete");
+      }}
     />
   );
 }
