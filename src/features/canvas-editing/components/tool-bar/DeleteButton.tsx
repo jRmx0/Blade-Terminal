@@ -32,7 +32,7 @@ export default function DeleteButton() {
 
   return (
     <ToolBarButton
-      title="Delete Objects"
+      title="Delete"
       shortcut={S["canvas.tool-delete"].shortcut}
       icon="delete"
       isActive={isActive}
