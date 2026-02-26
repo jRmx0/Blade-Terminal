@@ -5,11 +5,12 @@ interface UseCanvasKeyboardOptions {
     activeTool: ActiveTool | null;
     drawingPointsCount: number;
     selectedObjectId: string | null;
-    selectedVertexIndex: number | null;
+    selectedVertexIndices: number[];
     setActiveTool: (tool: ActiveTool | null) => void;
     clearSelection: () => void;
     deleteObject: (id: string) => void;
     deleteVertex: (objectId: string, vertexIndex: number) => void;
+    deleteVertices: (objectId: string, indices: number[]) => void;
     cancelDrawing: () => void;
 }
 
@@ -17,11 +18,12 @@ export function useCanvasKeyboard({
     activeTool,
     drawingPointsCount,
     selectedObjectId,
-    selectedVertexIndex,
+    selectedVertexIndices,
     setActiveTool,
     clearSelection,
     deleteObject,
     deleteVertex,
+    deleteVertices,
     cancelDrawing,
 }: UseCanvasKeyboardOptions) {
     const handleKeyDown = useCallback(
@@ -35,7 +37,7 @@ export function useCanvasKeyboard({
                         setActiveTool(null);
                     }
                 } else if (activeTool === "select") {
-                    if (selectedObjectId !== null || selectedVertexIndex !== null) {
+                    if (selectedObjectId !== null || selectedVertexIndices.length > 0) {
                         clearSelection();
                     } else {
                         setActiveTool(null);
@@ -47,8 +49,8 @@ export function useCanvasKeyboard({
             }
 
             if (e.key === "Delete" && activeTool === "select") {
-                if (selectedObjectId !== null && selectedVertexIndex !== null) {
-                    deleteVertex(selectedObjectId, selectedVertexIndex);
+                if (selectedObjectId !== null && selectedVertexIndices.length > 0) {
+                    deleteVertices(selectedObjectId, selectedVertexIndices);
                 } else if (selectedObjectId !== null) {
                     deleteObject(selectedObjectId);
                 }
@@ -58,11 +60,12 @@ export function useCanvasKeyboard({
             activeTool,
             drawingPointsCount,
             selectedObjectId,
-            selectedVertexIndex,
+            selectedVertexIndices,
             setActiveTool,
             clearSelection,
             deleteObject,
             deleteVertex,
+            deleteVertices,
             cancelDrawing,
         ],
     );

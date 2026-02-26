@@ -37,22 +37,24 @@ const SAMPLE_OBJECTS: CanvasObject[] = [
 interface CanvasObjectState {
     objects: CanvasObject[];
     selectedObjectId: string | null;
-    selectedVertexIndex: number | null;
+    selectedVertexIndices: number[];
 
     addObject: (category: ObjectCategory, points: { x: number; y: number }[], type: ObjectType) => void;
     deleteObject: (id: string) => void;
     selectObject: (id: string) => void;
     clearSelection: () => void;
     selectVertex: (index: number | null) => void;
+    toggleVertexSelection: (index: number, ctrl: boolean) => void;
     updateVertex: (objectId: string, vertexIndex: number, x: number, y: number) => void;
     deleteVertex: (objectId: string, vertexIndex: number) => void;
+    deleteVertices: (objectId: string, indices: number[]) => void;
     insertVertex: (objectId: string, afterIndex: number, x: number, y: number) => string;
 }
 
 export const useCanvasObjectStore = create<CanvasObjectState>((set, get) => ({
     objects: SAMPLE_OBJECTS,
     selectedObjectId: null,
-    selectedVertexIndex: null,
+    selectedVertexIndices: [],
 
     addObject: (category, points, type) =>
         set((state) => ({
@@ -71,17 +73,35 @@ export const useCanvasObjectStore = create<CanvasObjectState>((set, get) => ({
         set((state) => ({
             objects: state.objects.filter((o) => o.id !== id),
             selectedObjectId: state.selectedObjectId === id ? null : state.selectedObjectId,
-            selectedVertexIndex:
-                state.selectedObjectId === id ? null : state.selectedVertexIndex,
+            selectedVertexIndices:
+                state.selectedObjectId === id ? [] : state.selectedVertexIndices,
         })),
 
     selectObject: (id) =>
-        set({ selectedObjectId: id, selectedVertexIndex: null }),
+        set({ selectedObjectId: id, selectedVertexIndices: [] }),
 
     clearSelection: () =>
-        set({ selectedObjectId: null, selectedVertexIndex: null }),
+        set({ selectedObjectId: null, selectedVertexIndices: [] }),
 
-    selectVertex: (index) => set({ selectedVertexIndex: index }),
+    selectVertex: (index) =>
+        set({ selectedVertexIndices: index !== null ? [index] : [] }),
+
+    toggleVertexSelection: (index, ctrl) =>
+        set((state) => {
+            if (!ctrl) {
+                // Without Ctrl: deselect all, select only this one (unless it was the only selected)
+                const alreadySoleSelected =
+                    state.selectedVertexIndices.length === 1 && state.selectedVertexIndices[0] === index;
+                return { selectedVertexIndices: alreadySoleSelected ? [] : [index] };
+            }
+            // With Ctrl: toggle this vertex in the selection
+            const alreadySelected = state.selectedVertexIndices.includes(index);
+            return {
+                selectedVertexIndices: alreadySelected
+                    ? state.selectedVertexIndices.filter((i) => i !== index)
+                    : [...state.selectedVertexIndices, index],
+            };
+        }),
 
     updateVertex: (objectId, vertexIndex, x, y) =>
         set((state) => ({
@@ -98,13 +118,28 @@ export const useCanvasObjectStore = create<CanvasObjectState>((set, get) => ({
         set((state) => ({
             objects: state.objects.map((o) => {
                 if (o.id !== objectId) return o;
-                if (o.vertices.length <= 3) return o; // guard: minimum 3 vertices
+                if (o.vertices.length <= 3) return o;
                 return {
                     ...o,
                     vertices: o.vertices.filter((_, i) => i !== vertexIndex),
                 };
             }),
-            selectedVertexIndex: null,
+            selectedVertexIndices: [],
+        })),
+
+    deleteVertices: (objectId, indices) =>
+        set((state) => ({
+            objects: state.objects.map((o) => {
+                if (o.id !== objectId) return o;
+                const remaining = o.vertices.length - indices.length;
+                if (remaining < 3) return o; // guard: minimum 3 vertices
+                const indexSet = new Set(indices);
+                return {
+                    ...o,
+                    vertices: o.vertices.filter((_, i) => !indexSet.has(i)),
+                };
+            }),
+            selectedVertexIndices: [],
         })),
 
     insertVertex: (objectId, afterIndex, x, y) => {
@@ -120,7 +155,7 @@ export const useCanvasObjectStore = create<CanvasObjectState>((set, get) => ({
                 ];
                 return { ...o, vertices };
             }),
-            selectedVertexIndex: afterIndex + 1,
+            selectedVertexIndices: [afterIndex + 1],
         }));
         return newId;
     },

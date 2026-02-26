@@ -14,9 +14,9 @@ interface CanvasVertexHandlesLayerProps {
     selectedObject: CanvasObject | null;
     activeTool: ActiveTool | null;
     scale: number;
-    selectedVertexIndex: number | null;
+    selectedVertexIndices: number[];
     draggingVertexIndex: number | null;
-    onVertexClick: (index: number) => void;
+    onVertexClick: (index: number, ctrl: boolean) => void;
     onVertexDragStart: (index: number) => void;
     onVertexDragMove: (objectId: string, index: number, x: number, y: number) => void;
     onVertexDragEnd: (objectId: string, index: number, x: number, y: number) => void;
@@ -28,7 +28,7 @@ export function CanvasVertexHandlesLayer({
     selectedObject,
     activeTool,
     scale,
-    selectedVertexIndex,
+    selectedVertexIndices,
     draggingVertexIndex,
     onVertexClick,
     onVertexDragStart,
@@ -49,7 +49,7 @@ export function CanvasVertexHandlesLayer({
 
                 const accentColor =
                     selectedObject.category === "zone" ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE;
-                const isActiveVertex = selectedVertexIndex === i || draggingVertexIndex === i;
+                const isActiveVertex = selectedVertexIndices.includes(i) || draggingVertexIndex === i;
 
                 return [
                     <Circle
@@ -63,7 +63,7 @@ export function CanvasVertexHandlesLayer({
                         draggable
                         onClick={(e) => {
                             e.cancelBubble = true;
-                            onVertexClick(i);
+                            onVertexClick(i, e.evt.ctrlKey || e.evt.metaKey);
                         }}
                         onDragStart={() => onVertexDragStart(i)}
                         onDragMove={(e) => onVertexDragMove(selectedObject.id, i, e.target.x(), e.target.y())}

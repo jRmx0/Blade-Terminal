@@ -26,14 +26,16 @@ export default function CanvasEditor() {
   const {
     objects,
     selectedObjectId,
-    selectedVertexIndex,
+    selectedVertexIndices,
     addObject,
     deleteObject,
     selectObject,
     clearSelection,
     selectVertex,
+    toggleVertexSelection,
     updateVertex,
     deleteVertex,
+    deleteVertices,
     insertVertex,
   } = useCanvasObjectStore();
 
@@ -70,11 +72,12 @@ export default function CanvasEditor() {
     activeTool,
     drawingPointsCount: drawingPoints.length,
     selectedObjectId,
-    selectedVertexIndex,
+    selectedVertexIndices,
     setActiveTool,
     clearSelection,
     deleteObject,
     deleteVertex,
+    deleteVertices,
     cancelDrawing,
   });
 
@@ -167,9 +170,9 @@ export default function CanvasEditor() {
           selectedObject={selectedObject}
           activeTool={activeTool}
           scale={scale}
-          selectedVertexIndex={selectedVertexIndex}
+          selectedVertexIndices={selectedVertexIndices}
           draggingVertexIndex={draggingVertexIndex}
-          onVertexClick={(i) => selectVertex(selectedVertexIndex === i ? null : i)}
+          onVertexClick={(i, ctrl) => toggleVertexSelection(i, ctrl)}
           onVertexDragStart={(i) => setDraggingVertexIndex(i)}
           onVertexDragMove={(objectId, i, x, y) => updateVertex(objectId, i, x, y)}
           onVertexDragEnd={(objectId, i, x, y) => {
