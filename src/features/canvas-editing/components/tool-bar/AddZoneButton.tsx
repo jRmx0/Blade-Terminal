@@ -1,8 +1,10 @@
 import ToolBarButton from "@/components/tool-bar/ToolBarButton";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
+import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
 
 export default function AddZoneButton() {
   const { activeTool, setActiveTool } = useCanvasToolStore();
+  const cancelDrawing = useCanvasDrawingStore((s) => s.cancelDrawing);
   const isActive = activeTool === "addZone";
   const isDisabled = activeTool !== null && !isActive;
 
@@ -12,7 +14,10 @@ export default function AddZoneButton() {
       icon="rectangle_add"
       isActive={isActive}
       isDisabled={isDisabled}
-      onClick={() => setActiveTool(isActive ? null : "addZone")}
+      onClick={() => {
+        if (isActive) cancelDrawing();
+        setActiveTool(isActive ? null : "addZone");
+      }}
     />
   );
 }

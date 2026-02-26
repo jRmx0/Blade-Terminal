@@ -1,8 +1,10 @@
 import ToolBarButton from "@/components/tool-bar/ToolBarButton";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
+import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
 
 export default function AddObstacleButton() {
   const { activeTool, setActiveTool } = useCanvasToolStore();
+  const cancelDrawing = useCanvasDrawingStore((s) => s.cancelDrawing);
   const isActive = activeTool === "addObstacle";
   const isDisabled = activeTool !== null && !isActive;
 
@@ -12,7 +14,10 @@ export default function AddObstacleButton() {
       icon="add_triangle"
       isActive={isActive}
       isDisabled={isDisabled}
-      onClick={() => setActiveTool(isActive ? null : "addObstacle")}
+      onClick={() => {
+        if (isActive) cancelDrawing();
+        setActiveTool(isActive ? null : "addObstacle");
+      }}
     />
   );
 }

@@ -3,6 +3,9 @@ import { WORKBENCH_SHORTCUTS as S } from "@/config/shortcut-manager/workbenchSho
 import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
 import { useUiInspectorPanelStore } from "@/features/ui-manager/stores/uiInspectorPanelStore";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
+import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
+import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
 
 /**
  * Registers all shortcuts that are scoped to the Workbench.
@@ -25,4 +28,45 @@ export function useWorkbenchShortcuts() {
     useShortcut("canvas.reset-view", S["canvas.reset-view"].keys, () =>
         useCanvasViewStore.getState().resetView(),
     );
+
+    useShortcut("canvas.tool-select", S["canvas.tool-select"].keys, () => {
+        const { activeTool, setActiveTool } = useCanvasToolStore.getState();
+        const { clearSelection } = useCanvasObjectStore.getState();
+        useCanvasDrawingStore.getState().cancelDrawing();
+        clearSelection();
+        setActiveTool(activeTool === "select" ? null : "select");
+    });
+
+    useShortcut("canvas.tool-add-zone", S["canvas.tool-add-zone"].keys, () => {
+        const { activeTool, setActiveTool } = useCanvasToolStore.getState();
+        const { clearSelection } = useCanvasObjectStore.getState();
+        useCanvasDrawingStore.getState().cancelDrawing();
+        clearSelection();
+        setActiveTool(activeTool === "addZone" ? null : "addZone");
+    });
+
+    useShortcut("canvas.tool-add-obstacle", S["canvas.tool-add-obstacle"].keys, () => {
+        const { activeTool, setActiveTool } = useCanvasToolStore.getState();
+        const { clearSelection } = useCanvasObjectStore.getState();
+        useCanvasDrawingStore.getState().cancelDrawing();
+        clearSelection();
+        setActiveTool(activeTool === "addObstacle" ? null : "addObstacle");
+    });
+
+    useShortcut("canvas.tool-delete", S["canvas.tool-delete"].keys, () => {
+        const { activeTool, setActiveTool } = useCanvasToolStore.getState();
+        const { selectedObjectId, selectedVertexIndex, clearSelection, deleteObject, deleteVertex } =
+            useCanvasObjectStore.getState();
+        if (activeTool === "select" && selectedObjectId !== null) {
+            if (selectedVertexIndex !== null) {
+                deleteVertex(selectedObjectId, selectedVertexIndex);
+            } else {
+                deleteObject(selectedObjectId);
+            }
+            return;
+        }
+        useCanvasDrawingStore.getState().cancelDrawing();
+        clearSelection();
+        setActiveTool(activeTool === "delete" ? null : "delete");
+    });
 }

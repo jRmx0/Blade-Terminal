@@ -21,4 +21,20 @@ export const WORKBENCH_SHORTCUTS = {
         keys: "Ctrl+Shift+H",
         shortcut: ["Ctrl", "Shift", "H"],
     } satisfies ShortcutBindingConfig,
+    "canvas.tool-select": {
+        keys: "S",
+        shortcut: ["S"],
+    } satisfies ShortcutBindingConfig,
+    "canvas.tool-add-zone": {
+        keys: "Z",
+        shortcut: ["Z"],
+    } satisfies ShortcutBindingConfig,
+    "canvas.tool-add-obstacle": {
+        keys: "O",
+        shortcut: ["O"],
+    } satisfies ShortcutBindingConfig,
+    "canvas.tool-delete": {
+        keys: "D",
+        shortcut: ["D"],
+    } satisfies ShortcutBindingConfig,
 };

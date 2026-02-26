@@ -1,6 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import type Konva from "konva";
 import type { ActiveTool, ObjectType } from "@/features/canvas-editing/types/canvas";
+import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
 
 interface UseCanvasDrawingOptions {
     activeTool: ActiveTool | null;
@@ -19,8 +20,13 @@ export function useCanvasDrawing({
     clearSelection,
     addObject,
 }: UseCanvasDrawingOptions) {
-    const [drawingPoints, setDrawingPoints] = useState<{ x: number; y: number }[]>([]);
-    const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+    const {
+        drawingPoints,
+        mousePos,
+        appendDrawingPoint,
+        setMousePos,
+        cancelDrawing,
+    } = useCanvasDrawingStore();
 
     const updateDrawingMousePosition = useCallback(
         (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -30,12 +36,12 @@ export function useCanvasDrawing({
             const ptr = stage.getRelativePointerPosition();
             if (ptr) setMousePos({ x: ptr.x, y: ptr.y });
         },
-        [activeTool, stageRef],
+        [activeTool, stageRef, setMousePos],
     );
 
     const clearDrawingMousePosition = useCallback(() => {
         setMousePos(null);
-    }, []);
+    }, [setMousePos]);
 
     const handleStageClick = useCallback(
         (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -47,7 +53,7 @@ export function useCanvasDrawing({
                 if (e.target !== stage) return;
                 const ptr = stage.getRelativePointerPosition();
                 if (!ptr) return;
-                setDrawingPoints((prev) => [...prev, { x: ptr.x, y: ptr.y }]);
+                appendDrawingPoint({ x: ptr.x, y: ptr.y });
                 return;
             }
 
@@ -55,7 +61,7 @@ export function useCanvasDrawing({
                 clearSelection();
             }
         },
-        [activeTool, stageRef, clearSelection],
+        [activeTool, stageRef, clearSelection, appendDrawingPoint],
     );
 
     const handlePolygonClose = useCallback(
@@ -70,17 +76,11 @@ export function useCanvasDrawing({
                     drawingPoints,
                     "off-line",
                 );
-                setDrawingPoints([]);
-                setMousePos(null);
+                cancelDrawing();
             }
         },
-        [activeTool, drawingPoints, addObject],
+        [activeTool, drawingPoints, addObject, cancelDrawing],
     );
-
-    const cancelDrawing = useCallback(() => {
-        setDrawingPoints([]);
-        setMousePos(null);
-    }, []);
 
     return {
         drawingPoints,
