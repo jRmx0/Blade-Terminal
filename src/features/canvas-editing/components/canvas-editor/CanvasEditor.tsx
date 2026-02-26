@@ -19,6 +19,7 @@ export default function CanvasEditor() {
   const stageRef = useRef<Konva.Stage>(null);
   const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
   const [isHoveringHandle, setIsHoveringHandle] = useState(false);
+  const [isHoveringObject, setIsHoveringObject] = useState<string | null>(null);
 
   const { position, scale, gridVisible, setPosition, setScale } = useCanvasViewStore();
   const { activeTool, setActiveTool } = useCanvasToolStore();
@@ -118,6 +119,8 @@ export default function CanvasEditor() {
   function resolveCursor() {
     if (isPanning) return "grabbing";
     if (isMidpointDragging || isHoveringHandle || draggingVertexIndex !== null || isDrawing) return "crosshair";
+    if (isHoveringObject && activeTool === "select" && isHoveringObject !== selectedObjectId) return "crosshair";
+    if (isHoveringObject && activeTool === "delete") return "crosshair";
     return "default";
   }
 
@@ -157,6 +160,7 @@ export default function CanvasEditor() {
           scale={scale}
           onSelectObject={selectObject}
           onDeleteObject={deleteObject}
+          onObjectHoverChange={setIsHoveringObject}
         />
 
         <CanvasVertexHandlesLayer

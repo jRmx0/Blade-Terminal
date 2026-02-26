@@ -17,6 +17,7 @@ interface CanvasPolygonObjectsLayerProps {
     scale: number;
     onSelectObject: (id: string) => void;
     onDeleteObject: (id: string) => void;
+    onObjectHoverChange: (hoveredId: string | null) => void;
 }
 
 export function CanvasPolygonObjectsLayer({
@@ -26,6 +27,7 @@ export function CanvasPolygonObjectsLayer({
     scale,
     onSelectObject,
     onDeleteObject,
+    onObjectHoverChange,
 }: CanvasPolygonObjectsLayerProps) {
     const canInteract = activeTool === "select" || activeTool === "delete";
 
@@ -58,6 +60,8 @@ export function CanvasPolygonObjectsLayer({
                                 onSelectObject(obj.id);
                             }
                         }}
+                        onMouseEnter={() => canInteract && onObjectHoverChange(obj.id)}
+                        onMouseLeave={() => onObjectHoverChange(null)}
                     />
                 );
             })}
