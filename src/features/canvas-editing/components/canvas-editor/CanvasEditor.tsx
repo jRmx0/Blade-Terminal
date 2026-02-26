@@ -62,7 +62,7 @@ export default function CanvasEditor() {
     handleMidpointMouseDown,
     handleMidpointDragMouseMove,
     handleMidpointDragEnd,
-  } = useCanvasMidpointDrag({ stageRef, insertVertex, updateVertex });
+  } = useCanvasMidpointDrag({ stageRef, insertVertex, updateVertex, selectVertex });
 
   const { handleKeyDown } = useCanvasKeyboard({
     activeTool,

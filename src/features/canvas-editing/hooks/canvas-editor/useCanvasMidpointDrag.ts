@@ -5,6 +5,7 @@ interface UseCanvasMidpointDragOptions {
     stageRef: React.RefObject<Konva.Stage | null>;
     insertVertex: (objectId: string, afterIndex: number, x: number, y: number) => void;
     updateVertex: (objectId: string, vertexIndex: number, x: number, y: number) => void;
+    selectVertex: (index: number | null) => void;
 }
 
 interface MidpointDragState {
@@ -16,6 +17,7 @@ export function useCanvasMidpointDrag({
     stageRef,
     insertVertex,
     updateVertex,
+    selectVertex,
 }: UseCanvasMidpointDragOptions) {
     const [midpointDragState, setMidpointDragState] = useState<MidpointDragState | null>(null);
 
@@ -43,7 +45,8 @@ export function useCanvasMidpointDrag({
     /** Ends the midpoint drag on mouseup or mouseleave. */
     const handleMidpointDragEnd = useCallback(() => {
         setMidpointDragState(null);
-    }, []);
+        selectVertex(null);
+    }, [selectVertex]);
 
     return {
         isMidpointDragging: midpointDragState !== null,
