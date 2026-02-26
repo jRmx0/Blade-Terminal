@@ -8,6 +8,7 @@ interface UseCanvasKeyboardOptions {
     selectedVertexIndex: number | null;
     setActiveTool: (tool: ActiveTool | null) => void;
     clearSelection: () => void;
+    deleteObject: (id: string) => void;
     deleteVertex: (objectId: string, vertexIndex: number) => void;
     cancelDrawing: () => void;
 }
@@ -19,6 +20,7 @@ export function useCanvasKeyboard({
     selectedVertexIndex,
     setActiveTool,
     clearSelection,
+    deleteObject,
     deleteVertex,
     cancelDrawing,
 }: UseCanvasKeyboardOptions) {
@@ -47,6 +49,8 @@ export function useCanvasKeyboard({
             if (e.key === "Delete" && activeTool === "select") {
                 if (selectedObjectId !== null && selectedVertexIndex !== null) {
                     deleteVertex(selectedObjectId, selectedVertexIndex);
+                } else if (selectedObjectId !== null) {
+                    deleteObject(selectedObjectId);
                 }
             }
         },
@@ -57,6 +61,7 @@ export function useCanvasKeyboard({
             selectedVertexIndex,
             setActiveTool,
             clearSelection,
+            deleteObject,
             deleteVertex,
             cancelDrawing,
         ],

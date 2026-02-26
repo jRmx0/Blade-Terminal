@@ -4,9 +4,30 @@ import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObj
 
 export default function DeleteButton() {
   const { activeTool, setActiveTool } = useCanvasToolStore();
-  const clearSelection = useCanvasObjectStore((s) => s.clearSelection);
+  const { selectedObjectId, selectedVertexIndex, clearSelection, deleteObject, deleteVertex } =
+    useCanvasObjectStore();
+
   const isActive = activeTool === "delete";
-  const isDisabled = activeTool !== null && !isActive;
+  const hasSelection = selectedObjectId !== null;
+  const isInSelectModeWithSelection = activeTool === "select" && hasSelection;
+  const isDisabled = activeTool !== null && !isActive && !isInSelectModeWithSelection;
+
+  function handleClick() {
+    if (isActive) {
+      clearSelection();
+      setActiveTool(null);
+      return;
+    }
+    if (isInSelectModeWithSelection) {
+      if (selectedVertexIndex !== null) {
+        deleteVertex(selectedObjectId!, selectedVertexIndex);
+      } else {
+        deleteObject(selectedObjectId!);
+      }
+      return;
+    }
+    setActiveTool("delete");
+  }
 
   return (
     <ToolBarButton
@@ -14,10 +35,7 @@ export default function DeleteButton() {
       icon="delete"
       isActive={isActive}
       isDisabled={isDisabled}
-      onClick={() => {
-        if (isActive) clearSelection();
-        setActiveTool(isActive ? null : "delete");
-      }}
+      onClick={handleClick}
     />
   );
 }

@@ -44,9 +44,10 @@ export function useCanvasMidpointDrag({
 
     /** Ends the midpoint drag on mouseup or mouseleave. */
     const handleMidpointDragEnd = useCallback(() => {
+        if (!midpointDragState) return;
         setMidpointDragState(null);
         selectVertex(null);
-    }, [selectVertex]);
+    }, [midpointDragState, selectVertex]);
 
     return {
         isMidpointDragging: midpointDragState !== null,
