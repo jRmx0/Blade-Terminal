@@ -1,6 +1,7 @@
 interface ToolBarButtonProps {
   title: string;
   icon: string;
+  shortcut?: string[];
   isActive?: boolean;
   isDisabled?: boolean;
   onClick?: () => void;
@@ -9,14 +10,16 @@ interface ToolBarButtonProps {
 export default function ToolBarButton({
   title,
   icon,
+  shortcut,
   isActive = false,
   isDisabled = false,
   onClick,
 }: ToolBarButtonProps) {
+  const resolvedTitle = shortcut ? `${title} (${shortcut.join("+")})` : title;
   return (
     <button
       type="button"
-      title={title}
+      title={resolvedTitle}
       onClick={onClick}
       disabled={isDisabled}
       className={
