@@ -7,7 +7,7 @@ import ClearCppButton from "@/features/coverage-planning/components/tool-bar/Cle
 import OpenJobListButton from "@/features/job-runner/components/tool-bar/OpenJobListButton";
 import UiInspectorButton from "@/features/ui-manager/components/tool-bar/UiInspectorButton";
 import ToolSeparator from "@/components/tool-bar/ToolBarSeparator";
-import EditButton from "@/features/canvas-editing/components/tool-bar/EditButton";
+import EditButton from "@/features/canvas-editing/components/tool-bar/SelectButton";
 
 export default function ToolBar() {
   return (

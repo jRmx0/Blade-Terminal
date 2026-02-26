@@ -11,7 +11,7 @@ export default function EditButton() {
 
   return (
     <ToolBarButton
-      title="Select / Edit"
+      title="Select"
       shortcut={S["canvas.tool-select"].shortcut}
       icon="edit_square"
       isActive={isActive}
