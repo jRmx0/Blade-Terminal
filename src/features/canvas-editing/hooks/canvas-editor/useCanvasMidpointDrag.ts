@@ -26,9 +26,10 @@ export function useCanvasMidpointDrag({
         (objectId: string, afterIndex: number, midX: number, midY: number) => {
             beginBatch();
             insertVertex(objectId, afterIndex, midX, midY);
+            selectVertex(afterIndex + 1);
             setMidpointDragState({ objectId, vertexIndex: afterIndex + 1 });
         },
-        [insertVertex],
+        [insertVertex, selectVertex],
     );
 
     /** Drives the newly inserted vertex position during a midpoint drag. */
