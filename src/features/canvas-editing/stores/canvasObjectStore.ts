@@ -36,15 +36,9 @@ const SAMPLE_OBJECTS: CanvasObject[] = [
 
 interface CanvasObjectState {
     objects: CanvasObject[];
-    selectedObjectId: string | null;
-    selectedVertexIndices: number[];
 
     addObject: (category: ObjectCategory, points: { x: number; y: number }[], type: ObjectType) => void;
     deleteObject: (id: string) => void;
-    selectObject: (id: string) => void;
-    clearSelection: () => void;
-    selectVertex: (index: number | null) => void;
-    toggleVertexSelection: (index: number, ctrl: boolean) => void;
     updateVertex: (objectId: string, vertexIndex: number, x: number, y: number) => void;
     moveObject: (objectId: string, dx: number, dy: number) => void;
     deleteVertex: (objectId: string, vertexIndex: number) => void;
@@ -52,10 +46,8 @@ interface CanvasObjectState {
     insertVertex: (objectId: string, afterIndex: number, x: number, y: number) => string;
 }
 
-export const useCanvasObjectStore = create<CanvasObjectState>((set, get) => ({
+export const useCanvasObjectStore = create<CanvasObjectState>()((set) => ({
     objects: SAMPLE_OBJECTS,
-    selectedObjectId: null,
-    selectedVertexIndices: [],
 
     addObject: (category, points, type) =>
         set((state) => ({
@@ -73,36 +65,7 @@ export const useCanvasObjectStore = create<CanvasObjectState>((set, get) => ({
     deleteObject: (id) =>
         set((state) => ({
             objects: state.objects.filter((o) => o.id !== id),
-            selectedObjectId: state.selectedObjectId === id ? null : state.selectedObjectId,
-            selectedVertexIndices:
-                state.selectedObjectId === id ? [] : state.selectedVertexIndices,
         })),
-
-    selectObject: (id) =>
-        set({ selectedObjectId: id, selectedVertexIndices: [] }),
-
-    clearSelection: () =>
-        set({ selectedObjectId: null, selectedVertexIndices: [] }),
-
-    selectVertex: (index) =>
-        set({ selectedVertexIndices: index !== null ? [index] : [] }),
-
-    toggleVertexSelection: (index, ctrl) =>
-        set((state) => {
-            if (!ctrl) {
-                // Without Ctrl: deselect all, select only this one (unless it was the only selected)
-                const alreadySoleSelected =
-                    state.selectedVertexIndices.length === 1 && state.selectedVertexIndices[0] === index;
-                return { selectedVertexIndices: alreadySoleSelected ? [] : [index] };
-            }
-            // With Ctrl: toggle this vertex in the selection
-            const alreadySelected = state.selectedVertexIndices.includes(index);
-            return {
-                selectedVertexIndices: alreadySelected
-                    ? state.selectedVertexIndices.filter((i) => i !== index)
-                    : [...state.selectedVertexIndices, index],
-            };
-        }),
 
     updateVertex: (objectId, vertexIndex, x, y) =>
         set((state) => ({
@@ -136,7 +99,6 @@ export const useCanvasObjectStore = create<CanvasObjectState>((set, get) => ({
                     vertices: o.vertices.filter((_, i) => i !== vertexIndex),
                 };
             }),
-            selectedVertexIndices: [],
         })),
 
     deleteVertices: (objectId, indices) =>
@@ -144,14 +106,13 @@ export const useCanvasObjectStore = create<CanvasObjectState>((set, get) => ({
             objects: state.objects.map((o) => {
                 if (o.id !== objectId) return o;
                 const remaining = o.vertices.length - indices.length;
-                if (remaining < 3) return o; // guard: minimum 3 vertices
+                if (remaining < 3) return o;
                 const indexSet = new Set(indices);
                 return {
                     ...o,
                     vertices: o.vertices.filter((_, i) => !indexSet.has(i)),
                 };
             }),
-            selectedVertexIndices: [],
         })),
 
     insertVertex: (objectId, afterIndex, x, y) => {
@@ -167,7 +128,6 @@ export const useCanvasObjectStore = create<CanvasObjectState>((set, get) => ({
                 ];
                 return { ...o, vertices };
             }),
-            selectedVertexIndices: [afterIndex + 1],
         }));
         return newId;
     },

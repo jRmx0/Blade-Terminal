@@ -55,8 +55,10 @@ export function useCanvasKeyboard({
             if (e.key === "Delete" && activeTool === "select") {
                 if (selectedObjectId !== null && selectedVertexIndices.length > 0) {
                     deleteVertices(selectedObjectId, selectedVertexIndices);
+                    selectVertex(null);
                 } else if (selectedObjectId !== null) {
                     deleteObject(selectedObjectId);
+                    clearSelection();
                 }
             }
         },

@@ -5,6 +5,8 @@ import { useUiInspectorPanelStore } from "@/features/ui-manager/stores/uiInspect
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
+import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
 
 /**
@@ -31,7 +33,7 @@ export function useWorkbenchShortcuts() {
 
     useShortcut("canvas.tool-select", S["canvas.tool-select"].keys, () => {
         const { activeTool, setActiveTool } = useCanvasToolStore.getState();
-        const { clearSelection } = useCanvasObjectStore.getState();
+        const { clearSelection } = useCanvasSelectionStore.getState();
         useCanvasDrawingStore.getState().cancelDrawing();
         clearSelection();
         setActiveTool(activeTool === "select" ? null : "select");
@@ -39,7 +41,7 @@ export function useWorkbenchShortcuts() {
 
     useShortcut("canvas.tool-add-zone", S["canvas.tool-add-zone"].keys, () => {
         const { activeTool, setActiveTool } = useCanvasToolStore.getState();
-        const { clearSelection } = useCanvasObjectStore.getState();
+        const { clearSelection } = useCanvasSelectionStore.getState();
         useCanvasDrawingStore.getState().cancelDrawing();
         clearSelection();
         setActiveTool(activeTool === "addZone" ? null : "addZone");
@@ -47,7 +49,7 @@ export function useWorkbenchShortcuts() {
 
     useShortcut("canvas.tool-add-obstacle", S["canvas.tool-add-obstacle"].keys, () => {
         const { activeTool, setActiveTool } = useCanvasToolStore.getState();
-        const { clearSelection } = useCanvasObjectStore.getState();
+        const { clearSelection } = useCanvasSelectionStore.getState();
         useCanvasDrawingStore.getState().cancelDrawing();
         clearSelection();
         setActiveTool(activeTool === "addObstacle" ? null : "addObstacle");
@@ -55,13 +57,16 @@ export function useWorkbenchShortcuts() {
 
     useShortcut("canvas.tool-delete", S["canvas.tool-delete"].keys, () => {
         const { activeTool, setActiveTool } = useCanvasToolStore.getState();
-        const { selectedObjectId, selectedVertexIndices, clearSelection, deleteObject, deleteVertices } =
-            useCanvasObjectStore.getState();
+        const { selectedObjectId, selectedVertexIndices, clearSelection, selectVertex } =
+            useCanvasSelectionStore.getState();
+        const { deleteObject, deleteVertices } = useCanvasObjectStore.getState();
         if (activeTool === "select" && selectedObjectId !== null) {
             if (selectedVertexIndices.length > 0) {
                 deleteVertices(selectedObjectId, selectedVertexIndices);
+                selectVertex(null);
             } else {
                 deleteObject(selectedObjectId);
+                clearSelection();
             }
             return;
         }
@@ -69,4 +74,12 @@ export function useWorkbenchShortcuts() {
         clearSelection();
         setActiveTool(activeTool === "delete" ? null : "delete");
     });
+
+    useShortcut("canvas.undo", S["canvas.undo"].keys, () =>
+        useCanvasHistoryStore.getState().undo(),
+    );
+
+    useShortcut("canvas.redo", S["canvas.redo"].keys, () =>
+        useCanvasHistoryStore.getState().redo(),
+    );
 }

@@ -1,11 +1,11 @@
 import ToolBarButton from "@/components/tool-bar/ToolBarButton";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
-import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { WORKBENCH_SHORTCUTS as S } from "@/config/shortcut-manager/workbenchShortcutsConfig";
 
 export default function EditButton() {
   const { activeTool, setActiveTool } = useCanvasToolStore();
-  const clearSelection = useCanvasObjectStore((s) => s.clearSelection);
+  const clearSelection = useCanvasSelectionStore((s) => s.clearSelection);
   const isActive = activeTool === "select";
   const isDisabled = activeTool !== null && !isActive;
 

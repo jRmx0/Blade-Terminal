@@ -4,6 +4,8 @@ import type Konva from "konva";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
+import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useCanvasSize } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasSize";
 import { useCanvasPanning } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasPanning";
 import { useCanvasZoom } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasZoom";
@@ -26,20 +28,23 @@ export default function CanvasEditor() {
   const { activeTool, setActiveTool } = useCanvasToolStore();
   const {
     objects,
-    selectedObjectId,
-    selectedVertexIndices,
     addObject,
     deleteObject,
-    selectObject,
-    clearSelection,
-    selectVertex,
-    toggleVertexSelection,
     updateVertex,
     moveObject,
     deleteVertex,
     deleteVertices,
     insertVertex,
   } = useCanvasObjectStore();
+
+  const {
+    selectedObjectId,
+    selectedVertexIndices,
+    selectObject,
+    clearSelection,
+    selectVertex,
+    toggleVertexSelection,
+  } = useCanvasSelectionStore();
 
   const { containerRef, size } = useCanvasSize();
 
@@ -167,7 +172,10 @@ export default function CanvasEditor() {
           activeTool={activeTool}
           scale={scale}
           onSelectObject={selectObject}
-          onDeleteObject={deleteObject}
+          onDeleteObject={(id) => {
+            deleteObject(id);
+            if (selectedObjectId === id) clearSelection();
+          }}
           onObjectHoverChange={setIsHoveringObject}
           onObjectDragStart={(id) => {
             if (id !== selectedObjectId) {
@@ -191,11 +199,15 @@ export default function CanvasEditor() {
           selectedVertexIndices={selectedVertexIndices}
           draggingVertexIndex={draggingVertexIndex}
           onVertexClick={(i, ctrl) => toggleVertexSelection(i, ctrl)}
-          onVertexDragStart={(i) => setDraggingVertexIndex(i)}
+          onVertexDragStart={(i) => {
+            setDraggingVertexIndex(i);
+            useCanvasHistoryStore.getState().beginBatch();
+          }}
           onVertexDragMove={(objectId, i, x, y) => updateVertex(objectId, i, x, y)}
           onVertexDragEnd={(objectId, i, x, y) => {
             setDraggingVertexIndex(null);
             updateVertex(objectId, i, x, y);
+            useCanvasHistoryStore.getState().endBatch();
           }}
           onEdgeMidpointMouseDown={handleMidpointMouseDown}
           onHandleHoverChange={setIsHoveringHandle}
