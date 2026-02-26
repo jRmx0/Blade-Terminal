@@ -46,6 +46,7 @@ interface CanvasObjectState {
     selectVertex: (index: number | null) => void;
     toggleVertexSelection: (index: number, ctrl: boolean) => void;
     updateVertex: (objectId: string, vertexIndex: number, x: number, y: number) => void;
+    moveObject: (objectId: string, dx: number, dy: number) => void;
     deleteVertex: (objectId: string, vertexIndex: number) => void;
     deleteVertices: (objectId: string, indices: number[]) => void;
     insertVertex: (objectId: string, afterIndex: number, x: number, y: number) => string;
@@ -111,6 +112,17 @@ export const useCanvasObjectStore = create<CanvasObjectState>((set, get) => ({
                     i === vertexIndex ? { ...v, x, y } : v
                 );
                 return { ...o, vertices };
+            }),
+        })),
+
+    moveObject: (objectId, dx, dy) =>
+        set((state) => ({
+            objects: state.objects.map((o) => {
+                if (o.id !== objectId) return o;
+                return {
+                    ...o,
+                    vertices: o.vertices.map((v) => ({ ...v, x: v.x + dx, y: v.y + dy })),
+                };
             }),
         })),
 

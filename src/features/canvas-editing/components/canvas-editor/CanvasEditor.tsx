@@ -18,6 +18,7 @@ import { CanvasDrawingPreviewLayer } from "@/features/canvas-editing/components/
 export default function CanvasEditor() {
   const stageRef = useRef<Konva.Stage>(null);
   const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
+  const [movingObjectId, setMovingObjectId] = useState<string | null>(null);
   const [isHoveringHandle, setIsHoveringHandle] = useState(false);
   const [isHoveringObject, setIsHoveringObject] = useState<string | null>(null);
 
@@ -34,6 +35,7 @@ export default function CanvasEditor() {
     selectVertex,
     toggleVertexSelection,
     updateVertex,
+    moveObject,
     deleteVertex,
     deleteVertices,
     insertVertex,
@@ -114,7 +116,7 @@ export default function CanvasEditor() {
   }, [handlePanMouseLeave, clearDrawingMousePosition, handleMidpointDragEnd]);
 
   const selectedObject =
-    activeTool === "select" && selectedObjectId
+    activeTool === "select" && selectedObjectId && movingObjectId !== selectedObjectId
       ? (objects.find((o) => o.id === selectedObjectId) ?? null)
       : null;
 
@@ -122,8 +124,9 @@ export default function CanvasEditor() {
 
   function resolveCursor() {
     if (isPanning) return "grabbing";
+    if (movingObjectId !== null) return "grabbing";
     if (isMidpointDragging || isHoveringHandle || draggingVertexIndex !== null || isDrawing) return "crosshair";
-    if (isHoveringObject && activeTool === "select" && isHoveringObject !== selectedObjectId) return "crosshair";
+    if (isHoveringObject !== null && activeTool === "select") return "move";
     if (isHoveringObject && activeTool === "delete") return "crosshair";
     return "default";
   }
@@ -160,11 +163,25 @@ export default function CanvasEditor() {
         <CanvasPolygonObjectsLayer
           objects={objects}
           selectedObjectId={selectedObjectId}
+          movingObjectId={movingObjectId}
           activeTool={activeTool}
           scale={scale}
           onSelectObject={selectObject}
           onDeleteObject={deleteObject}
           onObjectHoverChange={setIsHoveringObject}
+          onObjectDragStart={(id) => {
+            if (id !== selectedObjectId) {
+              clearSelection();
+              selectObject(id);
+            } else {
+              selectVertex(null);
+            }
+            setMovingObjectId(id);
+          }}
+          onObjectDragEnd={(id, dx, dy) => {
+            moveObject(id, dx, dy);
+            setMovingObjectId(null);
+          }}
         />
 
         <CanvasVertexHandlesLayer
