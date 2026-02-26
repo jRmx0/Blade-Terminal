@@ -75,6 +75,7 @@ export default function CanvasEditor() {
     selectedVertexIndices,
     setActiveTool,
     clearSelection,
+    selectVertex,
     deleteObject,
     deleteVertex,
     deleteVertices,

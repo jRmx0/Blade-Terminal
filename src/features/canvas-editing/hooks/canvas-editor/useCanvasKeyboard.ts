@@ -8,6 +8,7 @@ interface UseCanvasKeyboardOptions {
     selectedVertexIndices: number[];
     setActiveTool: (tool: ActiveTool | null) => void;
     clearSelection: () => void;
+    selectVertex: (index: number | null) => void;
     deleteObject: (id: string) => void;
     deleteVertex: (objectId: string, vertexIndex: number) => void;
     deleteVertices: (objectId: string, indices: number[]) => void;
@@ -21,6 +22,7 @@ export function useCanvasKeyboard({
     selectedVertexIndices,
     setActiveTool,
     clearSelection,
+    selectVertex,
     deleteObject,
     deleteVertex,
     deleteVertices,
@@ -37,7 +39,9 @@ export function useCanvasKeyboard({
                         setActiveTool(null);
                     }
                 } else if (activeTool === "select") {
-                    if (selectedObjectId !== null || selectedVertexIndices.length > 0) {
+                    if (selectedVertexIndices.length > 0) {
+                        selectVertex(null); // deselect vertices, keep object selected
+                    } else if (selectedObjectId !== null) {
                         clearSelection();
                     } else {
                         setActiveTool(null);
@@ -63,6 +67,7 @@ export function useCanvasKeyboard({
             selectedVertexIndices,
             setActiveTool,
             clearSelection,
+            selectVertex,
             deleteObject,
             deleteVertex,
             deleteVertices,
