@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import type Konva from "konva";
-import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
+import { beginBatch, endBatch } from "@/features/canvas-editing/stores/canvasHistoryStore";
 
 interface UseCanvasMidpointDragOptions {
     stageRef: React.RefObject<Konva.Stage | null>;
@@ -24,7 +24,7 @@ export function useCanvasMidpointDrag({
 
     const handleMidpointMouseDown = useCallback(
         (objectId: string, afterIndex: number, midX: number, midY: number) => {
-            useCanvasHistoryStore.getState().beginBatch();
+            beginBatch();
             insertVertex(objectId, afterIndex, midX, midY);
             setMidpointDragState({ objectId, vertexIndex: afterIndex + 1 });
         },
@@ -49,7 +49,7 @@ export function useCanvasMidpointDrag({
         if (!midpointDragState) return;
         setMidpointDragState(null);
         selectVertex(null);
-        useCanvasHistoryStore.getState().endBatch();
+        endBatch();
     }, [midpointDragState, selectVertex]);
 
     return {

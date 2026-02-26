@@ -4,7 +4,7 @@ import type Konva from "konva";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
-import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
+import { beginBatch, endBatch } from "@/features/canvas-editing/stores/canvasHistoryStore";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useCanvasSize } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasSize";
 import { useCanvasPanning } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasPanning";
@@ -201,13 +201,13 @@ export default function CanvasEditor() {
           onVertexClick={(i, ctrl) => toggleVertexSelection(i, ctrl)}
           onVertexDragStart={(i) => {
             setDraggingVertexIndex(i);
-            useCanvasHistoryStore.getState().beginBatch();
+            beginBatch();
           }}
           onVertexDragMove={(objectId, i, x, y) => updateVertex(objectId, i, x, y)}
           onVertexDragEnd={(objectId, i, x, y) => {
             setDraggingVertexIndex(null);
             updateVertex(objectId, i, x, y);
-            useCanvasHistoryStore.getState().endBatch();
+            endBatch();
           }}
           onEdgeMidpointMouseDown={handleMidpointMouseDown}
           onHandleHoverChange={setIsHoveringHandle}
