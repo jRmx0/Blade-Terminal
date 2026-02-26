@@ -74,7 +74,7 @@ export function useCanvasDrawing({
                 addObject(
                     activeTool === "addZone" ? "zone" : "obstacle",
                     drawingPoints,
-                    "off-line",
+                    "offline",
                 );
                 cancelDrawing();
             }

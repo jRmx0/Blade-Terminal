@@ -1,23 +1,14 @@
 import { create } from "zustand";
-
-// TODO: Remove mock data - replace with real type options from backend
-const MOCK_OBJECT_TYPES = [
-    { value: "", label: "" },
-    { value: "offline", label: "Off-Line" },
-    { value: "online", label: "On-Line" },
-];
+import { type ObjectType, OBJECT_TYPE, OBJECT_TYPE_OPTIONS } from "@/config/enums";
 
 interface ObjectTypeState {
-    selectedObjectType: string;
-    setSelectedObjectType: (type: string) => void;
-    objectTypes: Array<{ value: string; label: string }>;
+    selectedObjectType: ObjectType;
+    setSelectedObjectType: (type: ObjectType) => void;
+    objectTypes: typeof OBJECT_TYPE_OPTIONS;
 }
 
 export const useObjectTypeStore = create<ObjectTypeState>((set) => ({
-    selectedObjectType: "offline",
-    objectTypes: MOCK_OBJECT_TYPES,
-    setSelectedObjectType: (type: string) =>
-        set(() => ({
-            selectedObjectType: type,
-        })),
+    selectedObjectType: OBJECT_TYPE.OFFLINE,
+    objectTypes: OBJECT_TYPE_OPTIONS,
+    setSelectedObjectType: (type: ObjectType) => set({ selectedObjectType: type }),
 }));

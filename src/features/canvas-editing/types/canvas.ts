@@ -1,6 +1,6 @@
-export type ObjectCategory = "zone" | "obstacle";
+import type { ObjectCategory, ObjectType } from "@/config/enums";
 
-export type ObjectType = "on-line" | "off-line";
+export type { ObjectCategory, ObjectType };
 
 export type ActiveTool = "select" | "addZone" | "addObstacle" | "delete";
 

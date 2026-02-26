@@ -14,7 +14,7 @@ const SAMPLE_OBJECTS: CanvasObject[] = [
     {
         id: "sample-zone-1",
         category: "zone",
-        type: "off-line",
+        type: "offline",
         vertices: [
             makeVertex(120, 100),
             makeVertex(320, 100),
@@ -25,7 +25,7 @@ const SAMPLE_OBJECTS: CanvasObject[] = [
     {
         id: "sample-obstacle-1",
         category: "obstacle",
-        type: "off-line",
+        type: "offline",
         vertices: [
             makeVertex(180, 150),
             makeVertex(260, 150),

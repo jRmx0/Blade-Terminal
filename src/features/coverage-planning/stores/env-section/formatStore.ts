@@ -1,23 +1,14 @@
 import { create } from "zustand";
-
-// TODO: Remove mock data - replace with real format options from backend
-const MOCK_FORMATS = [
-    { value: "", label: "" },
-    { value: "polygon", label: "Polygon" },
-    { value: "grid", label: "Grid" },
-];
+import { type EnvFormat, ENV_FORMAT, ENV_FORMAT_OPTIONS } from "@/config/enums";
 
 interface FormatState {
-    selectedFormat: string;
-    setSelectedFormat: (format: string) => void;
-    formats: Array<{ value: string; label: string }>;
+    selectedFormat: EnvFormat;
+    setSelectedFormat: (format: EnvFormat) => void;
+    formats: typeof ENV_FORMAT_OPTIONS;
 }
 
 export const useFormatStore = create<FormatState>((set) => ({
-    selectedFormat: "polygon",
-    formats: MOCK_FORMATS,
-    setSelectedFormat: (format: string) =>
-        set(() => ({
-            selectedFormat: format,
-        })),
+    selectedFormat: ENV_FORMAT.POLYGON,
+    formats: ENV_FORMAT_OPTIONS,
+    setSelectedFormat: (format: EnvFormat) => set({ selectedFormat: format }),
 }));
