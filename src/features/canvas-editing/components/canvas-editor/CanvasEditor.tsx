@@ -54,7 +54,7 @@ export default function CanvasEditor() {
     handlePanMouseMove,
     handlePanMouseUp,
     handlePanMouseLeave,
-  } = useCanvasPanning(setPosition);
+  } = useCanvasPanning(stageRef, setPosition);
 
   const { handleWheel } = useCanvasZoom(stageRef, setScale, setPosition);
 
