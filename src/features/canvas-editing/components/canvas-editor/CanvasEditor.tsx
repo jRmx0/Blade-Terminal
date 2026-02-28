@@ -11,6 +11,7 @@ import { useCanvasPanning } from "@/features/canvas-editing/hooks/canvas-editor/
 import { useCanvasZoom } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasZoom";
 import { useCanvasDrawing } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasDrawing";
 import { useCanvasMidpointDrag } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasMidpointDrag";
+import { useCanvasVertexDrag } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasVertexDrag";
 import { useCanvasKeyboard } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasKeyboard";
 import { CanvasGridLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasGridLayer";
 import { CanvasPolygonObjectsLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasPolygonObjectsLayer";
@@ -74,6 +75,8 @@ export default function CanvasEditor() {
     handleMidpointDragMouseMove,
     handleMidpointDragEnd,
   } = useCanvasMidpointDrag({ stageRef, insertVertex, updateVertex, selectVertex });
+
+  const { handleVertexDragMove, handleVertexDragEnd } = useCanvasVertexDrag(updateVertex);
 
   const { handleKeyDown } = useCanvasKeyboard({
     activeTool,
@@ -203,10 +206,10 @@ export default function CanvasEditor() {
             setDraggingVertexIndex(i);
             beginBatch();
           }}
-          onVertexDragMove={(objectId, i, x, y) => updateVertex(objectId, i, x, y)}
+          onVertexDragMove={handleVertexDragMove}
           onVertexDragEnd={(objectId, i, x, y) => {
             setDraggingVertexIndex(null);
-            updateVertex(objectId, i, x, y);
+            handleVertexDragEnd(objectId, i, x, y);
             endBatch();
           }}
           onEdgeMidpointMouseDown={handleMidpointMouseDown}
