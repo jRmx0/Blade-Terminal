@@ -11,7 +11,7 @@ export default function PickerModalItem({ label, subLabel, onOpen, onDelete }: P
             <button
                 type="button"
                 onClick={onOpen}
-                className="flex-1 flex flex-col min-w-0 px-5 py-3 text-left"
+                className="flex-1 flex flex-col min-w-0 px-5 py-3 text-left cursor-pointer"
             >
                 <span className="text-sm font-medium text-gray-800 truncate">
                     {label}
