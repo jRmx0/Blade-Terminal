@@ -5,6 +5,7 @@ import InspectorPanel from "./inspector-panel/InspectorPanel";
 import StatusBar from "./status-bar/StatusBar";
 import CanvasEditorLayout from "./canvas-editor/CanvasEditorLayout";
 import { useWorkbenchShortcuts } from "@/hooks/shortcut-manager/useWorkbenchShortcuts";
+import WorkspacePickerModal from "@/features/workspace-manager/components/workspace-picker-modal/WorkspacePickerModal";
 
 export default function WorkbenchWindow() {
   useWorkbenchShortcuts();
@@ -19,6 +20,7 @@ export default function WorkbenchWindow() {
         <InspectorPanel />
       </div>
       <StatusBar />
+      <WorkspacePickerModal />
     </div>
   );
 }
