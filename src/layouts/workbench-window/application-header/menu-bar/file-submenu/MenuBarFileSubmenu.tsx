@@ -30,9 +30,10 @@ export default function MenuBarFileSubmenu() {
       <WorkspaceImportButton />
       <WorkspaceExportButton />
 
-      <MenuSeparator />
+      {/* TODO: Home screen */}
+      {/* <MenuSeparator />
 
-      <WorkspaceCloseButton />
+      <WorkspaceCloseButton /> */}
     </div>
   );
 }
