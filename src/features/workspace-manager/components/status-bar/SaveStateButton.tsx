@@ -1,15 +1,24 @@
+import { useEnvStore } from "@/stores/envStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
 
 export default function SaveStateButton() {
+    const save = useEnvStore((state) => state.save);
     const mode = useSaveModeStore((state) => state.mode);
     const isDirty = useSaveModeStore((state) => state.isDirty);
-    const markSaved = useSaveModeStore((state) => state.markSaved);
+    const { setMode, markSaved } = useSaveModeStore();
 
     const isSaved = mode === "autosave" || (mode === "manual" && !isDirty);
     const tooltip = isSaved ? "Saved" : "Unsaved changes. Click here to save";
 
     function handleClick() {
-        if (!isSaved) markSaved();
+        if (!isSaved) {
+            save()
+                .then(() => {
+                    if (mode === "session") setMode("manual");
+                    markSaved();
+                })
+                .catch(console.error);
+        }
     }
 
     return (
