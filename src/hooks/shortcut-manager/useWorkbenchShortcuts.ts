@@ -1,6 +1,8 @@
 import { useShortcut } from "./useShortcut";
 import { WORKBENCH_SHORTCUTS as S } from "@/config/shortcut-manager/workbenchShortcutsConfig";
 import { useWorkspacePickerStore } from "@/features/workspace-manager/stores/workspacePickerStore";
+import { useEnvStore } from "@/stores/envStore";
+import { useSaveModeStore } from "@/stores/saveModeStore";
 import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
 import { useUiInspectorPanelStore } from "@/features/ui-manager/stores/uiInspectorPanelStore";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
@@ -19,6 +21,17 @@ export function useWorkbenchShortcuts() {
     useShortcut("workspace.open", S["workspace.open"].keys, () =>
         useWorkspacePickerStore.getState().open(),
     );
+
+    useShortcut("workspace.save", S["workspace.save"].keys, () => {
+        const { save } = useEnvStore.getState();
+        const { mode, setMode, markSaved } = useSaveModeStore.getState();
+        save()
+            .then(() => {
+                if (mode === "session") setMode("manual");
+                markSaved();
+            })
+            .catch(console.error);
+    });
 
     useShortcut("controls.toggle", S["controls.toggle"].keys, () =>
         useUiControlsPanelStore
