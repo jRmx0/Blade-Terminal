@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { shortcutRegistry } from "@/hooks/shortcut-manager/useShortcut";
+import { shortcutRegistry, shortcutBlockers } from "@/hooks/shortcut-manager/useShortcut";
 import { matchesShortcut } from "@/utils/parseShortcut";
 import { useMenuStore } from "@/stores/menuStore";
 
@@ -10,6 +10,8 @@ import { useMenuStore } from "@/stores/menuStore";
 export default function ShortcutManager() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (shortcutBlockers.size > 0) return;
+
       for (const [, entry] of shortcutRegistry) {
         if (!matchesShortcut(e, entry.parsed)) continue;
 

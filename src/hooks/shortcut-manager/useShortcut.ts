@@ -14,6 +14,21 @@ export interface ShortcutEntry {
 export const shortcutRegistry = new Map<string, ShortcutEntry>();
 
 /**
+ * Active blocker tokens. Shortcuts are suppressed while this Set is non-empty.
+ * Use blockShortcuts / unblockShortcuts to manage tokens imperatively, or
+ * use the useShortcutsBlocked hook for a React lifecycle-aware version.
+ */
+export const shortcutBlockers = new Set<string>();
+
+export function blockShortcuts(token: string) {
+    shortcutBlockers.add(token);
+}
+
+export function unblockShortcuts(token: string) {
+    shortcutBlockers.delete(token);
+}
+
+/**
  * Register a keyboard shortcut from a React component.
  *
  * @param id      Stable unique identifier (e.g. "inspector.toggle"). Prevents duplicate registrations.
