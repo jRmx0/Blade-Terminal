@@ -1,5 +1,6 @@
 import { useShortcut } from "./useShortcut";
 import { WORKBENCH_SHORTCUTS as S } from "@/config/shortcut-manager/workbenchShortcutsConfig";
+import { useWorkspacePickerStore } from "@/features/workspace-manager/stores/workspacePickerStore";
 import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
 import { useUiInspectorPanelStore } from "@/features/ui-manager/stores/uiInspectorPanelStore";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
@@ -15,6 +16,10 @@ import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDr
  * as long as the workbench is rendered and automatically cleaned up on unmount.
  */
 export function useWorkbenchShortcuts() {
+    useShortcut("workspace.open", S["workspace.open"].keys, () =>
+        useWorkspacePickerStore.getState().open(),
+    );
+
     useShortcut("controls.toggle", S["controls.toggle"].keys, () =>
         useUiControlsPanelStore
             .getState()

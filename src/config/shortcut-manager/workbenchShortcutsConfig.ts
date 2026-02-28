@@ -3,6 +3,10 @@ import type { ShortcutBindingConfig, ShortcutDisplayConfig } from "@/types/short
 export type { ShortcutBindingConfig, ShortcutDisplayConfig };
 
 export const WORKBENCH_SHORTCUTS = {
+    "workspace.open": {
+        keys: "Ctrl+O",
+        shortcut: ["Ctrl", "O"],
+    } satisfies ShortcutBindingConfig,
     "controls.toggle": {
         keys: "Ctrl+Alt+C",
         shortcut: ["Ctrl", "Alt", "C"],
