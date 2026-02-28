@@ -1,5 +1,6 @@
 import { useObjectTypeStore } from "@/features/coverage-planning/stores/env-section/objectTypeStore";
 import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
+import type { ObjectType } from "@/config/db-ops/enums";
 
 export default function TypeSelection() {
   const selectedType = useObjectTypeStore((state) => state.selectedObjectType);
@@ -12,7 +13,7 @@ export default function TypeSelection() {
     <ControlsPanelSectionSelect
       label="Type"
       value={selectedType}
-      onChange={setSelectedType}
+      onChange={(value) => setSelectedType(value as ObjectType)}
       options={types}
     />
   );
