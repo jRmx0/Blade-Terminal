@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { type EnvFormat, ENV_FORMAT, ENV_FORMAT_OPTIONS } from "@/config/enums";
+import { type EnvFormat, ENV_FORMAT, ENV_FORMAT_OPTIONS } from "@/config/db-ops/enums";
 
 interface FormatState {
     selectedFormat: EnvFormat;

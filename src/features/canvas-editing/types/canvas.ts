@@ -1,4 +1,4 @@
-import type { ObjectCategory, ObjectType } from "@/config/enums";
+import type { ObjectCategory, ObjectType } from "@/config/db-ops/enums";
 
 export type { ObjectCategory, ObjectType };
 

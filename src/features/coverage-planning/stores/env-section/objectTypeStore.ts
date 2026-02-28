@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { type ObjectType, OBJECT_TYPE, OBJECT_TYPE_OPTIONS } from "@/config/enums";
+import { type ObjectType, OBJECT_TYPE, OBJECT_TYPE_OPTIONS } from "@/config/db-ops/enums";
 
 interface ObjectTypeState {
     selectedObjectType: ObjectType;

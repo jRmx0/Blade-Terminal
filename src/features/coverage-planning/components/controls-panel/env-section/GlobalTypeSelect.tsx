@@ -1,6 +1,6 @@
 import { useGlobalTypeStore } from "@/features/coverage-planning/stores/env-section/globalTypeStore";
 import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
-import type { GlobalType } from "@/config/enums";
+import type { GlobalType } from "@/config/db-ops/enums";
 
 export default function GlobalTypeSelection() {
   const selectedGlobalType = useGlobalTypeStore(

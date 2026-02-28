@@ -1,4 +1,4 @@
-import type { EnvFormat, ObjectCategory, ObjectType } from "@/config/enums";
+import type { EnvFormat, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
 
 export interface Environment {
     id: string;

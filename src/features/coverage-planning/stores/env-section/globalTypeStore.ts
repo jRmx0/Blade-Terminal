@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { type GlobalType, GLOBAL_TYPE, GLOBAL_TYPE_OPTIONS } from "@/config/enums";
+import { type GlobalType, GLOBAL_TYPE, GLOBAL_TYPE_OPTIONS } from "@/config/db-ops/enums";
 
 interface GlobalTypeState {
     selectedGlobalType: GlobalType;

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ENV_FORMAT, OBJECT_TYPE } from "@/config/enums";
+import { ENV_FORMAT, OBJECT_TYPE } from "@/config/db-ops/enums";
 import type { Environment } from "@/types/envTypes";
 import { getSaveMode, useSaveModeStore } from "@/stores/saveModeStore";
 import { saveEnvironment, getEnvironment, getNextEnvironmentId } from "@server/db/environments";

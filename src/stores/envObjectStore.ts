@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { OBJECT_TYPE } from "@/config/enums";
-import type { ObjectCategory } from "@/config/enums";
+import { OBJECT_TYPE } from "@/config/db-ops/enums";
+import type { ObjectCategory } from "@/config/db-ops/enums";
 import type { EnvObject } from "@/types/envTypes";
 import { useEnvStore } from "@/stores/envStore";
 import { getSaveMode } from "@/stores/saveModeStore";
