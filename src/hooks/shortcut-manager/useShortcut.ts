@@ -20,8 +20,26 @@ export const shortcutRegistry = new Map<string, ShortcutEntry>();
  */
 export const shortcutBlockers = new Set<string>();
 
+/**
+ * Callbacks invoked when the first blocker is added (shortcuts go from enabled → disabled).
+ * Register with addShortcutBlockListener / removeShortcutBlockListener.
+ */
+const shortcutBlockListeners = new Set<() => void>();
+
+export function addShortcutBlockListener(fn: () => void) {
+    shortcutBlockListeners.add(fn);
+}
+
+export function removeShortcutBlockListener(fn: () => void) {
+    shortcutBlockListeners.delete(fn);
+}
+
 export function blockShortcuts(token: string) {
+    const wasEmpty = shortcutBlockers.size === 0;
     shortcutBlockers.add(token);
+    if (wasEmpty) {
+        for (const fn of shortcutBlockListeners) fn();
+    }
 }
 
 export function unblockShortcuts(token: string) {

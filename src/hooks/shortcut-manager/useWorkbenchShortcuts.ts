@@ -1,4 +1,5 @@
-import { useShortcut } from "./useShortcut";
+import { useEffect } from "react";
+import { useShortcut, addShortcutBlockListener, removeShortcutBlockListener } from "./useShortcut";
 import { WORKBENCH_SHORTCUTS as S } from "@/config/shortcut-manager/workbenchShortcutsConfig";
 import { useWorkspacePickerStore } from "@/features/workspace-manager/stores/workspacePickerStore";
 import { useEnvStore } from "@/stores/envStore";
@@ -18,6 +19,16 @@ import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDr
  * as long as the workbench is rendered and automatically cleaned up on unmount.
  */
 export function useWorkbenchShortcuts() {
+    useEffect(() => {
+        const deactivateTools = () => {
+            useCanvasDrawingStore.getState().cancelDrawing();
+            useCanvasToolStore.getState().setActiveTool(null);
+        };
+
+        addShortcutBlockListener(deactivateTools);
+        return () => removeShortcutBlockListener(deactivateTools);
+    }, []);
+
     useShortcut("workspace.open", S["workspace.open"].keys, () =>
         useWorkspacePickerStore.getState().open(),
     );
