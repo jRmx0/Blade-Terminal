@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useEnvStore } from "@/stores/envStore";
 import { WORKSPACE_NAME_MAX_LENGTH } from "@/config/db-ops/databaseConstraintsConfig";
+import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 
 export default function WorkspaceNameField() {
   const name = useEnvStore((state) => state.env.name);
@@ -9,6 +10,8 @@ export default function WorkspaceNameField() {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(name);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useShortcutsBlocked("workspace-name-field", isEditing);
 
   useEffect(() => {
     if (isEditing) {

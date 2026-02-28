@@ -5,6 +5,7 @@ import { getAllEnvironments, deleteEnvironment } from "@server/db/environments";
 import type { Environment } from "@/types/envTypes";
 import PickerModal from "@/components/picker-modal/PickerModal";
 import PickerModalItem from "@/components/picker-modal/PickerModalItem";
+import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 
 export default function WorkspacePickerModal() {
     const isOpen = useWorkspacePickerStore((s) => s.isOpen);
@@ -13,6 +14,8 @@ export default function WorkspacePickerModal() {
 
     const [environments, setEnvironments] = useState<Environment[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+
+    useShortcutsBlocked("workspace-picker-modal", isOpen);
 
     useEffect(() => {
         if (!isOpen) return;
