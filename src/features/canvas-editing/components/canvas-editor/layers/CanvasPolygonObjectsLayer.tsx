@@ -1,8 +1,6 @@
 import { Layer, Line } from "react-konva";
-import type {
-    CanvasObject,
-    ActiveTool,
-} from "@/features/canvas-editing/types/canvas";
+import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
+import type { EnvObject, EnvVertex } from "@/types/envTypes";
 import {
     COLOR_ZONE_FILL,
     COLOR_ZONE_STROKE,
@@ -11,20 +9,22 @@ import {
 } from "@/config/canvas-editing/canvasConfig";
 
 interface CanvasPolygonObjectsLayerProps {
-    objects: CanvasObject[];
-    selectedObjectId: string | null;
-    movingObjectId: string | null;
+    objects: EnvObject[];
+    vertices: EnvVertex[];
+    selectedObjectId: number | null;
+    movingObjectId: number | null;
     activeTool: ActiveTool | null;
     scale: number;
-    onSelectObject: (id: string) => void;
-    onDeleteObject: (id: string) => void;
-    onObjectHoverChange: (hoveredId: string | null) => void;
-    onObjectDragStart: (objectId: string) => void;
-    onObjectDragEnd: (objectId: string, dx: number, dy: number) => void;
+    onSelectObject: (id: number) => void;
+    onDeleteObject: (id: number) => void;
+    onObjectHoverChange: (hoveredId: number | null) => void;
+    onObjectDragStart: (objectId: number) => void;
+    onObjectDragEnd: (objectId: number, dx: number, dy: number) => void;
 }
 
 export function CanvasPolygonObjectsLayer({
     objects,
+    vertices,
     selectedObjectId,
     movingObjectId,
     activeTool,
@@ -38,6 +38,14 @@ export function CanvasPolygonObjectsLayer({
     const canInteract = activeTool === "select" || activeTool === "delete";
     const canDrag = activeTool === "select";
 
+    // Build lookup once per render — O(n) instead of O(n*m)
+    const verticesByObjectId = new Map<number, EnvVertex[]>();
+    for (const v of vertices) {
+        const list = verticesByObjectId.get(v.objectId) ?? [];
+        list.push(v);
+        verticesByObjectId.set(v.objectId, list);
+    }
+
     const sortedObjects = [...objects].sort((a, b) => {
         if (a.category === b.category) return 0;
         return a.category === "zone" ? -1 : 1;
@@ -49,11 +57,12 @@ export function CanvasPolygonObjectsLayer({
                 const isZone = obj.category === "zone";
                 const isSelected = obj.id === selectedObjectId && activeTool === "select";
                 const isMoving = obj.id === movingObjectId;
+                const objVerts = verticesByObjectId.get(obj.id) ?? [];
 
                 return (
                     <Line
                         key={obj.id}
-                        points={obj.vertices.flatMap((v) => [v.x, v.y])}
+                        points={objVerts.flatMap((v) => [v.x, v.y])}
                         closed
                         fill={isZone ? COLOR_ZONE_FILL : COLOR_OBSTACLE_FILL}
                         stroke={isZone ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE}

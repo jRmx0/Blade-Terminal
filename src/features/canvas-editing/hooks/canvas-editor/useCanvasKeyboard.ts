@@ -4,14 +4,14 @@ import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 interface UseCanvasKeyboardOptions {
     activeTool: ActiveTool | null;
     drawingPointsCount: number;
-    selectedObjectId: string | null;
+    selectedObjectId: number | null;
     selectedVertexIndices: number[];
     setActiveTool: (tool: ActiveTool | null) => void;
     clearSelection: () => void;
     selectVertex: (index: number | null) => void;
-    deleteObject: (id: string) => void;
-    deleteVertex: (objectId: string, vertexIndex: number) => void;
-    deleteVertices: (objectId: string, indices: number[]) => void;
+    deleteObject: (id: number) => void;
+    deleteVertex: (objectId: number, vertexIndex: number) => void;
+    deleteVertices: (objectId: number, indices: number[]) => void;
     cancelDrawing: () => void;
 }
 

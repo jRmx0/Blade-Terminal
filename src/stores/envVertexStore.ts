@@ -11,8 +11,8 @@ import {
 } from "@server/db/env-vertices";
 
 let _idCounter = 0;
-function nextId() {
-    return `vtx-${++_idCounter}`;
+function nextId(): number {
+    return ++_idCounter;
 }
 
 /**
@@ -23,12 +23,12 @@ function orderVertices(objectVertices: EnvVertex[]): EnvVertex[] {
     if (objectVertices.length === 0) return [];
 
     const pointedTo = new Set(
-        objectVertices.map((v) => v.nextVertexId).filter((id): id is string => id !== null)
+        objectVertices.map((v) => v.nextVertexId).filter((id): id is number => id !== null)
     );
     const head = objectVertices.find((v) => !pointedTo.has(v.id)) ?? objectVertices[0]!;
 
     const result: EnvVertex[] = [];
-    const visited = new Set<string>();
+    const visited = new Set<number>();
     let current: EnvVertex | undefined = head;
 
     while (current && !visited.has(current.id)) {
@@ -43,7 +43,7 @@ function orderVertices(objectVertices: EnvVertex[]): EnvVertex[] {
 }
 
 /** Recomputes vertexCount and area for an object after a vertex mutation. */
-function syncObjectCache(objectId: string, allVertices: EnvVertex[]) {
+function syncObjectCache(objectId: number, allVertices: EnvVertex[]) {
     const ordered = orderVertices(allVertices.filter((v) => v.objectId === objectId));
     useEnvObjectStore.getState().updateCachedFields(objectId, ordered.length, computePolygonArea(ordered));
 }
@@ -52,28 +52,28 @@ interface EnvVertexState {
     vertices: EnvVertex[];
 
     /** Returns vertices for an object in linked-list order. */
-    getOrderedVertices: (objectId: string) => EnvVertex[];
+    getOrderedVertices: (objectId: number) => EnvVertex[];
 
     /** Appends a vertex to the end of the object's linked list. Returns the new vertex id. */
-    addVertex: (objectId: string, x: number, y: number) => string;
+    addVertex: (objectId: number, x: number, y: number) => number;
 
     /** Inserts a vertex immediately after afterVertexId. Returns the new vertex id. */
-    insertVertex: (objectId: string, afterVertexId: string, x: number, y: number) => string;
+    insertVertex: (objectId: number, afterVertexId: number, x: number, y: number) => number;
 
     /** Removes a vertex and repairs the linked list. */
-    deleteVertex: (id: string) => void;
+    deleteVertex: (id: number) => void;
 
     /** Updates the position of a vertex. */
-    updateVertex: (id: string, x: number, y: number) => void;
+    updateVertex: (id: number, x: number, y: number) => void;
 
     /** Removes all vertices belonging to a given object. */
-    deleteObjectVertices: (objectId: string) => void;
+    deleteObjectVertices: (objectId: number) => void;
 
     /** Manual save: persists all current vertices to IndexedDB. */
     save: () => Promise<void>;
 
     /** Loads all vertices for the given object IDs from IndexedDB. Merges with existing in-memory vertices. */
-    loadByObjectIds: (objectIds: string[]) => Promise<void>;
+    loadByObjectIds: (objectIds: number[]) => Promise<void>;
 }
 
 export const useEnvVertexStore = create<EnvVertexState>((set, get) => ({

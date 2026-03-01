@@ -1,11 +1,11 @@
 import type { Table } from "dexie";
 import { db } from "./db";
 import type { Environment } from "@/types/envTypes";
-import { WORKSPACE_NAME_MAX_LENGTH, ENV_ID_PREFIX } from "@/config/db-ops/databaseConstraintsConfig";
+import { WORKSPACE_NAME_MAX_LENGTH } from "@/config/db-ops/databaseConstraintsConfig";
 
-export const environmentsTable: Table<Environment, string> = db.table("environments");
+export const environmentsTable: Table<Environment, number> = db.table("environments");
 
-export async function getEnvironment(id: string): Promise<Environment | undefined> {
+export async function getEnvironment(id: number): Promise<Environment | undefined> {
     return environmentsTable.get(id);
 }
 
@@ -21,21 +21,16 @@ export async function saveEnvironment(env: Environment): Promise<void> {
     await environmentsTable.put(record);
 }
 
-export async function deleteEnvironment(id: string): Promise<void> {
+export async function deleteEnvironment(id: number): Promise<void> {
     await environmentsTable.delete(id);
 }
 
 /**
- * Returns the next sequential environment id (e.g. "env-4" when the
- * highest existing id is "env-3", or "env-1" when the table is empty).
+ * Returns the next sequential environment id (1 when the table is empty,
+ * otherwise max existing id + 1).
  */
-export async function getNextEnvironmentId(): Promise<string> {
+export async function getNextEnvironmentId(): Promise<number> {
     const all = await environmentsTable.toArray();
-    const max = all.reduce((acc, env) => {
-        const prefix = ENV_ID_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const match = env.id.match(new RegExp(`^${prefix}(\\d+)$`));
-        const n = match?.[1] ? parseInt(match[1], 10) : 0;
-        return Math.max(acc, n);
-    }, 0);
-    return `${ENV_ID_PREFIX}${max + 1}`;
+    const max = all.reduce((acc, env) => Math.max(acc, env.id), 0);
+    return max + 1;
 }

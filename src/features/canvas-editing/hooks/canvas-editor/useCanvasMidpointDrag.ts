@@ -4,13 +4,13 @@ import { beginBatch, endBatch } from "@/features/canvas-editing/stores/canvasHis
 
 interface UseCanvasMidpointDragOptions {
     stageRef: React.RefObject<Konva.Stage | null>;
-    insertVertex: (objectId: string, afterIndex: number, x: number, y: number) => void;
-    updateVertex: (objectId: string, vertexIndex: number, x: number, y: number) => void;
+    insertVertex: (objectId: number, afterIndex: number, x: number, y: number) => void;
+    updateVertex: (objectId: number, vertexIndex: number, x: number, y: number) => void;
     selectVertex: (index: number | null) => void;
 }
 
 interface MidpointDragState {
-    objectId: string;
+    objectId: number;
     vertexIndex: number;
 }
 
@@ -45,7 +45,7 @@ export function useCanvasMidpointDrag({
     }, [updateVertex]);
 
     const handleMidpointMouseDown = useCallback(
-        (objectId: string, afterIndex: number, midX: number, midY: number) => {
+        (objectId: number, afterIndex: number, midX: number, midY: number) => {
             beginBatch();
             insertVertex(objectId, afterIndex, midX, midY);
             selectVertex(afterIndex + 1);

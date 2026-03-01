@@ -12,8 +12,8 @@ import {
 } from "@server/db/env-objects";
 
 let _idCounter = 0;
-function nextId() {
-    return `obj-${++_idCounter}`;
+function nextId(): number {
+    return ++_idCounter;
 }
 
 interface EnvObjectState {
@@ -24,25 +24,25 @@ interface EnvObjectState {
      * Also increments the corresponding count on envStore.
      * Returns the new object's id.
      */
-    addObject: (environmentId: string, category: ObjectCategory) => string;
+    addObject: (environmentId: number, category: ObjectCategory) => number;
 
     /**
      * Removes an object by id.
      * Also decrements the corresponding count on envStore.
      */
-    deleteObject: (id: string) => void;
+    deleteObject: (id: number) => void;
 
     /**
      * Called by envVertexStore after any vertex mutation to keep
      * vertexCount and area in sync without envObjectStore knowing about vertices.
      */
-    updateCachedFields: (id: string, vertexCount: number, area: number) => void;
+    updateCachedFields: (id: number, vertexCount: number, area: number) => void;
 
     /** Manual save: persists all current objects to IndexedDB. */
     save: () => Promise<void>;
 
     /** Loads all objects for the given environment from IndexedDB. */
-    loadByEnvironment: (environmentId: string) => Promise<void>;
+    loadByEnvironment: (environmentId: number) => Promise<void>;
 }
 
 export const useEnvObjectStore = create<EnvObjectState>((set, get) => ({

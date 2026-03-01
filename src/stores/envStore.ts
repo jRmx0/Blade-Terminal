@@ -16,11 +16,11 @@ interface EnvState {
     /** Manual save: persists current env to IndexedDB. */
     save: () => Promise<void>;
     /** Loads env from IndexedDB and replaces in-memory state. */
-    load: (id: string) => Promise<void>;
+    load: (id: number) => Promise<void>;
 }
 
 const INITIAL_ENV: Environment = {
-    id: "env-1",
+    id: 0,
     name: "Untitled Environment",
     format: ENV_FORMAT.POLYGON,
     type: OBJECT_TYPE.OFFLINE,

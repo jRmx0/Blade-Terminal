@@ -32,7 +32,7 @@ export default function WorkspacePickerModal() {
         close();
     }
 
-    async function handleDelete(id: string) {
+    async function handleDelete(id: number) {
         await deleteEnvironment(id);
         setEnvironments((prev) => prev.filter((env) => env.id !== id));
     }
@@ -50,7 +50,7 @@ export default function WorkspacePickerModal() {
                 <PickerModalItem
                     key={env.id}
                     label={env.name}
-                    subLabel={env.id}
+                    subLabel={String(env.id)}
                     onOpen={() => handleOpen(env)}
                     onDelete={() => handleDelete(env.id)}
                 />

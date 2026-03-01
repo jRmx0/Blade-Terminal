@@ -1,10 +1,10 @@
 import { create } from "zustand";
 
 interface CanvasSelectionState {
-    selectedObjectId: string | null;
+    selectedObjectId: number | null;
     selectedVertexIndices: number[];
 
-    selectObject: (id: string) => void;
+    selectObject: (id: number) => void;
     clearSelection: () => void;
     selectVertex: (index: number | null) => void;
     toggleVertexSelection: (index: number, ctrl: boolean) => void;

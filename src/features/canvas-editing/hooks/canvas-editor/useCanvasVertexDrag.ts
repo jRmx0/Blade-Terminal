@@ -11,9 +11,9 @@ import { useCallback, useEffect, useRef } from "react";
  *     synchronously so the store is always accurate when the drag finishes.
  */
 export function useCanvasVertexDrag(
-    updateVertex: (objectId: string, index: number, x: number, y: number) => void,
+    updateVertex: (objectId: number, index: number, x: number, y: number) => void,
 ) {
-    const pendingRef = useRef<{ objectId: string; index: number; x: number; y: number } | null>(null);
+    const pendingRef = useRef<{ objectId: number; index: number; x: number; y: number } | null>(null);
     const rafIdRef = useRef<number | null>(null);
 
     useEffect(() => {
@@ -33,7 +33,7 @@ export function useCanvasVertexDrag(
 
     /** Called on every Konva onDragMove — accumulates, schedules at most one RAF/frame. */
     const handleVertexDragMove = useCallback(
-        (objectId: string, index: number, x: number, y: number) => {
+        (objectId: number, index: number, x: number, y: number) => {
             pendingRef.current = { objectId, index, x, y };
             if (rafIdRef.current === null) {
                 rafIdRef.current = requestAnimationFrame(flush);
@@ -44,7 +44,7 @@ export function useCanvasVertexDrag(
 
     /** Called on Konva onDragEnd — cancels pending RAF and commits final position. */
     const handleVertexDragEnd = useCallback(
-        (objectId: string, index: number, x: number, y: number) => {
+        (objectId: number, index: number, x: number, y: number) => {
             if (rafIdRef.current !== null) {
                 cancelAnimationFrame(rafIdRef.current);
                 rafIdRef.current = null;

@@ -1,7 +1,7 @@
 import type { EnvFormat, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
 
 export interface Environment {
-    id: string;
+    id: number;
     name: string;
     format: EnvFormat;
     type: ObjectType;
@@ -10,8 +10,8 @@ export interface Environment {
 }
 
 export interface EnvObject {
-    id: string;
-    environmentId: string;
+    id: number;
+    environmentId: number;
     category: ObjectCategory;
     /**
      * Vertex winding convention (in screen coordinates, Y increases downward):
@@ -26,10 +26,10 @@ export interface EnvObject {
 }
 
 export interface EnvVertex {
-    id: string;
-    objectId: string;
+    id: number;
+    objectId: number;
     /** Pointer to the next vertex in linked-list order. Null for the tail vertex. */
-    nextVertexId: string | null;
+    nextVertexId: number | null;
     x: number;
     y: number;
 }

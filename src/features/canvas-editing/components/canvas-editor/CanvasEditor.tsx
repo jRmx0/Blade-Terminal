@@ -7,6 +7,7 @@ import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObj
 import { beginBatch, endBatch } from "@/features/canvas-editing/stores/canvasHistoryStore";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useCanvasSize } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasSize";
+import { objectVertices } from "@/features/canvas-editing/utils/canvasGeometry";
 import { useCanvasPanning } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasPanning";
 import { useCanvasZoom } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasZoom";
 import { useCanvasDrawing } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasDrawing";
@@ -21,14 +22,15 @@ import { CanvasDrawingPreviewLayer } from "@/features/canvas-editing/components/
 export default function CanvasEditor() {
   const stageRef = useRef<Konva.Stage>(null);
   const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
-  const [movingObjectId, setMovingObjectId] = useState<string | null>(null);
+  const [movingObjectId, setMovingObjectId] = useState<number | null>(null);
   const [isHoveringHandle, setIsHoveringHandle] = useState(false);
-  const [isHoveringObject, setIsHoveringObject] = useState<string | null>(null);
+  const [isHoveringObject, setIsHoveringObject] = useState<number | null>(null);
 
   const { position, scale, gridVisible, setPosition, setScale } = useCanvasViewStore();
   const { activeTool, setActiveTool } = useCanvasToolStore();
   const {
     objects,
+    vertices,
     addObject,
     deleteObject,
     updateVertex,
@@ -128,6 +130,10 @@ export default function CanvasEditor() {
       ? (objects.find((o) => o.id === selectedObjectId) ?? null)
       : null;
 
+  const selectedObjectVertices = selectedObject
+    ? objectVertices(vertices, selectedObject.id)
+    : [];
+
   const isDrawing = activeTool === "addZone" || activeTool === "addObstacle";
 
   function resolveCursor() {
@@ -170,6 +176,7 @@ export default function CanvasEditor() {
 
         <CanvasPolygonObjectsLayer
           objects={objects}
+          vertices={vertices}
           selectedObjectId={selectedObjectId}
           movingObjectId={movingObjectId}
           activeTool={activeTool}
@@ -197,6 +204,7 @@ export default function CanvasEditor() {
 
         <CanvasVertexHandlesLayer
           selectedObject={selectedObject}
+          selectedObjectVertices={selectedObjectVertices}
           activeTool={activeTool}
           scale={scale}
           selectedVertexIndices={selectedVertexIndices}

@@ -1,5 +1,6 @@
 import { Layer, Circle } from "react-konva";
-import type { CanvasObject, ActiveTool } from "@/features/canvas-editing/types/canvas";
+import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
+import type { EnvObject, EnvVertex } from "@/types/envTypes";
 import { computeEdgeMidpoints } from "@/features/canvas-editing/utils/canvasGeometry";
 import {
     COLOR_ZONE_STROKE,
@@ -11,21 +12,23 @@ import {
 } from "@/config/canvas-editing/canvasConfig";
 
 interface CanvasVertexHandlesLayerProps {
-    selectedObject: CanvasObject | null;
+    selectedObject: EnvObject | null;
+    selectedObjectVertices: EnvVertex[];
     activeTool: ActiveTool | null;
     scale: number;
     selectedVertexIndices: number[];
     draggingVertexIndex: number | null;
     onVertexClick: (index: number, ctrl: boolean) => void;
     onVertexDragStart: (index: number) => void;
-    onVertexDragMove: (objectId: string, index: number, x: number, y: number) => void;
-    onVertexDragEnd: (objectId: string, index: number, x: number, y: number) => void;
-    onEdgeMidpointMouseDown: (objectId: string, afterIndex: number, midX: number, midY: number) => void;
+    onVertexDragMove: (objectId: number, index: number, x: number, y: number) => void;
+    onVertexDragEnd: (objectId: number, index: number, x: number, y: number) => void;
+    onEdgeMidpointMouseDown: (objectId: number, afterIndex: number, midX: number, midY: number) => void;
     onHandleHoverChange: (hovered: boolean) => void;
 }
 
 export function CanvasVertexHandlesLayer({
     selectedObject,
+    selectedObjectVertices,
     activeTool,
     scale,
     selectedVertexIndices,
@@ -39,11 +42,13 @@ export function CanvasVertexHandlesLayer({
 }: CanvasVertexHandlesLayerProps) {
     const isLayerListening = activeTool === "select" && selectedObject !== null;
 
-    const edgeMidpoints = selectedObject ? computeEdgeMidpoints(selectedObject.vertices) : [];
+    const edgeMidpoints = selectedObject ? computeEdgeMidpoints(selectedObjectVertices) : [];
+
+    if (!selectedObject) return <Layer />;
 
     return (
         <Layer listening={isLayerListening}>
-            {selectedObject?.vertices.map((v, i) => {
+            {selectedObjectVertices.map((v, i) => {
                 const mid = edgeMidpoints[i];
                 if (!mid) return null;
 

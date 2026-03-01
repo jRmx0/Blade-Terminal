@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import type Konva from "konva";
-import type { ActiveTool, ObjectType } from "@/features/canvas-editing/types/canvas";
+import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
+import type { ObjectType } from "@/config/db-ops/enums";
 import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
 
 interface UseCanvasDrawingOptions {
