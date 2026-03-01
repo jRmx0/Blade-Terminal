@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useWorkspacePickerStore } from "@/features/workspace-manager/stores/workspacePickerStore";
 import { useEnvStore } from "@/stores/envStore";
-import { getAllEnvironments, deleteEnvironment } from "@server/db/environments";
+import { getAllEnvironments, deleteEnvironmentCascade } from "@server/db/environments";
 import type { Environment } from "@/types/envTypes";
 import PickerModal from "@/components/picker-modal/PickerModal";
 import PickerModalItem from "@/components/picker-modal/PickerModalItem";
@@ -33,7 +33,7 @@ export default function WorkspacePickerModal() {
     }
 
     async function handleDelete(id: number) {
-        await deleteEnvironment(id);
+        await deleteEnvironmentCascade(id);
         setEnvironments((prev) => prev.filter((env) => env.id !== id));
     }
 

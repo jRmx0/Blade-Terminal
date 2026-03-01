@@ -2,6 +2,8 @@ import type { Table } from "dexie";
 import { db } from "./db";
 import type { Environment } from "@/types/envTypes";
 import { WORKSPACE_NAME_MAX_LENGTH } from "@/config/db-ops/databaseConstraintsConfig";
+import { deleteEnvObjectsByEnvironment, getEnvObjectsByEnvironment } from "./env-objects";
+import { deleteEnvVerticesByObjectIds } from "./env-vertices";
 
 export const environmentsTable: Table<Environment, number> = db.table("environments");
 
@@ -21,7 +23,15 @@ export async function saveEnvironment(env: Environment): Promise<void> {
     await environmentsTable.put(record);
 }
 
-export async function deleteEnvironment(id: number): Promise<void> {
+/**
+ * Deletes an environment and all its associated objects and vertices.
+ */
+export async function deleteEnvironmentCascade(id: number): Promise<void> {
+    const objects = await getEnvObjectsByEnvironment(id);
+    if (objects.length > 0) {
+        await deleteEnvVerticesByObjectIds(objects.map((o) => o.id));
+        await deleteEnvObjectsByEnvironment(id);
+    }
     await environmentsTable.delete(id);
 }
 

@@ -42,8 +42,8 @@ export function useCanvasSave(): UseCanvasSaveResult {
                 saveEnvironment(env),
                 dirtyObjects.length > 0 ? saveEnvObjects(dirtyObjects) : Promise.resolve(),
                 dirtyVerts.length > 0 ? saveEnvVertices(dirtyVerts) : Promise.resolve(),
-                ...[...deletedObjectIds].map(deleteEnvObject),
-                ...[...deletedVertexIds].map(deleteEnvVertex),
+                ...[...deletedObjectIds].map((id) => deleteEnvObject(id, env.id)),
+                ...[...deletedVertexIds.entries()].map(([id, objectId]) => deleteEnvVertex(id, objectId)),
             ]);
 
             clearDirty();

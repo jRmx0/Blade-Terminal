@@ -144,7 +144,7 @@ export const useEnvVertexStore = create<EnvVertexState>((set, get) => ({
         });
         syncObjectCache(target.objectId, get().vertices);
         if (getSaveMode() === "autosave") {
-            dbDeleteEnvVertex(id).catch(console.error);
+            dbDeleteEnvVertex(id, target.objectId).catch(console.error);
             const prev = get().vertices.find((v) => v.nextVertexId === target.nextVertexId);
             if (prev) saveEnvVertex(prev).catch(console.error);
         }

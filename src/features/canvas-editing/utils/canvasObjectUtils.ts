@@ -56,3 +56,30 @@ export function markDeleted(
     newDirty.delete(id);
     return { dirty: newDirty, deleted: new Set([...deleted, id]) };
 }
+
+// ---------------------------------------------------------------------------
+// Vertex-specific dirty tracking (deletedVertexIds is Map<vertexId, objectId>)
+// ---------------------------------------------------------------------------
+
+export function markVertexDirty(
+    dirty: Set<number>,
+    deleted: Map<number, number>,
+    id: number,
+): { dirty: Set<number>; deleted: Map<number, number> } {
+    const newDeleted = new Map(deleted);
+    newDeleted.delete(id);
+    return { dirty: new Set([...dirty, id]), deleted: newDeleted };
+}
+
+export function markVertexDeleted(
+    dirty: Set<number>,
+    deleted: Map<number, number>,
+    id: number,
+    objectId: number,
+): { dirty: Set<number>; deleted: Map<number, number> } {
+    const newDirty = new Set(dirty);
+    newDirty.delete(id);
+    const newDeleted = new Map(deleted);
+    newDeleted.set(id, objectId);
+    return { dirty: newDirty, deleted: newDeleted };
+}

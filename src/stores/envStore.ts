@@ -3,7 +3,9 @@ import { ENV_FORMAT, OBJECT_TYPE } from "@/config/db-ops/enums";
 import type { Environment } from "@/types/envTypes";
 import { getSaveMode, useSaveModeStore } from "@/stores/saveModeStore";
 import { saveEnvironment, getEnvironment, getNextEnvironmentId } from "@server/db/environments";
-import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { getMaxEnvObjectId } from "@server/db/env-objects";
+import { getMaxEnvVertexId } from "@server/db/env-vertices";
+import { useCanvasObjectStore, seedIdCounter } from "@/features/canvas-editing/stores/canvasObjectStore";
 
 interface EnvState {
     env: Environment;
@@ -42,7 +44,12 @@ export const useEnvStore = create<EnvState>((set, get) => ({
     env: INITIAL_ENV,
 
     init: async () => {
-        const id = await getNextEnvironmentId();
+        const [id, maxObjId, maxVtxId] = await Promise.all([
+            getNextEnvironmentId(),
+            getMaxEnvObjectId(),
+            getMaxEnvVertexId(),
+        ]);
+        seedIdCounter(Math.max(maxObjId, maxVtxId));
         set((state) => ({ env: { ...state.env, id } }));
     },
 

@@ -23,7 +23,7 @@ function diffSnapshots(
     dirtyObjectIds: Set<number>;
     dirtyVertexIds: Set<number>;
     deletedObjectIds: Set<number>;
-    deletedVertexIds: Set<number>;
+    deletedVertexIds: Map<number, number>;
 } {
     const fromObjectMap = new Map(from.objects.map((o) => [o.id, o]));
     const fromVertexMap = new Map(from.vertices.map((v) => [v.id, v]));
@@ -33,7 +33,9 @@ function diffSnapshots(
     const dirtyObjectIds = new Set(to.objects.filter((o) => fromObjectMap.get(o.id) !== o).map((o) => o.id));
     const deletedObjectIds = new Set(from.objects.filter((o) => !toObjectIds.has(o.id)).map((o) => o.id));
     const dirtyVertexIds = new Set(to.vertices.filter((v) => fromVertexMap.get(v.id) !== v).map((v) => v.id));
-    const deletedVertexIds = new Set(from.vertices.filter((v) => !toVertexIds.has(v.id)).map((v) => v.id));
+    const deletedVertexIds = new Map(
+        from.vertices.filter((v) => !toVertexIds.has(v.id)).map((v) => [v.id, v.objectId] as [number, number]),
+    );
 
     return { dirtyObjectIds, dirtyVertexIds, deletedObjectIds, deletedVertexIds };
 }

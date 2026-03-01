@@ -78,7 +78,7 @@ export const useEnvObjectStore = create<EnvObjectState>((set, get) => ({
             if (obj.category === "zone") decrementZoneCount();
             else decrementObstacleCount();
 
-            if (getSaveMode() === "autosave") dbDeleteEnvObject(id).catch(console.error);
+            if (getSaveMode() === "autosave") dbDeleteEnvObject(id, useEnvStore.getState().env.id).catch(console.error);
         }
     },
 

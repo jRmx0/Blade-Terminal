@@ -19,6 +19,6 @@ const server = serve({
 console.log(`🚀 Server running at ${server.url}`);
 
 // ─── Data-access API ─────────────────────────────────────────────────────────
-export { environmentsTable, getEnvironment, getAllEnvironments, saveEnvironment, deleteEnvironment } from "./db/environments";
-export { envObjectsTable, getEnvObject, getEnvObjectsByEnvironment, saveEnvObject, saveEnvObjects, deleteEnvObject, deleteEnvObjectsByEnvironment } from "./db/env-objects";
-export { envVerticesTable, getEnvVertex, getEnvVerticesByObject, saveEnvVertex, saveEnvVertices, updateEnvVertex, deleteEnvVertex, deleteEnvVerticesByObject } from "./db/env-vertices";
+export { environmentsTable, getEnvironment, getAllEnvironments, saveEnvironment, deleteEnvironmentCascade } from "./db/environments";
+export { envObjectsTable, getEnvObject, getEnvObjectsByEnvironment, saveEnvObject, saveEnvObjects, deleteEnvObject, deleteEnvObjectsByEnvironment, getMaxEnvObjectId } from "./db/env-objects";
+export { envVerticesTable, getEnvVertex, getEnvVerticesByObject, getEnvVerticesByObjectIds, saveEnvVertex, saveEnvVertices, updateEnvVertex, deleteEnvVertex, deleteEnvVerticesByObject, deleteEnvVerticesByObjectIds, getMaxEnvVertexId } from "./db/env-vertices";

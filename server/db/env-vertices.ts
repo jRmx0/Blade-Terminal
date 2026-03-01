@@ -2,10 +2,10 @@ import type { Table } from "dexie";
 import { db } from "./db";
 import type { EnvVertex } from "@/types/envTypes";
 
-export const envVerticesTable: Table<EnvVertex, number> = db.table("env_vertices");
+export const envVerticesTable: Table<EnvVertex, [number, number]> = db.table("env_vertices");
 
-export async function getEnvVertex(id: number): Promise<EnvVertex | undefined> {
-    return envVerticesTable.get(id);
+export async function getEnvVertex(id: number, objectId: number): Promise<EnvVertex | undefined> {
+    return envVerticesTable.get([id, objectId]);
 }
 
 export async function getEnvVerticesByObject(objectId: number): Promise<EnvVertex[]> {
@@ -24,14 +24,24 @@ export async function saveEnvVertices(vertices: EnvVertex[]): Promise<void> {
     await envVerticesTable.bulkPut(vertices);
 }
 
-export async function updateEnvVertex(id: number, changes: Partial<EnvVertex>): Promise<void> {
-    await envVerticesTable.update(id, changes);
+export async function updateEnvVertex(id: number, objectId: number, changes: Partial<EnvVertex>): Promise<void> {
+    await envVerticesTable.update([id, objectId], changes);
 }
 
-export async function deleteEnvVertex(id: number): Promise<void> {
-    await envVerticesTable.delete(id);
+export async function deleteEnvVertex(id: number, objectId: number): Promise<void> {
+    await envVerticesTable.delete([id, objectId]);
 }
 
 export async function deleteEnvVerticesByObject(objectId: number): Promise<void> {
     await envVerticesTable.where("objectId").equals(objectId).delete();
+}
+
+export async function deleteEnvVerticesByObjectIds(objectIds: number[]): Promise<void> {
+    await envVerticesTable.where("objectId").anyOf(objectIds).delete();
+}
+
+/** Returns the highest vertex id in the table, or 0 if empty. Used to seed the in-memory id counter. */
+export async function getMaxEnvVertexId(): Promise<number> {
+    const all = await envVerticesTable.toArray();
+    return all.reduce((acc, v) => Math.max(acc, v.id), 0);
 }
