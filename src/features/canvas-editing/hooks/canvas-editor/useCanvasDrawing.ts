@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type Konva from "konva";
 import type { ActiveTool, ObjectType } from "@/features/canvas-editing/types/canvas";
 import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
@@ -28,18 +28,45 @@ export function useCanvasDrawing({
         cancelDrawing,
     } = useCanvasDrawingStore();
 
+    // RAF throttle — only write mousePos to Zustand once per display frame
+    const pendingMousePosRef = useRef<{ x: number; y: number } | null>(null);
+    const rafIdRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+        };
+    }, []);
+
+    const flushMousePos = useCallback(() => {
+        if (pendingMousePosRef.current) {
+            setMousePos(pendingMousePosRef.current);
+            pendingMousePosRef.current = null;
+        }
+        rafIdRef.current = null;
+    }, [setMousePos]);
+
     const updateDrawingMousePosition = useCallback(
         (e: Konva.KonvaEventObject<MouseEvent>) => {
             if (activeTool !== "addZone" && activeTool !== "addObstacle") return;
             const stage = stageRef.current;
             if (!stage) return;
             const ptr = stage.getRelativePointerPosition();
-            if (ptr) setMousePos({ x: ptr.x, y: ptr.y });
+            if (!ptr) return;
+            pendingMousePosRef.current = { x: ptr.x, y: ptr.y };
+            if (rafIdRef.current === null) {
+                rafIdRef.current = requestAnimationFrame(flushMousePos);
+            }
         },
-        [activeTool, stageRef, setMousePos],
+        [activeTool, stageRef, flushMousePos],
     );
 
     const clearDrawingMousePosition = useCallback(() => {
+        if (rafIdRef.current !== null) {
+            cancelAnimationFrame(rafIdRef.current);
+            rafIdRef.current = null;
+        }
+        pendingMousePosRef.current = null;
         setMousePos(null);
     }, [setMousePos]);
 
