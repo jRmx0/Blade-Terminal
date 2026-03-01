@@ -36,7 +36,7 @@ export const getIsSaved = (): boolean => {
 // Import is deferred to avoid circular module issues.
 import("@/features/canvas-editing/stores/canvasObjectStore").then(({ useCanvasObjectStore }) => {
     useCanvasObjectStore.subscribe((state, prev) => {
-        if (state.objects !== prev.objects) {
+        if (state.objects !== prev.objects || state.vertices !== prev.vertices) {
             const { mode, markDirty } = useSaveModeStore.getState();
             if (mode === "manual") markDirty();
         }

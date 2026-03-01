@@ -14,6 +14,7 @@ import { useCanvasDrawing } from "@/features/canvas-editing/hooks/canvas-editor/
 import { useCanvasMidpointDrag } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasMidpointDrag";
 import { useCanvasVertexDrag } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasVertexDrag";
 import { useCanvasKeyboard } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasKeyboard";
+import { useCanvasSave } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasSave";
 import { CanvasGridLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasGridLayer";
 import { CanvasPolygonObjectsLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasPolygonObjectsLayer";
 import { CanvasVertexHandlesLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasVertexHandlesLayer";
@@ -80,6 +81,8 @@ export default function CanvasEditor() {
 
   const { handleVertexDragMove, handleVertexDragEnd } = useCanvasVertexDrag(updateVertex);
 
+  const { save } = useCanvasSave();
+
   const { handleKeyDown } = useCanvasKeyboard({
     activeTool,
     drawingPointsCount: drawingPoints.length,
@@ -92,6 +95,7 @@ export default function CanvasEditor() {
     deleteVertex,
     deleteVertices,
     cancelDrawing,
+    onSave: save,
   });
 
   // Keep canvas focusable for keyboard events

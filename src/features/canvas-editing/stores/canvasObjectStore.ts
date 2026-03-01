@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import type { EnvObject, EnvVertex } from "@/types/envTypes";
 import type { ObjectCategory, ObjectType } from "@/config/db-ops/enums";
-import { objectVertices, shoelaceArea } from "@/features/canvas-editing/utils/canvasGeometry";
+import { objectVertices } from "@/features/canvas-editing/utils/canvasGeometry";
 import { syncObject, markDirty, markDeleted } from "@/features/canvas-editing/utils/canvasObjectUtils";
+import { useEnvStore } from "@/stores/envStore";
 
 // ---------------------------------------------------------------------------
 // ID generator
@@ -12,51 +13,6 @@ let _idCounter = 1000;
 function nextId(): number {
     return ++_idCounter;
 }
-
-// ---------------------------------------------------------------------------
-// Sample data
-// ---------------------------------------------------------------------------
-
-function buildSampleData(): { objects: EnvObject[]; vertices: EnvVertex[] } {
-    const zoneId = 1;
-    const obstacleId = 2;
-
-    const zv1 = 10, zv2 = 11, zv3 = 12, zv4 = 13;
-    const ov1 = 20, ov2 = 21, ov3 = 22;
-
-    const vertices: EnvVertex[] = [
-        { id: zv1, objectId: zoneId, nextVertexId: zv2, x: 120, y: 100 },
-        { id: zv2, objectId: zoneId, nextVertexId: zv3, x: 320, y: 100 },
-        { id: zv3, objectId: zoneId, nextVertexId: zv4, x: 320, y: 260 },
-        { id: zv4, objectId: zoneId, nextVertexId: null, x: 120, y: 260 },
-        { id: ov1, objectId: obstacleId, nextVertexId: ov2, x: 180, y: 150 },
-        { id: ov2, objectId: obstacleId, nextVertexId: ov3, x: 260, y: 150 },
-        { id: ov3, objectId: obstacleId, nextVertexId: null, x: 260, y: 210 },
-    ];
-
-    const objects: EnvObject[] = [
-        {
-            id: zoneId,
-            environmentId: 0,
-            category: "zone",
-            type: "offline",
-            vertexCount: 4,
-            area: shoelaceArea(vertices.filter((v) => v.objectId === zoneId)),
-        },
-        {
-            id: obstacleId,
-            environmentId: 0,
-            category: "obstacle",
-            type: "offline",
-            vertexCount: 3,
-            area: shoelaceArea(vertices.filter((v) => v.objectId === obstacleId)),
-        },
-    ];
-
-    return { objects, vertices };
-}
-
-const SAMPLE = buildSampleData();
 
 // ---------------------------------------------------------------------------
 // Store
@@ -85,8 +41,8 @@ export interface CanvasObjectState {
 }
 
 export const useCanvasObjectStore = create<CanvasObjectState>()((set) => ({
-    objects: SAMPLE.objects,
-    vertices: SAMPLE.vertices,
+    objects: [],
+    vertices: [],
     dirtyObjectIds: new Set<number>(),
     dirtyVertexIds: new Set<number>(),
     deletedObjectIds: new Set<number>(),
@@ -104,7 +60,7 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set) => ({
             }));
             const newObject: EnvObject = {
                 id: objectId,
-                environmentId: 0,
+                environmentId: useEnvStore.getState().env.id,
                 category,
                 type,
                 vertexCount: 0, // fixed by syncObject
