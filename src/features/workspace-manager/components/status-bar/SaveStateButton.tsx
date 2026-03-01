@@ -1,9 +1,9 @@
 import { useEnvStore } from "@/stores/envStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
 import { useCanvasObjectStore, selectIsDirty } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { performSave } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasSave";
 
 export default function SaveStateButton() {
-    const save = useEnvStore((state) => state.save);
     const isEnvDirty = useEnvStore((state) => state.isEnvDirty);
     const mode = useSaveModeStore((state) => state.mode);
     const { setMode } = useSaveModeStore();
@@ -15,7 +15,7 @@ export default function SaveStateButton() {
 
     function handleClick() {
         if (!isSaved) {
-            save()
+            performSave()
                 .then(() => {
                     if (mode === "session") setMode("manual");
                 })

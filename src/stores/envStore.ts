@@ -6,6 +6,7 @@ import { saveEnvironment, getEnvironment, getNextEnvironmentId } from "@server/d
 import { getMaxEnvObjectId } from "@server/db/env-objects";
 import { getMaxEnvVertexId } from "@server/db/env-vertices";
 import { useCanvasObjectStore, seedIdCounter } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
 
 interface EnvState {
     env: Environment;
@@ -107,6 +108,7 @@ export const useEnvStore = create<EnvState>((set, get) => ({
         set({ env, isEnvDirty: false });
         useSaveModeStore.getState().setMode("manual");
         await useCanvasObjectStore.getState().load(id);
+        useCanvasHistoryStore.getState().resetHistory();
     },
 
     clearEnvDirty: () => set({ isEnvDirty: false }),

@@ -13,7 +13,6 @@ interface UseCanvasKeyboardOptions {
     deleteVertex: (objectId: number, vertexIndex: number) => void;
     deleteVertices: (objectId: number, indices: number[]) => void;
     cancelDrawing: () => void;
-    onSave: () => void;
 }
 
 export function useCanvasKeyboard({
@@ -28,16 +27,9 @@ export function useCanvasKeyboard({
     deleteVertex,
     deleteVertices,
     cancelDrawing,
-    onSave,
 }: UseCanvasKeyboardOptions) {
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent<HTMLDivElement>) => {
-            if (e.ctrlKey && e.key === "s") {
-                e.preventDefault();
-                onSave();
-                return;
-            }
-
             if (e.key === "Escape") {
                 e.preventDefault();
                 if (activeTool === "addZone" || activeTool === "addObstacle") {
@@ -82,7 +74,6 @@ export function useCanvasKeyboard({
             deleteVertex,
             deleteVertices,
             cancelDrawing,
-            onSave,
         ],
     );
 

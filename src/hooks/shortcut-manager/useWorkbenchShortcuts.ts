@@ -12,6 +12,7 @@ import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObj
 import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
+import { performSave } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasSave";
 
 /**
  * Registers all shortcuts that are scoped to the Workbench.
@@ -34,9 +35,8 @@ export function useWorkbenchShortcuts() {
     );
 
     useShortcut("workspace.save", S["workspace.save"].keys, () => {
-        const { save } = useEnvStore.getState();
         const { mode, setMode } = useSaveModeStore.getState();
-        save()
+        performSave()
             .then(() => {
                 if (mode === "session") setMode("manual");
             })

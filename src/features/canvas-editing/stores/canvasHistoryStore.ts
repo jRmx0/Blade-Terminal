@@ -66,6 +66,8 @@ interface CanvasHistoryState {
     redo: () => void;
     beginBatch: () => void;
     endBatch: () => void;
+    /** Clears all undo/redo history. Call after loading a new environment. */
+    resetHistory: () => void;
 }
 
 export const useCanvasHistoryStore = create<CanvasHistoryState>()((set, get) => ({
@@ -150,6 +152,8 @@ export const useCanvasHistoryStore = create<CanvasHistoryState>()((set, get) => 
             };
         });
     },
+    resetHistory: () =>
+        set({ past: [], future: [], canUndo: false, canRedo: false, _batchSnapshot: null, _isBatching: false }),
 }));
 
 // Subscribe to the object store — push a snapshot to past before every change
