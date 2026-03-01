@@ -3,6 +3,7 @@ import { ENV_FORMAT, OBJECT_TYPE } from "@/config/db-ops/enums";
 import type { Environment } from "@/types/envTypes";
 import { getSaveMode, useSaveModeStore } from "@/stores/saveModeStore";
 import { saveEnvironment, getEnvironment, getNextEnvironmentId } from "@server/db/environments";
+import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 
 interface EnvState {
     env: Environment;
@@ -91,6 +92,8 @@ export const useEnvStore = create<EnvState>((set, get) => ({
 
     load: async (id) => {
         const env = await getEnvironment(id);
-        if (env) set({ env });
+        if (!env) return;
+        set({ env });
+        await useCanvasObjectStore.getState().load(id);
     },
 }));

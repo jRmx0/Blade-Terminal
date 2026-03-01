@@ -4,6 +4,8 @@ import type { ObjectCategory, ObjectType } from "@/config/db-ops/enums";
 import { objectVertices } from "@/features/canvas-editing/utils/canvasGeometry";
 import { syncObject, markDirty, markDeleted } from "@/features/canvas-editing/utils/canvasObjectUtils";
 import { useEnvStore } from "@/stores/envStore";
+import { getEnvObjectsByEnvironment } from "@server/db/env-objects";
+import { getEnvVerticesByObjectIds } from "@server/db/env-vertices";
 
 // ---------------------------------------------------------------------------
 // ID generator
@@ -38,6 +40,8 @@ export interface CanvasObjectState {
     insertVertex: (objectId: number, afterIndex: number, x: number, y: number) => number;
     /** Call this after a successful DB save to reset tracking. */
     clearDirty: () => void;
+    /** Loads objects and vertices for an environment from DB, replacing current state. Dirty sets are cleared. */
+    load: (environmentId: number) => Promise<void>;
 }
 
 export const useCanvasObjectStore = create<CanvasObjectState>()((set) => ({
@@ -214,4 +218,19 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set) => ({
             deletedObjectIds: new Set<number>(),
             deletedVertexIds: new Set<number>(),
         }),
+
+    load: async (environmentId) => {
+        const objects = await getEnvObjectsByEnvironment(environmentId);
+        const vertices = objects.length > 0
+            ? await getEnvVerticesByObjectIds(objects.map((o) => o.id))
+            : [];
+        set({
+            objects,
+            vertices,
+            dirtyObjectIds: new Set<number>(),
+            dirtyVertexIds: new Set<number>(),
+            deletedObjectIds: new Set<number>(),
+            deletedVertexIds: new Set<number>(),
+        });
+    },
 }));

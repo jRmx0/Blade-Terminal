@@ -12,6 +12,10 @@ export async function getEnvVerticesByObject(objectId: number): Promise<EnvVerte
     return envVerticesTable.where("objectId").equals(objectId).toArray();
 }
 
+export async function getEnvVerticesByObjectIds(objectIds: number[]): Promise<EnvVertex[]> {
+    return envVerticesTable.where("objectId").anyOf(objectIds).toArray();
+}
+
 export async function saveEnvVertex(vertex: EnvVertex): Promise<void> {
     await envVerticesTable.put(vertex);
 }
