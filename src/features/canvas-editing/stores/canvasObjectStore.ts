@@ -50,6 +50,13 @@ export interface CanvasObjectState {
     load: (environmentId: number) => Promise<void>;
 }
 
+/** Selector: true when there are unsaved canvas changes. */
+export const selectIsDirty = (s: CanvasObjectState): boolean =>
+    s.dirtyObjectIds.size > 0 ||
+    s.dirtyVertexIds.size > 0 ||
+    s.deletedObjectIds.size > 0 ||
+    s.deletedVertexIds.size > 0;
+
 export const useCanvasObjectStore = create<CanvasObjectState>()((set) => ({
     objects: [],
     vertices: [],

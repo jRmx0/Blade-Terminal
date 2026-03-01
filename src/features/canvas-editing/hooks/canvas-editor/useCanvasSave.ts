@@ -14,15 +14,17 @@ export interface UseCanvasSaveResult {
 export function useCanvasSave(): UseCanvasSaveResult {
     const [isSaving, setIsSaving] = useState(false);
     const isSavingRef = useRef(false);
-    const { mode, markSaved } = useSaveModeStore();
+    const { mode } = useSaveModeStore();
 
     const save = useCallback(async () => {
         if (isSavingRef.current) return;
 
         const { objects, vertices, dirtyObjectIds, dirtyVertexIds, deletedObjectIds, deletedVertexIds, clearDirty } =
             useCanvasObjectStore.getState();
+        const { env, isEnvDirty, clearEnvDirty } = useEnvStore.getState();
 
         const hasDirty =
+            isEnvDirty ||
             dirtyObjectIds.size > 0 ||
             dirtyVertexIds.size > 0 ||
             deletedObjectIds.size > 0 ||
@@ -34,7 +36,6 @@ export function useCanvasSave(): UseCanvasSaveResult {
         setIsSaving(true);
 
         try {
-            const env = useEnvStore.getState().env;
             const dirtyObjects = objects.filter((o) => dirtyObjectIds.has(o.id));
             const dirtyVerts = vertices.filter((v) => dirtyVertexIds.has(v.id));
 
@@ -47,12 +48,12 @@ export function useCanvasSave(): UseCanvasSaveResult {
             ]);
 
             clearDirty();
-            markSaved();
+            clearEnvDirty();
         } finally {
             isSavingRef.current = false;
             setIsSaving(false);
         }
-    }, [markSaved]);
+    }, []);
 
     // Autosave: fire after every store change when mode is "autosave"
     useEffect(() => {

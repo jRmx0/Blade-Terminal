@@ -1,12 +1,15 @@
 import { useEnvStore } from "@/stores/envStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
+import { useCanvasObjectStore, selectIsDirty } from "@/features/canvas-editing/stores/canvasObjectStore";
 
 export default function SaveStateButton() {
     const save = useEnvStore((state) => state.save);
+    const isEnvDirty = useEnvStore((state) => state.isEnvDirty);
     const mode = useSaveModeStore((state) => state.mode);
-    const isDirty = useSaveModeStore((state) => state.isDirty);
-    const { setMode, markSaved } = useSaveModeStore();
+    const { setMode } = useSaveModeStore();
+    const isCanvasDirty = useCanvasObjectStore(selectIsDirty);
 
+    const isDirty = isEnvDirty || isCanvasDirty;
     const isSaved = mode === "autosave" || (mode === "manual" && !isDirty);
     const tooltip = isSaved ? "Saved" : "Unsaved changes. Click here to save";
 
@@ -15,7 +18,6 @@ export default function SaveStateButton() {
             save()
                 .then(() => {
                     if (mode === "session") setMode("manual");
-                    markSaved();
                 })
                 .catch(console.error);
         }

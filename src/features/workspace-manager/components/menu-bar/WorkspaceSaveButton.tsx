@@ -5,13 +5,12 @@ import { WORKBENCH_SHORTCUTS as S } from "@/config/shortcut-manager/workbenchSho
 
 export default function WorkspaceSaveButton() {
   const save = useEnvStore((state) => state.save);
-  const { mode, setMode, markSaved } = useSaveModeStore();
+  const { mode, setMode } = useSaveModeStore();
 
   const handleClick = () => {
     save()
       .then(() => {
         if (mode === "session") setMode("manual");
-        markSaved();
       })
       .catch(console.error);
   };

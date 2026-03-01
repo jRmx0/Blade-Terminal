@@ -35,11 +35,10 @@ export function useWorkbenchShortcuts() {
 
     useShortcut("workspace.save", S["workspace.save"].keys, () => {
         const { save } = useEnvStore.getState();
-        const { mode, setMode, markSaved } = useSaveModeStore.getState();
+        const { mode, setMode } = useSaveModeStore.getState();
         save()
             .then(() => {
                 if (mode === "session") setMode("manual");
-                markSaved();
             })
             .catch(console.error);
     });
