@@ -12,10 +12,10 @@ export default function ModalHeader({ title, onClose }: ModalHeaderProps) {
             <button
                 type="button"
                 onClick={onClose}
-                className="text-gray-400 hover:text-white hover:bg-red-600 transition-colors text-lg leading-none px-1.5 py-1.5 rounded"
+                className="flex items-center justify-center text-gray-400 hover:text-white hover:bg-red-600 transition-colors p-0.5 rounded"
                 title="Close"
             >
-                ✕
+                <span className="material-symbols-outlined block" style={{ fontSize: 22 }}>close</span>
             </button>
         </div>
     );
