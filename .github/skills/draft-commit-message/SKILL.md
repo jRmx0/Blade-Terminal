@@ -8,7 +8,7 @@ description: Draft a conventional commit message for staged changes. Use when th
 ## Workflow
 
 1. Run `git diff --cached --stat` to get an overview of staged files.
-2. Run `git diff --cached` to read the actual changes (for large diffs, use `--cached -- <path>` per file).
+2. Run `git diff --cached` to read the actual changes. If the output is empty or truncated, run `git diff --cached -- <path>` for each staged file individually.
 3. Analyze the changes and draft the message following the format rules below.
 4. Present the message inside a single fenced code block for easy copy.
 
@@ -55,7 +55,7 @@ Prefix the subject with `!` before the colon: `feat(workspace)!: remove legacy s
 
 ## Output
 
-Reply with **only** the commit message inside a fenced code block. No explanation, no commentary, no additional text before or after.
+**CRITICAL: Reply with the commit message ONLY — nothing else. No introduction, no explanation, no commentary before or after the code block. Any text outside the code block is a violation of this skill.**
 
 ```
 type(scope): subject
