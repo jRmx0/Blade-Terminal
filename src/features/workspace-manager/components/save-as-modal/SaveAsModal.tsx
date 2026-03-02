@@ -43,7 +43,15 @@ export default function SaveAsModal() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 select-none"
             onMouseDown={handleBackdropClick}
         >
-            <div className="flex flex-col w-130 bg-gray-100 rounded-lg shadow-xl overflow-hidden">
+            <div
+                className="flex flex-col w-130 bg-gray-100 rounded-lg shadow-xl overflow-hidden"
+                onMouseDown={(e) => {
+                    const target = e.target as HTMLElement;
+                    if (selectedEnvId !== null && !target.closest("button") && !target.closest("input")) {
+                        selectEnv(selectedEnvId);
+                    }
+                }}
+            >
                 <ModalHeader title="Save As" onClose={close} />
 
                 {/* Workspace list */}
@@ -52,6 +60,7 @@ export default function SaveAsModal() {
                         environments={environments}
                         selectedEnvId={selectedEnvId}
                         onSelect={selectEnv}
+                        onDeselect={() => { if (selectedEnvId !== null) selectEnv(selectedEnvId); }}
                     />
                 </div>
 
