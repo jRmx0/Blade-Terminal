@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useWorkspacePickerStore } from "@/features/workspace-manager/stores/workspacePickerStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useSaveModalStore } from "@/features/workspace-manager/stores/saveModalStore";
+import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { getAllEnvironments, deleteEnvironmentCascade } from "@server/db/environments";
 import type { Environment } from "@/types/envTypes";
 import PickerModal from "@/components/picker-modal/PickerModal";
@@ -12,6 +13,7 @@ export default function WorkspacePickerModal() {
     const isOpen = useWorkspacePickerStore((s) => s.isOpen);
     const close = useWorkspacePickerStore((s) => s.close);
     const load = useEnvStore((s) => s.load);
+    const currentEnvId = useEnvStore((s) => s.env.id);
 
     const [environments, setEnvironments] = useState<Environment[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -38,6 +40,13 @@ export default function WorkspacePickerModal() {
     async function handleDelete(id: number) {
         await deleteEnvironmentCascade(id);
         setEnvironments((prev) => prev.filter((env) => env.id !== id));
+
+        // If the deleted env was the currently loaded one, its data is gone from DB.
+        // Clear dirty flags so the save guard won't offer to save stale in-memory data.
+        if (id === currentEnvId) {
+            useEnvStore.getState().clearEnvDirty();
+            useCanvasObjectStore.getState().clearDirty();
+        }
     }
 
     return (
@@ -55,6 +64,7 @@ export default function WorkspacePickerModal() {
                     key={env.id}
                     label={env.name}
                     subLabel={String(env.id)}
+                    isActive={env.id === currentEnvId}
                     onOpen={() => handleOpen(env)}
                     onDelete={() => handleDelete(env.id)}
                 />
