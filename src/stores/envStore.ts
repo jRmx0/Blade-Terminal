@@ -14,6 +14,8 @@ interface EnvState {
     isEnvDirty: boolean;
     /** Resolves the correct id from IndexedDB and sets it on the initial env. Call once at app startup. */
     init: () => Promise<void>;
+    /** Resets to a fresh blank environment without saving. Used when the active env is deleted. */
+    reset: () => Promise<void>;
     setName: (name: string) => void;
     incrementZoneCount: () => void;
     decrementZoneCount: () => void;
@@ -55,6 +57,19 @@ export const useEnvStore = create<EnvState>((set, get) => ({
         ]);
         seedIdCounter(Math.max(maxObjId, maxVtxId));
         set((state) => ({ env: { ...state.env, id } }));
+    },
+
+    reset: async () => {
+        const [id, maxObjId, maxVtxId] = await Promise.all([
+            getNextEnvironmentId(),
+            getMaxEnvObjectId(),
+            getMaxEnvVertexId(),
+        ]);
+        seedIdCounter(Math.max(maxObjId, maxVtxId));
+        set({ env: { ...INITIAL_ENV, id }, isEnvDirty: false });
+        useSaveModeStore.getState().setMode("session");
+        useCanvasObjectStore.getState().clearAll();
+        useCanvasHistoryStore.getState().resetHistory();
     },
 
     setName: (name) => {

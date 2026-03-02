@@ -46,6 +46,8 @@ export interface CanvasObjectState {
     insertVertex: (objectId: number, afterIndex: number, x: number, y: number) => number;
     /** Call this after a successful DB save to reset tracking. */
     clearDirty: () => void;
+    /** Clears all objects, vertices, and dirty tracking — used when resetting to a blank environment. */
+    clearAll: () => void;
     /** Loads objects and vertices for an environment from DB, replacing current state. Dirty sets are cleared. */
     load: (environmentId: number) => Promise<void>;
 }
@@ -226,6 +228,16 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set) => ({
 
     clearDirty: () =>
         set({
+            dirtyObjectIds: new Set<number>(),
+            dirtyVertexIds: new Set<number>(),
+            deletedObjectIds: new Set<number>(),
+            deletedVertexIds: new Map<number, number>(),
+        }),
+
+    clearAll: () =>
+        set({
+            objects: [],
+            vertices: [],
             dirtyObjectIds: new Set<number>(),
             dirtyVertexIds: new Set<number>(),
             deletedObjectIds: new Set<number>(),
