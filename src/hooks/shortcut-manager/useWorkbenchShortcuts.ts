@@ -3,6 +3,7 @@ import { useShortcut, addShortcutBlockListener, removeShortcutBlockListener } fr
 import { WORKBENCH_SHORTCUTS as S } from "@/config/shortcut-manager/workbenchShortcutsConfig";
 import { useWorkspacePickerStore } from "@/features/workspace-manager/stores/workspacePickerStore";
 import { useSaveModalStore } from "@/features/workspace-manager/stores/saveModalStore";
+import { useSaveAsModalStore } from "@/features/workspace-manager/stores/saveAsModalStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
 import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
@@ -33,6 +34,10 @@ export function useWorkbenchShortcuts() {
 
     useShortcut("workspace.new", S["workspace.new"].keys, () =>
         useSaveModalStore.getState().requestWithSaveGuard(() => useEnvStore.getState().reset()),
+    );
+
+    useShortcut("workspace.save-as", S["workspace.save-as"].keys, () =>
+        useSaveAsModalStore.getState().open().catch(console.error),
     );
 
     useShortcut("workspace.open", S["workspace.open"].keys, () =>

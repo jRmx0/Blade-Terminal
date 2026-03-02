@@ -7,6 +7,10 @@ export const WORKBENCH_SHORTCUTS = {
         keys: "Ctrl+Alt+N",
         shortcut: ["Ctrl", "Alt", "N"],
     } satisfies ShortcutBindingConfig,
+    "workspace.save-as": {
+        keys: "Ctrl+Shift+S",
+        shortcut: ["Ctrl", "Shift", "S"],
+    } satisfies ShortcutBindingConfig,
     "workspace.open": {
         keys: "Ctrl+O",
         shortcut: ["Ctrl", "O"],
