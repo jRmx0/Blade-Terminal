@@ -1,11 +1,11 @@
-interface PickerModalHeaderProps {
+interface ModalHeaderProps {
     title: string;
     onClose: () => void;
 }
 
-export default function PickerModalHeader({ title, onClose }: PickerModalHeaderProps) {
+export default function ModalHeader({ title, onClose }: ModalHeaderProps) {
     return (
-        <div className="flex items-center justify-between px-5 py-2 border-b border-gray-200 select-none">
+        <div className="flex items-center justify-between px-5 py-2 select-none">
             <span className="text-sm font-semibold text-gray-700 tracking-wide uppercase">
                 {title}
             </span>
