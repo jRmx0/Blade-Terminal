@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useWorkspacePickerStore } from "@/features/workspace-manager/stores/workspacePickerStore";
 import { useEnvStore } from "@/stores/envStore";
+import { useSaveModalStore } from "@/features/workspace-manager/stores/saveModalStore";
 import { getAllEnvironments, deleteEnvironmentCascade } from "@server/db/environments";
 import type { Environment } from "@/types/envTypes";
 import PickerModal from "@/components/picker-modal/PickerModal";
@@ -27,9 +28,11 @@ export default function WorkspacePickerModal() {
             .finally(() => setIsLoading(false));
     }, [isOpen]);
 
-    async function handleOpen(env: Environment) {
-        await load(env.id);
-        close();
+    function handleOpen(env: Environment) {
+        useSaveModalStore.getState().requestWithSaveGuard(async () => {
+            await load(env.id);
+            close();
+        });
     }
 
     async function handleDelete(id: number) {

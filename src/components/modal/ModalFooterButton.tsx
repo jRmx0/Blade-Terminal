@@ -11,8 +11,8 @@ export default function ModalFooterButton({
 }: ModalFooterButtonProps) {
     const styles =
         variant === "primary"
-            ? "border border-gray-400 text-gray-600 hover:bg-blue-200 bg-blue-100"
-            : "border border-gray-400 text-gray-600 hover:bg-gray-200";
+            ? "border border-gray-500 text-gray-700 font-medium hover:bg-gray-200"
+            : "border border-gray-300 text-gray-500 hover:bg-gray-200";
 
     return (
         <button
