@@ -7,6 +7,7 @@ import CanvasEditorLayout from "./canvas-editor/CanvasEditorLayout";
 import { useWorkbenchShortcuts } from "@/hooks/shortcut-manager/useWorkbenchShortcuts";
 import WorkspacePickerModal from "@/features/workspace-manager/components/workspace-picker-modal/WorkspacePickerModal";
 import SaveModal from "@/features/workspace-manager/components/save-modal/SaveModal";
+import DeleteModal from "@/features/workspace-manager/components/delete-modal/DeleteModal";
 
 export default function WorkbenchWindow() {
   useWorkbenchShortcuts();
@@ -23,6 +24,7 @@ export default function WorkbenchWindow() {
       <StatusBar />
       <WorkspacePickerModal />
       <SaveModal />
+      <DeleteModal />
     </div>
   );
 }

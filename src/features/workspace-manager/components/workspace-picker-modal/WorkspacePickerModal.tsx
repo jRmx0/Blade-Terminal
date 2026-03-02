@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useWorkspacePickerStore } from "@/features/workspace-manager/stores/workspacePickerStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useSaveModalStore } from "@/features/workspace-manager/stores/saveModalStore";
+import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { getAllEnvironments, deleteEnvironmentCascade } from "@server/db/environments";
 import type { Environment } from "@/types/envTypes";
 import PickerModal from "@/components/picker-modal/PickerModal";
@@ -36,14 +37,15 @@ export default function WorkspacePickerModal() {
         });
     }
 
-    async function handleDelete(id: number) {
-        await deleteEnvironmentCascade(id);
-        setEnvironments((prev) => prev.filter((env) => env.id !== id));
+    function handleDelete(env: Environment) {
+        useDeleteModalStore.getState().requestDelete(env.name, async () => {
+            await deleteEnvironmentCascade(env.id);
+            setEnvironments((prev) => prev.filter((e) => e.id !== env.id));
 
-        // If the deleted env was the currently loaded one, reset to a blank environment.
-        if (id === currentEnvId) {
-            await useEnvStore.getState().reset();
-        }
+            if (env.id === currentEnvId) {
+                await useEnvStore.getState().reset();
+            }
+        });
     }
 
     return (
@@ -63,7 +65,7 @@ export default function WorkspacePickerModal() {
                     subLabel={String(env.id)}
                     isActive={env.id === currentEnvId}
                     onOpen={() => handleOpen(env)}
-                    onDelete={() => handleDelete(env.id)}
+                    onDelete={() => handleDelete(env)}
                 />
             ))}
         </PickerModal>
