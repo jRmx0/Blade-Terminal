@@ -45,6 +45,7 @@ export default function WorkspacePickerModal() {
             isLoading={isLoading}
             isEmpty={environments.length === 0}
             emptyMessage="No saved workspaces"
+            onCancel={close}
         >
             {environments.map((env) => (
                 <PickerModalItem

@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
-import PickerModalHeader from "@/components/picker-modal/PickerModalHeader";
+import ModalHeader from "@/components/modal/ModalHeader";
+import ModalFooter from "@/components/modal/ModalFooter";
+import PickerModalItemSection from "@/components/picker-modal/PickerModalItemSection";
 
 interface PickerModalProps {
     isOpen: boolean;
@@ -8,6 +10,10 @@ interface PickerModalProps {
     isLoading?: boolean;
     isEmpty?: boolean;
     emptyMessage?: string;
+    onOk?: () => void;
+    okLabel?: string;
+    onCancel?: () => void;
+    cancelLabel?: string;
     children: React.ReactNode;
 }
 
@@ -18,6 +24,10 @@ export default function PickerModal({
     isLoading = false,
     isEmpty = false,
     emptyMessage = "No items",
+    onOk,
+    okLabel,
+    onCancel,
+    cancelLabel,
     children,
 }: PickerModalProps) {
     const dialogRef = useRef<HTMLDivElement>(null);
@@ -48,9 +58,9 @@ export default function PickerModal({
                 ref={dialogRef}
                 className="flex flex-col w-120 max-h-[60vh] bg-gray-100 rounded-lg shadow-xl overflow-hidden"
             >
-                <PickerModalHeader title={title} onClose={onClose} />
+                <ModalHeader title={title} onClose={onClose} />
 
-                <div className="flex-1 overflow-y-auto">
+                <PickerModalItemSection>
                     {isLoading ? (
                         <p className="px-5 py-6 text-sm text-gray-500 text-center">Loading…</p>
                     ) : isEmpty ? (
@@ -58,7 +68,16 @@ export default function PickerModal({
                     ) : (
                         <ul>{children}</ul>
                     )}
-                </div>
+                </PickerModalItemSection>
+
+                {(onOk || onCancel) && (
+                    <ModalFooter
+                        onOk={onOk}
+                        okLabel={okLabel}
+                        onCancel={onCancel}
+                        cancelLabel={cancelLabel}
+                    />
+                )}
             </div>
         </div>
     );
