@@ -3,18 +3,23 @@ interface PickerModalItemProps {
     subLabel?: string;
     onOpen: () => void;
     onDelete: () => void;
+    isActive?: boolean;
 }
 
-export default function PickerModalItem({ label, subLabel, onOpen, onDelete }: PickerModalItemProps) {
+export default function PickerModalItem({ label, subLabel, onOpen, onDelete, isActive = false }: PickerModalItemProps) {
     return (
-        <li className="flex items-center group hover:bg-gray-200 active:bg-gray-300 transition-colors">
+        <li className={`flex items-center group transition-colors ${isActive ? "bg-gray-200" : "hover:bg-gray-200 active:bg-gray-300"}`}>
             <button
                 type="button"
                 onClick={onOpen}
-                className="flex-1 flex flex-col min-w-0 px-5 py-3 text-left cursor-pointer"
+                disabled={isActive}
+                className={`flex-1 flex flex-col min-w-0 px-5 py-3 text-left ${isActive ? "cursor-default" : "cursor-pointer"}`}
             >
-                <span className="text-sm font-medium text-gray-800 truncate">
+                <span className={`text-sm font-medium truncate ${isActive ? "text-gray-500" : "text-gray-800 group-hover:underline"}`}>
                     {label}
+                    {isActive && (
+                        <span className="ml-2 text-xs font-normal text-gray-400">(current)</span>
+                    )}
                 </span>
                 {subLabel && (
                     <span className="text-xs text-gray-400 truncate">{subLabel}</span>
