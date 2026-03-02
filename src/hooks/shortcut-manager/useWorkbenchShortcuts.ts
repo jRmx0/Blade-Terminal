@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useShortcut, addShortcutBlockListener, removeShortcutBlockListener } from "./useShortcut";
 import { WORKBENCH_SHORTCUTS as S } from "@/config/shortcut-manager/workbenchShortcutsConfig";
 import { useWorkspacePickerStore } from "@/features/workspace-manager/stores/workspacePickerStore";
+import { useSaveModalStore } from "@/features/workspace-manager/stores/saveModalStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
 import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
@@ -29,6 +30,10 @@ export function useWorkbenchShortcuts() {
         addShortcutBlockListener(deactivateTools);
         return () => removeShortcutBlockListener(deactivateTools);
     }, []);
+
+    useShortcut("workspace.new", S["workspace.new"].keys, () =>
+        useSaveModalStore.getState().requestWithSaveGuard(() => useEnvStore.getState().reset()),
+    );
 
     useShortcut("workspace.open", S["workspace.open"].keys, () =>
         useWorkspacePickerStore.getState().open(),
