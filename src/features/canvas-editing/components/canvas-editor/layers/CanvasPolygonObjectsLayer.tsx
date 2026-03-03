@@ -1,5 +1,7 @@
+import { useRef } from "react";
 import { Layer, Line } from "react-konva";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
+import type React from "react";
 import type { EnvObject, EnvVertex } from "@/types/envTypes";
 import {
     COLOR_ZONE_FILL,
@@ -20,6 +22,7 @@ interface CanvasPolygonObjectsLayerProps {
     onObjectHoverChange: (hoveredId: number | null) => void;
     onObjectDragStart: (objectId: number) => void;
     onObjectDragEnd: (objectId: number, dx: number, dy: number) => void;
+    isPanningRef: React.RefObject<boolean>;
 }
 
 export function CanvasPolygonObjectsLayer({
@@ -34,9 +37,13 @@ export function CanvasPolygonObjectsLayer({
     onObjectHoverChange,
     onObjectDragStart,
     onObjectDragEnd,
+    isPanningRef,
 }: CanvasPolygonObjectsLayerProps) {
     const canInteract = activeTool === "select" || activeTool === "delete";
     const canDrag = activeTool === "select";
+
+    // Coordinates onDragStart/onDragEnd: only true when a left-button drag is active.
+    const primaryDragRef = useRef(false);
 
     // Build lookup once per render — O(n) instead of O(n*m)
     const verticesByObjectId = new Map<number, EnvVertex[]>();
@@ -82,10 +89,19 @@ export function CanvasPolygonObjectsLayer({
                             }
                         }}
                         onDragStart={(e) => {
+                            if (isPanningRef.current) {
+                                // Middle-mouse pan is active — abort the drag without
+                                // cancelling bubble so mousemove keeps reaching the stage.
+                                e.target.stopDrag();
+                                return;
+                            }
+                            primaryDragRef.current = true;
                             e.cancelBubble = true;
                             onObjectDragStart(obj.id);
                         }}
                         onDragEnd={(e) => {
+                            if (!primaryDragRef.current) return;
+                            primaryDragRef.current = false;
                             e.cancelBubble = true;
                             const node = e.target;
                             const dx = node.x();

@@ -54,6 +54,7 @@ export default function CanvasEditor() {
 
   const {
     isPanning,
+    isPanningRef,
     handlePanMouseDown,
     handlePanMouseMove,
     handlePanMouseUp,
@@ -184,6 +185,7 @@ export default function CanvasEditor() {
           movingObjectId={movingObjectId}
           activeTool={activeTool}
           scale={scale}
+          isPanningRef={isPanningRef}
           onSelectObject={selectObject}
           onDeleteObject={(id) => {
             deleteObject(id);
