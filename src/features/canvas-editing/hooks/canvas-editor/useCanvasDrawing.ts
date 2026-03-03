@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef } from "react";
 import type Konva from "konva";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import type { ObjectType } from "@/config/db-ops/enums";
+import { defaultObjectTypeForGlobal } from "@/config/db-ops/enums";
 import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
+import { useEnvStore } from "@/stores/envStore";
 
 interface UseCanvasDrawingOptions {
     activeTool: ActiveTool | null;
@@ -99,10 +101,11 @@ export function useCanvasDrawing({
                 (activeTool === "addZone" || activeTool === "addObstacle") &&
                 drawingPoints.length >= 3
             ) {
+                const objectType = defaultObjectTypeForGlobal(useEnvStore.getState().env.type);
                 addObject(
                     activeTool === "addZone" ? "zone" : "obstacle",
                     drawingPoints,
-                    "offline",
+                    objectType,
                 );
                 cancelDrawing();
             }

@@ -49,6 +49,10 @@ export interface CanvasObjectState {
     deleteVertices: (objectId: number, indices: number[]) => void;
     /** Inserts a new vertex after the given index. Returns the new vertex id. */
     insertVertex: (objectId: number, afterIndex: number, x: number, y: number) => number;
+    /** Updates the type of a single object. Marks it dirty. */
+    updateObjectType: (objectId: number, type: ObjectType) => void;
+    /** Bulk-updates the type of every object. Marks all dirty. */
+    updateObjectsType: (type: ObjectType) => void;
     /** Resets dirty tracking. Called by canvas bridge after a successful save. */
     clearDirty: () => void;
     /** Replaces all in-memory objects and vertices and resets dirty tracking. Used by the canvas bridge for load and reset. */
@@ -230,6 +234,31 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
         });
         return newId;
     },
+
+    updateObjectType: (objectId, type) =>
+        set((state) => {
+            const idx = state.objects.findIndex((o) => o.id === objectId);
+            if (idx === -1) return state;
+
+            const newObjects = state.objects.map((o) => o.id === objectId ? { ...o, type } : o);
+            let dObj = state.dirtyObjectIds, xObj = state.deletedObjectIds;
+            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, objectId));
+
+            return { objects: newObjects, dirtyObjectIds: dObj, deletedObjectIds: xObj };
+        }),
+
+    updateObjectsType: (type) =>
+        set((state) => {
+            if (state.objects.length === 0) return state;
+
+            const newObjects = state.objects.map((o) => ({ ...o, type }));
+            let dObj = state.dirtyObjectIds, xObj = state.deletedObjectIds;
+            for (const o of state.objects) {
+                ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, o.id));
+            }
+
+            return { objects: newObjects, dirtyObjectIds: dObj, deletedObjectIds: xObj };
+        }),
 
     clearDirty: () =>
         set({

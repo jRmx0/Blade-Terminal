@@ -9,6 +9,7 @@ import WorkspacePickerModal from "@/features/workspace-manager/components/worksp
 import SaveModal from "@/features/workspace-manager/components/save-modal/SaveModal";
 import SaveAsModal from "@/features/workspace-manager/components/save-as-modal/SaveAsModal";
 import DeleteModal from "@/features/workspace-manager/components/delete-modal/DeleteModal";
+import ConfirmTypeChangeModal from "@/features/coverage-planning/components/controls-panel/env-section/ConfirmTypeChangeModal";
 
 export default function WorkbenchWindow() {
   useWorkbenchShortcuts();
@@ -27,6 +28,7 @@ export default function WorkbenchWindow() {
       <SaveModal />
       <SaveAsModal />
       <DeleteModal />
+      <ConfirmTypeChangeModal />
     </div>
   );
 }

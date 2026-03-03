@@ -57,3 +57,23 @@ export const OBJECT_TYPE_OPTIONS: { value: ObjectType; label: string }[] = [
     { value: OBJECT_TYPE.OFFLINE, label: "Off-Line" },
     { value: OBJECT_TYPE.ONLINE, label: "On-Line" },
 ];
+
+// ─── Global Type Helpers ───────────────────────────────────────────────────────
+
+/**
+ * Returns true when the global type is a fixed single type (offline or online),
+ * meaning all objects are forced to that type and per-object selection is disabled.
+ */
+export function isGlobalTypeFixed(type: GlobalType): boolean {
+    return type === GLOBAL_TYPE.OFFLINE || type === GLOBAL_TYPE.ONLINE;
+}
+
+/**
+ * Returns the ObjectType that new (or bulk-updated) objects should receive
+ * based on the active global type.
+ */
+export function defaultObjectTypeForGlobal(type: GlobalType): ObjectType {
+    return type === GLOBAL_TYPE.ONLINE || type === GLOBAL_TYPE.ANY_ONLINE
+        ? OBJECT_TYPE.ONLINE
+        : OBJECT_TYPE.OFFLINE;
+}
