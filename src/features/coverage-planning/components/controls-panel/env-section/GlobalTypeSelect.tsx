@@ -1,22 +1,17 @@
-import { useGlobalTypeStore } from "@/features/coverage-planning/stores/env-section/globalTypeStore";
+import { useEnvStore } from "@/stores/envStore";
 import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
-import type { GlobalType } from "@/config/db-ops/enums";
+import { GLOBAL_TYPE_OPTIONS, type GlobalType } from "@/config/db-ops/enums";
 
 export default function GlobalTypeSelection() {
-  const selectedGlobalType = useGlobalTypeStore(
-    (state) => state.selectedGlobalType,
-  );
-  const globalTypes = useGlobalTypeStore((state) => state.globalTypes);
-  const setSelectedGlobalType = useGlobalTypeStore(
-    (state) => state.setSelectedGlobalType,
-  );
+  const type = useEnvStore((s) => s.env.type);
+  const setType = useEnvStore((s) => s.setType);
 
   return (
     <ControlsPanelSectionSelect
       label="Global Type"
-      value={selectedGlobalType}
-      onChange={(v) => setSelectedGlobalType(v as GlobalType)}
-      options={globalTypes}
+      value={type}
+      onChange={(v) => setType(v as GlobalType)}
+      options={GLOBAL_TYPE_OPTIONS}
     />
   );
 }

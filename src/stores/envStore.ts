@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ENV_FORMAT, OBJECT_TYPE } from "@/config/db-ops/enums";
+import { ENV_FORMAT, GLOBAL_TYPE, type EnvFormat, type GlobalType } from "@/config/db-ops/enums";
 import type { Environment } from "@/types/envTypes";
 import { getSaveMode } from "@/stores/saveModeStore";
 import { saveEnvironment } from "@server/db/environments";
@@ -12,6 +12,10 @@ interface EnvState {
     setEnv: (env: Environment) => void;
     /** Updates the environment name and marks the record as dirty. Triggers autosave when mode is "autosave". */
     setName: (name: string) => void;
+    /** Updates the environment format and marks the record as dirty. Triggers autosave when mode is "autosave". */
+    setFormat: (format: EnvFormat) => void;
+    /** Updates the environment global type and marks the record as dirty. Triggers autosave when mode is "autosave". */
+    setType: (type: GlobalType) => void;
     /** Clears the dirty flag. Called by canvas bridge after a successful save. */
     clearDirty: () => void;
 }
@@ -20,7 +24,7 @@ const INITIAL_ENV: Environment = {
     id: 0,
     name: "Untitled Environment",
     format: ENV_FORMAT.POLYGON,
-    type: OBJECT_TYPE.OFFLINE,
+    type: GLOBAL_TYPE.OFFLINE,
     zoneObjectCount: 0,
     obstacleObjectCount: 0,
 };
@@ -40,6 +44,22 @@ export const useEnvStore = create<EnvState>()((set) => ({
     setName: (name) => {
         set((state) => {
             const env = { ...state.env, name };
+            autosaveEnv(env);
+            return { env, isEnvDirty: true };
+        });
+    },
+
+    setFormat: (format) => {
+        set((state) => {
+            const env = { ...state.env, format };
+            autosaveEnv(env);
+            return { env, isEnvDirty: true };
+        });
+    },
+
+    setType: (type) => {
+        set((state) => {
+            const env = { ...state.env, type };
             autosaveEnv(env);
             return { env, isEnvDirty: true };
         });

@@ -1,10 +1,10 @@
-import type { EnvFormat, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
+import type { EnvFormat, GlobalType, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
 
 export interface Environment {
     id: number;
     name: string;
     format: EnvFormat;
-    type: ObjectType;
+    type: GlobalType;
     zoneObjectCount: number;
     obstacleObjectCount: number;
 }

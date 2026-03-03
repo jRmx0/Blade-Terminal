@@ -1,7 +1,7 @@
 import { getEnvironment, saveEnvironment } from "@server/db/environments";
 import { deleteEnvObjectsByEnvironment, saveEnvObjects } from "@server/db/env-objects";
 import { saveEnvVertices } from "@server/db/env-vertices";
-import { ENV_FORMAT, OBJECT_TYPE, OBJECT_CATEGORY } from "@/config/db-ops/enums";
+import { ENV_FORMAT, GLOBAL_TYPE, OBJECT_CATEGORY } from "@/config/db-ops/enums";
 import type { Environment } from "@/types/envTypes";
 import { useEnvStore } from "@/stores/envStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
@@ -12,7 +12,7 @@ import { seedIdCounterFromDb, resolveNextEnvironmentId, loadCanvasForEnvironment
 const BLANK_ENV: Omit<Environment, "id"> = {
     name: "Untitled Environment",
     format: ENV_FORMAT.POLYGON,
-    type: OBJECT_TYPE.OFFLINE,
+    type: GLOBAL_TYPE.OFFLINE,
     zoneObjectCount: 0,
     obstacleObjectCount: 0,
 };

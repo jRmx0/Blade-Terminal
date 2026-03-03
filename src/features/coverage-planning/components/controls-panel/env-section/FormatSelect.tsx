@@ -1,18 +1,17 @@
-import { useFormatStore } from "@/features/coverage-planning/stores/env-section/formatStore";
+import { useEnvStore } from "@/stores/envStore";
 import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
-import type { EnvFormat } from "@/config/db-ops/enums";
+import { ENV_FORMAT_OPTIONS, type EnvFormat } from "@/config/db-ops/enums";
 
 export default function FormatSelection() {
-  const selectedFormat = useFormatStore((state) => state.selectedFormat);
-  const formats = useFormatStore((state) => state.formats);
-  const setSelectedFormat = useFormatStore((state) => state.setSelectedFormat);
+  const format = useEnvStore((s) => s.env.format);
+  const setFormat = useEnvStore((s) => s.setFormat);
 
   return (
     <ControlsPanelSectionSelect
       label="Format"
-      value={selectedFormat}
-      onChange={(value) => setSelectedFormat(value as EnvFormat)}
-      options={formats}
+      value={format}
+      onChange={(value) => setFormat(value as EnvFormat)}
+      options={ENV_FORMAT_OPTIONS}
       placeholder="Select format..."
     />
   );
