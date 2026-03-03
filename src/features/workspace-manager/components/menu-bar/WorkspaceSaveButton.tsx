@@ -1,15 +1,15 @@
 import MenuBarItem from "@/components/menu-bar/MenuBarItem";
 import { useSaveModeStore } from "@/stores/saveModeStore";
 import { WORKBENCH_SHORTCUTS as S } from "@/config/shortcut-manager/workbenchShortcutsConfig";
-import { performSave } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasSave";
+import { saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
 
 export default function WorkspaceSaveButton() {
-  const { mode, setMode } = useSaveModeStore();
+  const { mode, setMode, isAutoSaveEnabled } = useSaveModeStore();
 
   const handleClick = () => {
-    performSave()
+    saveCanvas()
       .then(() => {
-        if (mode === "session") setMode("manual");
+        if (mode === "session") setMode(isAutoSaveEnabled ? "autosave" : "manual");
       })
       .catch(console.error);
   };

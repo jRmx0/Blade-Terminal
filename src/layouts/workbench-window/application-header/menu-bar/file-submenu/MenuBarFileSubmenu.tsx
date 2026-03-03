@@ -5,9 +5,10 @@ import WorkspaceRenameButton from "@/features/workspace-manager/components/menu-
 import WorkspaceCopyButton from "@/features/workspace-manager/components/menu-bar/WorkspaceCopyButton";
 import WorkspaceImportButton from "@/features/workspace-manager/components/menu-bar/WorkspaceImportButton";
 import WorkspaceExportButton from "@/features/workspace-manager/components/menu-bar/WorkspaceExportButton";
-import WorkspaceCloseButton from "@/features/workspace-manager/components/menu-bar/WorkspaceCloseButton";
+// import WorkspaceCloseButton from "@/features/workspace-manager/components/menu-bar/WorkspaceCloseButton";
 import MenuSeparator from "@/components/menu-bar/MenuBarSeparator";
 import WorkspaceOpenButton from "@/features/workspace-manager/components/menu-bar/WorkspaceOpenButton";
+import WorkspaceAutoSaveButton from "@/features/workspace-manager/components/menu-bar/WorkspaceAutoSaveButton";
 
 export default function MenuBarFileSubmenu() {
   return (
@@ -24,6 +25,10 @@ export default function MenuBarFileSubmenu() {
 
       <WorkspaceRenameButton />
       <WorkspaceCopyButton />
+
+      <MenuSeparator />
+
+      <WorkspaceAutoSaveButton />
 
       <MenuSeparator />
 

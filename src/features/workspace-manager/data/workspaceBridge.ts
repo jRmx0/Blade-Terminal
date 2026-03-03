@@ -7,7 +7,7 @@ import { useEnvStore } from "@/stores/envStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
-import { seedIdCounterFromDb, resolveNextEnvironmentId, loadCanvasForEnvironment } from "@/features/canvas-editing/data/canvasBridge";
+import { seedIdCounterFromDb, resolveNextEnvironmentId, loadCanvasForEnvironment, saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
 
 const BLANK_ENV: Omit<Environment, "id"> = {
     name: "Untitled Environment",
@@ -19,6 +19,10 @@ const BLANK_ENV: Omit<Environment, "id"> = {
 
 function countByCategory(objects: { category: string }[], category: string): number {
     return objects.filter((o) => o.category === category).length;
+}
+
+function modeAfterFirstSave(): "manual" | "autosave" {
+    return useSaveModeStore.getState().isAutoSaveEnabled ? "autosave" : "manual";
 }
 
 /** Initializes a fresh blank environment at app startup. Seeds the ID counter from IndexedDB. */
@@ -43,7 +47,7 @@ export async function resetWorkspace(): Promise<void> {
 export async function loadWorkspace(environmentId: number): Promise<void> {
     const env = await getEnvironment(environmentId);
     if (!env) return;
-    useSaveModeStore.getState().setMode("manual");
+    useSaveModeStore.getState().setMode(modeAfterFirstSave());
     await loadCanvasForEnvironment(environmentId);
     const { objects } = useCanvasObjectStore.getState();
     const zoneObjectCount = countByCategory(objects, OBJECT_CATEGORY.ZONE);
@@ -68,4 +72,20 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
         vertices.length > 0 ? saveEnvVertices(vertices) : Promise.resolve(),
     ]);
     await loadWorkspace(targetId);
+}
+
+/**
+ * Applies an autosave toggle to the current save mode:
+ * - Enabling while mode is "manual" → switches to "autosave" and immediately saves any dirty state.
+ * - Enabling while mode is "session" → no mode change; autosave activates on the next manual save.
+ * - Disabling while mode is "autosave" → switches to "manual".
+ */
+export async function applyAutoSaveToggle(enabled: boolean): Promise<void> {
+    const { mode, setMode } = useSaveModeStore.getState();
+    if (enabled && mode === "manual") {
+        setMode("autosave");
+        await saveCanvas();
+    } else if (!enabled && mode === "autosave") {
+        setMode("manual");
+    }
 }

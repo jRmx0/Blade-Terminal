@@ -43,8 +43,8 @@ export const useSaveModalStore = create<SaveModalState>()((set, get) => ({
 
     saveAndContinue: async () => {
         await saveCanvas();
-        const { mode, setMode } = useSaveModeStore.getState();
-        if (mode === "session") setMode("manual");
+        const { mode, setMode, isAutoSaveEnabled } = useSaveModeStore.getState();
+        if (mode === "session") setMode(isAutoSaveEnabled ? "autosave" : "manual");
 
         const { pendingAction } = get();
         set({ isOpen: false, pendingAction: null });
