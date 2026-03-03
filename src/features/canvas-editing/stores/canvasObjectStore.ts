@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { EnvObject, EnvVertex } from "@/types/envTypes";
-import type { ObjectCategory, ObjectType } from "@/config/db-ops/enums";
+import { OBJECT_CATEGORY, type ObjectCategory, type ObjectType } from "@/config/db-ops/enums";
 import { objectVertices } from "@/features/canvas-editing/utils/canvasGeometry";
 import { syncObject, markDirty, markDeleted, markVertexDirty, markVertexDeleted } from "@/features/canvas-editing/utils/canvasObjectUtils";
 import { useEnvStore } from "@/stores/envStore";
@@ -59,7 +59,7 @@ export const selectIsDirty = (s: CanvasObjectState): boolean =>
     s.deletedObjectIds.size > 0 ||
     s.deletedVertexIds.size > 0;
 
-export const useCanvasObjectStore = create<CanvasObjectState>()((set) => ({
+export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
     objects: [],
     vertices: [],
     dirtyObjectIds: new Set<number>(),
@@ -67,7 +67,7 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set) => ({
     deletedObjectIds: new Set<number>(),
     deletedVertexIds: new Map<number, number>(),
 
-    addObject: (category, points, type) =>
+    addObject: (category, points, type) => {
         set((state) => {
             const objectId = nextId();
             const newVertices: EnvVertex[] = points.map((p) => ({
@@ -99,9 +99,14 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set) => ({
             }
 
             return { ...synced, dirtyObjectIds: dObj, dirtyVertexIds: dVtx, deletedObjectIds: xObj, deletedVertexIds: xVtx };
-        }),
+        });
+        const { incrementZoneCount, incrementObstacleCount } = useEnvStore.getState();
+        if (category === OBJECT_CATEGORY.ZONE) incrementZoneCount();
+        else if (category === OBJECT_CATEGORY.OBSTACLE) incrementObstacleCount();
+    },
 
-    deleteObject: (id) =>
+    deleteObject: (id) => {
+        const category = get().objects.find((o) => o.id === id)?.category;
         set((state) => {
             const toDelete = objectVertices(state.vertices, id);
 
@@ -117,7 +122,11 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set) => ({
                 vertices: state.vertices.filter((v) => v.objectId !== id),
                 dirtyObjectIds: dObj, dirtyVertexIds: dVtx, deletedObjectIds: xObj, deletedVertexIds: xVtx,
             };
-        }),
+        });
+        const { decrementZoneCount, decrementObstacleCount } = useEnvStore.getState();
+        if (category === OBJECT_CATEGORY.ZONE) decrementZoneCount();
+        else if (category === OBJECT_CATEGORY.OBSTACLE) decrementObstacleCount();
+    },
 
     updateVertex: (objectId, vertexIndex, x, y) =>
         set((state) => {
@@ -260,5 +269,9 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set) => ({
             deletedObjectIds: new Set<number>(),
             deletedVertexIds: new Map<number, number>(),
         });
+        // Recompute counts from loaded objects to correct any stale DB values
+        const zoneCount = objects.filter((o) => o.category === OBJECT_CATEGORY.ZONE).length;
+        const obstacleCount = objects.filter((o) => o.category === OBJECT_CATEGORY.OBSTACLE).length;
+        useEnvStore.getState().syncObjectCounts(zoneCount, obstacleCount);
     },
 }));
