@@ -1,5 +1,8 @@
 import InspectorPanelSectionField from "@/components/inspector-panel/InspectorPanelSectionField";
+import { useEnvStore } from "@/stores/envStore";
 
 export default function ZoneSumField() {
-  return <InspectorPanelSectionField label="Number of zones" value="TBD" />;
+  const count = useEnvStore((s) => s.env.zoneObjectCount);
+
+  return <InspectorPanelSectionField label="Number of zones" value={String(count)} />;
 }
