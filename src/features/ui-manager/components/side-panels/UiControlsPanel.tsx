@@ -69,7 +69,7 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
   return (
     <div
       style={{ width: `${width}px` }}
-      className="relative flex flex-col h-full bg-gray-100 overflow-auto select-none"
+      className="relative flex flex-col h-full shrink-0 bg-gray-100 overflow-auto select-none"
     >
       {children}
 
@@ -78,11 +78,10 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
         className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize select-none group"
       >
         <div
-          className={`absolute right-0 top-0 bottom-0 pointer-events-none transition-[width,background-color] delay-0 ${
-            isResizing
+          className={`absolute right-0 top-0 bottom-0 pointer-events-none transition-[width,background-color] delay-0 ${isResizing
               ? "w-1 bg-blue-500"
               : "w-px bg-gray-300 group-hover:w-1 group-hover:bg-blue-500 group-hover:delay-300"
-          }`}
+            }`}
         />
       </div>
     </div>
