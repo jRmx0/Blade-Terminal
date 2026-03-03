@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import type { EnvObject, EnvVertex } from "@/types/envTypes";
+import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
+import { useEnvStore } from "@/stores/envStore";
 import { useCanvasObjectStore } from "./canvasObjectStore";
 
 // ---------------------------------------------------------------------------
@@ -49,6 +51,12 @@ function restoreSnapshot(current: CanvasSnapshot, target: CanvasSnapshot) {
     });
 }
 
+function syncCountsFromSnapshot(snapshot: CanvasSnapshot) {
+    const zoneCount = snapshot.objects.filter((o) => o.category === OBJECT_CATEGORY.ZONE).length;
+    const obstacleCount = snapshot.objects.filter((o) => o.category === OBJECT_CATEGORY.OBSTACLE).length;
+    useEnvStore.getState().syncObjectCounts(zoneCount, obstacleCount);
+}
+
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
@@ -91,6 +99,7 @@ export const useCanvasHistoryStore = create<CanvasHistoryState>()((set, get) => 
 
         set({ _isTimeTraveling: true });
         restoreSnapshot(current, snapshot);
+        syncCountsFromSnapshot(snapshot);
         set({
             _isTimeTraveling: false,
             past: past.slice(0, -1),
@@ -112,6 +121,7 @@ export const useCanvasHistoryStore = create<CanvasHistoryState>()((set, get) => 
 
         set({ _isTimeTraveling: true });
         restoreSnapshot(current, snapshot);
+        syncCountsFromSnapshot(snapshot);
         set({
             _isTimeTraveling: false,
             past: [...past, current],

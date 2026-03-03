@@ -269,9 +269,5 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
             deletedObjectIds: new Set<number>(),
             deletedVertexIds: new Map<number, number>(),
         });
-        // Recompute counts from loaded objects to correct any stale DB values
-        const zoneCount = objects.filter((o) => o.category === OBJECT_CATEGORY.ZONE).length;
-        const obstacleCount = objects.filter((o) => o.category === OBJECT_CATEGORY.OBSTACLE).length;
-        useEnvStore.getState().syncObjectCounts(zoneCount, obstacleCount);
     },
 }));

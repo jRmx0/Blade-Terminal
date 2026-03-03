@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ENV_FORMAT, OBJECT_TYPE } from "@/config/db-ops/enums";
+import { ENV_FORMAT, OBJECT_TYPE, OBJECT_CATEGORY } from "@/config/db-ops/enums";
 import type { Environment } from "@/types/envTypes";
 import { getSaveMode, useSaveModeStore } from "@/stores/saveModeStore";
 import { saveEnvironment, getEnvironment, getNextEnvironmentId } from "@server/db/environments";
@@ -122,9 +122,14 @@ export const useEnvStore = create<EnvState>((set, get) => ({
     load: async (id) => {
         const env = await getEnvironment(id);
         if (!env) return;
-        set({ env, isEnvDirty: false });
         useSaveModeStore.getState().setMode("manual");
         await useCanvasObjectStore.getState().load(id);
+        // Compute counts from the freshly-loaded objects — never trust stale DB values.
+        const { objects } = useCanvasObjectStore.getState();
+        const zoneObjectCount = objects.filter((o) => o.category === OBJECT_CATEGORY.ZONE).length;
+        const obstacleObjectCount = objects.filter((o) => o.category === OBJECT_CATEGORY.OBSTACLE).length;
+        // Set the full env atomically so the UI never briefly sees wrong DB counts.
+        set({ env: { ...env, zoneObjectCount, obstacleObjectCount }, isEnvDirty: false });
         useCanvasHistoryStore.getState().resetHistory();
     },
 
