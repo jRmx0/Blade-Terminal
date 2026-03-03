@@ -27,6 +27,8 @@ interface EnvState {
     load: (id: number) => Promise<void>;
     /** Clears the env dirty flag. Called by useCanvasSave after a full save. */
     clearEnvDirty: () => void;
+    /** Syncs zone and obstacle counts from the loaded canvas objects. Called by canvasObjectStore.load(). */
+    syncObjectCounts: (zoneCount: number, obstacleCount: number) => void;
 }
 
 const INITIAL_ENV: Environment = {
@@ -127,4 +129,7 @@ export const useEnvStore = create<EnvState>((set, get) => ({
     },
 
     clearEnvDirty: () => set({ isEnvDirty: false }),
+
+    syncObjectCounts: (zoneCount, obstacleCount) =>
+        set((state) => ({ env: { ...state.env, zoneObjectCount: zoneCount, obstacleObjectCount: obstacleCount } })),
 }));
