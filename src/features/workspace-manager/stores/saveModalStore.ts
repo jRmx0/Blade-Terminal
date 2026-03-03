@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { useSaveStatusStore } from "@/stores/saveStatusStore";
-import { performSave } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasSave";
+import { saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
 import { useSaveModeStore } from "@/stores/saveModeStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
@@ -42,7 +42,7 @@ export const useSaveModalStore = create<SaveModalState>()((set, get) => ({
     },
 
     saveAndContinue: async () => {
-        await performSave();
+        await saveCanvas();
         const { mode, setMode } = useSaveModeStore.getState();
         if (mode === "session") setMode("manual");
 
@@ -52,7 +52,7 @@ export const useSaveModalStore = create<SaveModalState>()((set, get) => ({
     },
 
     discardAndContinue: async () => {
-        useEnvStore.getState().clearEnvDirty();
+        useEnvStore.getState().clearDirty();
         useCanvasObjectStore.getState().clearDirty();
 
         const { pendingAction } = get();

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useWorkspacePickerStore } from "@/features/workspace-manager/stores/workspacePickerStore";
-import { useEnvStore } from "@/stores/envStore";
 import { useSaveModalStore } from "@/features/workspace-manager/stores/saveModalStore";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { getAllEnvironments, deleteEnvironmentCascade } from "@server/db/environments";
+import { loadWorkspace, resetWorkspace } from "@/features/workspace-manager/data/workspaceBridge";
+import { useEnvStore } from "@/stores/envStore";
 import type { Environment } from "@/types/envTypes";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 import ModalHeader from "@/components/modal/ModalHeader";
@@ -13,7 +14,6 @@ import ModalWorkspaceSelectList from "@/components/modal/ModalWorkspaceSelectLis
 export default function WorkspacePickerModal() {
     const isOpen = useWorkspacePickerStore((s) => s.isOpen);
     const close = useWorkspacePickerStore((s) => s.close);
-    const load = useEnvStore((s) => s.load);
     const currentEnvId = useEnvStore((s) => s.env.id);
 
     const [environments, setEnvironments] = useState<Environment[]>([]);
@@ -47,7 +47,7 @@ export default function WorkspacePickerModal() {
         const env = environments.find((e) => e.id === id);
         if (!env || env.id === currentEnvId) return;
         useSaveModalStore.getState().requestWithSaveGuard(async () => {
-            await load(env.id);
+            await loadWorkspace(env.id);
             close();
         });
     }
@@ -60,7 +60,7 @@ export default function WorkspacePickerModal() {
             setEnvironments((prev) => prev.filter((e) => e.id !== env.id));
             setSelectedEnvId((prev) => (prev === env.id ? null : prev));
             if (env.id === currentEnvId) {
-                await useEnvStore.getState().reset();
+                await resetWorkspace();
             }
         });
     }

@@ -1,10 +1,8 @@
 import { create } from "zustand";
 import type { Environment } from "@/types/envTypes";
-import { getAllEnvironments, getNextEnvironmentId, saveEnvironment } from "@server/db/environments";
-import { deleteEnvObjectsByEnvironment, saveEnvObjects } from "@server/db/env-objects";
-import { saveEnvVertices } from "@server/db/env-vertices";
+import { getAllEnvironments } from "@server/db/environments";
 import { useEnvStore } from "@/stores/envStore";
-import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { saveAsWorkspace } from "@/features/workspace-manager/data/workspaceBridge";
 
 interface SaveAsModalState {
     isOpen: boolean;
@@ -65,36 +63,12 @@ export const useSaveAsModalStore = create<SaveAsModalState>((set, get) => ({
     save: async () => {
         if (get().isSaving) return;
         set({ isSaving: true });
-
         try {
             const { name, selectedEnvId } = get();
-            const { env } = useEnvStore.getState();
-            const { objects, vertices } = useCanvasObjectStore.getState();
-
-            const isOverwrite = selectedEnvId !== null;
-            const targetId = isOverwrite ? selectedEnvId : await getNextEnvironmentId();
-
-            const targetEnv: Environment = { ...env, id: targetId, name };
-
-            if (isOverwrite) {
-                // Clear old objects for the target env so stale entries don't persist after load.
-                await deleteEnvObjectsByEnvironment(targetId);
-            }
-
-            const targetObjects = objects.map((o) => ({ ...o, environmentId: targetId }));
-
-            await Promise.all([
-                saveEnvironment(targetEnv),
-                targetObjects.length > 0 ? saveEnvObjects(targetObjects) : Promise.resolve(),
-                vertices.length > 0 ? saveEnvVertices(vertices) : Promise.resolve(),
-            ]);
-
-            // Switch to the newly saved env — this resets dirty state and loads from DB.
-            await useEnvStore.getState().load(targetId);
+            await saveAsWorkspace(name, selectedEnvId);
         } finally {
             set({ isSaving: false });
         }
-
         get().close();
     },
 }));

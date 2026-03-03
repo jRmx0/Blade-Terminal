@@ -40,8 +40,8 @@ export async function deleteEnvVerticesByObjectIds(objectIds: number[]): Promise
     await envVerticesTable.where("objectId").anyOf(objectIds).delete();
 }
 
-/** Returns the highest vertex id in the table, or 0 if empty. Used to seed the in-memory id counter. */
+/** Returns the highest vertex id in the table, or 0 when empty. Used to seed the in-memory id counter. */
 export async function getMaxEnvVertexId(): Promise<number> {
-    const all = await envVerticesTable.toArray();
-    return all.reduce((acc, v) => Math.max(acc, v.id), 0);
+    const last = await envVerticesTable.orderBy("[id+objectId]").last();
+    return last?.id ?? 0;
 }

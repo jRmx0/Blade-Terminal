@@ -1,7 +1,5 @@
 import { create } from "zustand";
 import type { EnvObject, EnvVertex } from "@/types/envTypes";
-import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
-import { useEnvStore } from "@/stores/envStore";
 import { useCanvasObjectStore } from "./canvasObjectStore";
 
 // ---------------------------------------------------------------------------
@@ -51,12 +49,6 @@ function restoreSnapshot(current: CanvasSnapshot, target: CanvasSnapshot) {
     });
 }
 
-function syncCountsFromSnapshot(snapshot: CanvasSnapshot) {
-    const zoneCount = snapshot.objects.filter((o) => o.category === OBJECT_CATEGORY.ZONE).length;
-    const obstacleCount = snapshot.objects.filter((o) => o.category === OBJECT_CATEGORY.OBSTACLE).length;
-    useEnvStore.getState().syncObjectCounts(zoneCount, obstacleCount);
-}
-
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
@@ -66,15 +58,22 @@ interface CanvasHistoryState {
     future: CanvasSnapshot[];
     canUndo: boolean;
     canRedo: boolean;
+    /** @internal Set while undo/redo is restoring a snapshot to suppress the auto-push subscriber. */
     _isTimeTraveling: boolean;
+    /** @internal Set while a batch is open to defer snapshot capture until endBatch(). */
     _isBatching: boolean;
+    /** @internal The snapshot captured at beginBatch(). */
     _batchSnapshot: CanvasSnapshot | null;
 
+    /** Restores the previous snapshot and moves current state to redo stack. */
     undo: () => void;
+    /** Re-applies the next snapshot from the redo stack. */
     redo: () => void;
+    /** Captures a batch-start snapshot. Subsequent store changes are grouped into one history entry. */
     beginBatch: () => void;
+    /** Commits the batched changes as a single history entry. No-op if nothing changed. */
     endBatch: () => void;
-    /** Clears all undo/redo history. Call after loading a new environment. */
+    /** Clears all undo/redo history. Call after loading or resetting a workspace. */
     resetHistory: () => void;
 }
 
@@ -99,7 +98,6 @@ export const useCanvasHistoryStore = create<CanvasHistoryState>()((set, get) => 
 
         set({ _isTimeTraveling: true });
         restoreSnapshot(current, snapshot);
-        syncCountsFromSnapshot(snapshot);
         set({
             _isTimeTraveling: false,
             past: past.slice(0, -1),
@@ -121,7 +119,6 @@ export const useCanvasHistoryStore = create<CanvasHistoryState>()((set, get) => 
 
         set({ _isTimeTraveling: true });
         restoreSnapshot(current, snapshot);
-        syncCountsFromSnapshot(snapshot);
         set({
             _isTimeTraveling: false,
             past: [...past, current],

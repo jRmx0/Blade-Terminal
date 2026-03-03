@@ -1,34 +1,19 @@
 import { create } from "zustand";
-import { ENV_FORMAT, OBJECT_TYPE, OBJECT_CATEGORY } from "@/config/db-ops/enums";
+import { ENV_FORMAT, OBJECT_TYPE } from "@/config/db-ops/enums";
 import type { Environment } from "@/types/envTypes";
-import { getSaveMode, useSaveModeStore } from "@/stores/saveModeStore";
-import { saveEnvironment, getEnvironment, getNextEnvironmentId } from "@server/db/environments";
-import { getMaxEnvObjectId } from "@server/db/env-objects";
-import { getMaxEnvVertexId } from "@server/db/env-vertices";
-import { useCanvasObjectStore, seedIdCounter } from "@/features/canvas-editing/stores/canvasObjectStore";
-import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
+import { getSaveMode } from "@/stores/saveModeStore";
+import { saveEnvironment } from "@server/db/environments";
 
 interface EnvState {
     env: Environment;
     /** True when env metadata has been changed since the last save or load. */
     isEnvDirty: boolean;
-    /** Resolves the correct id from IndexedDB and sets it on the initial env. Call once at app startup. */
-    init: () => Promise<void>;
-    /** Resets to a fresh blank environment without saving. Used when the active env is deleted. */
-    reset: () => Promise<void>;
+    /** Replaces the full environment record. Used by workspace bridge after load or init. Does not mark dirty. */
+    setEnv: (env: Environment) => void;
+    /** Updates the environment name and marks the record as dirty. Triggers autosave when mode is "autosave". */
     setName: (name: string) => void;
-    incrementZoneCount: () => void;
-    decrementZoneCount: () => void;
-    incrementObstacleCount: () => void;
-    decrementObstacleCount: () => void;
-    /** Manual save: persists current env to IndexedDB. */
-    save: () => Promise<void>;
-    /** Loads env from IndexedDB and replaces in-memory state. */
-    load: (id: number) => Promise<void>;
-    /** Clears the env dirty flag. Called by useCanvasSave after a full save. */
-    clearEnvDirty: () => void;
-    /** Syncs zone and obstacle counts from the loaded canvas objects. Called by canvasObjectStore.load(). */
-    syncObjectCounts: (zoneCount: number, obstacleCount: number) => void;
+    /** Clears the dirty flag. Called by canvas bridge after a successful save. */
+    clearDirty: () => void;
 }
 
 const INITIAL_ENV: Environment = {
@@ -40,101 +25,25 @@ const INITIAL_ENV: Environment = {
     obstacleObjectCount: 0,
 };
 
-function autosave(env: Environment) {
-    const mode = getSaveMode();
-    if (mode === "autosave") {
+function autosaveEnv(env: Environment): void {
+    if (getSaveMode() === "autosave") {
         saveEnvironment(env).catch(console.error);
     }
 }
 
-export const useEnvStore = create<EnvState>((set, get) => ({
+export const useEnvStore = create<EnvState>()((set) => ({
     env: INITIAL_ENV,
     isEnvDirty: false,
 
-    init: async () => {
-        const [id, maxObjId, maxVtxId] = await Promise.all([
-            getNextEnvironmentId(),
-            getMaxEnvObjectId(),
-            getMaxEnvVertexId(),
-        ]);
-        seedIdCounter(Math.max(maxObjId, maxVtxId));
-        set((state) => ({ env: { ...state.env, id } }));
-    },
-
-    reset: async () => {
-        const [id, maxObjId, maxVtxId] = await Promise.all([
-            getNextEnvironmentId(),
-            getMaxEnvObjectId(),
-            getMaxEnvVertexId(),
-        ]);
-        seedIdCounter(Math.max(maxObjId, maxVtxId));
-        set({ env: { ...INITIAL_ENV, id }, isEnvDirty: false });
-        useSaveModeStore.getState().setMode("session");
-        useCanvasObjectStore.getState().clearAll();
-        useCanvasHistoryStore.getState().resetHistory();
-    },
+    setEnv: (env) => set({ env }),
 
     setName: (name) => {
         set((state) => {
             const env = { ...state.env, name };
-            autosave(env);
+            autosaveEnv(env);
             return { env, isEnvDirty: true };
         });
     },
 
-    incrementZoneCount: () => {
-        set((state) => {
-            const env = { ...state.env, zoneObjectCount: state.env.zoneObjectCount + 1 };
-            autosave(env);
-            return { env, isEnvDirty: true };
-        });
-    },
-
-    decrementZoneCount: () => {
-        set((state) => {
-            const env = { ...state.env, zoneObjectCount: Math.max(0, state.env.zoneObjectCount - 1) };
-            autosave(env);
-            return { env, isEnvDirty: true };
-        });
-    },
-
-    incrementObstacleCount: () => {
-        set((state) => {
-            const env = { ...state.env, obstacleObjectCount: state.env.obstacleObjectCount + 1 };
-            autosave(env);
-            return { env, isEnvDirty: true };
-        });
-    },
-
-    decrementObstacleCount: () => {
-        set((state) => {
-            const env = { ...state.env, obstacleObjectCount: Math.max(0, state.env.obstacleObjectCount - 1) };
-            autosave(env);
-            return { env, isEnvDirty: true };
-        });
-    },
-
-    save: async () => {
-        await saveEnvironment(get().env);
-        set({ isEnvDirty: false });
-    },
-
-    load: async (id) => {
-        const env = await getEnvironment(id);
-        if (!env) return;
-        useSaveModeStore.getState().setMode("manual");
-        await useCanvasObjectStore.getState().load(id);
-        // Compute counts from the freshly-loaded objects — never trust stale DB values.
-        const { objects } = useCanvasObjectStore.getState();
-        const zoneObjectCount = objects.filter((o) => o.category === OBJECT_CATEGORY.ZONE).length;
-        const obstacleObjectCount = objects.filter((o) => o.category === OBJECT_CATEGORY.OBSTACLE).length;
-        // Set the full env atomically so the UI never briefly sees wrong DB counts.
-        set({ env: { ...env, zoneObjectCount, obstacleObjectCount }, isEnvDirty: false });
-        useCanvasHistoryStore.getState().resetHistory();
-    },
-
-    clearEnvDirty: () => set({ isEnvDirty: false }),
-
-    syncObjectCounts: (zoneCount, obstacleCount) =>
-        set((state) => ({ env: { ...state.env, zoneObjectCount: zoneCount, obstacleObjectCount: obstacleCount } })),
+    clearDirty: () => set({ isEnvDirty: false }),
 }));

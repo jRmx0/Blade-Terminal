@@ -4,7 +4,6 @@ import { WORKBENCH_SHORTCUTS as S } from "@/config/shortcut-manager/workbenchSho
 import { useWorkspacePickerStore } from "@/features/workspace-manager/stores/workspacePickerStore";
 import { useSaveModalStore } from "@/features/workspace-manager/stores/saveModalStore";
 import { useSaveAsModalStore } from "@/features/workspace-manager/stores/saveAsModalStore";
-import { useEnvStore } from "@/stores/envStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
 import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
 import { useUiInspectorPanelStore } from "@/features/ui-manager/stores/uiInspectorPanelStore";
@@ -14,7 +13,8 @@ import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObj
 import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
-import { performSave } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasSave";
+import { saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
+import { resetWorkspace } from "@/features/workspace-manager/data/workspaceBridge";
 
 /**
  * Registers all shortcuts that are scoped to the Workbench.
@@ -33,7 +33,7 @@ export function useWorkbenchShortcuts() {
     }, []);
 
     useShortcut("workspace.new", S["workspace.new"].keys, () =>
-        useSaveModalStore.getState().requestWithSaveGuard(() => useEnvStore.getState().reset()),
+        useSaveModalStore.getState().requestWithSaveGuard(resetWorkspace),
     );
 
     useShortcut("workspace.save-as", S["workspace.save-as"].keys, () =>
@@ -46,7 +46,7 @@ export function useWorkbenchShortcuts() {
 
     useShortcut("workspace.save", S["workspace.save"].keys, () => {
         const { mode, setMode } = useSaveModeStore.getState();
-        performSave()
+        saveCanvas()
             .then(() => {
                 if (mode === "session") setMode("manual");
             })

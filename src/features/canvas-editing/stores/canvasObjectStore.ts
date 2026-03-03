@@ -1,11 +1,9 @@
 import { create } from "zustand";
 import type { EnvObject, EnvVertex } from "@/types/envTypes";
-import { OBJECT_CATEGORY, type ObjectCategory, type ObjectType } from "@/config/db-ops/enums";
+import { type ObjectCategory, type ObjectType } from "@/config/db-ops/enums";
+import { useEnvStore } from "@/stores/envStore";
 import { objectVertices } from "@/features/canvas-editing/utils/canvasGeometry";
 import { syncObject, markDirty, markDeleted, markVertexDirty, markVertexDeleted } from "@/features/canvas-editing/utils/canvasObjectUtils";
-import { useEnvStore } from "@/stores/envStore";
-import { getEnvObjectsByEnvironment } from "@server/db/env-objects";
-import { getEnvVerticesByObjectIds } from "@server/db/env-vertices";
 
 // ---------------------------------------------------------------------------
 // ID generator
@@ -37,19 +35,24 @@ export interface CanvasObjectState {
     /** Map of vertexId → objectId for vertices deleted since the last clearDirty(). */
     deletedVertexIds: Map<number, number>;
 
+    /** Adds a new polygon object with the given vertices. Marks object and all vertices dirty. */
     addObject: (category: ObjectCategory, points: { x: number; y: number }[], type: ObjectType) => void;
+    /** Removes an object and all its vertices. Marks them as deleted. */
     deleteObject: (id: number) => void;
+    /** Moves a single vertex to a new position. Marks object and vertex dirty. */
     updateVertex: (objectId: number, vertexIndex: number, x: number, y: number) => void;
+    /** Translates all vertices of an object by (dx, dy). Marks object and all vertices dirty. */
     moveObject: (objectId: number, dx: number, dy: number) => void;
+    /** Removes a vertex from an object. No-op when the object has ≤ 3 vertices. */
     deleteVertex: (objectId: number, vertexIndex: number) => void;
+    /** Removes multiple vertices by index. No-op when the result would have fewer than 3 vertices. */
     deleteVertices: (objectId: number, indices: number[]) => void;
+    /** Inserts a new vertex after the given index. Returns the new vertex id. */
     insertVertex: (objectId: number, afterIndex: number, x: number, y: number) => number;
-    /** Call this after a successful DB save to reset tracking. */
+    /** Resets dirty tracking. Called by canvas bridge after a successful save. */
     clearDirty: () => void;
-    /** Clears all objects, vertices, and dirty tracking — used when resetting to a blank environment. */
-    clearAll: () => void;
-    /** Loads objects and vertices for an environment from DB, replacing current state. Dirty sets are cleared. */
-    load: (environmentId: number) => Promise<void>;
+    /** Replaces all in-memory objects and vertices and resets dirty tracking. Used by the canvas bridge for load and reset. */
+    setObjects: (objects: EnvObject[], vertices: EnvVertex[]) => void;
 }
 
 /** Selector: true when there are unsaved canvas changes. */
@@ -100,13 +103,9 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
 
             return { ...synced, dirtyObjectIds: dObj, dirtyVertexIds: dVtx, deletedObjectIds: xObj, deletedVertexIds: xVtx };
         });
-        const { incrementZoneCount, incrementObstacleCount } = useEnvStore.getState();
-        if (category === OBJECT_CATEGORY.ZONE) incrementZoneCount();
-        else if (category === OBJECT_CATEGORY.OBSTACLE) incrementObstacleCount();
     },
 
     deleteObject: (id) => {
-        const category = get().objects.find((o) => o.id === id)?.category;
         set((state) => {
             const toDelete = objectVertices(state.vertices, id);
 
@@ -123,9 +122,6 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
                 dirtyObjectIds: dObj, dirtyVertexIds: dVtx, deletedObjectIds: xObj, deletedVertexIds: xVtx,
             };
         });
-        const { decrementZoneCount, decrementObstacleCount } = useEnvStore.getState();
-        if (category === OBJECT_CATEGORY.ZONE) decrementZoneCount();
-        else if (category === OBJECT_CATEGORY.OBSTACLE) decrementObstacleCount();
     },
 
     updateVertex: (objectId, vertexIndex, x, y) =>
@@ -243,24 +239,7 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
             deletedVertexIds: new Map<number, number>(),
         }),
 
-    clearAll: () =>
-        set({
-            objects: [],
-            vertices: [],
-            dirtyObjectIds: new Set<number>(),
-            dirtyVertexIds: new Set<number>(),
-            deletedObjectIds: new Set<number>(),
-            deletedVertexIds: new Map<number, number>(),
-        }),
-
-    load: async (environmentId) => {
-        const objects = await getEnvObjectsByEnvironment(environmentId);
-        const vertices = objects.length > 0
-            ? await getEnvVerticesByObjectIds(objects.map((o) => o.id))
-            : [];
-        // Seed counter above all loaded IDs to prevent future collisions
-        const maxId = Math.max(0, ...objects.map((o) => o.id), ...vertices.map((v) => v.id));
-        seedIdCounter(maxId);
+    setObjects: (objects, vertices) =>
         set({
             objects,
             vertices,
@@ -268,6 +247,5 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
             dirtyVertexIds: new Set<number>(),
             deletedObjectIds: new Set<number>(),
             deletedVertexIds: new Map<number, number>(),
-        });
-    },
+        }),
 }));

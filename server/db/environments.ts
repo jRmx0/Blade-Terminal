@@ -35,12 +35,8 @@ export async function deleteEnvironmentCascade(id: number): Promise<void> {
     await environmentsTable.delete(id);
 }
 
-/**
- * Returns the next sequential environment id (1 when the table is empty,
- * otherwise max existing id + 1).
- */
-export async function getNextEnvironmentId(): Promise<number> {
-    const all = await environmentsTable.toArray();
-    const max = all.reduce((acc, env) => Math.max(acc, env.id), 0);
-    return max + 1;
+/** Returns the highest environment id stored, or 0 when the table is empty. */
+export async function getMaxEnvironmentId(): Promise<number> {
+    const last = await environmentsTable.orderBy("id").last();
+    return last?.id ?? 0;
 }

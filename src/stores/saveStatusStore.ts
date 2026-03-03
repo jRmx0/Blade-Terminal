@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { useEnvStore } from "@/stores/envStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
 import { useCanvasObjectStore, selectIsDirty } from "@/features/canvas-editing/stores/canvasObjectStore";
-import { performSave } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasSave";
+import { saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -40,7 +40,7 @@ export const useSaveStatusStore = create<SaveStatusState>()(() => ({
     status: computeStatus(),
 
     save: async () => {
-        await performSave();
+        await saveCanvas();
         const { mode, setMode } = useSaveModeStore.getState();
         if (mode === "session") setMode("manual");
     },
