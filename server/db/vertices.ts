@@ -8,12 +8,12 @@ export async function getVertex(id: number, objectId: number, environmentId: num
     return verticesTable.get([id, objectId, environmentId]);
 }
 
-export async function getVerticesByObject(objectId: number): Promise<Vertex[]> {
-    return verticesTable.where("objectId").equals(objectId).toArray();
+export async function getVerticesByObject(objectId: number, environmentId: number): Promise<Vertex[]> {
+    return verticesTable.where("objectId").equals(objectId).filter((v) => v.environmentId === environmentId).toArray();
 }
 
-export async function getVerticesByObjectIds(objectIds: number[]): Promise<Vertex[]> {
-    return verticesTable.where("objectId").anyOf(objectIds).toArray();
+export async function getVerticesByObjectIds(objectIds: number[], environmentId: number): Promise<Vertex[]> {
+    return verticesTable.where("objectId").anyOf(objectIds).filter((v) => v.environmentId === environmentId).toArray();
 }
 
 export async function saveVertex(vertex: Vertex): Promise<void> {
@@ -32,12 +32,12 @@ export async function deleteVertex(id: number, objectId: number, environmentId: 
     await verticesTable.delete([id, objectId, environmentId]);
 }
 
-export async function deleteVerticesByObject(objectId: number): Promise<void> {
-    await verticesTable.where("objectId").equals(objectId).delete();
+export async function deleteVerticesByObject(objectId: number, environmentId: number): Promise<void> {
+    await verticesTable.where("objectId").equals(objectId).filter((v) => v.environmentId === environmentId).delete();
 }
 
-export async function deleteVerticesByObjectIds(objectIds: number[]): Promise<void> {
-    await verticesTable.where("objectId").anyOf(objectIds).delete();
+export async function deleteVerticesByObjectIds(objectIds: number[], environmentId: number): Promise<void> {
+    await verticesTable.where("objectId").anyOf(objectIds).filter((v) => v.environmentId === environmentId).delete();
 }
 
 

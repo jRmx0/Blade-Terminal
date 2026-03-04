@@ -114,7 +114,7 @@ export async function saveCanvas(): Promise<void> {
 export async function loadCanvasForEnvironment(environmentId: number): Promise<void> {
     const objects = await getObjectsByEnvironment(environmentId);
     const vertices = objects.length > 0
-        ? await getVerticesByObjectIds(objects.map((o) => o.id))
+        ? await getVerticesByObjectIds(objects.map((o) => o.id), environmentId)
         : [];
     useCanvasObjectStore.getState().setObjects(objects, vertices);
 }

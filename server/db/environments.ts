@@ -29,7 +29,7 @@ export async function saveEnvironment(env: Environment): Promise<void> {
 export async function deleteEnvironmentCascade(id: number): Promise<void> {
     const objects = await getObjectsByEnvironment(id);
     if (objects.length > 0) {
-        await deleteVerticesByObjectIds(objects.map((o) => o.id));
+        await deleteVerticesByObjectIds(objects.map((o) => o.id), id);
         await deleteObjectsByEnvironment(id);
     }
     await environmentsTable.delete(id);
