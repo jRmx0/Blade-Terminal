@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Object, Vertex } from "@/types/schemaTypes";
 import { useCanvasObjectStore } from "./canvasObjectStore";
+import { vertexKey } from "@/features/canvas-editing/utils/canvasObjectUtils";
 
 // ---------------------------------------------------------------------------
 // Snapshot — captures the full relational state of the canvas
@@ -21,20 +22,22 @@ function diffSnapshots(
     to: CanvasSnapshot,
 ): {
     dirtyObjectIds: Set<number>;
-    dirtyVertexIds: Set<number>;
+    dirtyVertexIds: Set<string>;
     deletedObjectIds: Set<number>;
-    deletedVertexIds: Map<number, { objectId: number; environmentId: number }>;
+    deletedVertexIds: Map<string, { id: number; objectId: number; environmentId: number }>;
 } {
     const fromObjectMap = new Map(from.objects.map((o) => [o.id, o]));
-    const fromVertexMap = new Map(from.vertices.map((v) => [v.id, v]));
+    const fromVertexMap = new Map(from.vertices.map((v) => [vertexKey(v.objectId, v.environmentId, v.id), v]));
     const toObjectIds = new Set(to.objects.map((o) => o.id));
-    const toVertexIds = new Set(to.vertices.map((v) => v.id));
+    const toVertexKeys = new Set(to.vertices.map((v) => vertexKey(v.objectId, v.environmentId, v.id)));
 
     const dirtyObjectIds = new Set(to.objects.filter((o) => fromObjectMap.get(o.id) !== o).map((o) => o.id));
     const deletedObjectIds = new Set(from.objects.filter((o) => !toObjectIds.has(o.id)).map((o) => o.id));
-    const dirtyVertexIds = new Set(to.vertices.filter((v) => fromVertexMap.get(v.id) !== v).map((v) => v.id));
+    const dirtyVertexIds = new Set(to.vertices.filter((v) => fromVertexMap.get(vertexKey(v.objectId, v.environmentId, v.id)) !== v).map((v) => vertexKey(v.objectId, v.environmentId, v.id)));
     const deletedVertexIds = new Map(
-        from.vertices.filter((v) => !toVertexIds.has(v.id)).map((v) => [v.id, { objectId: v.objectId, environmentId: v.environmentId }] as [number, { objectId: number; environmentId: number }]),
+        from.vertices
+            .filter((v) => !toVertexKeys.has(vertexKey(v.objectId, v.environmentId, v.id)))
+            .map((v) => [vertexKey(v.objectId, v.environmentId, v.id), { id: v.id, objectId: v.objectId, environmentId: v.environmentId }] as [string, { id: number; objectId: number; environmentId: number }]),
     );
 
     return { dirtyObjectIds, dirtyVertexIds, deletedObjectIds, deletedVertexIds };

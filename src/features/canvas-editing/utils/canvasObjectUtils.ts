@@ -22,7 +22,7 @@ export function syncObject(
     const linked = new Map<number, Vertex>(
         objVerts.map((v, i) => [v.id, { ...v, nextVertexId: i < n - 1 ? objVerts[i + 1]!.id : null }]),
     );
-    const newVertices = vertices.map((v) => linked.get(v.id) ?? v);
+    const newVertices = vertices.map((v) => (v.objectId === objectId ? (linked.get(v.id) ?? v) : v));
 
     // Update object stats
     const area = n >= 3 ? shoelaceArea(objVerts) : 0;
@@ -58,29 +58,38 @@ export function markDeleted(
 }
 
 // ---------------------------------------------------------------------------
-// Vertex-specific dirty tracking (deletedVertexIds is Map<vertexId, objectId>)
+// Vertex-specific dirty tracking (deletedVertexIds is Map<vertexKey, {id,objectId,environmentId}>)
 // ---------------------------------------------------------------------------
 
-export function markVertexDirty(
-    dirty: Set<number>,
-    deleted: Map<number, { objectId: number; environmentId: number }>,
-    id: number,
-): { dirty: Set<number>; deleted: Map<number, { objectId: number; environmentId: number }> } {
-    const newDeleted = new Map(deleted);
-    newDeleted.delete(id);
-    return { dirty: new Set([...dirty, id]), deleted: newDeleted };
+/** Composite key matching the DB compound primary key [objectId+environmentId+id]. */
+export function vertexKey(objectId: number, environmentId: number, id: number): string {
+    return `${objectId}:${environmentId}:${id}`;
 }
 
-export function markVertexDeleted(
-    dirty: Set<number>,
-    deleted: Map<number, { objectId: number; environmentId: number }>,
+export function markVertexDirty(
+    dirty: Set<string>,
+    deleted: Map<string, { id: number; objectId: number; environmentId: number }>,
     id: number,
     objectId: number,
     environmentId: number,
-): { dirty: Set<number>; deleted: Map<number, { objectId: number; environmentId: number }> } {
-    const newDirty = new Set(dirty);
-    newDirty.delete(id);
+): { dirty: Set<string>; deleted: Map<string, { id: number; objectId: number; environmentId: number }> } {
+    const key = vertexKey(objectId, environmentId, id);
     const newDeleted = new Map(deleted);
-    newDeleted.set(id, { objectId, environmentId });
+    newDeleted.delete(key);
+    return { dirty: new Set([...dirty, key]), deleted: newDeleted };
+}
+
+export function markVertexDeleted(
+    dirty: Set<string>,
+    deleted: Map<string, { id: number; objectId: number; environmentId: number }>,
+    id: number,
+    objectId: number,
+    environmentId: number,
+): { dirty: Set<string>; deleted: Map<string, { id: number; objectId: number; environmentId: number }> } {
+    const key = vertexKey(objectId, environmentId, id);
+    const newDirty = new Set(dirty);
+    newDirty.delete(key);
+    const newDeleted = new Map(deleted);
+    newDeleted.set(key, { id, objectId, environmentId });
     return { dirty: newDirty, deleted: newDeleted };
 }

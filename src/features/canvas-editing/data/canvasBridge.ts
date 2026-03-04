@@ -3,6 +3,7 @@ import { getObjectsByEnvironment, saveObjects, deleteObject } from "@server/db/o
 import { getVerticesByObjectIds, saveVertices, deleteVertex } from "@server/db/vertices";
 import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
 import type { Object, Vertex } from "@/types/schemaTypes";
+import { vertexKey } from "@/features/canvas-editing/utils/canvasObjectUtils";
 import { useCanvasObjectStore } from "../stores/canvasObjectStore";
 import { useEnvStore } from "@/stores/envStore";
 
@@ -39,9 +40,9 @@ let _isSaving = false;
 function hasUnsavedChanges(
     isEnvDirty: boolean,
     dirtyObjectIds: Set<number>,
-    dirtyVertexIds: Set<number>,
+    dirtyVertexIds: Set<string>,
     deletedObjectIds: Set<number>,
-    deletedVertexIds: Map<number, { objectId: number; environmentId: number }>,
+    deletedVertexIds: Map<string, { id: number; objectId: number; environmentId: number }>,
 ): boolean {
     return (
         isEnvDirty ||
@@ -67,13 +68,13 @@ async function persistDirtyObjects(
 
 async function persistDirtyVertices(
     vertices: Vertex[],
-    dirtyVertexIds: Set<number>,
-    deletedVertexIds: Map<number, { objectId: number; environmentId: number }>,
+    dirtyVertexIds: Set<string>,
+    deletedVertexIds: Map<string, { id: number; objectId: number; environmentId: number }>,
 ): Promise<void> {
-    const dirty = vertices.filter((v) => dirtyVertexIds.has(v.id));
+    const dirty = vertices.filter((v) => dirtyVertexIds.has(vertexKey(v.objectId, v.environmentId, v.id)));
     await Promise.all([
         dirty.length > 0 ? saveVertices(dirty) : Promise.resolve(),
-        ...[...deletedVertexIds.entries()].map(([id, { objectId, environmentId }]) => deleteVertex(id, objectId, environmentId)),
+        ...[...deletedVertexIds.values()].map(({ id, objectId, environmentId }) => deleteVertex(id, objectId, environmentId)),
     ]);
 }
 
