@@ -28,7 +28,8 @@ export interface Object {
 export interface Vertex {
     id: number;
     objectId: number;
-    /** Pointer to the next vertex in linked-list order. Null for the tail vertex. */
+    environmentId: number;
+    /** Pointer to the next vertex in linked-list order. */
     nextVertexId: number | null;
     x: number;
     y: number;

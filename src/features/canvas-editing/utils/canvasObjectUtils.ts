@@ -63,9 +63,9 @@ export function markDeleted(
 
 export function markVertexDirty(
     dirty: Set<number>,
-    deleted: Map<number, number>,
+    deleted: Map<number, { objectId: number; environmentId: number }>,
     id: number,
-): { dirty: Set<number>; deleted: Map<number, number> } {
+): { dirty: Set<number>; deleted: Map<number, { objectId: number; environmentId: number }> } {
     const newDeleted = new Map(deleted);
     newDeleted.delete(id);
     return { dirty: new Set([...dirty, id]), deleted: newDeleted };
@@ -73,13 +73,14 @@ export function markVertexDirty(
 
 export function markVertexDeleted(
     dirty: Set<number>,
-    deleted: Map<number, number>,
+    deleted: Map<number, { objectId: number; environmentId: number }>,
     id: number,
     objectId: number,
-): { dirty: Set<number>; deleted: Map<number, number> } {
+    environmentId: number,
+): { dirty: Set<number>; deleted: Map<number, { objectId: number; environmentId: number }> } {
     const newDirty = new Set(dirty);
     newDirty.delete(id);
     const newDeleted = new Map(deleted);
-    newDeleted.set(id, objectId);
+    newDeleted.set(id, { objectId, environmentId });
     return { dirty: newDirty, deleted: newDeleted };
 }

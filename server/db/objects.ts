@@ -28,8 +28,4 @@ export async function deleteObjectsByEnvironment(environmentId: number): Promise
     await objectsTable.where("environmentId").equals(environmentId).delete();
 }
 
-/** Returns the highest object id in the table, or 0 when empty. Used to seed the in-memory id counter. */
-export async function getMaxEnvObjectId(): Promise<number> {
-    const last = await objectsTable.orderBy("[id+environmentId]").last();
-    return last?.id ?? 0;
-}
+

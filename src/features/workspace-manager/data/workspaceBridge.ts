@@ -7,7 +7,7 @@ import { useEnvStore } from "@/stores/envStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
-import { seedIdCounterFromDb, resolveNextEnvironmentId, loadCanvasForEnvironment, saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
+import { resolveNextEnvironmentId, loadCanvasForEnvironment, saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
 
 const BLANK_ENV: Omit<Environment, "id"> = {
     name: "Untitled Environment",
@@ -27,14 +27,12 @@ function modeAfterFirstSave(): "manual" | "autosave" {
 
 /** Initializes a fresh blank environment at app startup. Seeds the ID counter from IndexedDB. */
 export async function initializeWorkspace(): Promise<void> {
-    await seedIdCounterFromDb();
     const nextId = await resolveNextEnvironmentId();
     useEnvStore.getState().setEnv({ ...BLANK_ENV, id: nextId });
 }
 
 /** Discards the current environment and starts a blank one without saving. */
 export async function resetWorkspace(): Promise<void> {
-    await seedIdCounterFromDb();
     const nextId = await resolveNextEnvironmentId();
     useEnvStore.getState().setEnv({ ...BLANK_ENV, id: nextId });
     useEnvStore.getState().clearDirty();
@@ -66,10 +64,11 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
         await deleteObjectsByEnvironment(targetId);
     }
     const targetObjects = objects.map((o) => ({ ...o, environmentId: targetId }));
+    const targetVertices = vertices.map((v) => ({ ...v, environmentId: targetId }));
     await Promise.all([
         saveEnvironment(targetEnv),
         targetObjects.length > 0 ? saveObjects(targetObjects) : Promise.resolve(),
-        vertices.length > 0 ? saveVertices(vertices) : Promise.resolve(),
+        targetVertices.length > 0 ? saveVertices(targetVertices) : Promise.resolve(),
     ]);
     await loadWorkspace(targetId);
 }
