@@ -1,6 +1,6 @@
 import { Layer, Circle } from "react-konva";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
-import type { EnvObject, EnvVertex } from "@/types/envTypes";
+import type { Object, Vertex } from "@/types/schemaTypes";
 import { computeEdgeMidpoints } from "@/features/canvas-editing/utils/canvasGeometry";
 import {
     COLOR_ZONE_STROKE,
@@ -12,8 +12,8 @@ import {
 } from "@/config/canvas-editing/canvasConfig";
 
 interface CanvasVertexHandlesLayerProps {
-    selectedObject: EnvObject | null;
-    selectedObjectVertices: EnvVertex[];
+    selectedObject: Object | null;
+    selectedObjectVertices: Vertex[];
     activeTool: ActiveTool | null;
     scale: number;
     selectedVertexIndices: number[];

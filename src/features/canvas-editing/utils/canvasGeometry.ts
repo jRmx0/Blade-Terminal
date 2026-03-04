@@ -1,4 +1,4 @@
-import type { EnvObject, EnvVertex } from "@/types/envTypes";
+import type { Object, Vertex } from "@/types/schemaTypes";
 import type { ObjectCategory } from "@/config/db-ops/enums";
 
 export interface EdgeMidpoint {
@@ -9,7 +9,7 @@ export interface EdgeMidpoint {
 }
 
 /** Returns vertices belonging to an object, in polygon draw order. */
-export function objectVertices(vertices: EnvVertex[], objectId: number): EnvVertex[] {
+export function objectVertices(vertices: Vertex[], objectId: number): Vertex[] {
     return vertices.filter((v) => v.objectId === objectId);
 }
 
@@ -29,7 +29,7 @@ export function shoelaceArea(verts: { x: number; y: number }[]): number {
  * Computes the midpoint of every edge in a closed polygon.
  * The last edge wraps from the final vertex back to vertices[0].
  */
-export function computeEdgeMidpoints(vertices: EnvVertex[]): EdgeMidpoint[] {
+export function computeEdgeMidpoints(vertices: Vertex[]): EdgeMidpoint[] {
     return vertices.map((v, i) => {
         const next = vertices[(i + 1) % vertices.length]!;
         return {
@@ -108,8 +108,8 @@ export function clipPolygon(subject: Point[], clip: Point[]): Point[] {
  */
 export function computeNetArea(
     objectId: number,
-    objects: EnvObject[],
-    allVertices: EnvVertex[],
+    objects: Object[],
+    allVertices: Vertex[],
 ): number | null {
     const target = objects.find((o) => o.id === objectId);
     if (!target || (target.category as ObjectCategory) !== "zone") return null;

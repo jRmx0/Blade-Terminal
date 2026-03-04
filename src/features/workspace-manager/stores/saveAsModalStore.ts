@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Environment } from "@/types/envTypes";
+import type { Environment } from "@/types/schemaTypes";
 import { getAllEnvironments } from "@server/db/environments";
 import { useEnvStore } from "@/stores/envStore";
 import { saveAsWorkspace } from "@/features/workspace-manager/data/workspaceBridge";

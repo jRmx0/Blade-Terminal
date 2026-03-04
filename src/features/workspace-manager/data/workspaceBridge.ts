@@ -1,8 +1,8 @@
 import { getEnvironment, saveEnvironment } from "@server/db/environments";
-import { deleteEnvObjectsByEnvironment, saveEnvObjects } from "@server/db/env-objects";
-import { saveEnvVertices } from "@server/db/env-vertices";
+import { deleteObjectsByEnvironment, saveObjects } from "@server/db/objects";
+import { saveVertices } from "@server/db/vertices";
 import { ENV_FORMAT, GLOBAL_TYPE, OBJECT_CATEGORY } from "@/config/db-ops/enums";
-import type { Environment } from "@/types/envTypes";
+import type { Environment } from "@/types/schemaTypes";
 import { useEnvStore } from "@/stores/envStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
@@ -13,8 +13,8 @@ const BLANK_ENV: Omit<Environment, "id"> = {
     name: "Untitled Environment",
     format: ENV_FORMAT.POLYGON,
     type: GLOBAL_TYPE.OFFLINE,
-    zoneObjectCount: 0,
-    obstacleObjectCount: 0,
+    zoneCount: 0,
+    obstacleCount: 0,
 };
 
 function countByCategory(objects: { category: string }[], category: string): number {
@@ -52,7 +52,7 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     const { objects } = useCanvasObjectStore.getState();
     const zoneObjectCount = countByCategory(objects, OBJECT_CATEGORY.ZONE);
     const obstacleObjectCount = countByCategory(objects, OBJECT_CATEGORY.OBSTACLE);
-    useEnvStore.getState().setEnv({ ...env, zoneObjectCount, obstacleObjectCount });
+    useEnvStore.getState().setEnv({ ...env, zoneCount: zoneObjectCount, obstacleCount: obstacleObjectCount });
     useCanvasHistoryStore.getState().resetHistory();
 }
 
@@ -63,13 +63,13 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
     const targetId = selectedEnvId ?? (await resolveNextEnvironmentId());
     const targetEnv: Environment = { ...env, id: targetId, name };
     if (selectedEnvId !== null) {
-        await deleteEnvObjectsByEnvironment(targetId);
+        await deleteObjectsByEnvironment(targetId);
     }
     const targetObjects = objects.map((o) => ({ ...o, environmentId: targetId }));
     await Promise.all([
         saveEnvironment(targetEnv),
-        targetObjects.length > 0 ? saveEnvObjects(targetObjects) : Promise.resolve(),
-        vertices.length > 0 ? saveEnvVertices(vertices) : Promise.resolve(),
+        targetObjects.length > 0 ? saveObjects(targetObjects) : Promise.resolve(),
+        vertices.length > 0 ? saveVertices(vertices) : Promise.resolve(),
     ]);
     await loadWorkspace(targetId);
 }

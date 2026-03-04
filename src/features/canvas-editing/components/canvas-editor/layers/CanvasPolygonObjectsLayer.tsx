@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { Layer, Line } from "react-konva";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import type React from "react";
-import type { EnvObject, EnvVertex } from "@/types/envTypes";
+import type { Object, Vertex } from "@/types/schemaTypes";
 import {
     COLOR_ZONE_FILL,
     COLOR_ZONE_STROKE,
@@ -11,8 +11,8 @@ import {
 } from "@/config/canvas-editing/canvasConfig";
 
 interface CanvasPolygonObjectsLayerProps {
-    objects: EnvObject[];
-    vertices: EnvVertex[];
+    objects: Object[];
+    vertices: Vertex[];
     selectedObjectId: number | null;
     movingObjectId: number | null;
     activeTool: ActiveTool | null;
@@ -46,7 +46,7 @@ export function CanvasPolygonObjectsLayer({
     const primaryDragRef = useRef(false);
 
     // Build lookup once per render — O(n) instead of O(n*m)
-    const verticesByObjectId = new Map<number, EnvVertex[]>();
+    const verticesByObjectId = new Map<number, Vertex[]>();
     for (const v of vertices) {
         const list = verticesByObjectId.get(v.objectId) ?? [];
         list.push(v);

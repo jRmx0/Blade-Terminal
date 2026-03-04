@@ -1,4 +1,4 @@
-import type { EnvObject, EnvVertex } from "@/types/envTypes";
+import type { Object, Vertex } from "@/types/schemaTypes";
 import { objectVertices, shoelaceArea } from "./canvasGeometry";
 
 // ---------------------------------------------------------------------------
@@ -11,15 +11,15 @@ import { objectVertices, shoelaceArea } from "./canvasGeometry";
  *   2. Update vertexCount + area on the EnvObject.
  */
 export function syncObject(
-    objects: EnvObject[],
-    vertices: EnvVertex[],
+    objects: Object[],
+    vertices: Vertex[],
     objectId: number,
-): { objects: EnvObject[]; vertices: EnvVertex[] } {
+): { objects: Object[]; vertices: Vertex[] } {
     const objVerts = objectVertices(vertices, objectId);
     const n = objVerts.length;
 
     // Rebuild linked list
-    const linked = new Map<number, EnvVertex>(
+    const linked = new Map<number, Vertex>(
         objVerts.map((v, i) => [v.id, { ...v, nextVertexId: i < n - 1 ? objVerts[i + 1]!.id : null }]),
     );
     const newVertices = vertices.map((v) => linked.get(v.id) ?? v);

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { EnvObject, EnvVertex } from "@/types/envTypes";
+import type { Object, Vertex } from "@/types/schemaTypes";
 import { useCanvasObjectStore } from "./canvasObjectStore";
 
 // ---------------------------------------------------------------------------
@@ -7,8 +7,8 @@ import { useCanvasObjectStore } from "./canvasObjectStore";
 // ---------------------------------------------------------------------------
 
 interface CanvasSnapshot {
-    objects: EnvObject[];
-    vertices: EnvVertex[];
+    objects: Object[];
+    vertices: Vertex[];
 }
 
 // ---------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 import { getMaxEnvironmentId, saveEnvironment } from "@server/db/environments";
-import { getMaxEnvObjectId, getEnvObjectsByEnvironment, saveEnvObjects, deleteEnvObject } from "@server/db/env-objects";
-import { getMaxEnvVertexId, getEnvVerticesByObjectIds, saveEnvVertices, deleteEnvVertex } from "@server/db/env-vertices";
+import { getMaxEnvObjectId, getObjectsByEnvironment, saveObjects, deleteObject } from "@server/db/objects";
+import { getMaxVertexId, getVerticesByObjectIds, saveVertices, deleteVertex } from "@server/db/vertices";
 import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
-import type { EnvObject, EnvVertex } from "@/types/envTypes";
+import type { Object, Vertex } from "@/types/schemaTypes";
 import { useCanvasObjectStore, seedIdCounter } from "../stores/canvasObjectStore";
 import { useEnvStore } from "@/stores/envStore";
 
@@ -10,14 +10,14 @@ import { useEnvStore } from "@/stores/envStore";
 // Reactively keeps envStore zone/obstacle counts derived from the canvas object
 // list. Lives here (not in either store) to avoid a circular import.
 
-function countByCategory(objects: EnvObject[], category: string): number {
+function countByCategory(objects: Object[], category: string): number {
     return objects.filter((o) => o.category === category).length;
 }
 
-function syncEnvCounts(objects: EnvObject[]): void {
+function syncEnvCounts(objects: Object[]): void {
     const zoneObjectCount = countByCategory(objects, OBJECT_CATEGORY.ZONE);
     const obstacleObjectCount = countByCategory(objects, OBJECT_CATEGORY.OBSTACLE);
-    useEnvStore.setState((s) => ({ env: { ...s.env, zoneObjectCount, obstacleObjectCount } }));
+    useEnvStore.setState((s) => ({ env: { ...s.env, zoneCount: zoneObjectCount, obstacleCount: obstacleObjectCount } }));
 }
 
 useCanvasObjectStore.subscribe((next, prev) => {
@@ -28,7 +28,7 @@ useCanvasObjectStore.subscribe((next, prev) => {
 
 /** Seeds the canvas ID counter from the highest IDs currently stored in IndexedDB. */
 export async function seedIdCounterFromDb(): Promise<void> {
-    const [maxObjId, maxVtxId] = await Promise.all([getMaxEnvObjectId(), getMaxEnvVertexId()]);
+    const [maxObjId, maxVtxId] = await Promise.all([getMaxEnvObjectId(), getMaxVertexId()]);
     seedIdCounter(Math.max(maxObjId, maxVtxId));
 }
 
@@ -59,27 +59,27 @@ function hasUnsavedChanges(
 }
 
 async function persistDirtyObjects(
-    objects: EnvObject[],
+    objects: Object[],
     dirtyObjectIds: Set<number>,
     deletedObjectIds: Set<number>,
     environmentId: number,
 ): Promise<void> {
     const dirty = objects.filter((o) => dirtyObjectIds.has(o.id));
     await Promise.all([
-        dirty.length > 0 ? saveEnvObjects(dirty) : Promise.resolve(),
-        ...[...deletedObjectIds].map((id) => deleteEnvObject(id, environmentId)),
+        dirty.length > 0 ? saveObjects(dirty) : Promise.resolve(),
+        ...[...deletedObjectIds].map((id) => deleteObject(id, environmentId)),
     ]);
 }
 
 async function persistDirtyVertices(
-    vertices: EnvVertex[],
+    vertices: Vertex[],
     dirtyVertexIds: Set<number>,
     deletedVertexIds: Map<number, number>,
 ): Promise<void> {
     const dirty = vertices.filter((v) => dirtyVertexIds.has(v.id));
     await Promise.all([
-        dirty.length > 0 ? saveEnvVertices(dirty) : Promise.resolve(),
-        ...[...deletedVertexIds.entries()].map(([id, objectId]) => deleteEnvVertex(id, objectId)),
+        dirty.length > 0 ? saveVertices(dirty) : Promise.resolve(),
+        ...[...deletedVertexIds.entries()].map(([id, objectId]) => deleteVertex(id, objectId)),
     ]);
 }
 
@@ -117,9 +117,9 @@ export async function saveCanvas(): Promise<void> {
  * the canvas store. Seeds the ID counter to prevent future collisions.
  */
 export async function loadCanvasForEnvironment(environmentId: number): Promise<void> {
-    const objects = await getEnvObjectsByEnvironment(environmentId);
+    const objects = await getObjectsByEnvironment(environmentId);
     const vertices = objects.length > 0
-        ? await getEnvVerticesByObjectIds(objects.map((o) => o.id))
+        ? await getVerticesByObjectIds(objects.map((o) => o.id))
         : [];
     const maxId = Math.max(0, ...objects.map((o) => o.id), ...vertices.map((v) => v.id));
     seedIdCounter(maxId);

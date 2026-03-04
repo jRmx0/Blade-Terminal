@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { ENV_FORMAT, GLOBAL_TYPE, type EnvFormat, type GlobalType } from "@/config/db-ops/enums";
-import type { Environment } from "@/types/envTypes";
+import type { Environment } from "@/types/schemaTypes";
 import { getSaveMode } from "@/stores/saveModeStore";
 import { saveEnvironment } from "@server/db/environments";
 
@@ -25,8 +25,8 @@ const INITIAL_ENV: Environment = {
     name: "Untitled Environment",
     format: ENV_FORMAT.POLYGON,
     type: GLOBAL_TYPE.OFFLINE,
-    zoneObjectCount: 0,
-    obstacleObjectCount: 0,
+    zoneCount: 0,
+    obstacleCount: 0,
 };
 
 function autosaveEnv(env: Environment): void {

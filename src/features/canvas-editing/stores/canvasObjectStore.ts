@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { EnvObject, EnvVertex } from "@/types/envTypes";
+import type { Object, Vertex } from "@/types/schemaTypes";
 import { type ObjectCategory, type ObjectType } from "@/config/db-ops/enums";
 import { useEnvStore } from "@/stores/envStore";
 import { objectVertices } from "@/features/canvas-editing/utils/canvasGeometry";
@@ -24,8 +24,8 @@ export function seedIdCounter(maxId: number): void {
 // ---------------------------------------------------------------------------
 
 export interface CanvasObjectState {
-    objects: EnvObject[];
-    vertices: EnvVertex[];
+    objects: Object[];
+    vertices: Vertex[];
 
     /** IDs that have been created or mutated since the last clearDirty(). */
     dirtyObjectIds: Set<number>;
@@ -56,7 +56,7 @@ export interface CanvasObjectState {
     /** Resets dirty tracking. Called by canvas bridge after a successful save. */
     clearDirty: () => void;
     /** Replaces all in-memory objects and vertices and resets dirty tracking. Used by the canvas bridge for load and reset. */
-    setObjects: (objects: EnvObject[], vertices: EnvVertex[]) => void;
+    setObjects: (objects: Object[], vertices: Vertex[]) => void;
 }
 
 /** Selector: true when there are unsaved canvas changes. */
@@ -77,14 +77,14 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
     addObject: (category, points, type) => {
         set((state) => {
             const objectId = nextId();
-            const newVertices: EnvVertex[] = points.map((p) => ({
+            const newVertices: Vertex[] = points.map((p) => ({
                 id: nextId(),
                 objectId,
                 nextVertexId: null, // fixed by syncObject
                 x: p.x,
                 y: p.y,
             }));
-            const newObject: EnvObject = {
+            const newObject: Object = {
                 id: objectId,
                 environmentId: useEnvStore.getState().env.id,
                 category,
@@ -215,7 +215,7 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
             if (!afterVertex) return state;
 
             const globalAfterIndex = state.vertices.findIndex((v) => v.id === afterVertex.id);
-            const newVertex: EnvVertex = { id: newId, objectId, nextVertexId: null, x, y };
+            const newVertex: Vertex = { id: newId, objectId, nextVertexId: null, x, y };
             const newVertices = [
                 ...state.vertices.slice(0, globalAfterIndex + 1),
                 newVertex,

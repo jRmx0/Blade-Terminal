@@ -1,4 +1,4 @@
-import type { Environment } from "@/types/envTypes";
+import type { Environment } from "@/types/schemaTypes";
 
 interface ModalWorkspaceSelectListProps {
     environments: Environment[];

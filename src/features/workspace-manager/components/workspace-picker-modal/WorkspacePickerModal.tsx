@@ -5,7 +5,7 @@ import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteM
 import { getAllEnvironments, deleteEnvironmentCascade } from "@server/db/environments";
 import { loadWorkspace, resetWorkspace } from "@/features/workspace-manager/data/workspaceBridge";
 import { useEnvStore } from "@/stores/envStore";
-import type { Environment } from "@/types/envTypes";
+import type { Environment } from "@/types/schemaTypes";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 import ModalHeader from "@/components/modal/ModalHeader";
 import ModalFooterButton from "@/components/modal/ModalFooterButton";

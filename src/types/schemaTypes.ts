@@ -1,15 +1,15 @@
-import type { EnvFormat, GlobalType, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
+import type { EnvFormat, GlobalType as EnvType, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
 
 export interface Environment {
     id: number;
     name: string;
     format: EnvFormat;
-    type: GlobalType;
-    zoneObjectCount: number;
-    obstacleObjectCount: number;
+    type: EnvType;
+    zoneCount: number;
+    obstacleCount: number;
 }
 
-export interface EnvObject {
+export interface Object {
     id: number;
     environmentId: number;
     category: ObjectCategory;
@@ -21,11 +21,11 @@ export interface EnvObject {
     type: ObjectType;
     /** Cached: precomputed number of vertices. */
     vertexCount: number;
-    /** Cached: precomputed polygon area (shoelace formula). Always positive. */
+    /** Cached: precomputed polygon area (shoelace formula). */
     area: number;
 }
 
-export interface EnvVertex {
+export interface Vertex {
     id: number;
     objectId: number;
     /** Pointer to the next vertex in linked-list order. Null for the tail vertex. */
