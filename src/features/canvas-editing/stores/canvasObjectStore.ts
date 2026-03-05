@@ -90,7 +90,7 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
             let dObj = state.dirtyObjects, xObj = state.deletedObjects;
             let dVtx = state.dirtyVertices, xVtx = state.deletedVertices;
             ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, synced.objects.find((o) => o.id === objectId)!));
-            for (const v of newVertices) {
+            for (const v of objectVertices(synced.vertices, objectId)) {
                 ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v));
             }
 
@@ -128,12 +128,12 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
     finalizeVertexMove: (vertex) =>
         set((state) => {
             const synced = syncObject(state.objects, state.vertices, vertex.objectId);
-            const currentVertex = state.vertices.find((v) => v.id === vertex.id && v.objectId === vertex.objectId)!;
+            const syncedVertex = synced.vertices.find((v) => v.id === vertex.id && v.objectId === vertex.objectId)!;
 
             let dObj = state.dirtyObjects, xObj = state.deletedObjects;
             let dVtx = state.dirtyVertices, xVtx = state.deletedVertices;
             ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, synced.objects.find((o) => o.id === vertex.objectId)!));
-            ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, currentVertex));
+            ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, syncedVertex));
 
             return { ...synced, dirtyObjects: dObj, dirtyVertices: dVtx, deletedObjects: xObj, deletedVertices: xVtx };
         }),
@@ -148,7 +148,7 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
             let dObj = state.dirtyObjects, xObj = state.deletedObjects;
             let dVtx = state.dirtyVertices, xVtx = state.deletedVertices;
             ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, synced.objects.find((o) => o.id === obj.id)!));
-            for (const v of objectVertices(state.vertices, obj.id)) {
+            for (const v of objectVertices(synced.vertices, obj.id)) {
                 ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v));
             }
 
@@ -168,7 +168,7 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
             let dVtx = state.dirtyVertices, xVtx = state.deletedVertices;
             ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, synced.objects.find((o) => o.id === obj.id)!));
             ({ dirty: dVtx, deleted: xVtx } = markVertexDeleted(dVtx, xVtx, vertex));
-            for (const v of objectVertices(newVertices, obj.id)) {
+            for (const v of objectVertices(synced.vertices, obj.id)) {
                 ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v));
             }
 
@@ -191,7 +191,7 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
             for (const v of toDelete) {
                 ({ dirty: dVtx, deleted: xVtx } = markVertexDeleted(dVtx, xVtx, v));
             }
-            for (const v of objectVertices(newVertices, obj.id)) {
+            for (const v of objectVertices(synced.vertices, obj.id)) {
                 ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v));
             }
 
@@ -217,7 +217,7 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
             let dObj = state.dirtyObjects, xObj = state.deletedObjects;
             let dVtx = state.dirtyVertices, xVtx = state.deletedVertices;
             ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, synced.objects.find((o) => o.id === objectId)!));
-            for (const v of objectVertices(newVertices, objectId)) {
+            for (const v of objectVertices(synced.vertices, objectId)) {
                 ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v));
             }
 
