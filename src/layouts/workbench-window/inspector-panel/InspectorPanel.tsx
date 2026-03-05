@@ -13,7 +13,7 @@ import TurnSumField from "@/features/inspector/components/coverage-section/TurnS
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 
 export default function InspectorPanel() {
-  const hasSelection = useCanvasSelectionStore((s) => s.selectedObjectId !== null);
+  const hasSelection = useCanvasSelectionStore((s) => s.selectedObject !== null);
 
   return (
     <UiInspectorPanel>
