@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
+import { useUiInspectorPanelStore } from "@/features/ui-manager/stores/uiInspectorPanelStore";
 
 interface UiControlsPanelProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
   const [isResizing, setResizing] = useState(false);
   const [isDragCollapsed, setDragCollapsed] = useState(false);
 
+  const panelRef = useRef<HTMLDivElement>(null);
   const resizeHandleRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const isDragCollapsedRef = useRef(false);
@@ -50,7 +52,17 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
           isDragCollapsedRef.current = false;
           setDragCollapsed(false);
         }
-        setWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, rawWidth)));
+        const containerWidth = panelRef.current?.parentElement?.clientWidth ?? Infinity;
+        const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, rawWidth));
+        setWidth(newWidth);
+        // Push inspector if controls grows into it
+        const inspectorState = useUiInspectorPanelStore.getState();
+        if (inspectorState.isVisible) {
+          const leftover = containerWidth - newWidth;
+          if (inspectorState.width > leftover) {
+            inspectorState.setWidth(Math.max(MIN_WIDTH, leftover));
+          }
+        }
       }
     };
 
@@ -83,8 +95,9 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
 
   return (
     <div
+      ref={panelRef}
       style={{ width: hidden ? 0 : `${width}px` }}
-      className="relative flex flex-col h-full shrink-0 bg-gray-100 overflow-hidden select-none"
+      className="relative flex flex-col h-full shrink-0 bg-gray-100 overflow-hidden select-none pointer-events-auto"
     >
       {!hidden && (
         <>

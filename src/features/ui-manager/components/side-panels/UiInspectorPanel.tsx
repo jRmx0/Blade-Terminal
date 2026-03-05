@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { useUiInspectorPanelStore } from "@/features/ui-manager/stores/uiInspectorPanelStore";
+import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
 
 interface UiInspectorPanelProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ export default function UiInspectorPanel({ children }: UiInspectorPanelProps) {
   const [isResizing, setResizing] = useState(false);
   const [isDragCollapsed, setDragCollapsed] = useState(false);
 
+  const panelRef = useRef<HTMLDivElement>(null);
   const resizeHandleRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const isDragCollapsedRef = useRef(false);
@@ -38,7 +40,7 @@ export default function UiInspectorPanel({ children }: UiInspectorPanelProps) {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDraggingRef.current) return;
 
-      // Inspector is on the right — dragging right (positive clientX diff) increases width
+      // Inspector is on the right — dragging left (negative clientX diff) increases width
       const rawWidth = startWidthRef.current + (startXRef.current - e.clientX);
 
       if (rawWidth < COLLAPSE_THRESHOLD) {
@@ -51,7 +53,17 @@ export default function UiInspectorPanel({ children }: UiInspectorPanelProps) {
           isDragCollapsedRef.current = false;
           setDragCollapsed(false);
         }
-        setWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, rawWidth)));
+        const containerWidth = panelRef.current?.parentElement?.clientWidth ?? Infinity;
+        const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, rawWidth));
+        setWidth(newWidth);
+        // Push controls if inspector grows into it
+        const controlsState = useUiControlsPanelStore.getState();
+        if (controlsState.isVisible) {
+          const leftover = containerWidth - newWidth;
+          if (controlsState.width > leftover) {
+            controlsState.setWidth(Math.max(MIN_WIDTH, leftover));
+          }
+        }
       }
     };
 
@@ -84,8 +96,9 @@ export default function UiInspectorPanel({ children }: UiInspectorPanelProps) {
 
   return (
     <div
+      ref={panelRef}
       style={{ width: hidden ? 0 : `${width}px` }}
-      className="relative flex flex-col h-full shrink-0 bg-gray-100 overflow-hidden select-none"
+      className="relative flex flex-col h-full shrink-0 bg-gray-100 overflow-hidden select-none pointer-events-auto"
     >
       {!hidden && (
         <>
@@ -97,8 +110,8 @@ export default function UiInspectorPanel({ children }: UiInspectorPanelProps) {
           >
             <div
               className={`absolute left-0 top-0 bottom-0 pointer-events-none transition-[width,background-color] delay-0 ${isResizing
-                  ? "w-1 bg-blue-500"
-                  : "w-px bg-gray-300 group-hover:w-1 group-hover:bg-blue-500 group-hover:delay-300"
+                ? "w-1 bg-blue-500"
+                : "w-px bg-gray-300 group-hover:w-1 group-hover:bg-blue-500 group-hover:delay-300"
                 }`}
             />
           </div>

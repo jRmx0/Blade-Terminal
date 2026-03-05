@@ -2,7 +2,7 @@ import CanvasEditor from "@/features/canvas-editing/components/canvas-editor/Can
 
 export default function CanvasEditorLayout() {
   return (
-    <div className="flex-1 min-w-0 h-full overflow-hidden">
+    <div className="absolute inset-0 overflow-hidden">
       <CanvasEditor />
     </div>
   );

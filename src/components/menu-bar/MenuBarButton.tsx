@@ -56,7 +56,7 @@ export default function MenuBarButton({
 
       {/* Submenu Dropdown */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-0 bg-white border border-gray-300 rounded shadow-lg z-10 min-w-max">
+        <div className="absolute left-0 top-full mt-0 bg-white border border-gray-300 rounded shadow-lg z-20 min-w-max">
           {submenu}
         </div>
       )}

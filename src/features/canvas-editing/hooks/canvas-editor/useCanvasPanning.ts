@@ -71,17 +71,6 @@ export function useCanvasPanning(
         }
     }, []);
 
-    const handlePanMouseMove = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
-        if (!isPanningRef.current) return;
-        const dx = e.evt.clientX - panLastPosRef.current.x;
-        const dy = e.evt.clientY - panLastPosRef.current.y;
-        panLastPosRef.current = { x: e.evt.clientX, y: e.evt.clientY };
-        // Accumulate — RAF will consume on next frame
-        pendingDeltaRef.current.x += dx;
-        pendingDeltaRef.current.y += dy;
-        scheduleFlush();
-    }, [scheduleFlush]);
-
     /** Stops panning and immediately flushes any remaining delta. */
     const stopPanning = useCallback(() => {
         if (!isPanningRef.current) return;
@@ -95,13 +84,35 @@ export function useCanvasPanning(
         flushPosition();
     }, [flushPosition]);
 
-    const handlePanMouseUp = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
-        if (e.evt.button === 1) stopPanning();
-    }, [stopPanning]);
+    // Attach document-level listeners so panning continues even when the
+    // mouse leaves the canvas element (e.g. over an overlaid panel).
+    useEffect(() => {
+        const onDocMouseMove = (e: MouseEvent) => {
+            if (!isPanningRef.current) return;
+            const dx = e.clientX - panLastPosRef.current.x;
+            const dy = e.clientY - panLastPosRef.current.y;
+            panLastPosRef.current = { x: e.clientX, y: e.clientY };
+            pendingDeltaRef.current.x += dx;
+            pendingDeltaRef.current.y += dy;
+            scheduleFlush();
+        };
+        const onDocMouseUp = (e: MouseEvent) => {
+            if (e.button === 1) stopPanning();
+        };
+        document.addEventListener("mousemove", onDocMouseMove);
+        document.addEventListener("mouseup", onDocMouseUp);
+        return () => {
+            document.removeEventListener("mousemove", onDocMouseMove);
+            document.removeEventListener("mouseup", onDocMouseUp);
+        };
+    }, [scheduleFlush, stopPanning]);
 
-    const handlePanMouseLeave = useCallback(() => {
-        stopPanning();
-    }, [stopPanning]);
+    // No-ops: document-level listeners (below) handle all movement and release
+    // so we don't double-count deltas when the mouse is over the canvas.
+    const handlePanMouseMove = useCallback((_e: Konva.KonvaEventObject<MouseEvent>) => { }, []);
+    const handlePanMouseUp = useCallback((_e: Konva.KonvaEventObject<MouseEvent>) => { }, []);
+    // No-op: panning no longer stops on mouse-leave (document listeners handle it).
+    const handlePanMouseLeave = useCallback(() => { }, []);
 
     return {
         isPanning,

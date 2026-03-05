@@ -18,10 +18,13 @@ export default function WorkbenchWindow() {
     <div className="flex flex-col w-full h-full">
       <ApplicationHeader />
       <ToolBar />
-      <div className="flex flex-1 overflow-hidden">
-        <ControlsPanel />
+      <div className="relative flex-1 overflow-hidden">
         <CanvasEditorLayout />
-        <InspectorPanel />
+        <div className="absolute inset-0 flex pointer-events-none z-10">
+          <ControlsPanel />
+          <div className="flex-1" />
+          <InspectorPanel />
+        </div>
       </div>
       <StatusBar />
       <WorkspacePickerModal />
