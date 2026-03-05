@@ -1,9 +1,8 @@
-import { getMaxEnvironmentId, saveEnvironment } from "@server/db/environments";
+import { getLastEnvironmentId, saveEnvironment } from "@server/db/environments";
 import { getObjectsByEnvironment, saveObjects, deleteObject } from "@server/db/objects";
-import { getVerticesByObjectIds, saveVertices, deleteVertex } from "@server/db/vertices";
+import { getVerticesByObjects, saveVertices, deleteVertex } from "@server/db/vertices";
 import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
-import type { Object, Vertex } from "@/types/schemaTypes";
-import { vertexKey } from "@/features/canvas-editing/utils/canvasObjectUtils";
+import type { Object, Vertex, Environment } from "@/types/schemaTypes";
 import { useCanvasObjectStore } from "../stores/canvasObjectStore";
 import { useEnvStore } from "@/stores/envStore";
 
@@ -29,7 +28,7 @@ useCanvasObjectStore.subscribe((next, prev) => {
 
 /** Returns the next sequential environment ID (max existing + 1, or 1 when the table is empty). */
 export async function resolveNextEnvironmentId(): Promise<number> {
-    const max = await getMaxEnvironmentId();
+    const max = await getLastEnvironmentId();
     return max + 1;
 }
 
@@ -37,44 +36,17 @@ export async function resolveNextEnvironmentId(): Promise<number> {
 
 let _isSaving = false;
 
-function hasUnsavedChanges(
-    isEnvDirty: boolean,
-    dirtyObjectIds: Set<number>,
-    dirtyVertexIds: Set<string>,
-    deletedObjectIds: Set<number>,
-    deletedVertexIds: Map<string, { id: number; objectId: number; environmentId: number }>,
-): boolean {
-    return (
-        isEnvDirty ||
-        dirtyObjectIds.size > 0 ||
-        dirtyVertexIds.size > 0 ||
-        deletedObjectIds.size > 0 ||
-        deletedVertexIds.size > 0
-    );
-}
-
-async function persistDirtyObjects(
-    objects: Object[],
-    dirtyObjectIds: Set<number>,
-    deletedObjectIds: Set<number>,
-    environmentId: number,
-): Promise<void> {
-    const dirty = objects.filter((o) => dirtyObjectIds.has(o.id));
+async function persistDirtyObjects(dirtyObjects: Object[], deletedObjects: Object[]): Promise<void> {
     await Promise.all([
-        dirty.length > 0 ? saveObjects(dirty) : Promise.resolve(),
-        ...[...deletedObjectIds].map((id) => deleteObject(id, environmentId)),
+        dirtyObjects.length > 0 ? saveObjects(dirtyObjects) : Promise.resolve(),
+        ...deletedObjects.map((obj) => deleteObject(obj)),
     ]);
 }
 
-async function persistDirtyVertices(
-    vertices: Vertex[],
-    dirtyVertexIds: Set<string>,
-    deletedVertexIds: Map<string, { id: number; objectId: number; environmentId: number }>,
-): Promise<void> {
-    const dirty = vertices.filter((v) => dirtyVertexIds.has(vertexKey(v.objectId, v.environmentId, v.id)));
+async function persistDirtyVertices(dirtyVertices: Vertex[], deletedVertices: Vertex[]): Promise<void> {
     await Promise.all([
-        dirty.length > 0 ? saveVertices(dirty) : Promise.resolve(),
-        ...[...deletedVertexIds.values()].map(({ id, objectId, environmentId }) => deleteVertex(id, objectId, environmentId)),
+        dirtyVertices.length > 0 ? saveVertices(dirtyVertices) : Promise.resolve(),
+        ...deletedVertices.map((v) => deleteVertex(v)),
     ]);
 }
 
@@ -85,18 +57,18 @@ async function persistDirtyVertices(
 export async function saveCanvas(): Promise<void> {
     if (_isSaving) return;
 
-    const { objects, vertices, dirtyObjectIds, dirtyVertexIds, deletedObjectIds, deletedVertexIds, clearDirty } =
+    const { dirtyObjects, dirtyVertices, deletedObjects, deletedVertices, clearDirty } =
         useCanvasObjectStore.getState();
     const { env, isEnvDirty, clearDirty: clearEnvDirty } = useEnvStore.getState();
 
-    if (!hasUnsavedChanges(isEnvDirty, dirtyObjectIds, dirtyVertexIds, deletedObjectIds, deletedVertexIds)) return;
+    if (!isEnvDirty && !dirtyObjects.length && !deletedObjects.length && !dirtyVertices.length && !deletedVertices.length) return;
 
     _isSaving = true;
     try {
         await Promise.all([
-            saveEnvironment(env),
-            persistDirtyObjects(objects, dirtyObjectIds, deletedObjectIds, env.id),
-            persistDirtyVertices(vertices, dirtyVertexIds, deletedVertexIds),
+            isEnvDirty ? saveEnvironment(env) : Promise.resolve(),
+            persistDirtyObjects(dirtyObjects, deletedObjects),
+            persistDirtyVertices(dirtyVertices, deletedVertices),
         ]);
         clearDirty();
         clearEnvDirty();
@@ -108,13 +80,50 @@ export async function saveCanvas(): Promise<void> {
 // ── Canvas load ────────────────────────────────────────────────────────────
 
 /**
+ * Walks the nextVertexId linked list to restore draw order for one object's vertices.
+ * Dexie returns rows in primary-key (id) order, so a vertex inserted as id=5
+ * between id=2 and id=3 would come back last without this step.
+ * Falls back to the original array if the chain is broken or incomplete.
+ */
+function sortByLinkedList(group: Vertex[]): Vertex[] {
+    if (group.length <= 1) return group;
+    const nextIds = new Set(group.map((v) => v.nextVertexId).filter((id): id is number => id !== null));
+    const head = group.find((v) => !nextIds.has(v.id));
+    if (!head) return group;
+    const byId = new Map(group.map((v) => [v.id, v]));
+    const ordered: Vertex[] = [];
+    const visited = new Set<number>();
+    let current: Vertex | undefined = head;
+    while (current && !visited.has(current.id)) {
+        ordered.push(current);
+        visited.add(current.id);
+        current = current.nextVertexId !== null ? byId.get(current.nextVertexId) : undefined;
+    }
+    return ordered.length === group.length ? ordered : group;
+}
+
+function restoreVertexOrder(vertices: Vertex[]): Vertex[] {
+    const byObject = new Map<number, Vertex[]>();
+    for (const v of vertices) {
+        const group = byObject.get(v.objectId) ?? [];
+        group.push(v);
+        byObject.set(v.objectId, group);
+    }
+    const result: Vertex[] = [];
+    for (const group of byObject.values()) {
+        result.push(...sortByLinkedList(group));
+    }
+    return result;
+}
+
+/**
  * Loads objects and vertices for an environment from IndexedDB and hydrates
  * the canvas store. Seeds the ID counter to prevent future collisions.
  */
-export async function loadCanvasForEnvironment(environmentId: number): Promise<void> {
-    const objects = await getObjectsByEnvironment(environmentId);
-    const vertices = objects.length > 0
-        ? await getVerticesByObjectIds(objects.map((o) => o.id), environmentId)
+export async function loadCanvasForEnvironment(env: Environment): Promise<void> {
+    const objects = await getObjectsByEnvironment(env);
+    const rawVertices = objects.length > 0
+        ? await getVerticesByObjects(objects)
         : [];
-    useCanvasObjectStore.getState().setObjects(objects, vertices);
+    useCanvasObjectStore.getState().setObjects(objects, restoreVertexOrder(rawVertices));
 }

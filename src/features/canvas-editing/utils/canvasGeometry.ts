@@ -1,11 +1,14 @@
 import type { Object, Vertex } from "@/types/schemaTypes";
 import type { ObjectCategory } from "@/config/db-ops/enums";
 
-export interface EdgeMidpoint {
-    /** Index of the edge's start vertex (edge goes from vertices[afterIndex] to vertices[afterIndex+1]) */
-    afterIndex: number;
+export interface Point {
     x: number;
     y: number;
+}
+
+export interface EdgeMidpoint extends Point {
+    /** Index of the edge's start vertex (edge goes from vertices[afterIndex] to vertices[afterIndex+1]) */
+    afterIndex: number;
 }
 
 /** Returns vertices belonging to an object, in polygon draw order. */
@@ -14,7 +17,7 @@ export function objectVertices(vertices: Vertex[], objectId: number): Vertex[] {
 }
 
 /** Shoelace formula — always positive. */
-export function shoelaceArea(verts: { x: number; y: number }[]): number {
+export function shoelaceArea(verts: Point[]): number {
     let sum = 0;
     const n = verts.length;
     for (let i = 0; i < n; i++) {
@@ -43,8 +46,6 @@ export function computeEdgeMidpoints(vertices: Vertex[]): EdgeMidpoint[] {
 // ---------------------------------------------------------------------------
 // Sutherland-Hodgman polygon clipping
 // ---------------------------------------------------------------------------
-
-type Point = { x: number; y: number };
 
 /** Returns the intersection point of segment (a→b) with the infinite line (c→d). */
 function lineIntersect(a: Point, b: Point, c: Point, d: Point): Point {
@@ -107,20 +108,19 @@ export function clipPolygon(subject: Point[], clip: Point[]): Point[] {
  * For obstacle objects the concept of "net area" doesn't apply — returns `null`.
  */
 export function computeNetArea(
-    objectId: number,
+    obj: Object,
     objects: Object[],
     allVertices: Vertex[],
 ): number | null {
-    const target = objects.find((o) => o.id === objectId);
-    if (!target || (target.category as ObjectCategory) !== "zone") return null;
+    if ((obj.category as ObjectCategory) !== "zone") return null;
 
-    const zoneVerts = objectVertices(allVertices, objectId);
+    const zoneVerts = objectVertices(allVertices, obj.id);
     const zonePoints: Point[] = zoneVerts.map((v) => ({ x: v.x, y: v.y }));
 
     let overlapArea = 0;
-    for (const obj of objects) {
-        if ((obj.category as ObjectCategory) !== "obstacle") continue;
-        const obstVerts = objectVertices(allVertices, obj.id);
+    for (const o of objects) {
+        if ((o.category as ObjectCategory) !== "obstacle") continue;
+        const obstVerts = objectVertices(allVertices, o.id);
         const obstPoints: Point[] = obstVerts.map((v) => ({ x: v.x, y: v.y }));
         const clipped = clipPolygon(obstPoints, zonePoints);
         if (clipped.length >= 3) {
@@ -128,5 +128,5 @@ export function computeNetArea(
         }
     }
 
-    return Math.max(0, target.area - overlapArea);
+    return Math.max(0, obj.area - overlapArea);
 }

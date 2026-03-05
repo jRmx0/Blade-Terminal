@@ -11,10 +11,10 @@ import {
 
 export default function ObjectTypeSelect() {
   const globalType = useEnvStore((s) => s.env.type);
-  const selectedObjectId = useCanvasSelectionStore((s) => s.selectedObjectId);
+  const selectedObject = useCanvasSelectionStore((s) => s.selectedObject);
   const updateObjectType = useCanvasObjectStore((s) => s.updateObjectType);
-  const selectedObject = useCanvasObjectStore(
-    (s) => s.objects.find((o) => o.id === selectedObjectId) ?? null,
+  const liveObject = useCanvasObjectStore(
+    (s) => selectedObject ? s.objects.find((o) => o.id === selectedObject.id) ?? null : null,
   );
 
   const isFixed = isGlobalTypeFixed(globalType);
@@ -23,13 +23,13 @@ export default function ObjectTypeSelect() {
   // Displayed value: forced type when global is fixed; selected object's type when any
   const displayValue: ObjectType = isFixed
     ? forcedType
-    : (selectedObject?.type ?? defaultObjectTypeForGlobal(globalType));
+    : (liveObject?.type ?? defaultObjectTypeForGlobal(globalType));
 
-  const isDisabled = isFixed || selectedObjectId === null;
+  const isDisabled = isFixed || selectedObject === null;
 
   function handleChange(value: string) {
-    if (isDisabled || selectedObjectId === null) return;
-    updateObjectType(selectedObjectId, value as ObjectType);
+    if (isDisabled || selectedObject === null) return;
+    updateObjectType(selectedObject, value as ObjectType);
   }
 
   return (

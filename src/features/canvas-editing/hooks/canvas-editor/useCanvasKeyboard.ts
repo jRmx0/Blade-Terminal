@@ -1,25 +1,26 @@
 import { useCallback } from "react";
+import type { Object, Vertex } from "@/types/schemaTypes";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 
 interface UseCanvasKeyboardOptions {
     activeTool: ActiveTool | null;
     drawingPointsCount: number;
-    selectedObjectId: number | null;
-    selectedVertexIndices: number[];
+    selectedObject: Object | null;
+    selectedVertices: Vertex[];
     setActiveTool: (tool: ActiveTool | null) => void;
     clearSelection: () => void;
-    selectVertex: (index: number | null) => void;
-    deleteObject: (id: number) => void;
-    deleteVertex: (objectId: number, vertexIndex: number) => void;
-    deleteVertices: (objectId: number, indices: number[]) => void;
+    selectVertex: (vertex: Vertex | null) => void;
+    deleteObject: (obj: Object) => void;
+    deleteVertex: (obj: Object, vertex: Vertex) => void;
+    deleteVertices: (obj: Object, vertices: Vertex[]) => void;
     cancelDrawing: () => void;
 }
 
 export function useCanvasKeyboard({
     activeTool,
     drawingPointsCount,
-    selectedObjectId,
-    selectedVertexIndices,
+    selectedObject,
+    selectedVertices,
     setActiveTool,
     clearSelection,
     selectVertex,
@@ -39,9 +40,9 @@ export function useCanvasKeyboard({
                         setActiveTool(null);
                     }
                 } else if (activeTool === "select") {
-                    if (selectedVertexIndices.length > 0) {
+                    if (selectedVertices.length > 0) {
                         selectVertex(null); // deselect vertices, keep object selected
-                    } else if (selectedObjectId !== null) {
+                    } else if (selectedObject !== null) {
                         clearSelection();
                     } else {
                         setActiveTool(null);
@@ -53,11 +54,11 @@ export function useCanvasKeyboard({
             }
 
             if (e.key === "Delete" && activeTool === "select") {
-                if (selectedObjectId !== null && selectedVertexIndices.length > 0) {
-                    deleteVertices(selectedObjectId, selectedVertexIndices);
+                if (selectedObject !== null && selectedVertices.length > 0) {
+                    deleteVertices(selectedObject, selectedVertices);
                     selectVertex(null);
-                } else if (selectedObjectId !== null) {
-                    deleteObject(selectedObjectId);
+                } else if (selectedObject !== null) {
+                    deleteObject(selectedObject);
                     clearSelection();
                 }
             }
@@ -65,8 +66,8 @@ export function useCanvasKeyboard({
         [
             activeTool,
             drawingPointsCount,
-            selectedObjectId,
-            selectedVertexIndices,
+            selectedObject,
+            selectedVertices,
             setActiveTool,
             clearSelection,
             selectVertex,

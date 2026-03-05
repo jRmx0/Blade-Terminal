@@ -1,40 +1,42 @@
 import { create } from "zustand";
+import type { Object, Vertex } from "@/types/schemaTypes";
+import { sameVertex } from "@/features/canvas-editing/utils/canvasObjectUtils";
 
 interface CanvasSelectionState {
-    selectedObjectId: number | null;
-    selectedVertexIndices: number[];
+    selectedObject: Object | null;
+    selectedVertices: Vertex[];
 
-    selectObject: (id: number) => void;
+    selectObject: (obj: Object) => void;
     clearSelection: () => void;
-    selectVertex: (index: number | null) => void;
-    toggleVertexSelection: (index: number, ctrl: boolean) => void;
+    selectVertex: (vertex: Vertex | null) => void;
+    toggleVertexSelection: (vertex: Vertex, ctrl: boolean) => void;
 }
 
 export const useCanvasSelectionStore = create<CanvasSelectionState>((set) => ({
-    selectedObjectId: null,
-    selectedVertexIndices: [],
+    selectedObject: null,
+    selectedVertices: [],
 
-    selectObject: (id) =>
-        set({ selectedObjectId: id, selectedVertexIndices: [] }),
+    selectObject: (obj) =>
+        set({ selectedObject: obj, selectedVertices: [] }),
 
     clearSelection: () =>
-        set({ selectedObjectId: null, selectedVertexIndices: [] }),
+        set({ selectedObject: null, selectedVertices: [] }),
 
-    selectVertex: (index) =>
-        set({ selectedVertexIndices: index !== null ? [index] : [] }),
+    selectVertex: (vertex) =>
+        set({ selectedVertices: vertex !== null ? [vertex] : [] }),
 
-    toggleVertexSelection: (index, ctrl) =>
+    toggleVertexSelection: (vertex, ctrl) =>
         set((state) => {
             if (!ctrl) {
                 const alreadySoleSelected =
-                    state.selectedVertexIndices.length === 1 && state.selectedVertexIndices[0] === index;
-                return { selectedVertexIndices: alreadySoleSelected ? [] : [index] };
+                    state.selectedVertices.length === 1 && sameVertex(state.selectedVertices[0]!, vertex);
+                return { selectedVertices: alreadySoleSelected ? [] : [vertex] };
             }
-            const alreadySelected = state.selectedVertexIndices.includes(index);
+            const alreadySelected = state.selectedVertices.some((sv) => sameVertex(sv, vertex));
             return {
-                selectedVertexIndices: alreadySelected
-                    ? state.selectedVertexIndices.filter((i) => i !== index)
-                    : [...state.selectedVertexIndices, index],
+                selectedVertices: alreadySelected
+                    ? state.selectedVertices.filter((sv) => !sameVertex(sv, vertex))
+                    : [...state.selectedVertices, vertex],
             };
         }),
 }));

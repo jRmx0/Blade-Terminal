@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Stage } from "react-konva";
 import type Konva from "konva";
+import type { Object, Vertex } from "@/types/schemaTypes";
+import { sameObject } from "@/features/canvas-editing/utils/canvasObjectUtils";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
@@ -22,10 +24,10 @@ import { CanvasDrawingPreviewLayer } from "@/features/canvas-editing/components/
 
 export default function CanvasEditor() {
   const stageRef = useRef<Konva.Stage>(null);
-  const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
-  const [movingObjectId, setMovingObjectId] = useState<number | null>(null);
+  const [draggingVertex, setDraggingVertex] = useState<Vertex | null>(null);
+  const [movingObject, setMovingObject] = useState<Object | null>(null);
   const [isHoveringHandle, setIsHoveringHandle] = useState(false);
-  const [isHoveringObject, setIsHoveringObject] = useState<number | null>(null);
+  const [isHoveringObject, setIsHoveringObject] = useState<Object | null>(null);
 
   const { position, scale, gridVisible, setPosition, setScale } = useCanvasViewStore();
   const { activeTool, setActiveTool } = useCanvasToolStore();
@@ -42,8 +44,8 @@ export default function CanvasEditor() {
   } = useCanvasObjectStore();
 
   const {
-    selectedObjectId,
-    selectedVertexIndices,
+    selectedObject: selectedStoreObject,
+    selectedVertices,
     selectObject,
     clearSelection,
     selectVertex,
@@ -87,8 +89,8 @@ export default function CanvasEditor() {
   const { handleKeyDown } = useCanvasKeyboard({
     activeTool,
     drawingPointsCount: drawingPoints.length,
-    selectedObjectId,
-    selectedVertexIndices,
+    selectedObject: selectedStoreObject,
+    selectedVertices,
     setActiveTool,
     clearSelection,
     selectVertex,
@@ -130,8 +132,9 @@ export default function CanvasEditor() {
   }, [handlePanMouseLeave, clearDrawingMousePosition, handleMidpointDragEnd]);
 
   const selectedObject =
-    activeTool === "select" && selectedObjectId && movingObjectId !== selectedObjectId
-      ? (objects.find((o) => o.id === selectedObjectId) ?? null)
+    activeTool === "select" && selectedStoreObject &&
+    !(movingObject !== null && sameObject(movingObject, selectedStoreObject))
+      ? selectedStoreObject
       : null;
 
   const selectedObjectVertices = selectedObject
@@ -142,8 +145,8 @@ export default function CanvasEditor() {
 
   function resolveCursor() {
     if (isPanning) return "grabbing";
-    if (movingObjectId !== null) return "grabbing";
-    if (isMidpointDragging || isHoveringHandle || draggingVertexIndex !== null || isDrawing) return "crosshair";
+    if (movingObject !== null) return "grabbing";
+    if (isMidpointDragging || isHoveringHandle || draggingVertex !== null || isDrawing) return "crosshair";
     if (isHoveringObject !== null && activeTool === "select") return "move";
     if (isHoveringObject && activeTool === "delete") return "crosshair";
     return "default";
@@ -181,29 +184,29 @@ export default function CanvasEditor() {
         <CanvasPolygonObjectsLayer
           objects={objects}
           vertices={vertices}
-          selectedObjectId={selectedObjectId}
-          movingObjectId={movingObjectId}
+          selectedObject={selectedStoreObject}
+          movingObject={movingObject}
           activeTool={activeTool}
           scale={scale}
           isPanningRef={isPanningRef}
           onSelectObject={selectObject}
-          onDeleteObject={(id) => {
-            deleteObject(id);
-            if (selectedObjectId === id) clearSelection();
+          onDeleteObject={(obj) => {
+            deleteObject(obj);
+            if (selectedStoreObject?.id === obj.id) clearSelection();
           }}
           onObjectHoverChange={setIsHoveringObject}
-          onObjectDragStart={(id) => {
-            if (id !== selectedObjectId) {
+          onObjectDragStart={(obj) => {
+            if (obj.id !== selectedStoreObject?.id) {
               clearSelection();
-              selectObject(id);
+              selectObject(obj);
             } else {
               selectVertex(null);
             }
-            setMovingObjectId(id);
+            setMovingObject(obj);
           }}
-          onObjectDragEnd={(id, dx, dy) => {
-            moveObject(id, dx, dy);
-            setMovingObjectId(null);
+          onObjectDragEnd={(obj, dx, dy) => {
+            moveObject(obj, dx, dy);
+            setMovingObject(null);
           }}
         />
 
@@ -212,17 +215,17 @@ export default function CanvasEditor() {
           selectedObjectVertices={selectedObjectVertices}
           activeTool={activeTool}
           scale={scale}
-          selectedVertexIndices={selectedVertexIndices}
-          draggingVertexIndex={draggingVertexIndex}
-          onVertexClick={(i, ctrl) => toggleVertexSelection(i, ctrl)}
-          onVertexDragStart={(i) => {
-            setDraggingVertexIndex(i);
+          selectedVertices={selectedVertices}
+          draggingVertex={draggingVertex}
+          onVertexClick={(v, ctrl) => toggleVertexSelection(v, ctrl)}
+          onVertexDragStart={(v) => {
+            setDraggingVertex(v);
             beginBatch();
           }}
           onVertexDragMove={handleVertexDragMove}
-          onVertexDragEnd={(objectId, i, x, y) => {
-            setDraggingVertexIndex(null);
-            handleVertexDragEnd(objectId, i, x, y);
+          onVertexDragEnd={(vertex, pos) => {
+            setDraggingVertex(null);
+            handleVertexDragEnd(vertex, pos);
             endBatch();
           }}
           onEdgeMidpointMouseDown={handleMidpointMouseDown}

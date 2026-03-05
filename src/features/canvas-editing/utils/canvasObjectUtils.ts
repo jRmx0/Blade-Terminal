@@ -10,27 +10,47 @@ import { objectVertices, shoelaceArea } from "./canvasGeometry";
  *   1. Rebuild the nextVertexId linked-list for the object's vertices.
  *   2. Update vertexCount + area on the EnvObject.
  */
+function rebuildLinkedList(vertices: Vertex[], objectId: number): Vertex[] {
+    const objVerts = objectVertices(vertices, objectId);
+    const n = objVerts.length;
+    const linked = new Map<number, Vertex>();
+    for (let i = 0; i < n; i++) {
+        const v = objVerts[i]!;
+        linked.set(v.id, { ...v, nextVertexId: i < n - 1 ? objVerts[i + 1]!.id : null });
+    }
+    return vertices.map((v) => (v.objectId === objectId ? (linked.get(v.id) ?? v) : v));
+}
+
+function updateObjectStats(objects: Object[], vertices: Vertex[], objectId: number): Object[] {
+    const objVerts = objectVertices(vertices, objectId);
+    const n = objVerts.length;
+    const area = n >= 3 ? shoelaceArea(objVerts) : 0;
+    return objects.map((o) => (o.id === objectId ? { ...o, vertexCount: n, area } : o));
+}
+
 export function syncObject(
     objects: Object[],
     vertices: Vertex[],
     objectId: number,
 ): { objects: Object[]; vertices: Vertex[] } {
-    const objVerts = objectVertices(vertices, objectId);
-    const n = objVerts.length;
+    return {
+        vertices: rebuildLinkedList(vertices, objectId),
+        objects: updateObjectStats(objects, vertices, objectId),
+    };
+}
 
-    // Rebuild linked list
-    const linked = new Map<number, Vertex>(
-        objVerts.map((v, i) => [v.id, { ...v, nextVertexId: i < n - 1 ? objVerts[i + 1]!.id : null }]),
-    );
-    const newVertices = vertices.map((v) => (v.objectId === objectId ? (linked.get(v.id) ?? v) : v));
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
 
-    // Update object stats
-    const area = n >= 3 ? shoelaceArea(objVerts) : 0;
-    const newObjects = objects.map((o) =>
-        o.id === objectId ? { ...o, vertexCount: n, area } : o,
-    );
+/** True when two objects share the same compound primary key [id, environmentId]. */
+export function sameObject(a: Object, b: Object): boolean {
+    return a.id === b.id && a.environmentId === b.environmentId;
+}
 
-    return { objects: newObjects, vertices: newVertices };
+/** True when two vertices share the same compound primary key [objectId, environmentId, id]. */
+export function sameVertex(a: Vertex, b: Vertex): boolean {
+    return a.id === b.id && a.objectId === b.objectId && a.environmentId === b.environmentId;
 }
 
 // ---------------------------------------------------------------------------
@@ -38,27 +58,29 @@ export function syncObject(
 // ---------------------------------------------------------------------------
 
 export function markDirty(
-    dirty: Set<number>,
-    deleted: Set<number>,
-    id: number,
-): { dirty: Set<number>; deleted: Set<number> } {
-    const newDeleted = new Set(deleted);
-    newDeleted.delete(id);
-    return { dirty: new Set([...dirty, id]), deleted: newDeleted };
+    dirty: Object[],
+    deleted: Object[],
+    obj: Object,
+): { dirty: Object[]; deleted: Object[] } {
+    return {
+        dirty: [...dirty.filter((o) => o.id !== obj.id), obj],
+        deleted: deleted.filter((o) => o.id !== obj.id),
+    };
 }
 
 export function markDeleted(
-    dirty: Set<number>,
-    deleted: Set<number>,
-    id: number,
-): { dirty: Set<number>; deleted: Set<number> } {
-    const newDirty = new Set(dirty);
-    newDirty.delete(id);
-    return { dirty: newDirty, deleted: new Set([...deleted, id]) };
+    dirty: Object[],
+    deleted: Object[],
+    obj: Object,
+): { dirty: Object[]; deleted: Object[] } {
+    return {
+        dirty: dirty.filter((o) => o.id !== obj.id),
+        deleted: [...deleted.filter((o) => o.id !== obj.id), obj],
+    };
 }
 
 // ---------------------------------------------------------------------------
-// Vertex-specific dirty tracking (deletedVertexIds is Map<vertexKey, {id,objectId,environmentId}>)
+// Vertex-specific dirty tracking
 // ---------------------------------------------------------------------------
 
 /** Composite key matching the DB compound primary key [objectId+environmentId+id]. */
@@ -67,29 +89,27 @@ export function vertexKey(objectId: number, environmentId: number, id: number): 
 }
 
 export function markVertexDirty(
-    dirty: Set<string>,
-    deleted: Map<string, { id: number; objectId: number; environmentId: number }>,
-    id: number,
-    objectId: number,
-    environmentId: number,
-): { dirty: Set<string>; deleted: Map<string, { id: number; objectId: number; environmentId: number }> } {
-    const key = vertexKey(objectId, environmentId, id);
-    const newDeleted = new Map(deleted);
-    newDeleted.delete(key);
-    return { dirty: new Set([...dirty, key]), deleted: newDeleted };
+    dirty: Vertex[],
+    deleted: Vertex[],
+    vertex: Vertex,
+): { dirty: Vertex[]; deleted: Vertex[] } {
+    const key = vertexKey(vertex.objectId, vertex.environmentId, vertex.id);
+    const keep = (v: Vertex) => vertexKey(v.objectId, v.environmentId, v.id) !== key;
+    return {
+        dirty: [...dirty.filter(keep), vertex],
+        deleted: deleted.filter(keep),
+    };
 }
 
 export function markVertexDeleted(
-    dirty: Set<string>,
-    deleted: Map<string, { id: number; objectId: number; environmentId: number }>,
-    id: number,
-    objectId: number,
-    environmentId: number,
-): { dirty: Set<string>; deleted: Map<string, { id: number; objectId: number; environmentId: number }> } {
-    const key = vertexKey(objectId, environmentId, id);
-    const newDirty = new Set(dirty);
-    newDirty.delete(key);
-    const newDeleted = new Map(deleted);
-    newDeleted.set(key, { id, objectId, environmentId });
-    return { dirty: newDirty, deleted: newDeleted };
+    dirty: Vertex[],
+    deleted: Vertex[],
+    vertex: Vertex,
+): { dirty: Vertex[]; deleted: Vertex[] } {
+    const key = vertexKey(vertex.objectId, vertex.environmentId, vertex.id);
+    const keep = (v: Vertex) => vertexKey(v.objectId, v.environmentId, v.id) !== key;
+    return {
+        dirty: dirty.filter(keep),
+        deleted: [...deleted.filter(keep), vertex],
+    };
 }

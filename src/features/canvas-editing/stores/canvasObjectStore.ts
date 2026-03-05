@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import type { Object, Vertex } from "@/types/schemaTypes";
+import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import { type ObjectCategory, type ObjectType } from "@/config/db-ops/enums";
 import { useEnvStore } from "@/stores/envStore";
 import { objectVertices } from "@/features/canvas-editing/utils/canvasGeometry";
-import { syncObject, markDirty, markDeleted, markVertexDirty, markVertexDeleted, vertexKey } from "@/features/canvas-editing/utils/canvasObjectUtils";
+import { syncObject, markDirty, markDeleted, markVertexDirty, markVertexDeleted } from "@/features/canvas-editing/utils/canvasObjectUtils";
 
 // ---------------------------------------------------------------------------
 // Store
@@ -13,30 +14,27 @@ export interface CanvasObjectState {
     objects: Object[];
     vertices: Vertex[];
 
-    /** IDs that have been created or mutated since the last clearDirty(). */
-    dirtyObjectIds: Set<number>;
-    dirtyVertexIds: Set<string>,
-    /** IDs that have been removed since the last clearDirty(). */
-    deletedObjectIds: Set<number>;
-    /** Map of vertexKey → { id, objectId, environmentId } for vertices deleted since the last clearDirty(). */
-    deletedVertexIds: Map<string, { id: number; objectId: number; environmentId: number }>;
+    dirtyObjects: Object[];
+    dirtyVertices: Vertex[];
+    deletedObjects: Object[];
+    deletedVertices: Vertex[];
 
     /** Adds a new polygon object with the given vertices. Marks object and all vertices dirty. */
-    addObject: (category: ObjectCategory, points: { x: number; y: number }[], type: ObjectType) => void;
+    addObject: (category: ObjectCategory, points: Point[], type: ObjectType) => void;
     /** Removes an object and all its vertices. Marks them as deleted. */
-    deleteObject: (id: number) => void;
+    deleteObject: (obj: Object) => void;
     /** Moves a single vertex to a new position. Marks object and vertex dirty. */
-    updateVertex: (objectId: number, vertexIndex: number, x: number, y: number) => void;
+    updateVertex: (vertex: Vertex, pos: Point) => void;
     /** Translates all vertices of an object by (dx, dy). Marks object and all vertices dirty. */
-    moveObject: (objectId: number, dx: number, dy: number) => void;
+    moveObject: (obj: Object, dx: number, dy: number) => void;
     /** Removes a vertex from an object. No-op when the object has ≤ 3 vertices. */
-    deleteVertex: (objectId: number, vertexIndex: number) => void;
-    /** Removes multiple vertices by index. No-op when the result would have fewer than 3 vertices. */
-    deleteVertices: (objectId: number, indices: number[]) => void;
-    /** Inserts a new vertex after the given index. Returns the new vertex id. */
-    insertVertex: (objectId: number, afterIndex: number, x: number, y: number) => number;
+    deleteVertex: (obj: Object, vertex: Vertex) => void;
+    /** Removes multiple vertices. No-op when the result would have fewer than 3 vertices. */
+    deleteVertices: (obj: Object, vertices: Vertex[]) => void;
+    /** Inserts a new vertex after the given vertex. Returns the new Vertex. */
+    insertVertex: (afterVertex: Vertex, pos: Point) => Vertex;
     /** Updates the type of a single object. Marks it dirty. */
-    updateObjectType: (objectId: number, type: ObjectType) => void;
+    updateObjectType: (obj: Object, type: ObjectType) => void;
     /** Bulk-updates the type of every object. Marks all dirty. */
     updateObjectsType: (type: ObjectType) => void;
     /** Resets dirty tracking. Called by canvas bridge after a successful save. */
@@ -47,18 +45,18 @@ export interface CanvasObjectState {
 
 /** Selector: true when there are unsaved canvas changes. */
 export const selectIsDirty = (s: CanvasObjectState): boolean =>
-    s.dirtyObjectIds.size > 0 ||
-    s.dirtyVertexIds.size > 0 ||
-    s.deletedObjectIds.size > 0 ||
-    s.deletedVertexIds.size > 0;
+    s.dirtyObjects.length > 0 ||
+    s.dirtyVertices.length > 0 ||
+    s.deletedObjects.length > 0 ||
+    s.deletedVertices.length > 0;
 
 export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
     objects: [],
     vertices: [],
-    dirtyObjectIds: new Set<number>(),
-    dirtyVertexIds: new Set<string>(),
-    deletedObjectIds: new Set<number>(),
-    deletedVertexIds: new Map<string, { id: number; objectId: number; environmentId: number }>(),
+    dirtyObjects: [],
+    dirtyVertices: [],
+    deletedObjects: [],
+    deletedVertices: [],
 
     addObject: (category, points, type) => {
         const envId = useEnvStore.getState().env.id;
@@ -87,128 +85,121 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
                 objectId,
             );
 
-            let dObj = state.dirtyObjectIds, xObj = state.deletedObjectIds;
-            let dVtx = state.dirtyVertexIds, xVtx = state.deletedVertexIds;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, objectId));
+            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
+            let dVtx = state.dirtyVertices, xVtx = state.deletedVertices;
+            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, synced.objects.find((o) => o.id === objectId)!));
             for (const v of newVertices) {
-                ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v.id, v.objectId, v.environmentId));
+                ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v));
             }
 
-            return { ...synced, dirtyObjectIds: dObj, dirtyVertexIds: dVtx, deletedObjectIds: xObj, deletedVertexIds: xVtx };
+            return { ...synced, dirtyObjects: dObj, dirtyVertices: dVtx, deletedObjects: xObj, deletedVertices: xVtx };
         });
     },
 
-    deleteObject: (id) => {
+    deleteObject: (obj) => {
         set((state) => {
-            const toDelete = objectVertices(state.vertices, id);
+            if (!state.objects.some((o) => o.id === obj.id)) return state;
+            const toDelete = objectVertices(state.vertices, obj.id);
 
-            let dObj = state.dirtyObjectIds, xObj = state.deletedObjectIds;
-            let dVtx = state.dirtyVertexIds, xVtx = state.deletedVertexIds;
-            ({ dirty: dObj, deleted: xObj } = markDeleted(dObj, xObj, id));
+            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
+            let dVtx = state.dirtyVertices, xVtx = state.deletedVertices;
+            ({ dirty: dObj, deleted: xObj } = markDeleted(dObj, xObj, obj));
             for (const v of toDelete) {
-                ({ dirty: dVtx, deleted: xVtx } = markVertexDeleted(dVtx, xVtx, v.id, v.objectId, v.environmentId));
+                ({ dirty: dVtx, deleted: xVtx } = markVertexDeleted(dVtx, xVtx, v));
             }
 
             return {
-                objects: state.objects.filter((o) => o.id !== id),
-                vertices: state.vertices.filter((v) => v.objectId !== id),
-                dirtyObjectIds: dObj, dirtyVertexIds: dVtx, deletedObjectIds: xObj, deletedVertexIds: xVtx,
+                objects: state.objects.filter((o) => o.id !== obj.id),
+                vertices: state.vertices.filter((v) => v.objectId !== obj.id),
+                dirtyObjects: dObj, dirtyVertices: dVtx, deletedObjects: xObj, deletedVertices: xVtx,
             };
         });
     },
 
-    updateVertex: (objectId, vertexIndex, x, y) =>
-        set((state) => {
-            const objVerts = objectVertices(state.vertices, objectId);
-            const target = objVerts[vertexIndex];
-            if (!target) return state;
-
-            const newVertices = state.vertices.map((v) =>
-            v.id === target.id && v.objectId === objectId ? { ...v, x, y } : v,
-        );
-            const synced = syncObject(state.objects, newVertices, objectId);
-
-            let dObj = state.dirtyObjectIds, xObj = state.deletedObjectIds;
-            let dVtx = state.dirtyVertexIds, xVtx = state.deletedVertexIds;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, objectId));
-            ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, target.id, objectId, target.environmentId));
-
-            return { ...synced, dirtyObjectIds: dObj, dirtyVertexIds: dVtx, deletedObjectIds: xObj, deletedVertexIds: xVtx };
-        }),
-
-    moveObject: (objectId, dx, dy) =>
+    updateVertex: (vertex, pos) =>
         set((state) => {
             const newVertices = state.vertices.map((v) =>
-                v.objectId === objectId ? { ...v, x: v.x + dx, y: v.y + dy } : v,
+                v.id === vertex.id && v.objectId === vertex.objectId ? { ...v, x: pos.x, y: pos.y } : v,
             );
-            const synced = syncObject(state.objects, newVertices, objectId);
+            const synced = syncObject(state.objects, newVertices, vertex.objectId);
 
-            let dObj = state.dirtyObjectIds, xObj = state.deletedObjectIds;
-            let dVtx = state.dirtyVertexIds, xVtx = state.deletedVertexIds;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, objectId));
-            for (const v of objectVertices(state.vertices, objectId)) {
-                ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v.id, v.objectId, v.environmentId));
-            }
+            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
+            let dVtx = state.dirtyVertices, xVtx = state.deletedVertices;
+            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, synced.objects.find((o) => o.id === vertex.objectId)!));
+            ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, vertex));
 
-            return { ...synced, dirtyObjectIds: dObj, dirtyVertexIds: dVtx, deletedObjectIds: xObj, deletedVertexIds: xVtx };
+            return { ...synced, dirtyObjects: dObj, dirtyVertices: dVtx, deletedObjects: xObj, deletedVertices: xVtx };
         }),
 
-    deleteVertex: (objectId, vertexIndex) =>
+    moveObject: (obj, dx, dy) =>
         set((state) => {
-            const objVerts = objectVertices(state.vertices, objectId);
+            const newVertices = state.vertices.map((v) =>
+                v.objectId === obj.id ? { ...v, x: v.x + dx, y: v.y + dy } : v,
+            );
+            const synced = syncObject(state.objects, newVertices, obj.id);
+
+            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
+            let dVtx = state.dirtyVertices, xVtx = state.deletedVertices;
+            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, synced.objects.find((o) => o.id === obj.id)!));
+            for (const v of objectVertices(state.vertices, obj.id)) {
+                ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v));
+            }
+
+            return { ...synced, dirtyObjects: dObj, dirtyVertices: dVtx, deletedObjects: xObj, deletedVertices: xVtx };
+        }),
+
+    deleteVertex: (obj, vertex) =>
+        set((state) => {
+            const objVerts = objectVertices(state.vertices, obj.id);
             if (objVerts.length <= 3) return state;
-            const target = objVerts[vertexIndex];
-            if (!target) return state;
+            if (!objVerts.some((v) => v.id === vertex.id)) return state;
 
-            const newVertices = state.vertices.filter((v) => !(v.id === target.id && v.objectId === objectId));
-            const synced = syncObject(state.objects, newVertices, objectId);
+            const newVertices = state.vertices.filter((v) => !(v.id === vertex.id && v.objectId === obj.id));
+            const synced = syncObject(state.objects, newVertices, obj.id);
 
-            let dObj = state.dirtyObjectIds, xObj = state.deletedObjectIds;
-            let dVtx = state.dirtyVertexIds, xVtx = state.deletedVertexIds;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, objectId));
-            ({ dirty: dVtx, deleted: xVtx } = markVertexDeleted(dVtx, xVtx, target.id, objectId, target.environmentId));
-            for (const v of objectVertices(newVertices, objectId)) {
-                ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v.id, v.objectId, v.environmentId));
+            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
+            let dVtx = state.dirtyVertices, xVtx = state.deletedVertices;
+            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, synced.objects.find((o) => o.id === obj.id)!));
+            ({ dirty: dVtx, deleted: xVtx } = markVertexDeleted(dVtx, xVtx, vertex));
+            for (const v of objectVertices(newVertices, obj.id)) {
+                ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v));
             }
 
-            return { ...synced, dirtyObjectIds: dObj, dirtyVertexIds: dVtx, deletedObjectIds: xObj, deletedVertexIds: xVtx };
+            return { ...synced, dirtyObjects: dObj, dirtyVertices: dVtx, deletedObjects: xObj, deletedVertices: xVtx };
         }),
 
-    deleteVertices: (objectId, indices) =>
+    deleteVertices: (obj, vertices) =>
         set((state) => {
-            const objVerts = objectVertices(state.vertices, objectId);
-            if (objVerts.length - indices.length < 3) return state;
+            const objVerts = objectVertices(state.vertices, obj.id);
+            if (objVerts.length - vertices.length < 3) return state;
 
-            const indexSet = new Set(indices);
-            const toDelete = objVerts.filter((_, i) => indexSet.has(i));
-            const toDeleteIds = new Set(toDelete.map((v) => v.id));
-            const newVertices = state.vertices.filter((v) => !(v.objectId === objectId && toDeleteIds.has(v.id)));
-            const synced = syncObject(state.objects, newVertices, objectId);
+            const toDeleteIds = new Set(vertices.map((v) => v.id));
+            const toDelete = objVerts.filter((v) => toDeleteIds.has(v.id));
+            const newVertices = state.vertices.filter((v) => !(v.objectId === obj.id && toDeleteIds.has(v.id)));
+            const synced = syncObject(state.objects, newVertices, obj.id);
 
-            let dObj = state.dirtyObjectIds, xObj = state.deletedObjectIds;
-            let dVtx = state.dirtyVertexIds, xVtx = state.deletedVertexIds;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, objectId));
+            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
+            let dVtx = state.dirtyVertices, xVtx = state.deletedVertices;
+            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, synced.objects.find((o) => o.id === obj.id)!));
             for (const v of toDelete) {
-                ({ dirty: dVtx, deleted: xVtx } = markVertexDeleted(dVtx, xVtx, v.id, v.objectId, v.environmentId));
+                ({ dirty: dVtx, deleted: xVtx } = markVertexDeleted(dVtx, xVtx, v));
             }
-            for (const v of objectVertices(newVertices, objectId)) {
-                ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v.id, v.objectId, v.environmentId));
+            for (const v of objectVertices(newVertices, obj.id)) {
+                ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v));
             }
 
-            return { ...synced, dirtyObjectIds: dObj, dirtyVertexIds: dVtx, deletedObjectIds: xObj, deletedVertexIds: xVtx };
+            return { ...synced, dirtyObjects: dObj, dirtyVertices: dVtx, deletedObjects: xObj, deletedVertices: xVtx };
         }),
 
-    insertVertex: (objectId, afterIndex, x, y) => {
+    insertVertex: (afterVertex, pos) => {
+        const { objectId } = afterVertex;
         const inMemoryMax = Math.max(0, ...objectVertices(get().vertices, objectId).map((v) => v.id));
-        const newId = inMemoryMax + 1;
+        const envId = useEnvStore.getState().env.id;
+        const newVertex: Vertex = { id: inMemoryMax + 1, objectId, environmentId: envId, nextVertexId: null, x: pos.x, y: pos.y };
         set((state) => {
-            const objVerts = objectVertices(state.vertices, objectId);
-            const afterVertex = objVerts[afterIndex];
-            if (!afterVertex) return state;
-
             const globalAfterIndex = state.vertices.findIndex((v) => v.id === afterVertex.id && v.objectId === objectId);
-            const envId = useEnvStore.getState().env.id;
-            const newVertex: Vertex = { id: newId, objectId, environmentId: envId, nextVertexId: null, x, y };
+            if (globalAfterIndex === -1) return state;
+
             const newVertices = [
                 ...state.vertices.slice(0, globalAfterIndex + 1),
                 newVertex,
@@ -216,28 +207,28 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
             ];
             const synced = syncObject(state.objects, newVertices, objectId);
 
-            let dObj = state.dirtyObjectIds, xObj = state.deletedObjectIds;
-            let dVtx = state.dirtyVertexIds, xVtx = state.deletedVertexIds;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, objectId));
+            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
+            let dVtx = state.dirtyVertices, xVtx = state.deletedVertices;
+            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, synced.objects.find((o) => o.id === objectId)!));
             for (const v of objectVertices(newVertices, objectId)) {
-                ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v.id, v.objectId, v.environmentId));
+                ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, v));
             }
 
-            return { ...synced, dirtyObjectIds: dObj, dirtyVertexIds: dVtx, deletedObjectIds: xObj, deletedVertexIds: xVtx };
+            return { ...synced, dirtyObjects: dObj, dirtyVertices: dVtx, deletedObjects: xObj, deletedVertices: xVtx };
         });
-        return newId;
+        return newVertex;
     },
 
-    updateObjectType: (objectId, type) =>
+    updateObjectType: (obj, type) =>
         set((state) => {
-            const idx = state.objects.findIndex((o) => o.id === objectId);
-            if (idx === -1) return state;
+            if (!state.objects.some((o) => o.id === obj.id)) return state;
 
-            const newObjects = state.objects.map((o) => o.id === objectId ? { ...o, type } : o);
-            let dObj = state.dirtyObjectIds, xObj = state.deletedObjectIds;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, objectId));
+            const updated = { ...obj, type };
+            const newObjects = state.objects.map((o) => o.id === obj.id ? updated : o);
+            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
+            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, updated));
 
-            return { objects: newObjects, dirtyObjectIds: dObj, deletedObjectIds: xObj };
+            return { objects: newObjects, dirtyObjects: dObj, deletedObjects: xObj };
         }),
 
     updateObjectsType: (type) =>
@@ -245,29 +236,29 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
             if (state.objects.length === 0) return state;
 
             const newObjects = state.objects.map((o) => ({ ...o, type }));
-            let dObj = state.dirtyObjectIds, xObj = state.deletedObjectIds;
-            for (const o of state.objects) {
-                ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, o.id));
+            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
+            for (const o of newObjects) {
+                ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, o));
             }
 
-            return { objects: newObjects, dirtyObjectIds: dObj, deletedObjectIds: xObj };
+            return { objects: newObjects, dirtyObjects: dObj, deletedObjects: xObj };
         }),
 
     clearDirty: () =>
         set({
-            dirtyObjectIds: new Set<number>(),
-            dirtyVertexIds: new Set<string>(),
-            deletedObjectIds: new Set<number>(),
-            deletedVertexIds: new Map<string, { id: number; objectId: number; environmentId: number }>(),
+            dirtyObjects: [],
+            dirtyVertices: [],
+            deletedObjects: [],
+            deletedVertices: [],
         }),
 
     setObjects: (objects, vertices) =>
         set({
             objects,
             vertices,
-            dirtyObjectIds: new Set<number>(),
-            dirtyVertexIds: new Set<string>(),
-            deletedObjectIds: new Set<number>(),
-            deletedVertexIds: new Map<string, { id: number; objectId: number; environmentId: number }>(),
+            dirtyObjects: [],
+            dirtyVertices: [],
+            deletedObjects: [],
+            deletedVertices: [],
         }),
 }));

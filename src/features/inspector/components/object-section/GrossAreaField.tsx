@@ -3,7 +3,7 @@ import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObj
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 
 export default function GrossAreaField() {
-  const selectedObjectId = useCanvasSelectionStore((s) => s.selectedObjectId);
+  const selectedObjectId = useCanvasSelectionStore((s) => s.selectedObject?.id);
   const area = useCanvasObjectStore(
     (s) => s.objects.find((o) => o.id === selectedObjectId)?.area ?? 0,
   );

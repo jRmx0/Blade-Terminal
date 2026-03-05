@@ -1,3 +1,5 @@
+import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
+
 /**
  * Computes the signed area of a closed polygon using the Shoelace (Gauss) formula.
  * In screen coordinates (Y increases downward):
@@ -5,7 +7,7 @@
  *   - Negative → counter-clockwise winding (obstacle convention)
  * Returns 0 for fewer than 3 points.
  */
-export function computeSignedPolygonArea(vertices: { x: number; y: number }[]): number {
+export function computeSignedPolygonArea(vertices: Point[]): number {
     const n = vertices.length;
     if (n < 3) return 0;
     let area = 0;
@@ -23,6 +25,6 @@ export function computeSignedPolygonArea(vertices: { x: number; y: number }[]): 
  * Vertices may be in either CW or CCW order; the result is always positive.
  * Returns 0 for fewer than 3 points.
  */
-export function computePolygonArea(vertices: { x: number; y: number }[]): number {
+export function computePolygonArea(vertices: Point[]): number {
     return Math.abs(computeSignedPolygonArea(vertices));
 }

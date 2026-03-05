@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type React from "react";
 import type Konva from "konva";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
+import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 
 /**
  * Handles middle-mouse-button canvas panning.
@@ -14,7 +15,7 @@ import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewS
  */
 export function useCanvasPanning(
     stageRef: React.RefObject<Konva.Stage | null>,
-    setPosition: (pos: { x: number; y: number }) => void,
+    setPosition: (pos: Point) => void,
 ) {
     const isPanningRef = useRef(false);
     const panLastPosRef = useRef({ x: 0, y: 0 });

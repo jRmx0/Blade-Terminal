@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
+import type { Vertex } from "@/types/schemaTypes";
+import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 
 /**
  * Throttles vertex position updates during Konva drag to one Zustand write
@@ -11,9 +13,9 @@ import { useCallback, useEffect, useRef } from "react";
  *     synchronously so the store is always accurate when the drag finishes.
  */
 export function useCanvasVertexDrag(
-    updateVertex: (objectId: number, index: number, x: number, y: number) => void,
+    updateVertex: (vertex: Vertex, pos: Point) => void,
 ) {
-    const pendingRef = useRef<{ objectId: number; index: number; x: number; y: number } | null>(null);
+    const pendingRef = useRef<{ vertex: Vertex; pos: Point } | null>(null);
     const rafIdRef = useRef<number | null>(null);
 
     useEffect(() => {
@@ -24,8 +26,8 @@ export function useCanvasVertexDrag(
 
     const flush = useCallback(() => {
         if (pendingRef.current) {
-            const { objectId, index, x, y } = pendingRef.current;
-            updateVertex(objectId, index, x, y);
+            const { vertex, pos } = pendingRef.current;
+            updateVertex(vertex, pos);
             pendingRef.current = null;
         }
         rafIdRef.current = null;
@@ -33,8 +35,8 @@ export function useCanvasVertexDrag(
 
     /** Called on every Konva onDragMove — accumulates, schedules at most one RAF/frame. */
     const handleVertexDragMove = useCallback(
-        (objectId: number, index: number, x: number, y: number) => {
-            pendingRef.current = { objectId, index, x, y };
+        (vertex: Vertex, pos: Point) => {
+            pendingRef.current = { vertex, pos };
             if (rafIdRef.current === null) {
                 rafIdRef.current = requestAnimationFrame(flush);
             }
@@ -44,13 +46,13 @@ export function useCanvasVertexDrag(
 
     /** Called on Konva onDragEnd — cancels pending RAF and commits final position. */
     const handleVertexDragEnd = useCallback(
-        (objectId: number, index: number, x: number, y: number) => {
+        (vertex: Vertex, pos: Point) => {
             if (rafIdRef.current !== null) {
                 cancelAnimationFrame(rafIdRef.current);
                 rafIdRef.current = null;
             }
             pendingRef.current = null;
-            updateVertex(objectId, index, x, y);
+            updateVertex(vertex, pos);
         },
         [updateVertex],
     );

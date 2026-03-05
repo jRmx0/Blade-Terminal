@@ -4,7 +4,7 @@ import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvas
 import { OBJECT_CATEGORY_OPTIONS } from "@/config/db-ops/enums";
 
 export default function CategoryField() {
-  const selectedObjectId = useCanvasSelectionStore((s) => s.selectedObjectId);
+  const selectedObjectId = useCanvasSelectionStore((s) => s.selectedObject?.id);
   const category = useCanvasObjectStore(
     (s) => s.objects.find((o) => o.id === selectedObjectId)?.category,
   );

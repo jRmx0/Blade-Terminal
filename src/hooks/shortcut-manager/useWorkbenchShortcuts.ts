@@ -95,15 +95,15 @@ export function useWorkbenchShortcuts() {
 
     useShortcut("canvas.tool-delete", S["canvas.tool-delete"].keys, () => {
         const { activeTool, setActiveTool } = useCanvasToolStore.getState();
-        const { selectedObjectId, selectedVertexIndices, clearSelection, selectVertex } =
+        const { selectedObject, selectedVertices, clearSelection, selectVertex } =
             useCanvasSelectionStore.getState();
         const { deleteObject, deleteVertices } = useCanvasObjectStore.getState();
-        if (activeTool === "select" && selectedObjectId !== null) {
-            if (selectedVertexIndices.length > 0) {
-                deleteVertices(selectedObjectId, selectedVertexIndices);
+        if (activeTool === "select" && selectedObject !== null) {
+            if (selectedVertices.length > 0) {
+                deleteVertices(selectedObject, selectedVertices);
                 selectVertex(null);
             } else {
-                deleteObject(selectedObjectId);
+                deleteObject(selectedObject);
                 clearSelection();
             }
             return;

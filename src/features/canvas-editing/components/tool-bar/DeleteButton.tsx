@@ -7,12 +7,12 @@ import { WORKBENCH_SHORTCUTS as S } from "@/config/shortcut-manager/workbenchSho
 export default function DeleteButton() {
   const { activeTool, setActiveTool } = useCanvasToolStore();
   const { deleteObject, deleteVertices } = useCanvasObjectStore();
-  const { selectedObjectId, selectedVertexIndices, clearSelection, selectVertex } =
+  const { selectedObject, selectedVertices, clearSelection, selectVertex } =
     useCanvasSelectionStore();
 
   const isActive = activeTool === "delete";
-  const hasSelection = selectedObjectId !== null;
-  const hasVertexSelection = selectedVertexIndices.length > 0;
+  const hasSelection = selectedObject !== null;
+  const hasVertexSelection = selectedVertices.length > 0;
   const isInSelectModeWithSelection = activeTool === "select" && hasSelection;
   const isDisabled = activeTool !== null && !isActive && !isInSelectModeWithSelection;
 
@@ -24,10 +24,10 @@ export default function DeleteButton() {
     }
     if (isInSelectModeWithSelection) {
       if (hasVertexSelection) {
-        deleteVertices(selectedObjectId!, selectedVertexIndices);
+        deleteVertices(selectedObject!, selectedVertices);
         selectVertex(null);
       } else {
-        deleteObject(selectedObjectId!);
+        deleteObject(selectedObject!);
         clearSelection();
       }
       return;

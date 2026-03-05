@@ -21,26 +21,22 @@ function diffSnapshots(
     from: CanvasSnapshot,
     to: CanvasSnapshot,
 ): {
-    dirtyObjectIds: Set<number>;
-    dirtyVertexIds: Set<string>;
-    deletedObjectIds: Set<number>;
-    deletedVertexIds: Map<string, { id: number; objectId: number; environmentId: number }>;
+    dirtyObjects: Object[];
+    dirtyVertices: Vertex[];
+    deletedObjects: Object[];
+    deletedVertices: Vertex[];
 } {
     const fromObjectMap = new Map(from.objects.map((o) => [o.id, o]));
     const fromVertexMap = new Map(from.vertices.map((v) => [vertexKey(v.objectId, v.environmentId, v.id), v]));
     const toObjectIds = new Set(to.objects.map((o) => o.id));
     const toVertexKeys = new Set(to.vertices.map((v) => vertexKey(v.objectId, v.environmentId, v.id)));
 
-    const dirtyObjectIds = new Set(to.objects.filter((o) => fromObjectMap.get(o.id) !== o).map((o) => o.id));
-    const deletedObjectIds = new Set(from.objects.filter((o) => !toObjectIds.has(o.id)).map((o) => o.id));
-    const dirtyVertexIds = new Set(to.vertices.filter((v) => fromVertexMap.get(vertexKey(v.objectId, v.environmentId, v.id)) !== v).map((v) => vertexKey(v.objectId, v.environmentId, v.id)));
-    const deletedVertexIds = new Map(
-        from.vertices
-            .filter((v) => !toVertexKeys.has(vertexKey(v.objectId, v.environmentId, v.id)))
-            .map((v) => [vertexKey(v.objectId, v.environmentId, v.id), { id: v.id, objectId: v.objectId, environmentId: v.environmentId }] as [string, { id: number; objectId: number; environmentId: number }]),
-    );
+    const dirtyObjects = to.objects.filter((o) => fromObjectMap.get(o.id) !== o);
+    const deletedObjects = from.objects.filter((o) => !toObjectIds.has(o.id));
+    const dirtyVertices = to.vertices.filter((v) => fromVertexMap.get(vertexKey(v.objectId, v.environmentId, v.id)) !== v);
+    const deletedVertices = from.vertices.filter((v) => !toVertexKeys.has(vertexKey(v.objectId, v.environmentId, v.id)));
 
-    return { dirtyObjectIds, dirtyVertexIds, deletedObjectIds, deletedVertexIds };
+    return { dirtyObjects, dirtyVertices, deletedObjects, deletedVertices };
 }
 
 function restoreSnapshot(current: CanvasSnapshot, target: CanvasSnapshot) {

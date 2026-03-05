@@ -3,6 +3,7 @@ import { Layer, Line } from "react-konva";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import type React from "react";
 import type { Object, Vertex } from "@/types/schemaTypes";
+import { sameObject } from "@/features/canvas-editing/utils/canvasObjectUtils";
 import {
     COLOR_ZONE_FILL,
     COLOR_ZONE_STROKE,
@@ -13,23 +14,23 @@ import {
 interface CanvasPolygonObjectsLayerProps {
     objects: Object[];
     vertices: Vertex[];
-    selectedObjectId: number | null;
-    movingObjectId: number | null;
+    selectedObject: Object | null;
+    movingObject: Object | null;
     activeTool: ActiveTool | null;
     scale: number;
-    onSelectObject: (id: number) => void;
-    onDeleteObject: (id: number) => void;
-    onObjectHoverChange: (hoveredId: number | null) => void;
-    onObjectDragStart: (objectId: number) => void;
-    onObjectDragEnd: (objectId: number, dx: number, dy: number) => void;
+    onSelectObject: (obj: Object) => void;
+    onDeleteObject: (obj: Object) => void;
+    onObjectHoverChange: (obj: Object | null) => void;
+    onObjectDragStart: (obj: Object) => void;
+    onObjectDragEnd: (obj: Object, dx: number, dy: number) => void;
     isPanningRef: React.RefObject<boolean>;
 }
 
 export function CanvasPolygonObjectsLayer({
     objects,
     vertices,
-    selectedObjectId,
-    movingObjectId,
+    selectedObject,
+    movingObject,
     activeTool,
     scale,
     onSelectObject,
@@ -62,8 +63,8 @@ export function CanvasPolygonObjectsLayer({
         <Layer>
             {sortedObjects.map((obj) => {
                 const isZone = obj.category === "zone";
-                const isSelected = obj.id === selectedObjectId && activeTool === "select";
-                const isMoving = obj.id === movingObjectId;
+                const isSelected = selectedObject !== null && sameObject(obj, selectedObject) && activeTool === "select";
+                const isMoving = movingObject !== null && sameObject(obj, movingObject);
                 const objVerts = verticesByObjectId.get(obj.id) ?? [];
 
                 return (
@@ -83,9 +84,9 @@ export function CanvasPolygonObjectsLayer({
                         onClick={(e) => {
                             e.cancelBubble = true;
                             if (activeTool === "delete") {
-                                onDeleteObject(obj.id);
+                                onDeleteObject(obj);
                             } else if (activeTool === "select") {
-                                onSelectObject(obj.id);
+                                onSelectObject(obj);
                             }
                         }}
                         onDragStart={(e) => {
@@ -97,7 +98,7 @@ export function CanvasPolygonObjectsLayer({
                             }
                             primaryDragRef.current = true;
                             e.cancelBubble = true;
-                            onObjectDragStart(obj.id);
+                            onObjectDragStart(obj);
                         }}
                         onDragEnd={(e) => {
                             if (!primaryDragRef.current) return;
@@ -108,9 +109,9 @@ export function CanvasPolygonObjectsLayer({
                             const dy = node.y();
                             node.x(0);
                             node.y(0);
-                            onObjectDragEnd(obj.id, dx, dy);
+                            onObjectDragEnd(obj, dx, dy);
                         }}
-                        onMouseEnter={() => canInteract && onObjectHoverChange(obj.id)}
+                        onMouseEnter={() => canInteract && onObjectHoverChange(obj)}
                         onMouseLeave={() => onObjectHoverChange(null)}
                     />
                 );

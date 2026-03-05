@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import type Konva from "konva";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import type { ObjectType } from "@/config/db-ops/enums";
+import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import { defaultObjectTypeForGlobal } from "@/config/db-ops/enums";
 import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
 import { useEnvStore } from "@/stores/envStore";
@@ -12,7 +13,7 @@ interface UseCanvasDrawingOptions {
     clearSelection: () => void;
     addObject: (
         category: "zone" | "obstacle",
-        points: { x: number; y: number }[],
+        points: Point[],
         type: ObjectType,
     ) => void;
 }
@@ -32,7 +33,7 @@ export function useCanvasDrawing({
     } = useCanvasDrawingStore();
 
     // RAF throttle — only write mousePos to Zustand once per display frame
-    const pendingMousePosRef = useRef<{ x: number; y: number } | null>(null);
+    const pendingMousePosRef = useRef<Point | null>(null);
     const rafIdRef = useRef<number | null>(null);
 
     useEffect(() => {

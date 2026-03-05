@@ -46,7 +46,7 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     const env = await getEnvironment(environmentId);
     if (!env) return;
     useSaveModeStore.getState().setMode(modeAfterFirstSave());
-    await loadCanvasForEnvironment(environmentId);
+    await loadCanvasForEnvironment(env);
     const { objects } = useCanvasObjectStore.getState();
     const zoneObjectCount = countByCategory(objects, OBJECT_CATEGORY.ZONE);
     const obstacleObjectCount = countByCategory(objects, OBJECT_CATEGORY.OBSTACLE);
@@ -61,7 +61,7 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
     const targetId = selectedEnvId ?? (await resolveNextEnvironmentId());
     const targetEnv: Environment = { ...env, id: targetId, name };
     if (selectedEnvId !== null) {
-        await deleteObjectsByEnvironment(targetId);
+        await deleteObjectsByEnvironment(targetEnv);
     }
     const targetObjects = objects.map((o) => ({ ...o, environmentId: targetId }));
     const targetVertices = vertices.map((v) => ({ ...v, environmentId: targetId }));

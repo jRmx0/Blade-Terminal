@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useWorkspacePickerStore } from "@/features/workspace-manager/stores/workspacePickerStore";
 import { useSaveModalStore } from "@/features/workspace-manager/stores/saveModalStore";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
-import { getAllEnvironments, deleteEnvironmentCascade } from "@server/db/environments";
+import { getAllEnvironments, deleteEnvironment } from "@server/db/environments";
 import { loadWorkspace, resetWorkspace } from "@/features/workspace-manager/data/workspaceBridge";
 import { useEnvStore } from "@/stores/envStore";
 import type { Environment } from "@/types/schemaTypes";
@@ -56,7 +56,7 @@ export default function WorkspacePickerModal() {
         const env = environments.find((e) => e.id === id);
         if (!env) return;
         useDeleteModalStore.getState().requestDelete(env.name, async () => {
-            await deleteEnvironmentCascade(env.id);
+            await deleteEnvironment(env);
             setEnvironments((prev) => prev.filter((e) => e.id !== env.id));
             setSelectedEnvId((prev) => (prev === env.id ? null : prev));
             if (env.id === currentEnvId) {

@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type Konva from "konva";
+import type { Vertex } from "@/types/schemaTypes";
+import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import { beginBatch, endBatch } from "@/features/canvas-editing/stores/canvasHistoryStore";
 
 interface UseCanvasMidpointDragOptions {
     stageRef: React.RefObject<Konva.Stage | null>;
-    insertVertex: (objectId: number, afterIndex: number, x: number, y: number) => void;
-    updateVertex: (objectId: number, vertexIndex: number, x: number, y: number) => void;
-    selectVertex: (index: number | null) => void;
-}
-
-interface MidpointDragState {
-    objectId: number;
-    vertexIndex: number;
+    insertVertex: (afterVertex: Vertex, pos: Point) => Vertex;
+    updateVertex: (vertex: Vertex, pos: Point) => void;
+    selectVertex: (vertex: Vertex | null) => void;
 }
 
 export function useCanvasMidpointDrag({
@@ -20,13 +17,13 @@ export function useCanvasMidpointDrag({
     updateVertex,
     selectVertex,
 }: UseCanvasMidpointDragOptions) {
-    const [midpointDragState, setMidpointDragState] = useState<MidpointDragState | null>(null);
+    const [midpointDragState, setMidpointDragState] = useState<Vertex | null>(null);
 
     // RAF throttle refs — same pattern as useCanvasVertexDrag / useCanvasPanning
-    const pendingPosRef = useRef<{ x: number; y: number } | null>(null);
+    const pendingPosRef = useRef<Point | null>(null);
     const rafIdRef = useRef<number | null>(null);
     // Keep a ref to the current drag state so the RAF callback always sees the latest value
-    const dragStateRef = useRef<MidpointDragState | null>(null);
+    const dragStateRef = useRef<Vertex | null>(null);
 
     useEffect(() => {
         return () => {
@@ -35,23 +32,22 @@ export function useCanvasMidpointDrag({
     }, []);
 
     const flush = useCallback(() => {
-        const state = dragStateRef.current;
+        const vertex = dragStateRef.current;
         const pos = pendingPosRef.current;
-        if (state && pos) {
-            updateVertex(state.objectId, state.vertexIndex, pos.x, pos.y);
+        if (vertex && pos) {
+            updateVertex(vertex, pos);
             pendingPosRef.current = null;
         }
         rafIdRef.current = null;
     }, [updateVertex]);
 
     const handleMidpointMouseDown = useCallback(
-        (objectId: number, afterIndex: number, midX: number, midY: number) => {
+        (afterVertex: Vertex, mid: Point) => {
             beginBatch();
-            insertVertex(objectId, afterIndex, midX, midY);
-            selectVertex(afterIndex + 1);
-            const state = { objectId, vertexIndex: afterIndex + 1 };
-            dragStateRef.current = state;
-            setMidpointDragState(state);
+            const newVertex = insertVertex(afterVertex, mid);
+            selectVertex(newVertex);
+            dragStateRef.current = newVertex;
+            setMidpointDragState(newVertex);
         },
         [insertVertex, selectVertex],
     );
@@ -73,7 +69,6 @@ export function useCanvasMidpointDrag({
         [stageRef, flush],
     );
 
-    /** Ends the midpoint drag — cancels pending RAF, flushes final position, then closes batch. */
     const handleMidpointDragEnd = useCallback(() => {
         if (!dragStateRef.current) return;
         // Cancel pending RAF and synchronously apply any remaining delta

@@ -4,13 +4,13 @@ import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvas
 import { computeNetArea } from "@/features/canvas-editing/utils/canvasGeometry";
 
 export default function NetAreaField() {
-  const selectedObjectId = useCanvasSelectionStore((s) => s.selectedObjectId);
+  const selectedObject = useCanvasSelectionStore((s) => s.selectedObject);
   const objects = useCanvasObjectStore((s) => s.objects);
   const vertices = useCanvasObjectStore((s) => s.vertices);
 
-  if (selectedObjectId === null) return null;
+  if (selectedObject === null) return null;
 
-  const netArea = computeNetArea(selectedObjectId, objects, vertices);
+  const netArea = computeNetArea(selectedObject, objects, vertices);
 
   // For obstacles the field is not applicable
   if (netArea === null) return null;

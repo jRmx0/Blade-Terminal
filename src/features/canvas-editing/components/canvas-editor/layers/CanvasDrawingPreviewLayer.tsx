@@ -1,4 +1,5 @@
 import { Layer, Line, Circle } from "react-konva";
+import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import {
     COLOR_ZONE_STROKE,
@@ -7,8 +8,8 @@ import {
 
 interface CanvasDrawingPreviewLayerProps {
     activeTool: ActiveTool | null;
-    drawingPoints: { x: number; y: number }[];
-    mousePos: { x: number; y: number } | null;
+    drawingPoints: Point[];
+    mousePos: Point | null;
     scale: number;
 }
 

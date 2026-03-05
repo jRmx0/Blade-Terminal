@@ -1,7 +1,8 @@
 import { Layer, Circle } from "react-konva";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import type { Object, Vertex } from "@/types/schemaTypes";
-import { computeEdgeMidpoints } from "@/features/canvas-editing/utils/canvasGeometry";
+import { computeEdgeMidpoints, type Point } from "@/features/canvas-editing/utils/canvasGeometry";
+import { sameVertex } from "@/features/canvas-editing/utils/canvasObjectUtils";
 import {
     COLOR_ZONE_STROKE,
     COLOR_OBSTACLE_STROKE,
@@ -16,13 +17,13 @@ interface CanvasVertexHandlesLayerProps {
     selectedObjectVertices: Vertex[];
     activeTool: ActiveTool | null;
     scale: number;
-    selectedVertexIndices: number[];
-    draggingVertexIndex: number | null;
-    onVertexClick: (index: number, ctrl: boolean) => void;
-    onVertexDragStart: (index: number) => void;
-    onVertexDragMove: (objectId: number, index: number, x: number, y: number) => void;
-    onVertexDragEnd: (objectId: number, index: number, x: number, y: number) => void;
-    onEdgeMidpointMouseDown: (objectId: number, afterIndex: number, midX: number, midY: number) => void;
+    selectedVertices: Vertex[];
+    draggingVertex: Vertex | null;
+    onVertexClick: (vertex: Vertex, ctrl: boolean) => void;
+    onVertexDragStart: (vertex: Vertex) => void;
+    onVertexDragMove: (vertex: Vertex, pos: Point) => void;
+    onVertexDragEnd: (vertex: Vertex, pos: Point) => void;
+    onEdgeMidpointMouseDown: (afterVertex: Vertex, mid: Point) => void;
     onHandleHoverChange: (hovered: boolean) => void;
 }
 
@@ -31,8 +32,8 @@ export function CanvasVertexHandlesLayer({
     selectedObjectVertices,
     activeTool,
     scale,
-    selectedVertexIndices,
-    draggingVertexIndex,
+    selectedVertices,
+    draggingVertex,
     onVertexClick,
     onVertexDragStart,
     onVertexDragMove,
@@ -54,7 +55,7 @@ export function CanvasVertexHandlesLayer({
 
                 const accentColor =
                     selectedObject.category === "zone" ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE;
-                const isActiveVertex = selectedVertexIndices.includes(i) || draggingVertexIndex === i;
+                const isActiveVertex = selectedVertices.some((sv) => sameVertex(sv, v)) || (draggingVertex !== null && sameVertex(draggingVertex, v));
 
                 return [
                     <Circle
@@ -68,11 +69,11 @@ export function CanvasVertexHandlesLayer({
                         draggable
                         onClick={(e) => {
                             e.cancelBubble = true;
-                            onVertexClick(i, e.evt.ctrlKey || e.evt.metaKey);
+                            onVertexClick(v, e.evt.ctrlKey || e.evt.metaKey);
                         }}
-                        onDragStart={() => onVertexDragStart(i)}
-                        onDragMove={(e) => onVertexDragMove(selectedObject.id, i, e.target.x(), e.target.y())}
-                        onDragEnd={(e) => onVertexDragEnd(selectedObject.id, i, e.target.x(), e.target.y())}
+                        onDragStart={() => onVertexDragStart(v)}
+                        onDragMove={(e) => onVertexDragMove(v, { x: e.target.x(), y: e.target.y() })}
+                        onDragEnd={(e) => onVertexDragEnd(v, { x: e.target.x(), y: e.target.y() })}
                         onMouseEnter={() => onHandleHoverChange(true)}
                         onMouseLeave={() => onHandleHoverChange(false)}
                     />,
@@ -86,7 +87,7 @@ export function CanvasVertexHandlesLayer({
                         strokeWidth={1.5 / scale}
                         onMouseDown={(e) => {
                             e.cancelBubble = true;
-                            onEdgeMidpointMouseDown(selectedObject.id, i, mid.x, mid.y);
+                            onEdgeMidpointMouseDown(v, mid);
                         }}
                         onMouseEnter={() => onHandleHoverChange(true)}
                         onMouseLeave={() => onHandleHoverChange(false)}

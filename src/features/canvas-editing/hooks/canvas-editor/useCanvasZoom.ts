@@ -2,11 +2,12 @@ import { useCallback } from "react";
 import type Konva from "konva";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 import { ZOOM_MIN, ZOOM_MAX, ZOOM_FACTOR } from "@/config/canvas-editing/canvasConfig";
+import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 
 export function useCanvasZoom(
     stageRef: React.RefObject<Konva.Stage | null>,
     setScale: (scale: number) => void,
-    setPosition: (pos: { x: number; y: number }) => void,
+    setPosition: (pos: Point) => void,
 ) {
     const handleWheel = useCallback(
         (e: Konva.KonvaEventObject<WheelEvent>) => {

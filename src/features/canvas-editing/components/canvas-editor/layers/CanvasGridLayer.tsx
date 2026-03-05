@@ -1,8 +1,9 @@
 import { Layer, Line } from "react-konva";
 import { GRID_SPACING, COLOR_GRID } from "@/config/canvas-editing/canvasConfig";
+import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 
 interface CanvasGridLayerProps {
-    position: { x: number; y: number };
+    position: Point;
     scale: number;
     size: { width: number; height: number };
 }

@@ -1,11 +1,12 @@
 import { create } from "zustand";
 import { ZOOM_STEP, ZOOM_MIN, ZOOM_MAX } from "@/config/canvas-editing/canvasConfig";
+import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 
 interface CanvasViewState {
-    position: { x: number; y: number };
+    position: Point;
     scale: number;
     gridVisible: boolean;
-    setPosition: (position: { x: number; y: number }) => void;
+    setPosition: (position: Point) => void;
     setScale: (scale: number) => void;
     zoomIn: () => void;
     zoomOut: () => void;

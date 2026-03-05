@@ -1,12 +1,13 @@
 import { create } from "zustand";
+import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 
 interface CanvasDrawingState {
-    drawingPoints: { x: number; y: number }[];
-    mousePos: { x: number; y: number } | null;
+    drawingPoints: Point[];
+    mousePos: Point | null;
 
-    setDrawingPoints: (points: { x: number; y: number }[]) => void;
-    appendDrawingPoint: (point: { x: number; y: number }) => void;
-    setMousePos: (pos: { x: number; y: number } | null) => void;
+    setDrawingPoints: (points: Point[]) => void;
+    appendDrawingPoint: (point: Point) => void;
+    setMousePos: (pos: Point | null) => void;
     cancelDrawing: () => void;
 }
 
