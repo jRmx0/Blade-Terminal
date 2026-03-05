@@ -1,15 +1,16 @@
 import type { Table } from "dexie";
 import { db } from "./db";
-import type { Object } from "@/types/schemaTypes";
+import type { Object, Environment } from "@/types/schemaTypes";
+import { deleteVerticesByObject, deleteVerticesByEnvironment } from "./vertices";
 
-export const objectsTable: Table<Object, [number, number]> = db.table("objects");
+const objectsTable: Table<Object, [number, number]> = db.table("objects");
 
-export async function getObject(id: number, environmentId: number): Promise<Object | undefined> {
-    return objectsTable.get([id, environmentId]);
+export async function getObject(obj: Object): Promise<Object | undefined> {
+    return objectsTable.get([obj.id, obj.environmentId]);
 }
 
-export async function getObjectsByEnvironment(environmentId: number): Promise<Object[]> {
-    return objectsTable.where("environmentId").equals(environmentId).toArray();
+export async function getObjectsByEnvironment(env: Environment): Promise<Object[]> {
+    return objectsTable.where("environmentId").equals(env.id).toArray();
 }
 
 export async function saveObject(obj: Object): Promise<void> {
@@ -20,12 +21,12 @@ export async function saveObjects(objects: Object[]): Promise<void> {
     await objectsTable.bulkPut(objects);
 }
 
-export async function deleteObject(id: number, environmentId: number): Promise<void> {
-    await objectsTable.delete([id, environmentId]);
+export async function deleteObject(obj: Object): Promise<void> {
+    await deleteVerticesByObject(obj);
+    await objectsTable.delete([obj.id, obj.environmentId]);
 }
 
-export async function deleteObjectsByEnvironment(environmentId: number): Promise<void> {
-    await objectsTable.where("environmentId").equals(environmentId).delete();
+export async function deleteObjectsByEnvironment(env: Environment): Promise<void> {
+    await deleteVerticesByEnvironment(env);
+    await objectsTable.where("environmentId").equals(env.id).delete();
 }
-
-
