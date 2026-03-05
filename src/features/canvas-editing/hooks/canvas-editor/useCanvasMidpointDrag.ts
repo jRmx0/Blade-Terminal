@@ -7,14 +7,16 @@ import { beginBatch, endBatch } from "@/features/canvas-editing/stores/canvasHis
 interface UseCanvasMidpointDragOptions {
     stageRef: React.RefObject<Konva.Stage | null>;
     insertVertex: (afterVertex: Vertex, pos: Point) => Vertex;
-    updateVertex: (vertex: Vertex, pos: Point) => void;
+    moveVertexXY: (vertex: Vertex, pos: Point) => void;
+    finalizeVertexMove: (vertex: Vertex) => void;
     selectVertex: (vertex: Vertex | null) => void;
 }
 
 export function useCanvasMidpointDrag({
     stageRef,
     insertVertex,
-    updateVertex,
+    moveVertexXY,
+    finalizeVertexMove,
     selectVertex,
 }: UseCanvasMidpointDragOptions) {
     const [midpointDragState, setMidpointDragState] = useState<Vertex | null>(null);
@@ -35,11 +37,11 @@ export function useCanvasMidpointDrag({
         const vertex = dragStateRef.current;
         const pos = pendingPosRef.current;
         if (vertex && pos) {
-            updateVertex(vertex, pos);
+            moveVertexXY(vertex, pos);
             pendingPosRef.current = null;
         }
         rafIdRef.current = null;
-    }, [updateVertex]);
+    }, [moveVertexXY]);
 
     const handleMidpointMouseDown = useCallback(
         (afterVertex: Vertex, mid: Point) => {
@@ -77,11 +79,12 @@ export function useCanvasMidpointDrag({
             rafIdRef.current = null;
         }
         flush();
+        finalizeVertexMove(dragStateRef.current);
         dragStateRef.current = null;
         setMidpointDragState(null);
         selectVertex(null);
         endBatch();
-    }, [flush, selectVertex]);
+    }, [flush, finalizeVertexMove, selectVertex]);
 
     return {
         isMidpointDragging: midpointDragState !== null,

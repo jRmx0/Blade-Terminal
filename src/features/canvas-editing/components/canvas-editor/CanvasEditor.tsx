@@ -36,7 +36,8 @@ export default function CanvasEditor() {
     vertices,
     addObject,
     deleteObject,
-    updateVertex,
+    moveVertexXY,
+    finalizeVertexMove,
     moveObject,
     deleteVertex,
     deleteVertices,
@@ -80,9 +81,9 @@ export default function CanvasEditor() {
     handleMidpointMouseDown,
     handleMidpointDragMouseMove,
     handleMidpointDragEnd,
-  } = useCanvasMidpointDrag({ stageRef, insertVertex, updateVertex, selectVertex });
+  } = useCanvasMidpointDrag({ stageRef, insertVertex, moveVertexXY, finalizeVertexMove, selectVertex });
 
-  const { handleVertexDragMove, handleVertexDragEnd } = useCanvasVertexDrag(updateVertex);
+  const { handleVertexDragMove, handleVertexDragEnd } = useCanvasVertexDrag(moveVertexXY, finalizeVertexMove);
 
   useCanvasAutosave();
 

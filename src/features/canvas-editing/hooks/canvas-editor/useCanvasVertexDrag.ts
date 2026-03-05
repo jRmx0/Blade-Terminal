@@ -8,12 +8,13 @@ import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
  *
  * How it works:
  *   - onDragMove stores the latest x/y in a ref and schedules a single RAF.
- *   - The RAF callback calls `updateVertex` once with the latest position.
- *   - onDragEnd cancels any pending RAF and commits the final position
- *     synchronously so the store is always accurate when the drag finishes.
+ *   - The RAF callback calls `moveVertexXY` once with the latest position (no sync, no dirty).
+ *   - onDragEnd cancels any pending RAF, commits the final x/y, then calls
+ *     `finalizeVertexMove` once to run syncObject + mark dirty.
  */
 export function useCanvasVertexDrag(
-    updateVertex: (vertex: Vertex, pos: Point) => void,
+    moveVertexXY: (vertex: Vertex, pos: Point) => void,
+    finalizeVertexMove: (vertex: Vertex) => void,
 ) {
     const pendingRef = useRef<{ vertex: Vertex; pos: Point } | null>(null);
     const rafIdRef = useRef<number | null>(null);
@@ -27,11 +28,11 @@ export function useCanvasVertexDrag(
     const flush = useCallback(() => {
         if (pendingRef.current) {
             const { vertex, pos } = pendingRef.current;
-            updateVertex(vertex, pos);
+            moveVertexXY(vertex, pos);
             pendingRef.current = null;
         }
         rafIdRef.current = null;
-    }, [updateVertex]);
+    }, [moveVertexXY]);
 
     /** Called on every Konva onDragMove — accumulates, schedules at most one RAF/frame. */
     const handleVertexDragMove = useCallback(
@@ -44,7 +45,7 @@ export function useCanvasVertexDrag(
         [flush],
     );
 
-    /** Called on Konva onDragEnd — cancels pending RAF and commits final position. */
+    /** Called on Konva onDragEnd — commits final position then syncs once. */
     const handleVertexDragEnd = useCallback(
         (vertex: Vertex, pos: Point) => {
             if (rafIdRef.current !== null) {
@@ -52,9 +53,10 @@ export function useCanvasVertexDrag(
                 rafIdRef.current = null;
             }
             pendingRef.current = null;
-            updateVertex(vertex, pos);
+            moveVertexXY(vertex, pos);
+            finalizeVertexMove(vertex);
         },
-        [updateVertex],
+        [moveVertexXY, finalizeVertexMove],
     );
 
     return { handleVertexDragMove, handleVertexDragEnd };

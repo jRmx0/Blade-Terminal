@@ -23,8 +23,10 @@ export interface CanvasObjectState {
     addObject: (category: ObjectCategory, points: Point[], type: ObjectType) => void;
     /** Removes an object and all its vertices. Marks them as deleted. */
     deleteObject: (obj: Object) => void;
-    /** Moves a single vertex to a new position. Marks object and vertex dirty. */
-    updateVertex: (vertex: Vertex, pos: Point) => void;
+    /** Updates x,y of a single vertex during drag — no sync, no dirty tracking. Call finalizeVertexMove on drag end. */
+    moveVertexXY: (vertex: Vertex, pos: Point) => void;
+    /** Runs syncObject + marks dirty once after a vertex drag completes. Reads current x,y from store state. */
+    finalizeVertexMove: (vertex: Vertex) => void;
     /** Translates all vertices of an object by (dx, dy). Marks object and all vertices dirty. */
     moveObject: (obj: Object, dx: number, dy: number) => void;
     /** Removes a vertex from an object. No-op when the object has ≤ 3 vertices. */
@@ -116,17 +118,22 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
         });
     },
 
-    updateVertex: (vertex, pos) =>
-        set((state) => {
-            const newVertices = state.vertices.map((v) =>
+    moveVertexXY: (vertex, pos) =>
+        set((state) => ({
+            vertices: state.vertices.map((v) =>
                 v.id === vertex.id && v.objectId === vertex.objectId ? { ...v, x: pos.x, y: pos.y } : v,
-            );
-            const synced = syncObject(state.objects, newVertices, vertex.objectId);
+            ),
+        })),
+
+    finalizeVertexMove: (vertex) =>
+        set((state) => {
+            const synced = syncObject(state.objects, state.vertices, vertex.objectId);
+            const currentVertex = state.vertices.find((v) => v.id === vertex.id && v.objectId === vertex.objectId)!;
 
             let dObj = state.dirtyObjects, xObj = state.deletedObjects;
             let dVtx = state.dirtyVertices, xVtx = state.deletedVertices;
             ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, synced.objects.find((o) => o.id === vertex.objectId)!));
-            ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, vertex));
+            ({ dirty: dVtx, deleted: xVtx } = markVertexDirty(dVtx, xVtx, currentVertex));
 
             return { ...synced, dirtyObjects: dObj, dirtyVertices: dVtx, deletedObjects: xObj, deletedVertices: xVtx };
         }),
