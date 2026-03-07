@@ -172,8 +172,8 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
           >
             <div
               className={`absolute right-0 top-0 bottom-0 pointer-events-none transition-[width,background-color] delay-0 select-none ${isResizing
-                ? "w-1 bg-blue-500"
-                : "w-px bg-gray-300 group-hover:w-1 group-hover:bg-blue-500 group-hover:delay-300"
+                ? "w-1 bg-teal-600"
+                : "w-px bg-gray-300 group-hover:w-1 group-hover:bg-teal-600 group-hover:delay-300"
                 }`}
             />
           </div>
