@@ -9,21 +9,57 @@ interface UiControlsPanelProps {
 const MIN_WIDTH = 150;
 const MAX_WIDTH = 600;
 const COLLAPSE_THRESHOLD = MIN_WIDTH / 2;
+const MIN_GAP = 200;
 
 export default function UiControlsPanel({ children }: UiControlsPanelProps) {
   const isVisible = useUiControlsPanelStore((state) => state.isVisible);
   const setVisibility = useUiControlsPanelStore((state) => state.setVisibility);
   const width = useUiControlsPanelStore((state) => state.width);
   const setWidth = useUiControlsPanelStore((state) => state.setWidth);
+  const isPushCollapsed = useUiControlsPanelStore((state) => state.isDragCollapsed);
   const [isResizing, setResizing] = useState(false);
-  const [isDragCollapsed, setDragCollapsed] = useState(false);
+  const [isSelfCollapsed, setSelfCollapsed] = useState(false);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const resizeHandleRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
-  const isDragCollapsedRef = useRef(false);
+  const isSelfCollapsedRef = useRef(false);
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
+  const pushedStartWidthRef = useRef(0);
+
+  // Clamp own width when the container shrinks (browser window resize)
+  useEffect(() => {
+    const container = panelRef.current?.parentElement;
+    if (!container) return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const containerWidth = entry.contentRect.width;
+      const myState = useUiControlsPanelStore.getState();
+      if (!myState.isVisible || myState.isDragCollapsed) return;
+      const inspectorState = useUiInspectorPanelStore.getState();
+      const otherWidth = (inspectorState.isVisible && !inspectorState.isDragCollapsed) ? inspectorState.width : 0;
+      const clamped = Math.max(MIN_WIDTH, Math.min(myState.width, containerWidth - MIN_GAP - otherWidth));
+      if (clamped < myState.width) myState.setWidth(clamped);
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // Enforce gap when this panel becomes visible
+  useEffect(() => {
+    if (!isVisible) return;
+    const containerWidth = panelRef.current?.parentElement?.clientWidth ?? Infinity;
+    const myWidth = useUiControlsPanelStore.getState().width;
+    const inspectorState = useUiInspectorPanelStore.getState();
+    if (!inspectorState.isVisible) return;
+    const available = containerWidth - MIN_GAP;
+    const otherFinal = Math.max(MIN_WIDTH, available - myWidth);
+    const myFinal = Math.max(MIN_WIDTH, available - otherFinal);
+    if (otherFinal < inspectorState.width) inspectorState.setWidth(otherFinal);
+    if (myFinal < myWidth) setWidth(myFinal);
+  }, [isVisible, setWidth]);
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -31,6 +67,7 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
         isDraggingRef.current = true;
         startXRef.current = e.clientX;
         startWidthRef.current = useUiControlsPanelStore.getState().width;
+        pushedStartWidthRef.current = useUiInspectorPanelStore.getState().width;
         setResizing(true);
         document.body.style.cursor = "col-resize";
         document.body.style.userSelect = "none";
@@ -43,27 +80,46 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
       const rawWidth = startWidthRef.current + (e.clientX - startXRef.current);
 
       if (rawWidth < COLLAPSE_THRESHOLD) {
-        if (!isDragCollapsedRef.current) {
-          isDragCollapsedRef.current = true;
-          setDragCollapsed(true);
+        if (!isSelfCollapsedRef.current) {
+          isSelfCollapsedRef.current = true;
+          setSelfCollapsed(true);
         }
-      } else {
-        if (isDragCollapsedRef.current) {
-          isDragCollapsedRef.current = false;
-          setDragCollapsed(false);
-        }
-        const containerWidth = panelRef.current?.parentElement?.clientWidth ?? Infinity;
-        const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, rawWidth));
-        setWidth(newWidth);
-        // Push inspector if controls grows into it
-        const inspectorState = useUiInspectorPanelStore.getState();
-        if (inspectorState.isVisible) {
-          const leftover = containerWidth - newWidth;
-          if (inspectorState.width > leftover) {
-            inspectorState.setWidth(Math.max(MIN_WIDTH, leftover));
+        return;
+      }
+
+      if (isSelfCollapsedRef.current) {
+        isSelfCollapsedRef.current = false;
+        setSelfCollapsed(false);
+      }
+
+      const containerWidth = panelRef.current?.parentElement?.clientWidth ?? Infinity;
+      const inspectorState = useUiInspectorPanelStore.getState();
+      let newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, rawWidth));
+
+      if (inspectorState.isVisible) {
+        const leftover = containerWidth - newWidth - MIN_GAP;
+
+        if (leftover < COLLAPSE_THRESHOLD) {
+          // Push-collapse zone: inspector collapses, dragging panel continues freely
+          if (!inspectorState.isDragCollapsed) {
+            inspectorState.setDragCollapsed(true);
+          }
+        } else {
+          if (inspectorState.isDragCollapsed) {
+            inspectorState.setDragCollapsed(false);
+          }
+          if (leftover < MIN_WIDTH) {
+            // Push-stop zone: inspector is at minimum, cap the dragging panel
+            newWidth = Math.max(MIN_WIDTH, containerWidth - MIN_WIDTH - MIN_GAP);
+            inspectorState.setWidth(MIN_WIDTH);
+          } else {
+            // Spring zone: inspector recovers toward its pre-drag width
+            inspectorState.setWidth(Math.min(pushedStartWidthRef.current, leftover));
           }
         }
       }
+
+      setWidth(newWidth);
     };
 
     const handleMouseUp = () => {
@@ -72,10 +128,17 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
         setResizing(false);
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
-        if (isDragCollapsedRef.current) {
-          isDragCollapsedRef.current = false;
-          setDragCollapsed(false);
+        // Commit self-collapse
+        if (isSelfCollapsedRef.current) {
+          isSelfCollapsedRef.current = false;
+          setSelfCollapsed(false);
           setVisibility(false);
+        }
+        // Commit push-collapse on inspector
+        const inspectorState = useUiInspectorPanelStore.getState();
+        if (inspectorState.isDragCollapsed) {
+          inspectorState.setDragCollapsed(false);
+          inspectorState.setVisibility(false);
         }
       }
     };
@@ -91,7 +154,7 @@ export default function UiControlsPanel({ children }: UiControlsPanelProps) {
     };
   }, [setWidth, setVisibility]);
 
-  const hidden = !isVisible || isDragCollapsed;
+  const hidden = !isVisible || isSelfCollapsed || isPushCollapsed;
 
   return (
     <div
