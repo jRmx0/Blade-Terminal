@@ -1,11 +1,13 @@
 import ToolBarButton from "@/components/tool-bar/ToolBarButton";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
+import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { WORKBENCH_SHORTCUTS as S } from "@/config/shortcut-manager/workbenchShortcutsConfig";
 
 export default function DeleteButton() {
   const { activeTool, setActiveTool } = useCanvasToolStore();
+  const cancelDrawing = useCanvasDrawingStore((s) => s.cancelDrawing);
   const { deleteObject, deleteVertices } = useCanvasObjectStore();
   const { selectedObject, selectedVertices, clearSelection, selectVertex } =
     useCanvasSelectionStore();
@@ -14,7 +16,6 @@ export default function DeleteButton() {
   const hasSelection = selectedObject !== null;
   const hasVertexSelection = selectedVertices.length > 0;
   const isInSelectModeWithSelection = activeTool === "select" && hasSelection;
-  const isDisabled = activeTool !== null && !isActive && !isInSelectModeWithSelection;
 
   function handleClick() {
     if (isActive) {
@@ -32,6 +33,7 @@ export default function DeleteButton() {
       }
       return;
     }
+    cancelDrawing();
     setActiveTool("delete");
   }
 
@@ -41,7 +43,6 @@ export default function DeleteButton() {
       shortcut={S["canvas.tool-delete"].shortcut}
       icon="delete"
       isActive={isActive}
-      isDisabled={isDisabled}
       onClick={handleClick}
     />
   );

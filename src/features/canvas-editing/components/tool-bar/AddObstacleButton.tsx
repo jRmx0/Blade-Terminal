@@ -7,7 +7,6 @@ export default function AddObstacleButton() {
   const { activeTool, setActiveTool } = useCanvasToolStore();
   const cancelDrawing = useCanvasDrawingStore((s) => s.cancelDrawing);
   const isActive = activeTool === "addObstacle";
-  const isDisabled = activeTool !== null && !isActive;
 
   return (
     <ToolBarButton
@@ -15,9 +14,8 @@ export default function AddObstacleButton() {
       shortcut={S["canvas.tool-add-obstacle"].shortcut}
       icon="add_triangle"
       isActive={isActive}
-      isDisabled={isDisabled}
       onClick={() => {
-        if (isActive) cancelDrawing();
+        cancelDrawing();
         setActiveTool(isActive ? null : "addObstacle");
       }}
     />

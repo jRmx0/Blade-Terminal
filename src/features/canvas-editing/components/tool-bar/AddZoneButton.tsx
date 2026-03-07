@@ -7,7 +7,6 @@ export default function AddZoneButton() {
   const { activeTool, setActiveTool } = useCanvasToolStore();
   const cancelDrawing = useCanvasDrawingStore((s) => s.cancelDrawing);
   const isActive = activeTool === "addZone";
-  const isDisabled = activeTool !== null && !isActive;
 
   return (
     <ToolBarButton
@@ -15,9 +14,8 @@ export default function AddZoneButton() {
       shortcut={S["canvas.tool-add-zone"].shortcut}
       icon="rectangle_add"
       isActive={isActive}
-      isDisabled={isDisabled}
       onClick={() => {
-        if (isActive) cancelDrawing();
+        cancelDrawing();
         setActiveTool(isActive ? null : "addZone");
       }}
     />

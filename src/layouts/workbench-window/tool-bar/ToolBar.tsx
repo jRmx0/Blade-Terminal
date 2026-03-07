@@ -7,7 +7,7 @@ import ClearCppButton from "@/features/coverage-planning/components/tool-bar/Cle
 import OpenJobListButton from "@/features/job-runner/components/tool-bar/OpenJobListButton";
 import UiInspectorButton from "@/features/ui-manager/components/tool-bar/UiInspectorButton";
 import ToolSeparator from "@/components/tool-bar/ToolBarSeparator";
-import EditButton from "@/features/canvas-editing/components/tool-bar/SelectButton";
+import SelectButton from "@/features/canvas-editing/components/tool-bar/SelectButton";
 import UndoButton from "@/features/canvas-editing/components/tool-bar/UndoButton";
 import RedoButton from "@/features/canvas-editing/components/tool-bar/RedoButton";
 import ToolGroupSeparator from "@/components/tool-bar/ToolBarGroupSeparator";
@@ -23,7 +23,7 @@ export default function ToolBar() {
         <RedoButton />
         <ToolGroupSeparator />
 
-        <EditButton />
+        <SelectButton />
         <ToolSeparator />
 
         <AddZoneButton />
