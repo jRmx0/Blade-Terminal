@@ -13,15 +13,15 @@ export default function ModalFooterButton({
 }: ModalFooterButtonProps) {
     const styles =
         variant === "primary"
-            ? "border border-gray-500 text-gray-700 font-medium hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-            : "border border-gray-300 text-gray-500 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent";
+            ? "border border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            : "border border-gray-300 text-gray-700 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed";
 
     return (
         <button
             type="button"
             onClick={onClick}
             disabled={disabled}
-            className={`px-3 py-1 rounded text-sm transition-colors cursor-pointer ${styles}`}
+            className={`px-3 py-1 rounded font-medium text-sm transition-colors cursor-pointer ${styles}`}
         >
             {children}
         </button>

@@ -89,7 +89,7 @@ export default function WorkspacePickerModal() {
             >
                 <ModalHeader title="Open Workspace" onClose={close} />
 
-                <div className="flex flex-col mx-4 mt-4">
+                <div className="flex flex-col mx-4">
                     {isLoading ? (
                         <div className="border border-gray-300 bg-white h-52 rounded flex items-center justify-center text-sm text-gray-400 italic">
                             Loading...
@@ -109,7 +109,6 @@ export default function WorkspacePickerModal() {
                 </div>
 
                 <div className="flex items-center justify-end gap-2 px-4 py-3">
-                    <ModalFooterButton onClick={close}>Cancel</ModalFooterButton>
                     <ModalFooterButton
                         variant="primary"
                         onClick={() => selectedEnvId !== null && handleOpenById(selectedEnvId)}
@@ -117,6 +116,7 @@ export default function WorkspacePickerModal() {
                     >
                         Open
                     </ModalFooterButton>
+                    <ModalFooterButton onClick={close}>Cancel</ModalFooterButton>
                 </div>
             </div>
         </div>

@@ -5,8 +5,10 @@ import ModalHeader from "@/components/modal/ModalHeader";
 import ModalFooterButton from "@/components/modal/ModalFooterButton";
 import ModalWorkspaceSelectList from "@/components/modal/ModalWorkspaceSelectList";
 import ModalFileNameField from "@/components/modal/ModalFileNameField";
+import { useEnvStore } from "@/stores/envStore";
 
 export default function SaveAsModal() {
+    const currentEnvId = useEnvStore((s) => s.env.id);
     const { isOpen, environments, name, selectedEnvId, isSaving, setName, selectEnv, save, close } =
         useSaveAsModalStore();
     const inputRef = useRef<HTMLInputElement>(null);
@@ -55,10 +57,11 @@ export default function SaveAsModal() {
                 <ModalHeader title="Save As" onClose={close} />
 
                 {/* Workspace list */}
-                <div className="flex flex-col mx-4 mt-4">
+                <div className="flex flex-col mx-4">
                     <ModalWorkspaceSelectList
                         environments={environments}
                         selectedEnvId={selectedEnvId}
+                        activeEnvId={currentEnvId}
                         onSelect={selectEnv}
                         onDeselect={() => { if (selectedEnvId !== null) selectEnv(selectedEnvId); }}
                     />
@@ -75,11 +78,11 @@ export default function SaveAsModal() {
 
                 {/* Footer */}
                 <div className="flex items-center justify-end gap-2 px-4 py-3">
-                    <ModalFooterButton onClick={close} disabled={isSaving}>
-                        Cancel
-                    </ModalFooterButton>
                     <ModalFooterButton variant="primary" onClick={handleSave} disabled={!canSave}>
                         {isSaving ? "Saving..." : "Save"}
+                    </ModalFooterButton>
+                    <ModalFooterButton onClick={close} disabled={isSaving}>
+                        Cancel
                     </ModalFooterButton>
                 </div>
             </div>

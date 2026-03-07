@@ -35,18 +35,18 @@ export default function SaveModal() {
                 <ModalHeader title="Unsaved Changes" onClose={cancel} />
 
                 <p className="px-5 pt-3 pb-5 text-sm text-gray-500">
-                    All changes will be lost!
+                    Your changes will be lost if you don't save them.
                 </p>
 
                 <div className="flex items-center justify-end gap-2 px-4 py-3 border-gray-200">
-                    <ModalFooterButton onClick={cancel}>
-                        Cancel
+                    <ModalFooterButton variant="primary" onClick={() => saveAndContinue().catch(console.error)}>
+                        Save
                     </ModalFooterButton>
                     <ModalFooterButton onClick={() => discardAndContinue().catch(console.error)}>
-                        Discard Changes
+                        Don't Save
                     </ModalFooterButton>
-                    <ModalFooterButton variant="primary" onClick={() => saveAndContinue().catch(console.error)}>
-                        Save &amp; Continue
+                    <ModalFooterButton onClick={cancel}>
+                        Cancel
                     </ModalFooterButton>
                 </div>
             </div>
