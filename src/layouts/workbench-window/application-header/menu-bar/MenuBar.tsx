@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import MenuBarFileButton from "@/layouts/workbench-window/application-header/menu-bar/file-submenu/MenuBarFileButton";
 import MenuBarViewButton from "@/layouts/workbench-window/application-header/menu-bar/view-submenu/MenuBarViewButton";
 import { useMenuStore } from "@/stores/menuStore";
+import MenuBarEditButton from "./edit-submenu/MenuBarEditButton";
 
 export default function MenuBar() {
   const menuBarRef = useRef<HTMLDivElement>(null);
@@ -26,6 +27,7 @@ export default function MenuBar() {
   return (
     <div ref={menuBarRef} className="flex items-center">
       <MenuBarFileButton />
+      <MenuBarEditButton />
       <MenuBarViewButton />
     </div>
   );

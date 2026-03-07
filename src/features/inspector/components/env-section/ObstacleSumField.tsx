@@ -1,5 +1,8 @@
 import InspectorPanelSectionField from "@/components/inspector-panel/InspectorPanelSectionField";
+import { useEnvStore } from "@/stores/envStore";
 
 export default function ObstacleSumField() {
-  return <InspectorPanelSectionField label="Number of obstacles" value="TBD" />;
+  const count = useEnvStore((s) => s.env.obstacleCount);
+
+  return <InspectorPanelSectionField label="Number of obstacles" value={String(count)} />;
 }

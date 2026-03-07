@@ -10,23 +10,30 @@ import NetAreaField from "@/features/inspector/components/object-section/NetArea
 import CoverageField from "@/features/inspector/components/coverage-section/CoverageField";
 import OverlapField from "@/features/inspector/components/coverage-section/OverlapField";
 import TurnSumField from "@/features/inspector/components/coverage-section/TurnSumField";
+import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 
 export default function InspectorPanel() {
+  const hasSelection = useCanvasSelectionStore((s) => s.selectedObject !== null);
+
   return (
     <UiInspectorPanel>
       <div>
-        <InspectorPanelSection title="Environment">
-          <ZoneSumField />
-          <ObstacleSumField />
-        </InspectorPanelSection>
+        {!hasSelection && (
+          <InspectorPanelSection title="Environment">
+            <ZoneSumField />
+            <ObstacleSumField />
+          </InspectorPanelSection>
+        )}
 
-        <InspectorPanelSection title="Object">
-          <CategoryField />
-          <TypeField />
-          <VertexSumField />
-          <GrossAreaField />
-          <NetAreaField />
-        </InspectorPanelSection>
+        {hasSelection && (
+          <InspectorPanelSection title="Object">
+            <CategoryField />
+            <TypeField />
+            <VertexSumField />
+            <GrossAreaField />
+            <NetAreaField />
+          </InspectorPanelSection>
+        )}
 
         <InspectorPanelSection title="Coverage">
           <CoverageField />
@@ -37,3 +44,4 @@ export default function InspectorPanel() {
     </UiInspectorPanel>
   );
 }
+

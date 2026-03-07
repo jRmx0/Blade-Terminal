@@ -7,15 +7,23 @@ export default function ControlsPanelSectionCheckbox({
   disabled = false,
 }: ControlsPanelSectionCheckboxProps) {
   return (
-    <label className="flex items-center gap-3 px-3 py-2 rounded text-sm font-medium text-gray-700 hover:bg-gray-200 cursor-pointer select-none transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+    <label
+      className={`flex items-center gap-3 mx-3 my-1 border rounded bg-white px-3 py-1.5 select-none transition-colors ${disabled
+          ? "opacity-50 cursor-not-allowed border-gray-300"
+          : "cursor-pointer border-gray-300 hover:border-gray-400"
+        } ${checked ? "border-teal-700" : ""}`}
+    >
+      <span className={`text-sm flex-1 ${disabled ? "text-gray-400" : "text-gray-700"}`}>
+        {label}
+      </span>
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
         disabled={disabled}
-        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
+        className={`w-4 h-4 rounded border-gray-300 accent-teal-600 focus:ring-teal-700 ${disabled ? "cursor-not-allowed" : "cursor-pointer"
+          }`}
       />
-      <span className="flex-1">{label}</span>
     </label>
   );
 }

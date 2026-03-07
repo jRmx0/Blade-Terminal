@@ -2,10 +2,7 @@ import { create } from "zustand";
 
 // TODO: Remove mock data - replace with real algorithm options from backend
 const MOCK_ALGORITHMS = [
-    { value: "", label: "" },
-    { value: "grid", label: "Grid Coverage" },
-    { value: "spiral", label: "Spiral Coverage" },
-    { value: "sweep", label: "Sweep Coverage" },
+    { value: "bcd", label: "Boustrophedon Cellular Decomposition" },
 ];
 
 interface AlgoSelectionState {
@@ -15,7 +12,7 @@ interface AlgoSelectionState {
 }
 
 export const useAlgoSelectionStore = create<AlgoSelectionState>((set) => ({
-    selectedAlgo: "grid",
+    selectedAlgo: "bcd",
     algorithms: MOCK_ALGORITHMS,
     setSelectedAlgo: (algo: string) =>
         set(() => ({

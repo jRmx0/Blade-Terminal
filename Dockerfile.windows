@@ -1,0 +1,29 @@
+# Windows container base using Server Core (oven/bun has no Windows image)
+FROM mcr.microsoft.com/windows/servercore:ltsc2022 AS base
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+WORKDIR C:/app
+
+# Install Bun for Windows (pin version for reproducibility)
+ARG BUN_VERSION=1.2.3
+RUN Invoke-WebRequest -Uri "https://github.com/oven-sh/bun/releases/download/bun-v${env:BUN_VERSION}/bun-windows-x64.zip" -OutFile C:/bun.zip; \
+    Expand-Archive -Path C:/bun.zip -DestinationPath C:/bun; \
+    Remove-Item C:/bun.zip; \
+    Copy-Item -Path C:/bun/bun-windows-x64/bun.exe -Destination C:/Windows/System32/bun.exe; \
+    Remove-Item -Recurse -Force C:/bun
+
+# install production dependencies into temp directory
+FROM base AS install
+RUN New-Item -ItemType Directory -Path C:/temp/prod -Force | Out-Null
+COPY package.json bun.lock C:/temp/prod/
+RUN Set-Location C:/temp/prod; bun install --frozen-lockfile --production
+
+# copy production node_modules and all source files into the release image
+FROM base AS release
+COPY --from=install C:/temp/prod/node_modules node_modules
+COPY . .
+
+# run the app
+ENV NODE_ENV=production
+EXPOSE 3000/tcp
+ENTRYPOINT ["bun", "run", "start"]

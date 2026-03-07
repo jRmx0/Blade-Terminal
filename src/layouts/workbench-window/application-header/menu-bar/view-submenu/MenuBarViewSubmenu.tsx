@@ -9,7 +9,7 @@ import UiStatusBarButton from "@/features/ui-manager/components/menu-bar/UiStatu
 
 export default function MenuBarViewSubmenu() {
   return (
-    <div className="w-64 py-1 bg-gray-100">
+    <div className="w-80 py-1 bg-gray-100">
       <CanvasResetViewButton />
 
       <MenuSeparator />

@@ -17,3 +17,8 @@ const server = serve({
 });
 
 console.log(`🚀 Server running at ${server.url}`);
+
+// ─── Data-access API ─────────────────────────────────────────────────────────
+export { getEnvironment, getAllEnvironments, saveEnvironment, deleteEnvironment } from "./db/environments";
+export { getObject, getObjectsByEnvironment, saveObject, saveObjects, deleteObject, deleteObjectsByEnvironment } from "./db/objects";
+export { getVertex, getVerticesByObject, getVerticesByObjects, saveVertex, saveVertices, updateVertex, deleteVertex, deleteVertices, deleteVerticesByObject, deleteVerticesByObjects, deleteVerticesByEnvironment } from "./db/vertices";

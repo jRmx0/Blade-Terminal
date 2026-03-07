@@ -1,5 +1,6 @@
 import MenuBarItem from "@/components/menu-bar/MenuBarItem";
 import { useUiControlsPanelStore } from "@/features/ui-manager/stores/uiControlsPanelStore";
+import { WORKBENCH_SHORTCUTS as S } from "@/config/shortcut-manager/workbenchShortcutsConfig";
 
 export default function UiControlsButton() {
   const isVisible = useUiControlsPanelStore((state) => state.isVisible);
@@ -8,7 +9,7 @@ export default function UiControlsButton() {
   return (
     <MenuBarItem
       label="Controls"
-      shortcut={["Ctrl", "Alt", "C"]}
+      shortcut={S["controls.toggle"].shortcut}
       hasCheckmark
       defaultChecked={isVisible}
       onClick={() => setVisibility(!isVisible)}

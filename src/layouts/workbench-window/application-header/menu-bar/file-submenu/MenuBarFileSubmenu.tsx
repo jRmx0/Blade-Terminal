@@ -5,13 +5,14 @@ import WorkspaceRenameButton from "@/features/workspace-manager/components/menu-
 import WorkspaceCopyButton from "@/features/workspace-manager/components/menu-bar/WorkspaceCopyButton";
 import WorkspaceImportButton from "@/features/workspace-manager/components/menu-bar/WorkspaceImportButton";
 import WorkspaceExportButton from "@/features/workspace-manager/components/menu-bar/WorkspaceExportButton";
-import WorkspaceCloseButton from "@/features/workspace-manager/components/menu-bar/WorkspaceCloseButton";
+// import WorkspaceCloseButton from "@/features/workspace-manager/components/menu-bar/WorkspaceCloseButton";
 import MenuSeparator from "@/components/menu-bar/MenuBarSeparator";
 import WorkspaceOpenButton from "@/features/workspace-manager/components/menu-bar/WorkspaceOpenButton";
+import WorkspaceAutoSaveButton from "@/features/workspace-manager/components/menu-bar/WorkspaceAutoSaveButton";
 
 export default function MenuBarFileSubmenu() {
   return (
-    <div className="w-64 py-1 bg-gray-100">
+    <div className="w-80 py-1 bg-gray-100">
       <WorkspaceNewButton />
       <WorkspaceOpenButton />
 
@@ -27,12 +28,17 @@ export default function MenuBarFileSubmenu() {
 
       <MenuSeparator />
 
-      <WorkspaceImportButton />
-      <WorkspaceExportButton />
+      <WorkspaceAutoSaveButton />
 
       <MenuSeparator />
 
-      <WorkspaceCloseButton />
+      <WorkspaceImportButton />
+      <WorkspaceExportButton />
+
+      {/* TODO: Home screen */}
+      {/* <MenuSeparator />
+
+      <WorkspaceCloseButton /> */}
     </div>
   );
 }

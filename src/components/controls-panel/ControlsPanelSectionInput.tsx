@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ControlsPanelSectionInputProps } from "@/types/controlsPanelTypes";
 
 export default function ControlsPanelSectionInput({
@@ -7,18 +8,69 @@ export default function ControlsPanelSectionInput({
   disabled = false,
   type = "text",
 }: ControlsPanelSectionInputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const isEmpty = value === "" || value === "0";
+  const isFloated = !isEmpty || isFocused;
+  const displayValue = isEmpty && !isFocused ? "" : value;
+  const showSpinners = type === "number" && (isFocused || (isHovered && !isEmpty)) && !disabled;
+
   return (
-    <fieldset className="group border bg-white border-gray-300 rounded px-2 pt-0.5 pb-1 mx-3 my-1 focus-within:border-blue-500 select-none">
-      <legend className="text-xs text-gray-500 px-1 group-focus-within:text-blue-500">
+    <div
+      className="relative mx-3 my-1"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <span
+        className={`absolute pointer-events-none select-none transition-all duration-150 leading-none ${isFloated
+          ? `top-1 left-3 text-xs ${isFocused ? "text-teal-700" : "text-gray-500"}`
+          : "top-1/2 -translate-y-1/2 left-3 text-sm text-gray-400"
+          }`}
+      >
         {label}
-      </legend>
+      </span>
       <input
         type={type}
-        value={value}
+        value={displayValue}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         disabled={disabled}
-        className="px-1 w-full text-sm bg-white focus:outline-none disabled:text-gray-400 disabled:cursor-not-allowed"
+        className={`w-full border rounded bg-white text-sm px-3 focus:outline-none transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${isFloated ? "pt-5 pb-1" : "py-1.5"
+          } ${type === "number" ? "pr-5" : ""
+          } ${isFocused ? "border-teal-700" : "border-gray-300"
+          } ${disabled ? "text-gray-400 cursor-not-allowed" : "text-gray-900"
+          }`}
       />
-    </fieldset>
+      {showSpinners && (
+        <div className="absolute right-3 top-3.5 bottom-1 flex flex-col rounded overflow-hidden w-4">
+          <button
+            type="button"
+            tabIndex={-1}
+            disabled={disabled}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onChange(String(Number(value) + 1));
+            }}
+            className="flex-1 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors rounded-t cursor-pointer active:text-teal-700"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>expand_less</span>
+          </button>
+
+          <button
+            type="button"
+            tabIndex={-1}
+            disabled={disabled}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onChange(String(Number(value) - 1));
+            }}
+            className="flex-1 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors rounded-b cursor-pointer active:text-teal-700"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>expand_more</span>
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
