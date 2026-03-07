@@ -22,7 +22,7 @@ export default function WorkbenchWindow() {
         <CanvasEditorLayout />
         <div className="absolute inset-0 flex pointer-events-none z-10">
           <ControlsPanel />
-          <div className="flex-1" />
+          <div className="flex-1 select-none" />
           <InspectorPanel />
         </div>
       </div>
