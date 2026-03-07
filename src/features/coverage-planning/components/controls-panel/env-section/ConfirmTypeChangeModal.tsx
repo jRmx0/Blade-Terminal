@@ -39,11 +39,11 @@ export default function ConfirmTypeChangeModal() {
                 </p>
 
                 <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200">
-                    <ModalFooterButton onClick={cancel}>
-                        Cancel
-                    </ModalFooterButton>
                     <ModalFooterButton variant="primary" onClick={confirm}>
                         Confirm
+                    </ModalFooterButton>
+                    <ModalFooterButton onClick={cancel}>
+                        Cancel
                     </ModalFooterButton>
                 </div>
             </div>
