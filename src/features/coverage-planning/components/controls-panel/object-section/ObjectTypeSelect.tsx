@@ -20,10 +20,10 @@ export default function ObjectTypeSelect() {
   const isFixed = isGlobalTypeFixed(globalType);
   const forcedType = defaultObjectTypeForGlobal(globalType);
 
-  // Displayed value: forced type when global is fixed; selected object's type when any
-  const displayValue: ObjectType = isFixed
+  // Displayed value: forced type when global is fixed; selected object's type; empty when nothing selected
+  const displayValue: ObjectType | "" = isFixed
     ? forcedType
-    : (liveObject?.type ?? defaultObjectTypeForGlobal(globalType));
+    : (liveObject?.type ?? (selectedObject === null ? "" : defaultObjectTypeForGlobal(globalType)));
 
   const isDisabled = isFixed || selectedObject === null;
 
