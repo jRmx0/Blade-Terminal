@@ -50,7 +50,7 @@ export default function WorkspaceNameField() {
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={handleKeyDown}
-        className={`${sharedClass} outline-none ring-2 ring-blue-400 cursor-text`}
+        className={`${sharedClass} outline-none ring-2 ring-teal-700 cursor-text`}
       />
     );
   }
