@@ -49,7 +49,7 @@ export default function MenuBarButton({
         onClick={handleClick}
         onMouseEnter={handleMouseEnter}
         onKeyDown={handleKeyDown}
-        className="px-3 py-1 text-base text-gray-700 rounded hover:bg-gray-200 active:bg-gray-300 cursor-pointer select-none"
+        className="px-3 mt-1 text-base text-gray-700 rounded hover:bg-gray-200 active:bg-gray-300 cursor-pointer select-none"
       >
         {label}
       </button>
