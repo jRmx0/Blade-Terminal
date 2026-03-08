@@ -9,7 +9,7 @@ import type { Environment } from "@/types/schemaTypes";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 import ModalHeader from "@/components/modal/ModalHeader";
 import ModalFooterButton from "@/components/modal/ModalFooterButton";
-import ModalWorkspaceSelectList from "@/components/modal/ModalWorkspaceSelectList";
+import ModalListPart from "@/components/modal/ModalListPart";
 
 export default function WorkspacePickerModal() {
     const isOpen = useWorkspacePickerStore((s) => s.isOpen);
@@ -82,9 +82,7 @@ export default function WorkspacePickerModal() {
                 className="flex flex-col w-130 bg-gray-100 rounded-lg shadow-xl overflow-hidden"
                 onMouseDown={(e) => {
                     const target = e.target as HTMLElement;
-                    if (!target.closest("button") && !target.closest("input")) {
-                        setSelectedEnvId(null);
-                    }
+                    if (!target.closest("button") && !target.closest("input")) setSelectedEnvId(null);
                 }}
             >
                 <ModalHeader title="Open Workspace" onClose={close} />
@@ -95,14 +93,14 @@ export default function WorkspacePickerModal() {
                             Loading...
                         </div>
                     ) : (
-                        <ModalWorkspaceSelectList
-                            environments={environments}
-                            selectedEnvId={selectedEnvId}
-                            activeEnvId={currentEnvId}
+                        <ModalListPart
+                            items={environments}
+                            selectedId={selectedEnvId}
+                            activeId={currentEnvId}
                             onSelect={setSelectedEnvId}
-                            onDeselect={() => setSelectedEnvId(null)}
                             onDoubleClick={handleOpenById}
-                            onDelete={handleDelete}
+                            doubleClickLabel="Open"
+                            actions={[{ icon: "delete", title: "Delete", variant: "danger", onClick: handleDelete }]}
                             emptyMessage="No saved workspaces"
                         />
                     )}

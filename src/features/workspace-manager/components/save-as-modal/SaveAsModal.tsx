@@ -3,7 +3,7 @@ import { useSaveAsModalStore } from "@/features/workspace-manager/stores/saveAsM
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 import ModalHeader from "@/components/modal/ModalHeader";
 import ModalFooterButton from "@/components/modal/ModalFooterButton";
-import ModalWorkspaceSelectList from "@/components/modal/ModalWorkspaceSelectList";
+import ModalListPart from "@/components/modal/ModalListPart";
 import ModalFileNameField from "@/components/modal/ModalFileNameField";
 import { useEnvStore } from "@/stores/envStore";
 
@@ -49,8 +49,8 @@ export default function SaveAsModal() {
                 className="flex flex-col w-130 bg-gray-100 rounded-lg shadow-xl overflow-hidden"
                 onMouseDown={(e) => {
                     const target = e.target as HTMLElement;
-                    if (selectedEnvId !== null && !target.closest("button") && !target.closest("input")) {
-                        selectEnv(selectedEnvId);
+                    if (!target.closest("button") && !target.closest("input")) {
+                        if (selectedEnvId !== null) selectEnv(selectedEnvId);
                     }
                 }}
             >
@@ -58,12 +58,11 @@ export default function SaveAsModal() {
 
                 {/* Workspace list */}
                 <div className="flex flex-col mx-4">
-                    <ModalWorkspaceSelectList
-                        environments={environments}
-                        selectedEnvId={selectedEnvId}
-                        activeEnvId={currentEnvId}
+                    <ModalListPart
+                        items={environments}
+                        selectedId={selectedEnvId}
+                        activeId={currentEnvId}
                         onSelect={selectEnv}
-                        onDeselect={() => { if (selectedEnvId !== null) selectEnv(selectedEnvId); }}
                     />
                 </div>
 
