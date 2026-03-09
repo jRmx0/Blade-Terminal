@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
-import ModalHeader from "@/components/modal/ModalHeader";
+import ModalTitle from "@/components/modal/ModalTitle";
 import ModalFooterButton from "@/components/modal/ModalFooterButton";
 
 export default function DeleteModal() {
@@ -28,11 +28,11 @@ export default function DeleteModal() {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 select-none"
+            className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 select-none"
             onMouseDown={handleBackdropClick}
         >
             <div className="flex flex-col w-80 bg-gray-100 rounded-lg shadow-xl overflow-hidden">
-                <ModalHeader title="Delete workspace" onClose={cancel} />
+                <ModalTitle title="Delete workspace" onClose={cancel} />
 
                 <p className="px-5 pt-3 pb-5 text-sm text-gray-500">
                     Delete <span className="font-medium text-gray-700">{envName}</span>? This cannot be undone.

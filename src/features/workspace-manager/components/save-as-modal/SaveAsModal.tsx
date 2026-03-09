@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useSaveAsModalStore } from "@/features/workspace-manager/stores/saveAsModalStore";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
-import ModalHeader from "@/components/modal/ModalHeader";
+import ModalTitle from "@/components/modal/ModalTitle";
 import ModalFooterButton from "@/components/modal/ModalFooterButton";
 import ModalListPart from "@/components/modal/ModalListPart";
 import ModalFileNameField from "@/components/modal/ModalFileNameField";
@@ -54,7 +54,7 @@ export default function SaveAsModal() {
                     }
                 }}
             >
-                <ModalHeader title="Save As" onClose={close} />
+                <ModalTitle title="Save As" onClose={close} />
 
                 {/* Workspace list */}
                 <div className="flex flex-col mx-4">

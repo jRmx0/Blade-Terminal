@@ -1,9 +1,9 @@
-interface ModalHeaderProps {
+interface ModalTitleProps {
     title: string;
     onClose: () => void;
 }
 
-export default function ModalHeader({ title, onClose }: ModalHeaderProps) {
+export default function ModalTitle({ title, onClose }: ModalTitleProps) {
     return (
         <div className="flex items-center justify-between px-5 py-2 select-none">
             <span className="text-sm font-semibold text-gray-700 tracking-wide uppercase">

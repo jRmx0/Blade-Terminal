@@ -7,7 +7,7 @@ import { loadWorkspace, resetWorkspace } from "@/features/workspace-manager/data
 import { useEnvStore } from "@/stores/envStore";
 import type { Environment } from "@/types/schemaTypes";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
-import ModalHeader from "@/components/modal/ModalHeader";
+import ModalTitle from "@/components/modal/ModalTitle";
 import ModalFooterButton from "@/components/modal/ModalFooterButton";
 import ModalListPart from "@/components/modal/ModalListPart";
 
@@ -85,7 +85,7 @@ export default function WorkspacePickerModal() {
                     if (!target.closest("button") && !target.closest("input")) setSelectedEnvId(null);
                 }}
             >
-                <ModalHeader title="Open Workspace" onClose={close} />
+                <ModalTitle title="Open Workspace" onClose={close} />
 
                 <div className="flex flex-col mx-4">
                     {isLoading ? (

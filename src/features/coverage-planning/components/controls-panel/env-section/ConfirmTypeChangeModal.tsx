@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useConfirmTypeChangeModalStore } from "@/features/coverage-planning/stores/env-section/confirmTypeChangeModalStore";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
-import ModalHeader from "@/components/modal/ModalHeader";
+import ModalTitle from "@/components/modal/ModalTitle";
 import ModalFooterButton from "@/components/modal/ModalFooterButton";
 
 export default function ConfirmTypeChangeModal() {
@@ -32,7 +32,7 @@ export default function ConfirmTypeChangeModal() {
             onMouseDown={handleBackdropClick}
         >
             <div className="flex flex-col w-80 bg-gray-100 rounded-lg shadow-xl overflow-hidden">
-                <ModalHeader title="Update object types" onClose={cancel} />
+                <ModalTitle title="Update object types" onClose={cancel} />
 
                 <p className="px-5 pt-3 pb-5 text-sm text-gray-500">
                     {message}

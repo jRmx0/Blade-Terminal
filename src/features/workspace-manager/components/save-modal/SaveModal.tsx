@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useSaveModalStore } from "@/features/workspace-manager/stores/saveModalStore";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
-import ModalHeader from "@/components/modal/ModalHeader";
+import ModalTitle from "@/components/modal/ModalTitle";
 import ModalFooterButton from "@/components/modal/ModalFooterButton";
 
 export default function SaveModal() {
@@ -32,7 +32,7 @@ export default function SaveModal() {
             onMouseDown={handleBackdropClick}
         >
             <div className="flex flex-col w-100 bg-gray-100 rounded-lg shadow-xl overflow-hidden">
-                <ModalHeader title="Unsaved Changes" onClose={cancel} />
+                <ModalTitle title="Unsaved Changes" onClose={cancel} />
 
                 <p className="px-5 pt-3 pb-5 text-sm text-gray-500">
                     Your changes will be lost if you don't save them.
