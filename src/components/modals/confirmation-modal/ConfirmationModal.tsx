@@ -1,7 +1,7 @@
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
-import { useModalLifecycle } from "../internal/useModalLifecycle";
+import { useModalLifecycle } from "../../../hooks/modals/useModalLifecycle";
 
 export default function ConfirmationModal() {
     const {

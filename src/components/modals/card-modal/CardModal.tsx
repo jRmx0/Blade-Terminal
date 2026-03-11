@@ -5,7 +5,7 @@ import InternalCardModalHeader, { type InternalCardModalSavedState } from "./int
 import InternalCardModalFastTab from "./internal/InternalCardModalFastTab";
 import InternalCardModalFastTabField, { type InternalCardModalTextFieldHintState } from "./internal/InternalCardModalFastTabField";
 import InternalCardModalListPart from "./internal/InternalCardModalListPart";
-import { useModalLifecycle } from "../internal/useModalLifecycle";
+import { useModalLifecycle } from "../../../hooks/modals/useModalLifecycle";
 
 export type CardModalSavedState = InternalCardModalSavedState;
 

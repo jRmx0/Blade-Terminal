@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import InternalListModalRepeater from "./internal/InternalListModalRepeater";
 import InternalListModalInputField from "./internal/InternalListModalInputField";
-import { useModalLifecycle } from "../internal/useModalLifecycle";
+import { useModalLifecycle } from "../../../hooks/modals/useModalLifecycle";
 
 export interface ListModalItem {
     id: number;
