@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@server/db/db";
 import type { ComputationProvider, ComputationAlgorithm, AlgorithmParameter, ComputationAlgorithmDetails, FetchedComputationMetadata } from "@/types/serviceTypes";
@@ -6,6 +6,7 @@ import { useComputationProviderCardStore } from "@/features/computation-provider
 import { useComputationProvidersListModalStore } from "@/features/computation-provider/stores/computationProvidersListModalStore";
 import { saveComputationProvider, deleteComputationProvider } from "@server/db/computationProviders";
 import { testConnection, fetchMetadataPreview, persistFetchedMetadata } from "@/features/computation-provider/data/computationProviderService";
+import { useComputationProviderAutosave } from "@/features/computation-provider/hooks/useComputationProviderAutosave";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
@@ -88,6 +89,18 @@ function areAlgorithmDetailsEqual(a: ComputationAlgorithmDetails[], b: Computati
                 && leftParam.enumValues.every((value, enumIndex) => value === rightParam.enumValues[enumIndex]);
         });
     });
+}
+
+function areFetchedMetadataEqual(
+    a: FetchedComputationMetadata | null,
+    b: FetchedComputationMetadata | null,
+) {
+    if (a === b) return true;
+    if (!a || !b) return false;
+
+    return a.metadataFetchedAt === b.metadataFetchedAt
+        && a.urlAtLastFetch === b.urlAtLastFetch
+        && areAlgorithmDetailsEqual(a.algorithms, b.algorithms);
 }
 
 function sleep(ms: number) {
@@ -237,6 +250,11 @@ export default function ComputationProviderCard() {
     const [draftMetadata, setDraftMetadata] = useState<FetchedComputationMetadata | null>(null);
     const [testActionFeedback, setTestActionFeedback] = useState<ActionFeedback>(EMPTY_ACTION_FEEDBACK);
     const [fetchActionFeedback, setFetchActionFeedback] = useState<ActionFeedback>(EMPTY_ACTION_FEEDBACK);
+    const [isSaving, setIsSaving] = useState(false);
+    const savePromiseRef = useRef<Promise<boolean> | null>(null);
+    const isDirtyRef = useRef(false);
+    const canSaveRef = useRef(false);
+    const skipNextProviderLoadRef = useRef<number | null>(null);
 
     const algorithms = useLiveQuery<ComputationAlgorithm[]>(
         () =>
@@ -248,6 +266,21 @@ export default function ComputationProviderCard() {
 
     useShortcutsBlocked("computation-provider-card", isOpen);
 
+    const isStale = form.urlAtLastFetch !== null && form.url.trim() !== form.urlAtLastFetch;
+    const lastFetchLabel =
+        form.metadataFetchedAt === null
+            ? "Never fetched"
+            : `Last fetched: ${new Date(form.metadataFetchedAt).toLocaleString()}`;
+    const normalizedForm = normalizeForm(form);
+    const canSave = Boolean(normalizedForm.name && normalizedForm.url);
+    const canTestConnection = Boolean(normalizedForm.url);
+    const canFetchMetadata = Boolean(normalizedForm.url);
+    const hasDraftAlgorithms = draftMetadata !== null;
+    const isDirty = !areFormsEqual(normalizedForm, savedForm) || hasDraftAlgorithms;
+    const savedState = isDirty ? "unsaved" : editingId === null ? "nothing_to_save" : "saved";
+    const isSavedProvider = editingId !== null;
+    const visibleAlgorithms = draftMetadata?.algorithms ?? null;
+
     useEffect(() => {
         if (!isOpen) {
             setEditingId(null);
@@ -258,6 +291,8 @@ export default function ComputationProviderCard() {
             setIsEditMode(false);
             setTestActionFeedback(EMPTY_ACTION_FEEDBACK);
             setFetchActionFeedback(EMPTY_ACTION_FEEDBACK);
+            setIsSaving(false);
+            savePromiseRef.current = null;
             return;
         }
         setEditingId(selectedProviderId);
@@ -267,6 +302,10 @@ export default function ComputationProviderCard() {
             setForm(EMPTY_FORM);
             setSavedForm(EMPTY_FORM);
             setDraftMetadata(null);
+            return;
+        }
+        if (skipNextProviderLoadRef.current === selectedProviderId) {
+            skipNextProviderLoadRef.current = null;
             return;
         }
         (db.table("computationProviders").get(selectedProviderId) as Promise<ComputationProvider | undefined>).then(
@@ -282,26 +321,96 @@ export default function ComputationProviderCard() {
     }, [isOpen, selectedProviderId]);
 
     useEffect(() => {
+        isDirtyRef.current = isDirty;
+        canSaveRef.current = canSave;
+    }, [canSave, isDirty]);
+
+    const saveProviderChanges = useCallback(async () => {
+        if (savePromiseRef.current) {
+            return savePromiseRef.current;
+        }
+
+        const formSnapshot = normalizeForm(form);
+        if (!formSnapshot.name || !formSnapshot.url) {
+            return false;
+        }
+
+        const draftMetadataSnapshot = draftMetadata;
+        const savePromise = (async () => {
+            setIsSaving(true);
+
+            try {
+                const record: ComputationProvider = editingId !== null
+                    ? { ...formSnapshot, id: editingId }
+                    : formSnapshot;
+                const savedId = await saveComputationProvider(record);
+
+                if (draftMetadataSnapshot !== null) {
+                    await persistFetchedMetadata(savedId, draftMetadataSnapshot);
+                }
+
+                setEditingId(savedId);
+                skipNextProviderLoadRef.current = savedId;
+                setSelectedProviderId(savedId);
+                setSavedForm(formSnapshot);
+                setForm((currentForm) => {
+                    const normalizedCurrentForm = normalizeForm(currentForm);
+
+                    return areFormsEqual(normalizedCurrentForm, formSnapshot)
+                        ? formSnapshot
+                        : currentForm;
+                });
+                setDraftMetadata((currentDraftMetadata) => (
+                    areFetchedMetadataEqual(currentDraftMetadata, draftMetadataSnapshot)
+                        ? null
+                        : currentDraftMetadata
+                ));
+
+                return true;
+            } finally {
+                setIsSaving(false);
+                savePromiseRef.current = null;
+            }
+        })();
+
+        savePromiseRef.current = savePromise;
+        return savePromise;
+    }, [draftMetadata, editingId, form, setSelectedProviderId]);
+
+    useComputationProviderAutosave({
+        isOpen,
+        isEditMode,
+        isDirty,
+        canSave,
+        editingId,
+        isSaving,
+        onAutosave: saveProviderChanges,
+    });
+
+    useEffect(() => {
         if (!isOpen) return;
         function handleKeyDown(e: KeyboardEvent) {
             if (e.key === "Escape" && !isConfirmationModalOpen) {
-                requestClose();
+                requestClose().catch(console.error);
             }
         }
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, isConfirmationModalOpen, form, savedForm, editingId]);
-
-    if (!isOpen) return null;
+    }, [isOpen, isConfirmationModalOpen, form, savedForm, editingId, isSaving]);
 
     async function completeClose() {
         close();
         openList();
     }
 
-    function requestClose() {
-        if (!isDirty) {
-            completeClose().catch(console.error);
+    async function requestClose() {
+        if (savePromiseRef.current !== null) {
+            await savePromiseRef.current;
+            await sleep(0);
+        }
+
+        if (!isDirtyRef.current) {
+            await completeClose();
             return;
         }
 
@@ -311,9 +420,9 @@ export default function ComputationProviderCard() {
             confirmLabel: "Save",
             secondaryLabel: "Don't Save",
             cancelLabel: "Cancel",
-            confirmDisabled: !canSave,
+            confirmDisabled: !canSaveRef.current,
             confirmAction: async () => {
-                await handleSave();
+                await saveProviderChanges();
                 await completeClose();
             },
             secondaryAction: completeClose,
@@ -322,12 +431,12 @@ export default function ComputationProviderCard() {
 
     function handleBackdropClick(e: React.MouseEvent) {
         if (e.target === e.currentTarget) {
-            requestClose();
+            requestClose().catch(console.error);
         }
     }
 
     function handleClose() {
-        requestClose();
+        requestClose().catch(console.error);
     }
 
     function toggleFastTab(key: string) {
@@ -339,20 +448,7 @@ export default function ComputationProviderCard() {
     }
 
     async function handleSave() {
-        const normalizedForm = normalizeForm(form);
-        if (!normalizedForm.name || !normalizedForm.url) return;
-        const record: ComputationProvider = editingId !== null ? { ...normalizedForm, id: editingId } : normalizedForm;
-        const savedId = await saveComputationProvider(record);
-
-        if (draftMetadata !== null) {
-            await persistFetchedMetadata(savedId, draftMetadata);
-        }
-
-        setEditingId(savedId);
-        setSelectedProviderId(savedId);
-        setForm(normalizedForm);
-        setSavedForm(normalizedForm);
-        setDraftMetadata(null);
+        await saveProviderChanges();
     }
 
     function handleDelete() {
@@ -418,20 +514,7 @@ export default function ComputationProviderCard() {
         setFetchActionFeedback({ status: "error", message: result.error });
     }
 
-    const isStale = form.urlAtLastFetch !== null && form.url.trim() !== form.urlAtLastFetch;
-    const lastFetchLabel =
-        form.metadataFetchedAt === null
-            ? "Never fetched"
-            : `Last fetched: ${new Date(form.metadataFetchedAt).toLocaleString()}`;
-    const normalizedForm = normalizeForm(form);
-    const canSave = Boolean(normalizedForm.name && normalizedForm.url);
-    const canTestConnection = Boolean(normalizedForm.url);
-    const canFetchMetadata = Boolean(normalizedForm.url);
-    const hasDraftAlgorithms = draftMetadata !== null;
-    const isDirty = !areFormsEqual(normalizedForm, savedForm) || hasDraftAlgorithms;
-    const savedState = isDirty ? "unsaved" : editingId === null ? "nothing_to_save" : "saved";
-    const isSavedProvider = editingId !== null;
-    const visibleAlgorithms = draftMetadata?.algorithms ?? null;
+    if (!isOpen) return null;
 
     return (
         <div
