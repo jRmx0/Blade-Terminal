@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSaveModeStore } from "@/stores/saveModeStore";
 
 const AUTOSAVE_DELAY_MS = 1000;
@@ -24,6 +24,7 @@ export function useComputationProviderAutosave({
 }: UseComputationProviderAutosaveProps) {
     const isAutoSaveEnabled = useSaveModeStore((s) => s.isAutoSaveEnabled);
     const previousIsEditModeRef = useRef(isEditMode);
+    const [isAutoSavePending, setIsAutoSavePending] = useState(false);
 
     useEffect(() => {
         const wasEditMode = previousIsEditModeRef.current;
@@ -37,15 +38,20 @@ export function useComputationProviderAutosave({
             && !isSaving;
 
         if (canAutosave && wasEditMode && !isEditMode) {
+            setIsAutoSavePending(false);
             onAutosave().catch(console.error);
             return;
         }
 
         if (!canAutosave || !isEditMode) {
+            setIsAutoSavePending(false);
             return;
         }
 
+        setIsAutoSavePending(true);
+
         const timeoutId = window.setTimeout(() => {
+            setIsAutoSavePending(false);
             onAutosave().catch(console.error);
         }, AUTOSAVE_DELAY_MS);
 
@@ -53,4 +59,6 @@ export function useComputationProviderAutosave({
             window.clearTimeout(timeoutId);
         };
     }, [canSave, editingId, isAutoSaveEnabled, isDirty, isEditMode, isOpen, isSaving, onAutosave]);
+
+    return isAutoSavePending;
 }

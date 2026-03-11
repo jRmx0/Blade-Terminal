@@ -11,7 +11,7 @@ import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteM
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 import ModalTitle from "@/components/modal/ModalTitle";
-import ModalHeader from "@/components/modal/modal-header/ModalHeader";
+import ModalHeader, { type ModalSavedState } from "@/components/modal/modal-header/ModalHeader";
 import ModalTextField from "@/components/modal/ModalTextField";
 import type { ModalActionStatus } from "@/components/modal/modal-action-bar/ModalAction";
 import ModalActionBar from "@/components/modal/modal-action-bar/ModalActionBar";
@@ -277,7 +277,7 @@ export default function ComputationProviderCard() {
     const canFetchMetadata = Boolean(normalizedForm.url);
     const hasDraftAlgorithms = draftMetadata !== null;
     const isDirty = !areFormsEqual(normalizedForm, savedForm) || hasDraftAlgorithms;
-    const savedState = isDirty ? "unsaved" : editingId === null ? "nothing_to_save" : "saved";
+    const savedState: ModalSavedState = isDirty ? "unsaved" : editingId === null ? "nothing_to_save" : "saved";
     const isSavedProvider = editingId !== null;
     const visibleAlgorithms = draftMetadata?.algorithms ?? null;
 
@@ -377,7 +377,7 @@ export default function ComputationProviderCard() {
         return savePromise;
     }, [draftMetadata, editingId, form, setSelectedProviderId]);
 
-    useComputationProviderAutosave({
+    const isAutoSavePending = useComputationProviderAutosave({
         isOpen,
         isEditMode,
         isDirty,
@@ -386,6 +386,7 @@ export default function ComputationProviderCard() {
         isSaving,
         onAutosave: saveProviderChanges,
     });
+    const headerSavedState: ModalSavedState = isAutoSavePending ? "saving" : savedState;
 
     useEffect(() => {
         if (!isOpen) return;
@@ -526,7 +527,7 @@ export default function ComputationProviderCard() {
                 <ModalHeader
                     recordId={editingId}
                     recordName={form.name.trim()}
-                    savedState={savedState}
+                    savedState={headerSavedState}
                     onSave={handleSave}
                     canSave={canSave}
                     isEditMode={isEditMode}

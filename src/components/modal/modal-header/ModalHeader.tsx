@@ -1,6 +1,6 @@
 import ModalSystemActions from "@/components/modal/modal-header/ModalSystemActions";
 
-export type ModalSavedState = "saved" | "unsaved" | "nothing_to_save";
+export type ModalSavedState = "saved" | "unsaved" | "saving" | "nothing_to_save";
 
 interface ModalHeaderProps {
     recordId: number | null;
@@ -27,6 +27,7 @@ function SavedStateButton({
     if (savedState === "nothing_to_save") return null;
 
     const isUnsaved = savedState === "unsaved";
+    const isSaving = savedState === "saving";
     const isSaveEnabled = isUnsaved && canSave;
 
     return (
@@ -34,20 +35,30 @@ function SavedStateButton({
             type="button"
             onClick={isSaveEnabled ? onSave : undefined}
             disabled={!isSaveEnabled}
-            title={savedState === "saved" ? "All changes saved" : canSave ? "Save changes" : "Fill required fields to save"}
+            title={
+                savedState === "saved"
+                    ? "All changes saved"
+                    : isSaving
+                        ? "Autosave pending"
+                        : canSave
+                            ? "Save changes"
+                            : "Fill required fields to save"
+            }
             className={[
                 "flex items-center gap-1 px-2 py-0.5 rounded text-sm transition-colors",
                 isSaveEnabled
                     ? "text-amber-600 hover:bg-amber-50 cursor-pointer"
+                    : isSaving
+                        ? "text-gray-500 animate-pulse cursor-default"
                     : isUnsaved
                         ? "text-amber-500 opacity-70 cursor-not-allowed"
                         : "text-gray-500 cursor-default",
             ].join(" ")}
         >
             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                {isUnsaved ? "save" : "check_circle"}
+                {isUnsaved ? "save" : isSaving ? "schedule" : "check_circle"}
             </span>
-            {isUnsaved ? "Unsaved" : "Saved"}
+            {isUnsaved ? "Unsaved" : isSaving ? "Saving..." : "Saved"}
         </button>
     );
 }
