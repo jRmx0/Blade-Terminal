@@ -56,7 +56,7 @@ export default function ComputationProvidersListModal() {
             actions={actions}
             emptyMessage="No providers yet. Add one to get started."
             onClearSelection={() => setSelectedId(null)}
-            leadingAction={(
+            footerStart={(
                 <button
                     type="button"
                     onClick={handleAdd}
@@ -66,7 +66,7 @@ export default function ComputationProvidersListModal() {
                     Add Provider
                 </button>
             )}
-            footerActions={<ModalFooterButton onClick={close}>Close</ModalFooterButton>}
+            footerEnd={<ModalFooterButton onClick={close}>Close</ModalFooterButton>}
         />
     );
 }

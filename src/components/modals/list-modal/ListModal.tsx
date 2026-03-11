@@ -17,7 +17,7 @@ export interface ListModalAction {
     variant?: "danger" | "default";
 }
 
-export interface ListModalInputFieldConfig {
+export interface ListModalInputConfig {
     inputRef?: Ref<HTMLInputElement>;
     label?: string;
     value: string;
@@ -42,9 +42,9 @@ export interface ListModalProps {
     isLoading?: boolean;
     loadingMessage?: string;
     onClearSelection?: () => void;
-    leadingAction?: ReactNode;
-    footerActions?: ReactNode;
-    inputField?: ListModalInputFieldConfig;
+    footerStart?: ReactNode;
+    footerEnd?: ReactNode;
+    input?: ListModalInputConfig;
     children?: ReactNode;
     widthClassName?: string;
 }
@@ -65,9 +65,9 @@ export default function ListModal({
     isLoading = false,
     loadingMessage = "Loading...",
     onClearSelection,
-    leadingAction,
-    footerActions,
-    inputField,
+    footerStart,
+    footerEnd,
+    input,
     children,
     widthClassName = "w-130",
 }: ListModalProps) {
@@ -91,7 +91,7 @@ export default function ListModal({
 
     if (!isOpen) return null;
 
-    const hasFooter = Boolean(leadingAction) || Boolean(footerActions);
+    const hasFooter = Boolean(footerStart) || Boolean(footerEnd);
 
     return (
         <div
@@ -121,23 +121,23 @@ export default function ListModal({
                     onCloseMenu={closeMenu}
                 />
 
-                {inputField ? (
+                {input ? (
                     <InternalListModalInputField
-                        ref={inputField.inputRef}
-                        label={inputField.label}
-                        value={inputField.value}
-                        placeholder={inputField.placeholder}
-                        onChange={inputField.onChange}
-                        onConfirm={inputField.onConfirm}
+                        ref={input.inputRef}
+                        label={input.label}
+                        value={input.value}
+                        placeholder={input.placeholder}
+                        onChange={input.onChange}
+                        onConfirm={input.onConfirm}
                     />
                 ) : null}
 
                 {children}
 
                 {hasFooter && (
-                    <div className={`flex items-center gap-2 px-4 py-3 ${leadingAction ? "justify-between" : "justify-end"}`}>
-                        {leadingAction ?? <div />}
-                        {footerActions ? <div className="flex items-center gap-2">{footerActions}</div> : null}
+                    <div className={`flex items-center gap-2 px-4 py-3 ${footerStart ? "justify-between" : "justify-end"}`}>
+                        {footerStart ?? <div />}
+                        {footerEnd ? <div className="flex items-center gap-2">{footerEnd}</div> : null}
                     </div>
                 )}
             </div>

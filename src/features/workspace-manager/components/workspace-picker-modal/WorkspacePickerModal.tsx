@@ -72,7 +72,7 @@ export default function WorkspacePickerModal() {
             isLoading={isLoading}
             loadingMessage="Loading..."
             onClearSelection={() => setSelectedEnvId(null)}
-            footerActions={(
+            footerEnd={(
                 <>
                     <ModalFooterButton
                         variant="primary"
