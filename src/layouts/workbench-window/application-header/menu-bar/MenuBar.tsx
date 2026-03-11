@@ -3,6 +3,7 @@ import MenuBarFileButton from "@/layouts/workbench-window/application-header/men
 import MenuBarViewButton from "@/layouts/workbench-window/application-header/menu-bar/view-submenu/MenuBarViewButton";
 import { useMenuStore } from "@/stores/menuStore";
 import MenuBarEditButton from "./edit-submenu/MenuBarEditButton";
+import MenuBarRunButton from "./run-submenu/MenuBarRunButton";
 
 export default function MenuBar() {
   const menuBarRef = useRef<HTMLDivElement>(null);
@@ -29,6 +30,7 @@ export default function MenuBar() {
       <MenuBarFileButton />
       <MenuBarEditButton />
       <MenuBarViewButton />
+      <MenuBarRunButton />
     </div>
   );
 }

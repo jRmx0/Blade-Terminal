@@ -1,4 +1,4 @@
-export type MenuId = "file" | "edit" | "view";
+export type MenuId = "file" | "edit" | "view" | "run";
 
 export interface MenuState {
   activeMenu: MenuId | null;
