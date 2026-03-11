@@ -1,6 +1,7 @@
 import type {
     ComputationProvider,
     MetadataResponse,
+    ServiceHttpResponseDetails,
     TestConnectionResult,
     FetchMetadataResult,
     FetchMetadataPreviewResult,
@@ -44,6 +45,13 @@ function isHtmlResponse(response: Response): boolean {
     return contentType.includes("text/html");
 }
 
+function getHttpResponseDetails(response: Response): ServiceHttpResponseDetails {
+    return {
+        statusCode: response.status,
+        statusText: response.statusText,
+    };
+}
+
 function buildFetchedMetadata(provider: ComputationProvider, data: MetadataResponse): FetchedComputationMetadata {
     const computationProviderId = provider.id ?? 0;
 
@@ -75,7 +83,10 @@ function buildFetchedMetadata(provider: ComputationProvider, data: MetadataRespo
     };
 }
 
-async function requestMetadata(provider: ComputationProvider): Promise<{ ok: true; data: MetadataResponse } | { ok: false; error: string }> {
+async function requestMetadata(provider: ComputationProvider): Promise<
+    | ({ ok: true; data: MetadataResponse } & ServiceHttpResponseDetails)
+    | ({ ok: false; error: string } & Partial<ServiceHttpResponseDetails>)
+> {
     const endpoint = buildComputationProviderEndpointUrl(provider.url, "metadata");
     if (!endpoint.ok) {
         return endpoint;
@@ -88,14 +99,26 @@ async function requestMetadata(provider: ComputationProvider): Promise<{ ok: tru
             signal: AbortSignal.timeout(30_000),
         });
         if (!response.ok) {
-            return { ok: false, error: `HTTP ${response.status}: ${response.statusText}` };
+            return {
+                ok: false,
+                error: "Provider returned an error response.",
+                ...getHttpResponseDetails(response),
+            };
         }
 
         if (isHtmlResponse(response)) {
-            return { ok: false, error: "Service URL returned HTML instead of provider metadata. Check that it points to the provider container, not this app." };
+            return {
+                ok: false,
+                error: "Service URL returned HTML instead of provider metadata. Check that it points to the provider container, not this app.",
+                ...getHttpResponseDetails(response),
+            };
         }
 
-        return { ok: true, data: (await response.json()) as MetadataResponse };
+        return {
+            ok: true,
+            data: (await response.json()) as MetadataResponse,
+            ...getHttpResponseDetails(response),
+        };
     } catch (err) {
         return { ok: false, error: getRequestErrorMessage(err, "Metadata request timed out after 30 seconds.") };
     }
@@ -111,6 +134,8 @@ export async function fetchMetadataPreview(provider: ComputationProvider): Promi
         ok: true,
         algorithmCount: result.data.algorithms.length,
         metadata: buildFetchedMetadata(provider, result.data),
+        statusCode: result.statusCode,
+        statusText: result.statusText,
     };
 }
 
@@ -167,14 +192,25 @@ export async function testConnection(provider: ComputationProvider): Promise<Tes
             signal: AbortSignal.timeout(10_000),
         });
         if (!response.ok) {
-            return { ok: false, error: `HTTP ${response.status}: ${response.statusText}` };
+            return {
+                ok: false,
+                error: "Provider returned an error response.",
+                ...getHttpResponseDetails(response),
+            };
         }
 
         if (isHtmlResponse(response)) {
-            return { ok: false, error: "Service URL returned HTML instead of a provider health endpoint. Check that it points to the provider container, not this app." };
+            return {
+                ok: false,
+                error: "Service URL returned HTML instead of a provider health endpoint. Check that it points to the provider container, not this app.",
+                ...getHttpResponseDetails(response),
+            };
         }
 
-        return { ok: true };
+        return {
+            ok: true,
+            ...getHttpResponseDetails(response),
+        };
     } catch (err) {
         return { ok: false, error: getRequestErrorMessage(err, "Health check timed out after 10 seconds.") };
     }
@@ -198,7 +234,12 @@ export async function fetchMetadata(provider: ComputationProvider): Promise<Fetc
 
     try {
         await persistFetchedMetadata(provider.id, preview.metadata);
-        return { ok: true, algorithmCount: preview.algorithmCount };
+        return {
+            ok: true,
+            algorithmCount: preview.algorithmCount,
+            statusCode: preview.statusCode,
+            statusText: preview.statusText,
+        };
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         return { ok: false, error: `Metadata save failed: ${message}` };

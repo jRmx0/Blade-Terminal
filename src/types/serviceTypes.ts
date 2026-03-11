@@ -64,13 +64,18 @@ export interface AppEnumValue {
 
 // ─── Service action result types ──────────────────────────────────────────────
 
+export interface ServiceHttpResponseDetails {
+    statusCode: number;
+    statusText: string;
+}
+
 export type TestConnectionResult =
-    | { ok: true }
-    | { ok: false; error: string };
+    | ({ ok: true } & ServiceHttpResponseDetails)
+    | ({ ok: false; error: string } & Partial<ServiceHttpResponseDetails>);
 
 export type FetchMetadataResult =
-    | { ok: true; algorithmCount: number }
-    | { ok: false; error: string };
+    | ({ ok: true; algorithmCount: number } & ServiceHttpResponseDetails)
+    | ({ ok: false; error: string } & Partial<ServiceHttpResponseDetails>);
 
 export interface FetchedComputationMetadata {
     metadataFetchedAt: number;
@@ -79,8 +84,8 @@ export interface FetchedComputationMetadata {
 }
 
 export type FetchMetadataPreviewResult =
-    | { ok: true; algorithmCount: number; metadata: FetchedComputationMetadata }
-    | { ok: false; error: string };
+    | ({ ok: true; algorithmCount: number; metadata: FetchedComputationMetadata } & ServiceHttpResponseDetails)
+    | ({ ok: false; error: string } & Partial<ServiceHttpResponseDetails>);
 
 // ─── /metadata response contract ─────────────────────────────────────────────
 

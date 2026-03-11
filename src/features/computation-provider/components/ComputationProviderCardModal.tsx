@@ -426,8 +426,14 @@ export default function ComputationProviderCard() {
         const result = await withMinimumLoadingTime(() => testConnection(provider));
         setTestActionFeedback(
             result.ok
-                ? { status: "success", message: "Connection successful." }
-                : { status: "error", message: result.error },
+                ? {
+                    status: "success",
+                    message: "Connection successful.",
+                }
+                : {
+                    status: "error",
+                    message: result.error,
+                },
         );
     }
 
@@ -468,7 +474,10 @@ export default function ComputationProviderCard() {
             });
             return;
         }
-        setFetchActionFeedback({ status: "error", message: result.error });
+        setFetchActionFeedback({
+            status: "error",
+            message: result.error,
+        });
     }
 
     const headerConfig: CardModalHeaderConfig = {
