@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useConfirmTypeChangeModalStore } from "@/features/coverage-planning/stores/env-section/confirmTypeChangeModalStore";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
-import ModalTitle from "@/components/modal/ModalTitle";
-import ModalFooterButton from "@/components/modal/ModalFooterButton";
+import ModalTitle from "@/components/modal/modal-title/ModalTitle";
+import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 
 export default function ConfirmTypeChangeModal() {
     const { isOpen, message, confirm, cancel } = useConfirmTypeChangeModalStore();

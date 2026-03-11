@@ -1,4 +1,4 @@
-import ModalSystemActions from "@/components/modal/modal-header/ModalSystemActions";
+import ModalSystemActions from "@/components/modals/card-modal/card-modal-header/CardModalHeaderActions";
 
 export type ModalSavedState = "saved" | "unsaved" | "saving" | "nothing_to_save";
 
@@ -50,9 +50,9 @@ function SavedStateButton({
                     ? "text-amber-600 hover:bg-amber-50 cursor-pointer"
                     : isSaving
                         ? "text-gray-500 animate-pulse cursor-default"
-                    : isUnsaved
-                        ? "text-amber-500 opacity-70 cursor-not-allowed"
-                        : "text-gray-500 cursor-default",
+                        : isUnsaved
+                            ? "text-amber-500 opacity-70 cursor-not-allowed"
+                            : "text-gray-500 cursor-default",
             ].join(" ")}
         >
             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>

@@ -10,10 +10,10 @@ import { useComputationProviderAutosave } from "@/features/computation-provider/
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
-import ModalTitle from "@/components/modal/ModalTitle";
-import ModalHeader, { type ModalSavedState } from "@/components/modal/modal-header/ModalHeader";
-import ModalTextField from "@/components/modal/ModalTextField";
-import type { ModalActionStatus } from "@/components/modal/modal-action-bar/ModalAction";
+import ModalTitle from "@/components/modal/modal-title/ModalTitle";
+import ModalHeader, { type ModalSavedState } from "@/components/modals/card-modal/card-modal-header/CardModalHeader";
+import CardModalField from "@/components/modals/card-modal/card-modal-fast-tab/CardModalFastTabField";
+import type { ModalActionStatus } from "@/components/modal/modal-action-bar/ModalActionBarAction";
 import ModalActionBar from "@/components/modal/modal-action-bar/ModalActionBar";
 
 type ComputationProviderForm = Omit<ComputationProvider, "id">;
@@ -579,14 +579,14 @@ export default function ComputationProviderCard() {
                         onToggle={() => toggleFastTab("general")}
                         disabled={!isEditMode}
                     >
-                        <ModalTextField
+                        <CardModalField
                             label="Name"
                             value={form.name}
                             required
                             disabled={!isEditMode}
                             onChange={(v) => setForm((f) => ({ ...f, name: v }))}
                         />
-                        <ModalTextField
+                        <CardModalField
                             label="Service URL"
                             value={form.url}
                             required
@@ -599,7 +599,7 @@ export default function ComputationProviderCard() {
                             }
                             hintState={isStale ? "warning" : "info"}
                         />
-                        <ModalTextField
+                        <CardModalField
                             label="API Key"
                             value={form.apiKey}
                             type="password"

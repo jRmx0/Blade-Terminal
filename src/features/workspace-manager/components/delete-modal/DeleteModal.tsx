@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
-import ModalTitle from "@/components/modal/ModalTitle";
-import ModalFooterButton from "@/components/modal/ModalFooterButton";
+import ModalTitle from "@/components/modal/modal-title/ModalTitle";
+import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 
 export default function DeleteModal() {
     const { isOpen, envName, confirm, cancel } = useDeleteModalStore();

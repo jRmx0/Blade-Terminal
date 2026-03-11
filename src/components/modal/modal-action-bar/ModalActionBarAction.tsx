@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import ModalPopUp from "@/components/modal/ModalPopUp";
+import ModalPopUp from "@/components/modal/modal-pop-up/ModalPopUp";
 
 export type ModalActionStatus = "loading" | "success" | "warning" | "error";
 
@@ -120,7 +120,7 @@ interface ModalActionProps {
     statusMessage?: string;
 }
 
-export default function ModalAction({
+export default function ModalActionBarAction({
     icon,
     label,
     onClick,

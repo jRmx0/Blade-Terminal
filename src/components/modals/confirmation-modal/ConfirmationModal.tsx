@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import ModalFooterButton from "@/components/modal/ModalFooterButton";
-import ModalTitle from "@/components/modal/ModalTitle";
+import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
+import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 

@@ -7,8 +7,8 @@ import { useComputationProviderCardStore } from "@/features/computation-provider
 import { deleteComputationProvider } from "@server/db/computationProviders";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
-import ModalTitle from "@/components/modal/ModalTitle";
-import ModalFooterButton from "@/components/modal/ModalFooterButton";
+import ModalTitle from "@/components/modal/modal-title/ModalTitle";
+import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import ModalListPart from "@/components/modal/ModalListPart";
 
 export default function ComputationProvidersListModal() {

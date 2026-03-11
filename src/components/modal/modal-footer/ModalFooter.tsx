@@ -1,4 +1,4 @@
-import ModalFooterButton from "@/components/modal/ModalFooterButton";
+import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 
 interface ModalFooterProps {
     onOk?: () => void;
