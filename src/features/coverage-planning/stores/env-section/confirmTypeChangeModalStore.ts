@@ -18,6 +18,7 @@ export const useConfirmTypeChangeModalStore = create<ConfirmTypeChangeModalState
         useConfirmationModalStore.getState().requestConfirmation({
             title: "Update object types",
             message,
+            tone: "warning",
             confirmLabel: "Confirm",
             cancelLabel: "Cancel",
             confirmAction: async () => {

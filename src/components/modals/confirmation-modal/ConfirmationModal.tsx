@@ -1,14 +1,14 @@
-import { useEffect } from "react";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
-import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
+import { useModalLifecycle } from "../internal/useModalLifecycle";
 
 export default function ConfirmationModal() {
     const {
         isOpen,
         title,
         message,
+        tone,
         confirmLabel,
         cancelLabel,
         secondaryLabel,
@@ -18,29 +18,24 @@ export default function ConfirmationModal() {
         cancel,
     } = useConfirmationModalStore();
 
-    useShortcutsBlocked("confirmation-modal", isOpen);
+    const { handleBackdropMouseDown } = useModalLifecycle({
+        isOpen,
+        shortcutToken: "confirmation-modal",
+        onClose: cancel,
+    });
 
-    useEffect(() => {
-        if (!isOpen) return;
-
-        function handleKeyDown(e: KeyboardEvent) {
-            if (e.key === "Escape") cancel();
-        }
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, cancel]);
+    const confirmVariant = tone === "danger"
+        ? "danger"
+        : tone === "warning"
+            ? "warning"
+            : "primary";
 
     if (!isOpen) return null;
-
-    function handleBackdropClick(e: React.MouseEvent) {
-        if (e.target === e.currentTarget) cancel();
-    }
 
     return (
         <div
             className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 select-none"
-            onMouseDown={handleBackdropClick}
+            onMouseDown={handleBackdropMouseDown}
         >
             <div className="flex flex-col w-100 bg-gray-100 rounded-lg shadow-xl overflow-hidden">
                 <ModalTitle title={title} onClose={cancel} />
@@ -50,7 +45,7 @@ export default function ConfirmationModal() {
                 </p>
 
                 <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200">
-                    <ModalFooterButton variant="primary" disabled={confirmDisabled} onClick={() => confirm().catch(console.error)}>
+                    <ModalFooterButton variant={confirmVariant} disabled={confirmDisabled} onClick={() => confirm().catch(console.error)}>
                         {confirmLabel}
                     </ModalFooterButton>
                     {secondaryLabel && (

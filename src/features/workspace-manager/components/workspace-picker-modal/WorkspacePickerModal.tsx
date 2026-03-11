@@ -7,7 +7,7 @@ import { loadWorkspace, resetWorkspace } from "@/features/workspace-manager/data
 import { useEnvStore } from "@/stores/envStore";
 import type { Environment } from "@/types/schemaTypes";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
-import ListModal from "@/components/modals/list-modal/ListModal";
+import ListModal, { type ListModalAction } from "@/components/modals/list-modal/ListModal";
 
 export default function WorkspacePickerModal() {
     const isOpen = useWorkspacePickerStore((s) => s.isOpen);
@@ -53,6 +53,7 @@ export default function WorkspacePickerModal() {
     }
 
     const canOpen = selectedEnvId !== null && selectedEnvId !== currentEnvId;
+    const actions: ListModalAction[] = [{ icon: "delete", title: "Delete", variant: "danger", onClick: handleDelete }];
 
     return (
         <ListModal
@@ -66,7 +67,7 @@ export default function WorkspacePickerModal() {
             onSelect={setSelectedEnvId}
             onDoubleClick={handleOpenById}
             doubleClickLabel="Open"
-            actions={[{ icon: "delete", title: "Delete", variant: "danger", onClick: handleDelete }]}
+            actions={actions}
             emptyMessage="No saved workspaces"
             isLoading={isLoading}
             loadingMessage="Loading..."

@@ -1,9 +1,12 @@
 import { create } from "zustand";
 
+export type ConfirmationModalTone = "default" | "warning" | "danger";
+
 interface ConfirmationModalState {
     isOpen: boolean;
     title: string;
     message: string;
+    tone: ConfirmationModalTone;
     confirmLabel: string;
     cancelLabel: string;
     secondaryLabel: string | null;
@@ -14,6 +17,7 @@ interface ConfirmationModalState {
     requestConfirmation: (options: {
         title: string;
         message: string;
+        tone?: ConfirmationModalTone;
         confirmLabel?: string;
         cancelLabel?: string;
         secondaryLabel?: string;
@@ -30,6 +34,7 @@ const INITIAL_STATE = {
     isOpen: false,
     title: "",
     message: "",
+    tone: "default" as ConfirmationModalTone,
     confirmLabel: "Confirm",
     cancelLabel: "Cancel",
     secondaryLabel: null,
@@ -44,6 +49,7 @@ export const useConfirmationModalStore = create<ConfirmationModalState>()((set, 
     requestConfirmation: ({
         title,
         message,
+        tone = "default",
         confirmLabel = "Confirm",
         cancelLabel = "Cancel",
         secondaryLabel,
@@ -55,6 +61,7 @@ export const useConfirmationModalStore = create<ConfirmationModalState>()((set, 
             isOpen: true,
             title,
             message,
+            tone,
             confirmLabel,
             cancelLabel,
             secondaryLabel: secondaryLabel ?? null,

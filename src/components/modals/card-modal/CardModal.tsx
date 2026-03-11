@@ -1,15 +1,15 @@
-import { useEffect, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import ModalActionBar, { type ModalActionBarItem } from "@/components/modal/modal-action-bar/ModalActionBar";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import InternalCardModalHeader, { type InternalCardModalSavedState } from "./internal/InternalCardModalHeader";
 import InternalCardModalFastTab from "./internal/InternalCardModalFastTab";
 import InternalCardModalFastTabField, { type InternalCardModalTextFieldHintState } from "./internal/InternalCardModalFastTabField";
 import InternalCardModalListPart from "./internal/InternalCardModalListPart";
-import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
+import { useModalLifecycle } from "../internal/useModalLifecycle";
 
 export type CardModalSavedState = InternalCardModalSavedState;
 
-interface CardModalHeaderConfig {
+export interface CardModalHeaderConfig {
     recordId: number | null;
     recordName: string;
     savedState: CardModalSavedState;
@@ -22,7 +22,7 @@ interface CardModalHeaderConfig {
     canDelete?: boolean;
 }
 
-interface CardModalFieldConfig {
+export interface CardModalFieldConfig {
     id: string;
     label: string;
     value: string;
@@ -36,7 +36,7 @@ interface CardModalFieldConfig {
     onConfirm?: () => void;
 }
 
-interface CardModalFastTabConfig {
+export interface CardModalFastTabConfig {
     id: string;
     title: string;
     expanded: boolean;
@@ -46,14 +46,14 @@ interface CardModalFastTabConfig {
     content?: ReactNode;
 }
 
-interface CardModalSectionConfig {
+export interface CardModalSectionConfig {
     id: string;
     title: string;
     badge?: ReactNode;
     content: ReactNode;
 }
 
-interface CardModalProps {
+export interface CardModalProps {
     isOpen: boolean;
     title: string;
     shortcutToken: string;
@@ -82,33 +82,19 @@ export default function CardModal({
     bodyClassName = "flex flex-col flex-1 overflow-y-auto p-4 gap-3",
     canCloseOnEscape = true,
 }: CardModalProps) {
-    useShortcutsBlocked(shortcutToken, isOpen);
-
-    useEffect(() => {
-        if (!isOpen) return;
-
-        function handleKeyDown(e: KeyboardEvent) {
-            if (e.key === "Escape" && canCloseOnEscape) {
-                onClose();
-            }
-        }
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, onClose, canCloseOnEscape]);
+    const { handleBackdropMouseDown } = useModalLifecycle({
+        isOpen,
+        shortcutToken,
+        onClose,
+        canCloseOnEscape,
+    });
 
     if (!isOpen) return null;
-
-    function handleBackdropClick(e: React.MouseEvent) {
-        if (e.target === e.currentTarget) {
-            onClose();
-        }
-    }
 
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 select-none"
-            onMouseDown={handleBackdropClick}
+            onMouseDown={handleBackdropMouseDown}
         >
             <div className={`flex flex-col ${widthClassName} max-h-[90vh] bg-gray-100 rounded-lg shadow-xl overflow-visible`}>
                 <ModalTitle title={title} onClose={onClose} />

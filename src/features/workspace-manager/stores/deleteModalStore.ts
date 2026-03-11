@@ -18,6 +18,7 @@ export const useDeleteModalStore = create<DeleteModalState>()(() => ({
         useConfirmationModalStore.getState().requestConfirmation({
             title: "Delete",
             message: `Delete \"${itemName}\"? This cannot be undone.`,
+            tone: "danger",
             confirmLabel: "Delete",
             cancelLabel: "Cancel",
             confirmAction: action,

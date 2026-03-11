@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import InternalListModalRepeater from "./internal/InternalListModalRepeater";
 import InternalListModalInputField from "./internal/InternalListModalInputField";
-import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
+import { useModalLifecycle } from "../internal/useModalLifecycle";
 
 export interface ListModalItem {
     id: number;
@@ -17,7 +17,7 @@ export interface ListModalAction {
     variant?: "danger" | "default";
 }
 
-interface ListModalInputFieldConfig {
+export interface ListModalInputFieldConfig {
     inputRef?: Ref<HTMLInputElement>;
     label?: string;
     value: string;
@@ -26,7 +26,7 @@ interface ListModalInputFieldConfig {
     onConfirm?: () => void;
 }
 
-interface ListModalProps {
+export interface ListModalProps {
     isOpen: boolean;
     title: string;
     shortcutToken: string;
@@ -71,23 +71,14 @@ export default function ListModal({
     children,
     widthClassName = "w-130",
 }: ListModalProps) {
-    useShortcutsBlocked(shortcutToken, isOpen);
+    const { handleBackdropMouseDown } = useModalLifecycle({
+        isOpen,
+        shortcutToken,
+        onClose,
+    });
     const [openMenuId, setOpenMenuId] = useState<number | null>(null);
     const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
     const hasActions = actions.length > 0 || !!onDoubleClick;
-
-    useEffect(() => {
-        if (!isOpen) return;
-
-        function handleKeyDown(e: KeyboardEvent) {
-            if (e.key === "Escape") {
-                onClose();
-            }
-        }
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, onClose]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -106,12 +97,6 @@ export default function ListModal({
         setOpenMenuId(itemId);
     }
 
-    function handleBackdropClick(e: React.MouseEvent) {
-        if (e.target === e.currentTarget) {
-            onClose();
-        }
-    }
-
     function handlePanelMouseDown(e: React.MouseEvent<HTMLDivElement>) {
         if (!onClearSelection) return;
 
@@ -128,7 +113,7 @@ export default function ListModal({
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 select-none"
-            onMouseDown={handleBackdropClick}
+            onMouseDown={handleBackdropMouseDown}
         >
             <div
                 className={`flex flex-col ${widthClassName} bg-gray-100 rounded-lg shadow-xl overflow-hidden`}

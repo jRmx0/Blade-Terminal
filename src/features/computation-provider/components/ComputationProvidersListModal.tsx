@@ -7,7 +7,7 @@ import { useComputationProviderCardStore } from "@/features/computation-provider
 import { deleteComputationProvider } from "@server/db/computationProviders";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
-import ListModal from "@/components/modals/list-modal/ListModal";
+import ListModal, { type ListModalAction } from "@/components/modals/list-modal/ListModal";
 
 export default function ComputationProvidersListModal() {
     const { isOpen, close } = useComputationProvidersListModalStore();
@@ -41,6 +41,8 @@ export default function ComputationProvidersListModal() {
         });
     }
 
+    const actions: ListModalAction[] = [{ icon: "delete", title: "Delete", variant: "danger", onClick: handleDelete }];
+
     return (
         <ListModal
             isOpen={isOpen}
@@ -51,7 +53,7 @@ export default function ComputationProvidersListModal() {
             selectedId={selectedId}
             onSelect={setSelectedId}
             onDoubleClick={handleView}
-            actions={[{ icon: "delete", title: "Delete", variant: "danger", onClick: handleDelete }]}
+            actions={actions}
             emptyMessage="No providers yet. Add one to get started."
             onClearSelection={() => setSelectedId(null)}
             leadingAction={(

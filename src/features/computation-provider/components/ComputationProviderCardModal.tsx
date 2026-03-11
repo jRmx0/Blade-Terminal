@@ -9,7 +9,12 @@ import { testConnection, fetchMetadataPreview, persistFetchedMetadata } from "@/
 import { useComputationProviderAutosave } from "@/features/computation-provider/hooks/useComputationProviderAutosave";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
-import CardModal, { type CardModalSavedState } from "@/components/modals/card-modal/CardModal";
+import CardModal, {
+    type CardModalFastTabConfig,
+    type CardModalHeaderConfig,
+    type CardModalSavedState,
+    type CardModalSectionConfig,
+} from "@/components/modals/card-modal/CardModal";
 import type { ModalActionStatus } from "@/components/modal/modal-action-bar/ModalActionBarAction";
 
 type ComputationProviderForm = Omit<ComputationProvider, "id">;
@@ -371,6 +376,7 @@ export default function ComputationProviderCard() {
         useConfirmationModalStore.getState().requestConfirmation({
             title: "Unsaved Changes",
             message: "Your changes will be lost if you don't save them.",
+            tone: "warning",
             confirmLabel: "Save",
             secondaryLabel: "Don't Save",
             cancelLabel: "Cancel",
@@ -462,6 +468,111 @@ export default function ComputationProviderCard() {
         setFetchActionFeedback({ status: "error", message: result.error });
     }
 
+    const headerConfig: CardModalHeaderConfig = {
+        recordId: editingId,
+        recordName: form.name.trim(),
+        savedState: headerSavedState,
+        onSave: handleSave,
+        canSave,
+        isEditMode,
+        onEdit: () => setIsEditMode((v) => !v),
+        onNew: () => {
+            setEditingId(null);
+            setForm(EMPTY_FORM);
+            setSavedForm(EMPTY_FORM);
+            setDraftMetadata(null);
+            setIsEditMode(true);
+            setTestActionFeedback(EMPTY_ACTION_FEEDBACK);
+            setFetchActionFeedback(EMPTY_ACTION_FEEDBACK);
+        },
+        onDelete: handleDelete,
+        canDelete: editingId !== null,
+    };
+
+    const fastTabs: CardModalFastTabConfig[] = [
+        {
+            id: "general",
+            title: "General",
+            expanded: !!fastTabOpen.general,
+            onToggle: () => toggleFastTab("general"),
+            disabled: !isEditMode,
+            fields: [
+                {
+                    id: "name",
+                    label: "Name",
+                    value: form.name,
+                    required: true,
+                    disabled: !isEditMode,
+                    onChange: (v) => setForm((f) => ({ ...f, name: v })),
+                },
+                {
+                    id: "service-url",
+                    label: "Service URL",
+                    value: form.url,
+                    required: true,
+                    disabled: !isEditMode,
+                    onChange: (v) => setForm((f) => ({ ...f, url: v })),
+                    hint: isStale
+                        ? "Metadata may be stale — URL changed since last fetch"
+                        : lastFetchLabel,
+                    hintState: isStale ? "warning" : "info",
+                },
+                {
+                    id: "api-key",
+                    label: "API Key",
+                    value: form.apiKey,
+                    type: "password",
+                    disabled: !isEditMode,
+                    onChange: (v) => setForm((f) => ({ ...f, apiKey: v })),
+                },
+            ],
+        },
+    ];
+
+    const sections: CardModalSectionConfig[] = [
+        {
+            id: "algorithms",
+            title: "Algorithms",
+            badge: hasDraftAlgorithms ? (
+                <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                    Unsaved
+                </span>
+            ) : undefined,
+            content: !visibleAlgorithms && !isSavedProvider ? (
+                <p className="text-sm text-gray-400 italic text-center py-6">
+                    Fetch metadata to preview algorithms. Save provider to keep them.
+                </p>
+            ) : visibleAlgorithms ? (
+                <div className="border border-gray-200 rounded bg-white overflow-hidden">
+                    {visibleAlgorithms.map(({ algorithm, parameters }) => (
+                        <AlgorithmRow
+                            key={`draft-${algorithm.id}-${algorithm.name}`}
+                            algo={algorithm}
+                            parameters={parameters}
+                            expanded={!!algoExpanded[algorithm.id]}
+                            onToggle={() => toggleAlgo(algorithm.id)}
+                        />
+                    ))}
+                </div>
+            ) : !algorithms || algorithms.length === 0 ? (
+                <p className="text-sm text-gray-400 italic text-center py-6">
+                    No algorithms. Fetch metadata first.
+                </p>
+            ) : (
+                <div className="border border-gray-200 rounded bg-white overflow-hidden">
+                    {algorithms.map((algo) => (
+                        <AlgorithmRow
+                            key={`${algo.id}-${algo.computationProviderId}`}
+                            algo={algo}
+                            expanded={!!algoExpanded[algo.id]}
+                            onToggle={() => toggleAlgo(algo.id)}
+                        />
+                    ))}
+                </div>
+            ),
+        },
+    ];
+
     return (
         <CardModal
             isOpen={isOpen}
@@ -469,26 +580,7 @@ export default function ComputationProviderCard() {
             shortcutToken="computation-provider-card"
             onClose={handleClose}
             canCloseOnEscape={!isConfirmationModalOpen}
-            header={{
-                recordId: editingId,
-                recordName: form.name.trim(),
-                savedState: headerSavedState,
-                onSave: handleSave,
-                canSave,
-                isEditMode,
-                onEdit: () => setIsEditMode((v) => !v),
-                onNew: () => {
-                    setEditingId(null);
-                    setForm(EMPTY_FORM);
-                    setSavedForm(EMPTY_FORM);
-                    setDraftMetadata(null);
-                    setIsEditMode(true);
-                    setTestActionFeedback(EMPTY_ACTION_FEEDBACK);
-                    setFetchActionFeedback(EMPTY_ACTION_FEEDBACK);
-                },
-                onDelete: handleDelete,
-                canDelete: editingId !== null,
-            }}
+            header={headerConfig}
             actionBarActions={[
                 {
                     id: "test-connection",
@@ -511,88 +603,8 @@ export default function ComputationProviderCard() {
                     statusMessage: fetchActionFeedback.message,
                 },
             ]}
-            fastTabs={[
-                {
-                    id: "general",
-                    title: "General",
-                    expanded: !!fastTabOpen.general,
-                    onToggle: () => toggleFastTab("general"),
-                    disabled: !isEditMode,
-                    fields: [
-                        {
-                            id: "name",
-                            label: "Name",
-                            value: form.name,
-                            required: true,
-                            disabled: !isEditMode,
-                            onChange: (v) => setForm((f) => ({ ...f, name: v })),
-                        },
-                        {
-                            id: "service-url",
-                            label: "Service URL",
-                            value: form.url,
-                            required: true,
-                            disabled: !isEditMode,
-                            onChange: (v) => setForm((f) => ({ ...f, url: v })),
-                            hint: isStale
-                                ? "Metadata may be stale — URL changed since last fetch"
-                                : lastFetchLabel,
-                            hintState: isStale ? "warning" : "info",
-                        },
-                        {
-                            id: "api-key",
-                            label: "API Key",
-                            value: form.apiKey,
-                            type: "password",
-                            disabled: !isEditMode,
-                            onChange: (v) => setForm((f) => ({ ...f, apiKey: v })),
-                        },
-                    ],
-                },
-            ]}
-            sections={[
-                {
-                    id: "algorithms",
-                    title: "Algorithms",
-                    badge: hasDraftAlgorithms ? (
-                        <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-                            Unsaved
-                        </span>
-                    ) : undefined,
-                    content: !visibleAlgorithms && !isSavedProvider ? (
-                        <p className="text-sm text-gray-400 italic text-center py-6">
-                            Fetch metadata to preview algorithms. Save provider to keep them.
-                        </p>
-                    ) : visibleAlgorithms ? (
-                        <div className="border border-gray-200 rounded bg-white overflow-hidden">
-                            {visibleAlgorithms.map(({ algorithm, parameters }) => (
-                                <AlgorithmRow
-                                    key={`draft-${algorithm.id}-${algorithm.name}`}
-                                    algo={algorithm}
-                                    parameters={parameters}
-                                    expanded={!!algoExpanded[algorithm.id]}
-                                    onToggle={() => toggleAlgo(algorithm.id)}
-                                />
-                            ))}
-                        </div>
-                    ) : !algorithms || algorithms.length === 0 ? (
-                        <p className="text-sm text-gray-400 italic text-center py-6">
-                            No algorithms. Fetch metadata first.
-                        </p>
-                    ) : (
-                        <div className="border border-gray-200 rounded bg-white overflow-hidden">
-                            {algorithms.map((algo) => (
-                                <AlgorithmRow
-                                    key={`${algo.id}-${algo.computationProviderId}`}
-                                    algo={algo}
-                                    expanded={!!algoExpanded[algo.id]}
-                                    onToggle={() => toggleAlgo(algo.id)}
-                                />
-                            ))}
-                        </div>
-                    ),
-                },
-            ]}
+            fastTabs={fastTabs}
+            sections={sections}
         />
     );
 }

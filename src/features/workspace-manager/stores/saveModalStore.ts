@@ -29,6 +29,7 @@ export const useSaveModalStore = create<SaveModalState>()(() => ({
         useConfirmationModalStore.getState().requestConfirmation({
             title: "Unsaved Changes",
             message: "Your changes will be lost if you don't save them.",
+            tone: "warning",
             confirmLabel: "Save",
             secondaryLabel: "Don't Save",
             cancelLabel: "Cancel",

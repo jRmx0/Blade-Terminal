@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useSaveAsModalStore } from "@/features/workspace-manager/stores/saveAsModalStore";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
-import ListModal from "@/components/modals/list-modal/ListModal";
+import ListModal, { type ListModalInputFieldConfig } from "@/components/modals/list-modal/ListModal";
 import { useEnvStore } from "@/stores/envStore";
 
 export default function SaveAsModal() {
@@ -19,6 +19,13 @@ export default function SaveAsModal() {
     }
 
     const canSave = name.trim().length > 0 && !isSaving;
+    const inputField: ListModalInputFieldConfig = {
+        inputRef,
+        value: name,
+        placeholder: "Enter workspace name",
+        onChange: setName,
+        onConfirm: () => { if (canSave) handleSave(); },
+    };
 
     return (
         <ListModal
@@ -45,13 +52,7 @@ export default function SaveAsModal() {
                     </ModalFooterButton>
                 </>
             )}
-            inputField={{
-                inputRef,
-                value: name,
-                placeholder: "Enter workspace name",
-                onChange: setName,
-                onConfirm: () => { if (canSave) handleSave(); },
-            }}
+            inputField={inputField}
         />
     );
 }
