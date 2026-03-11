@@ -1,9 +1,8 @@
-interface ModalSystemActionsProps {
+interface InternalCardModalHeaderActionsProps {
     isEditMode: boolean;
     onEdit: () => void;
     onNew: () => void;
     onDelete: () => void;
-    /** Disable delete when no record is saved yet (no id). */
     canDelete?: boolean;
 }
 
@@ -44,13 +43,13 @@ function ActionButton({
     );
 }
 
-export default function ModalSystemActions({
+export default function InternalCardModalHeaderActions({
     isEditMode,
     onEdit,
     onNew,
     onDelete,
     canDelete = true,
-}: ModalSystemActionsProps) {
+}: InternalCardModalHeaderActionsProps) {
     return (
         <div className="flex items-center gap-0.5">
             <ActionButton
@@ -59,11 +58,7 @@ export default function ModalSystemActions({
                 onClick={onEdit}
                 active={isEditMode}
             />
-            <ActionButton
-                icon="add"
-                title="New"
-                onClick={onNew}
-            />
+            <ActionButton icon="add" title="New" onClick={onNew} />
             <ActionButton
                 icon="delete"
                 title="Delete"

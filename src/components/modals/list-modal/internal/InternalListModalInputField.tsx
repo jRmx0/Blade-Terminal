@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 
-interface ListModalSelectionFieldProps {
+interface InternalListModalInputFieldProps {
     label?: string;
     value: string;
     placeholder?: string;
@@ -8,7 +8,7 @@ interface ListModalSelectionFieldProps {
     onConfirm?: () => void;
 }
 
-const ListModalSelectionField = forwardRef<HTMLInputElement, ListModalSelectionFieldProps>(
+const InternalListModalInputField = forwardRef<HTMLInputElement, InternalListModalInputFieldProps>(
     ({ label = "File name:", value, placeholder, onChange, onConfirm }, ref) => (
         <div className="flex items-center gap-3 px-4 pt-3 pb-1">
             <label className="text-sm text-gray-600 shrink-0">{label}</label>
@@ -27,6 +27,6 @@ const ListModalSelectionField = forwardRef<HTMLInputElement, ListModalSelectionF
     ),
 );
 
-ListModalSelectionField.displayName = "ModalFileNameField";
+InternalListModalInputField.displayName = "InternalListModalInputField";
 
-export default ListModalSelectionField;
+export default InternalListModalInputField;

@@ -1,8 +1,8 @@
 import { forwardRef } from "react";
 
-export type ModalTextFieldHintState = "info" | "warning" | "error";
+export type InternalCardModalTextFieldHintState = "info" | "warning" | "error";
 
-interface ModalTextFieldProps {
+interface InternalCardModalFastTabFieldProps {
     label: string;
     value: string;
     placeholder?: string;
@@ -10,25 +10,24 @@ interface ModalTextFieldProps {
     required?: boolean;
     disabled?: boolean;
     hint?: string;
-    hintState?: ModalTextFieldHintState;
+    hintState?: InternalCardModalTextFieldHintState;
     onChange?: (value: string) => void;
     onConfirm?: () => void;
 }
 
-const HINT_STYLE: Record<ModalTextFieldHintState, { icon: string; color: string }> = {
+const HINT_STYLE: Record<InternalCardModalTextFieldHintState, { icon: string; color: string }> = {
     info: { icon: "info", color: "text-gray-400 hover:text-teal-600" },
     warning: { icon: "warning", color: "text-amber-500 hover:text-amber-600" },
     error: { icon: "error", color: "text-red-500 hover:text-red-600" },
 };
 
-const ModalTextField = forwardRef<HTMLInputElement, ModalTextFieldProps>(
+const InternalCardModalFastTabField = forwardRef<HTMLInputElement, InternalCardModalFastTabFieldProps>(
     ({ label, value, placeholder, type = "text", required = false, disabled = false, hint, hintState = "info", onChange, onConfirm }, ref) => {
         const hs = HINT_STYLE[hintState];
         const showRequiredMarker = required && value.trim().length === 0;
 
         return (
             <div className="flex items-start gap-3 min-w-0">
-                {/* Label + dot leader + optional hint button — 1/3 */}
                 <div className="w-1/3 shrink-0 h-9 flex items-center gap-1 min-w-0">
                     <label
                         className="text-sm text-gray-500 tracking-wide whitespace-nowrap shrink-0 cursor-default"
@@ -52,7 +51,6 @@ const ModalTextField = forwardRef<HTMLInputElement, ModalTextFieldProps>(
                     )}
                 </div>
 
-                {/* Field — 2/3 */}
                 <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                     <input
                         ref={ref}
@@ -75,6 +73,6 @@ const ModalTextField = forwardRef<HTMLInputElement, ModalTextFieldProps>(
     },
 );
 
-ModalTextField.displayName = "ModalTextField";
+InternalCardModalFastTabField.displayName = "InternalCardModalFastTabField";
 
-export default ModalTextField;
+export default InternalCardModalFastTabField;

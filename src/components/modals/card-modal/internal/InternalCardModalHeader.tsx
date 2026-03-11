@@ -1,11 +1,11 @@
-import ModalSystemActions from "@/components/modals/card-modal/card-modal-header/CardModalHeaderActions";
+import InternalCardModalHeaderActions from "./InternalCardModalHeaderActions";
 
-export type ModalSavedState = "saved" | "unsaved" | "saving" | "nothing_to_save";
+export type InternalCardModalSavedState = "saved" | "unsaved" | "saving" | "nothing_to_save";
 
-interface ModalHeaderProps {
+interface InternalCardModalHeaderProps {
     recordId: number | null;
     recordName: string;
-    savedState: ModalSavedState;
+    savedState: InternalCardModalSavedState;
     onSave: () => void;
     canSave?: boolean;
     isEditMode: boolean;
@@ -20,7 +20,7 @@ function SavedStateButton({
     onSave,
     canSave = true,
 }: {
-    savedState: ModalSavedState;
+    savedState: InternalCardModalSavedState;
     onSave: () => void;
     canSave?: boolean;
 }) {
@@ -63,7 +63,7 @@ function SavedStateButton({
     );
 }
 
-export default function ModalHeader({
+export default function InternalCardModalHeader({
     recordId,
     recordName,
     savedState,
@@ -74,10 +74,9 @@ export default function ModalHeader({
     onNew,
     onDelete,
     canDelete = true,
-}: ModalHeaderProps) {
+}: InternalCardModalHeaderProps) {
     return (
         <div className="flex items-center px-5 pb-1 bg-gray-100 select-none shrink-0">
-            {/* Left: id · name */}
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
                 {recordId !== null && (
                     <>
@@ -90,9 +89,8 @@ export default function ModalHeader({
                 </span>
             </div>
 
-            {/* Middle: system actions — truly centered */}
             <div className="flex items-center justify-center flex-1">
-                <ModalSystemActions
+                <InternalCardModalHeaderActions
                     isEditMode={isEditMode}
                     onEdit={onEdit}
                     onNew={onNew}
@@ -101,7 +99,6 @@ export default function ModalHeader({
                 />
             </div>
 
-            {/* Right: save state */}
             <div className="flex items-center justify-end flex-1">
                 <SavedStateButton savedState={savedState} onSave={onSave} canSave={canSave} />
             </div>

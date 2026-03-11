@@ -7,10 +7,7 @@ import CanvasEditorLayout from "./canvas-editor/CanvasEditorLayout";
 import ConfirmationModal from "@/components/modals/confirmation-modal/ConfirmationModal";
 import { useWorkbenchShortcuts } from "@/hooks/shortcut-manager/useWorkbenchShortcuts";
 import WorkspacePickerModal from "@/features/workspace-manager/components/workspace-picker-modal/WorkspacePickerModal";
-import SaveModal from "@/features/workspace-manager/components/save-modal/SaveModal";
 import SaveAsModal from "@/features/workspace-manager/components/save-as-modal/SaveAsModal";
-import DeleteModal from "@/features/workspace-manager/components/delete-modal/DeleteModal";
-import ConfirmTypeChangeModal from "@/features/coverage-planning/components/controls-panel/env-section/ConfirmTypeChangeModal";
 import ComputationProvidersListModal from "@/features/computation-provider/components/ComputationProvidersListModal";
 import ComputationProviderCardModal from "@/features/computation-provider/components/ComputationProviderCardModal";
 
@@ -32,10 +29,7 @@ export default function WorkbenchWindow() {
       <StatusBar />
       <WorkspacePickerModal />
       <ConfirmationModal />
-      <SaveModal />
       <SaveAsModal />
-      <DeleteModal />
-      <ConfirmTypeChangeModal />
       <ComputationProvidersListModal />
       <ComputationProviderCardModal />
     </div>
