@@ -36,3 +36,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Agentic coding
 plans
 temp
+
+# workspace config
+*.code-workspace
