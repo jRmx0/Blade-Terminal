@@ -8,6 +8,7 @@ import type {
 } from "@/types/serviceTypes";
 import { db } from "@server/db/db";
 import { updateMetadataTimestamp } from "@server/db/computationProviders";
+import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 
 // ─── Request builder ──────────────────────────────────────────────────────────
 
@@ -19,6 +20,28 @@ function buildHeaders(apiKey: string): HeadersInit {
         headers["Authorization"] = `Bearer ${apiKey}`;
     }
     return headers;
+}
+
+function getRequestErrorMessage(err: unknown, fallbackMessage: string): string {
+    if (err instanceof DOMException && err.name === "TimeoutError") {
+        return fallbackMessage;
+    }
+
+    if (err instanceof TypeError) {
+        return "Request failed. Ensure the service URL is reachable from the browser, the container port is published, and CORS allows this app origin.";
+    }
+
+    if (err instanceof Error) {
+        return err.message;
+    }
+
+    return String(err);
+}
+
+function isHtmlResponse(response: Response): boolean {
+    const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+
+    return contentType.includes("text/html");
 }
 
 function buildFetchedMetadata(provider: ComputationProvider, data: MetadataResponse): FetchedComputationMetadata {
@@ -53,9 +76,13 @@ function buildFetchedMetadata(provider: ComputationProvider, data: MetadataRespo
 }
 
 async function requestMetadata(provider: ComputationProvider): Promise<{ ok: true; data: MetadataResponse } | { ok: false; error: string }> {
+    const endpoint = buildComputationProviderEndpointUrl(provider.url, "metadata");
+    if (!endpoint.ok) {
+        return endpoint;
+    }
+
     try {
-        const url = provider.url.replace(/\/$/, "");
-        const response = await fetch(`${url}/metadata`, {
+        const response = await fetch(endpoint.url, {
             method: "GET",
             headers: buildHeaders(provider.apiKey),
             signal: AbortSignal.timeout(30_000),
@@ -64,10 +91,13 @@ async function requestMetadata(provider: ComputationProvider): Promise<{ ok: tru
             return { ok: false, error: `HTTP ${response.status}: ${response.statusText}` };
         }
 
+        if (isHtmlResponse(response)) {
+            return { ok: false, error: "Service URL returned HTML instead of provider metadata. Check that it points to the provider container, not this app." };
+        }
+
         return { ok: true, data: (await response.json()) as MetadataResponse };
     } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return { ok: false, error: message };
+        return { ok: false, error: getRequestErrorMessage(err, "Metadata request timed out after 30 seconds.") };
     }
 }
 
@@ -125,9 +155,13 @@ export async function persistFetchedMetadata(
  * Expects any 2xx response from GET <url>/health.
  */
 export async function testConnection(provider: ComputationProvider): Promise<TestConnectionResult> {
+    const endpoint = buildComputationProviderEndpointUrl(provider.url, "health");
+    if (!endpoint.ok) {
+        return endpoint;
+    }
+
     try {
-        const url = provider.url.replace(/\/$/, "");
-        const response = await fetch(`${url}/health`, {
+        const response = await fetch(endpoint.url, {
             method: "GET",
             headers: buildHeaders(provider.apiKey),
             signal: AbortSignal.timeout(10_000),
@@ -135,10 +169,14 @@ export async function testConnection(provider: ComputationProvider): Promise<Tes
         if (!response.ok) {
             return { ok: false, error: `HTTP ${response.status}: ${response.statusText}` };
         }
+
+        if (isHtmlResponse(response)) {
+            return { ok: false, error: "Service URL returned HTML instead of a provider health endpoint. Check that it points to the provider container, not this app." };
+        }
+
         return { ok: true };
     } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return { ok: false, error: message };
+        return { ok: false, error: getRequestErrorMessage(err, "Health check timed out after 10 seconds.") };
     }
 }
 

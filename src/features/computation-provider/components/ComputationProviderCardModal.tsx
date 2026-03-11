@@ -7,6 +7,7 @@ import { useComputationProvidersListModalStore } from "@/features/computation-pr
 import { saveComputationProvider, deleteComputationProvider } from "@server/db/computationProviders";
 import { testConnection, fetchMetadataPreview, persistFetchedMetadata } from "@/features/computation-provider/data/computationProviderService";
 import { useComputationProviderAutosave } from "@/features/computation-provider/hooks/useComputationProviderAutosave";
+import { validateComputationProviderUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 import CardModal, {
@@ -241,9 +242,11 @@ export default function ComputationProviderCard() {
             ? "Never fetched"
             : `Last fetched: ${new Date(form.metadataFetchedAt).toLocaleString()}`;
     const normalizedForm = normalizeForm(form);
-    const canSave = Boolean(normalizedForm.name && normalizedForm.url);
-    const canTestConnection = Boolean(normalizedForm.url);
-    const canFetchMetadata = Boolean(normalizedForm.url);
+    const urlValidation = validateComputationProviderUrl(normalizedForm.url);
+    const urlError = normalizedForm.url === "" ? undefined : urlValidation.ok ? undefined : urlValidation.error;
+    const canSave = Boolean(normalizedForm.name) && urlValidation.ok;
+    const canTestConnection = urlValidation.ok;
+    const canFetchMetadata = urlValidation.ok;
     const hasDraftAlgorithms = draftMetadata !== null;
     const isDirty = !areFormsEqual(normalizedForm, savedForm) || hasDraftAlgorithms;
     const savedState: CardModalSavedState = isDirty ? "unsaved" : editingId === null ? "nothing_to_save" : "saved";
@@ -512,10 +515,16 @@ export default function ComputationProviderCard() {
                     required: true,
                     disabled: !isEditMode,
                     onChange: (v) => setForm((f) => ({ ...f, url: v })),
-                    hint: isStale
-                        ? "Metadata may be stale — URL changed since last fetch"
-                        : lastFetchLabel,
-                    hintState: isStale ? "warning" : "info",
+                    hint: urlError ?? (
+                        isStale
+                            ? "Metadata may be stale — URL changed since last fetch"
+                            : lastFetchLabel
+                    ),
+                    hintState: urlError
+                        ? "error"
+                        : isStale
+                            ? "warning"
+                            : "info",
                 },
                 {
                     id: "api-key",
