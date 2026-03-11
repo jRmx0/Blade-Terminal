@@ -28,7 +28,7 @@ export default function SaveModal() {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 select-none"
+            className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 select-none"
             onMouseDown={handleBackdropClick}
         >
             <div className="flex flex-col w-100 bg-gray-100 rounded-lg shadow-xl overflow-hidden">
