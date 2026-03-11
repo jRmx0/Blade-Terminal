@@ -26,9 +26,7 @@ export default function ConfirmationModal() {
 
     const confirmVariant = tone === "danger"
         ? "danger"
-        : tone === "warning"
-            ? "warning"
-            : "primary";
+        : "primary";
 
     if (!isOpen) return null;
 
