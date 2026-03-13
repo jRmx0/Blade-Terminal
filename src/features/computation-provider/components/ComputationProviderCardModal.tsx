@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@server/db/db";
+import { getParametersByAlgorithm } from "@server/db/algorithmParameters";
 import type { ComputationProvider, ComputationAlgorithm, AlgorithmParameter, ComputationAlgorithmDetails, FetchedComputationMetadata } from "@/types/serviceTypes";
 import { useComputationProviderCardStore } from "@/features/computation-provider/stores/computationProviderCardStore";
 import { useComputationProvidersListModalStore } from "@/features/computation-provider/stores/computationProvidersListModalStore";
@@ -138,11 +139,7 @@ function AlgorithmRow({ algo, parameters, expanded, onToggle }: {
         () =>
             parameters !== undefined
                 ? Promise.resolve(parameters)
-                : db
-                    .table("computationAlgorithmParameters")
-                    .where("[algorithmId+computationProviderId]")
-                    .equals([algo.id, algo.computationProviderId])
-                    .toArray(),
+                : getParametersByAlgorithm(algo.id, algo.computationProviderId),
         [algo.id, algo.computationProviderId, parameters],
     );
     const resolvedParameters = parameters ?? liveParameters;

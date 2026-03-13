@@ -39,6 +39,16 @@ db.version(3)
         algorithmParameters: null,
     });
 
+db.version(4).stores({
+    environments: "id, name",
+    objects: "[id+environmentId], environmentId",
+    vertices: "[id+objectId+environmentId], objectId, environmentId",
+    computationProviders: "++id, name",
+    computationAlgorithms: "[id+computationProviderId], computationProviderId",
+    computationAlgorithmParameters: "[id+algorithmId+computationProviderId], algorithmId, computationProviderId, [algorithmId+computationProviderId]",
+    appEnumValues: "[enumGroup+value], enumGroup",
+});
+
 db.on("populate", () => {
     // seed appEnumValues for fresh databases
     return seedAppEnums();
