@@ -548,11 +548,6 @@ export default function ComputationProviderCard() {
         {
             id: "algorithms",
             title: "Algorithms",
-            badge: hasDraftAlgorithms ? (
-                <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-                    Unsaved
-                </span>
-            ) : undefined,
             content: !visibleAlgorithms && !isSavedProvider ? (
                 <p className="text-sm text-gray-400 italic text-center py-6">
                     Fetch metadata to preview algorithms. Save provider to keep them.
