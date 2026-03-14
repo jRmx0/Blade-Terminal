@@ -1,5 +1,5 @@
 import type { CardModalListPartItem } from "@/components/modals/card-modal/CardModal";
-import type { ComputationAlgorithmDetails } from "@/types/serviceTypes";
+import type { AlgorithmParameter, ComputationAlgorithm, ComputationAlgorithmDetails } from "@/types/serviceTypes";
 
 const ALGORITHM_PARAMETER_COLUMNS = [
     { id: "parameter", title: "Parameter" },
@@ -7,11 +7,43 @@ const ALGORITHM_PARAMETER_COLUMNS = [
     { id: "values", title: "Values / Default" },
 ] as const;
 
+interface BuildSavedAlgorithmDetailsOptions {
+    algorithms?: ComputationAlgorithm[];
+    algorithmParameters?: AlgorithmParameter[];
+}
+
 interface BuildAlgorithmSectionItemsOptions {
     algorithmDetails: ComputationAlgorithmDetails[];
     expanded: Record<number, boolean>;
     isDraft: boolean;
     onToggle: (algorithmId: number) => void;
+}
+
+export function buildSavedAlgorithmDetails({
+    algorithms,
+    algorithmParameters,
+}: BuildSavedAlgorithmDetailsOptions): ComputationAlgorithmDetails[] {
+    if (!algorithms) {
+        return [];
+    }
+
+    const parametersByAlgorithmId = new Map<number, AlgorithmParameter[]>();
+
+    for (const parameter of algorithmParameters ?? []) {
+        const existingParameters = parametersByAlgorithmId.get(parameter.algorithmId);
+
+        if (existingParameters) {
+            existingParameters.push(parameter);
+            continue;
+        }
+
+        parametersByAlgorithmId.set(parameter.algorithmId, [parameter]);
+    }
+
+    return algorithms.map((algorithm) => ({
+        algorithm,
+        parameters: parametersByAlgorithmId.get(algorithm.id) ?? [],
+    }));
 }
 
 export function buildAlgorithmSectionItems({

@@ -7,8 +7,7 @@ import { useComputationProvidersListModalStore } from "@/features/computation-pr
 import { saveComputationProvider, deleteComputationProvider } from "@server/db/computationProviders";
 import { testConnection, fetchMetadataPreview, persistFetchedMetadata } from "@/features/computation-provider/data/computationProviderService";
 import { useComputationProviderAutosave } from "@/features/computation-provider/hooks/useComputationProviderAutosave";
-import { buildAlgorithmSectionItems } from "@/features/computation-provider/utils/buildAlgorithmSectionItems";
-import { buildSavedAlgorithmDetails } from "@/features/computation-provider/utils/buildSavedAlgorithmDetails";
+import { buildAlgorithmSectionItems, buildSavedAlgorithmDetails } from "@/features/computation-provider/utils/algorithmSectionModel";
 import { validateComputationProviderUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
