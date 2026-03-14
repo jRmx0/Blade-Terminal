@@ -8,6 +8,7 @@ import { saveComputationProvider, deleteComputationProvider } from "@server/db/c
 import { testConnection, fetchMetadataPreview, persistFetchedMetadata } from "@/features/computation-provider/data/computationProviderService";
 import { useComputationProviderAutosave } from "@/features/computation-provider/hooks/useComputationProviderAutosave";
 import { buildAlgorithmSectionItems } from "@/features/computation-provider/utils/buildAlgorithmSectionItems";
+import { buildSavedAlgorithmDetails } from "@/features/computation-provider/utils/buildSavedAlgorithmDetails";
 import { validateComputationProviderUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
@@ -185,29 +186,10 @@ export default function ComputationProviderCard() {
     const savedState: CardModalSavedState = isDirty ? "unsaved" : editingId === null ? "nothing_to_save" : "saved";
     const isSavedProvider = editingId !== null;
     const visibleAlgorithms = draftMetadata?.algorithms ?? null;
-    const savedAlgorithmDetails = useMemo<ComputationAlgorithmDetails[]>(() => {
-        if (!algorithms) {
-            return [];
-        }
-
-        const parametersByAlgorithmId = new Map<number, AlgorithmParameter[]>();
-
-        for (const parameter of algorithmParameters ?? []) {
-            const existingParameters = parametersByAlgorithmId.get(parameter.algorithmId);
-
-            if (existingParameters) {
-                existingParameters.push(parameter);
-                continue;
-            }
-
-            parametersByAlgorithmId.set(parameter.algorithmId, [parameter]);
-        }
-
-        return algorithms.map((algorithm) => ({
-            algorithm,
-            parameters: parametersByAlgorithmId.get(algorithm.id) ?? [],
-        }));
-    }, [algorithmParameters, algorithms]);
+    const savedAlgorithmDetails = useMemo(
+        () => buildSavedAlgorithmDetails({ algorithms, algorithmParameters }),
+        [algorithmParameters, algorithms],
+    );
     const algorithmSectionItems = useMemo(
         () => buildAlgorithmSectionItems({
             algorithmDetails: visibleAlgorithms ?? savedAlgorithmDetails,
