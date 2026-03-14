@@ -7,13 +7,18 @@ import { useComputationProvidersListModalStore } from "@/features/computation-pr
 import { saveComputationProvider, deleteComputationProvider } from "@server/db/computationProviders";
 import { testConnection, fetchMetadataPreview, persistFetchedMetadata } from "@/features/computation-provider/data/computationProviderService";
 import { useComputationProviderAutosave } from "@/features/computation-provider/hooks/useComputationProviderAutosave";
-import { buildAlgorithmSectionItems, buildSavedAlgorithmDetails } from "@/features/computation-provider/utils/algorithmSectionModel";
+import {
+    ALGORITHM_PARAMETER_COLUMNS,
+    buildAlgorithmSectionRows,
+    buildSavedAlgorithmDetails,
+} from "@/features/computation-provider/utils/algorithmSectionModel";
 import { validateComputationProviderUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 import CardModal, {
     type CardModalFastTabConfig,
     type CardModalHeaderConfig,
+    type CardModalListPartRowId,
     type CardModalSavedState,
 } from "@/components/modals/card-modal/CardModal";
 import type { ModalActionStatus } from "@/components/modal/modal-action-bar/ModalActionBarAction";
@@ -147,7 +152,8 @@ export default function ComputationProviderCard() {
         general: true,
         algorithms: true,
     });
-    const [algoExpanded, setAlgoExpanded] = useState<Record<number, boolean>>({});
+    const [algoExpanded, setAlgoExpanded] = useState<Record<string, boolean>>({});
+    const [selectedAlgorithmRowIds, setSelectedAlgorithmRowIds] = useState<CardModalListPartRowId[]>([]);
     const [draftMetadata, setDraftMetadata] = useState<FetchedComputationMetadata | null>(null);
     const [testActionFeedback, setTestActionFeedback] = useState<ActionFeedback>(EMPTY_ACTION_FEEDBACK);
     const [fetchActionFeedback, setFetchActionFeedback] = useState<ActionFeedback>(EMPTY_ACTION_FEEDBACK);
@@ -192,10 +198,10 @@ export default function ComputationProviderCard() {
         () => buildSavedAlgorithmDetails({ algorithms, algorithmParameters }),
         [algorithmParameters, algorithms],
     );
-    const algorithmListPartItems = useMemo(
-        () => buildAlgorithmSectionItems({
+    const algorithmListPartRows = useMemo(
+        () => buildAlgorithmSectionRows({
             algorithmDetails: visibleAlgorithms ?? savedAlgorithmDetails,
-            expanded: algoExpanded,
+            isExpanded: (rowId, defaultExpanded = true) => algoExpanded[rowId] ?? defaultExpanded,
             isDraft: visibleAlgorithms !== null,
             onToggle: toggleAlgo,
         }),
@@ -211,6 +217,7 @@ export default function ComputationProviderCard() {
             setForm(EMPTY_FORM);
             setSavedForm(EMPTY_FORM);
             setAlgoExpanded({});
+            setSelectedAlgorithmRowIds([]);
             setDraftMetadata(null);
             setIsEditMode(false);
             setTestActionFeedback(EMPTY_ACTION_FEEDBACK);
@@ -352,8 +359,8 @@ export default function ComputationProviderCard() {
         setFastTabOpen((prev) => ({ ...prev, [key]: !prev[key] }));
     }
 
-    function toggleAlgo(id: number) {
-        setAlgoExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+    function toggleAlgo(rowId: string, defaultExpanded = true) {
+        setAlgoExpanded((prev) => ({ ...prev, [rowId]: !(prev[rowId] ?? defaultExpanded) }));
     }
 
     async function handleSave() {
@@ -503,9 +510,13 @@ export default function ComputationProviderCard() {
             expanded: !!fastTabOpen.algorithms,
             onToggle: () => toggleFastTab("algorithms"),
             listPart: {
-                items: algorithmListPartItems,
+                columns: ALGORITHM_PARAMETER_COLUMNS,
+                rows: algorithmListPartRows,
                 emptyMessage: algorithmListEmptyMessage,
                 maxHeightClassName: "max-h-96",
+                storageKey: "computation-provider-algorithms",
+                selectedRowIds: selectedAlgorithmRowIds,
+                onSelectedRowIdsChange: setSelectedAlgorithmRowIds,
             },
         },
     ];

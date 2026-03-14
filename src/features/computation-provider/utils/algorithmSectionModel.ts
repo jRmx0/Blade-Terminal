@@ -1,4 +1,4 @@
-import type { CardModalListPartItem } from "@/components/modals/card-modal/CardModal";
+import type { CardModalListPartColumn, CardModalListPartRow } from "@/components/modals/card-modal/CardModal";
 import type { AlgorithmParameter, ComputationAlgorithm, ComputationAlgorithmDetails, MetadataParamSection } from "@/types/serviceTypes";
 
 const SECTION_ORDER: MetadataParamSection[] = [
@@ -9,22 +9,23 @@ const SECTION_ORDER: MetadataParamSection[] = [
     "Execution",
 ];
 
-const ALGORITHM_PARAMETER_COLUMNS = [
-    { id: "parameter", title: "Parameter" },
-    { id: "type", title: "Type" },
-    { id: "values", title: "Values / Default" },
-] as const;
+export const ALGORITHM_PARAMETER_COLUMNS: CardModalListPartColumn[] = [
+    { id: "label", title: "Name", width: 220 },
+    { id: "type", title: "Type", width: 120 },
+    { id: "defaultValue", title: "Default Value", width: 180 },
+    { id: "enumValues", title: "Enum Values", width: 240 },
+];
 
 interface BuildSavedAlgorithmDetailsOptions {
     algorithms?: ComputationAlgorithm[];
     algorithmParameters?: AlgorithmParameter[];
 }
 
-interface BuildAlgorithmSectionItemsOptions {
+interface BuildAlgorithmSectionRowsOptions {
     algorithmDetails: ComputationAlgorithmDetails[];
-    expanded: Record<number, boolean>;
+    isExpanded: (rowId: string, defaultExpanded?: boolean) => boolean;
     isDraft: boolean;
-    onToggle: (algorithmId: number) => void;
+    onToggle: (rowId: string, defaultExpanded?: boolean) => void;
 }
 
 function getSectionRank(section: MetadataParamSection | undefined): number {
@@ -34,6 +35,48 @@ function getSectionRank(section: MetadataParamSection | undefined): number {
 
     const rank = SECTION_ORDER.indexOf(section);
     return rank === -1 ? SECTION_ORDER.length : rank;
+}
+
+function buildParameterRecordRow(algorithmId: number, parameter: AlgorithmParameter): CardModalListPartRow {
+    return {
+        kind: "record",
+        id: `algorithm-${algorithmId}-parameter-${parameter.id}`,
+        recordId: parameter.id,
+        cells: {
+            label: {
+                value: parameter.label,
+                title: parameter.label,
+            },
+            name: {
+                value: parameter.name,
+                title: parameter.name,
+                mono: true,
+                tone: "muted",
+            },
+            type: {
+                value: parameter.paramType,
+                mono: true,
+            },
+            defaultValue: parameter.defaultValue
+                ? {
+                    value: parameter.defaultValue,
+                    title: parameter.defaultValue,
+                }
+                : {
+                    value: "—",
+                    tone: "subtle",
+                },
+            enumValues: parameter.enumValues.length > 0
+                ? {
+                    value: parameter.enumValues.join(", "),
+                    title: parameter.enumValues.join(", "),
+                }
+                : {
+                    value: "—",
+                    tone: "subtle",
+                },
+        },
+    };
 }
 
 function buildParameterRows(algorithmId: number, parameters: AlgorithmParameter[]) {
@@ -46,53 +89,43 @@ function buildParameterRows(algorithmId: number, parameters: AlgorithmParameter[
         return left.label.localeCompare(right.label);
     });
 
-    const rows: CardModalListPartItem["rows"] = [];
-    let currentSection: MetadataParamSection | null = null;
+    const rows: CardModalListPartRow[] = [];
+    let currentSection: MetadataParamSection | undefined;
+    let currentSectionRows: AlgorithmParameter[] = [];
 
-    for (const parameter of sortedParameters) {
-        if (parameter.section && parameter.section !== currentSection) {
-            currentSection = parameter.section;
-            rows?.push({
-                id: `${algorithmId}-${currentSection}-section`,
-                variant: "section",
-                sectionTitle: currentSection,
-                cells: [],
-            });
-        } else if (!parameter.section) {
-            currentSection = null;
+    function pushCurrentSectionRows() {
+        if (currentSectionRows.length === 0) {
+            return;
         }
 
-        rows?.push({
-            id: `${algorithmId}-${parameter.id}-${parameter.name}`,
-            cells: [
-                {
-                    value: parameter.label,
-                    secondaryValue: parameter.name,
-                    secondaryTone: "muted",
-                    secondaryMono: true,
-                },
-                {
-                    value: parameter.paramType,
-                    mono: true,
-                },
-                parameter.enumValues.length > 0
-                    ? {
-                        value: parameter.enumValues.join(", "),
-                    }
-                    : parameter.defaultValue
-                        ? {
-                            value: `default: ${parameter.defaultValue}`,
-                            tone: "muted",
-                        }
-                        : {
-                            value: "—",
-                            tone: "subtle",
-                        },
-            ],
-        });
+        if (currentSection) {
+            rows.push({
+                kind: "group",
+                id: `algorithm-${algorithmId}-section-${currentSection}`,
+                label: currentSection,
+                expanded: true,
+                onToggle: () => undefined,
+                children: currentSectionRows.map((parameter) => buildParameterRecordRow(algorithmId, parameter)),
+            });
+        } else {
+            rows.push(...currentSectionRows.map((parameter) => buildParameterRecordRow(algorithmId, parameter)));
+        }
+
+        currentSectionRows = [];
     }
 
-    return rows ?? [];
+    for (const parameter of sortedParameters) {
+        if (parameter.section !== currentSection) {
+            pushCurrentSectionRows();
+            currentSection = parameter.section;
+        }
+
+        currentSectionRows.push(parameter);
+    }
+
+    pushCurrentSectionRows();
+
+    return rows;
 }
 
 export function buildSavedAlgorithmDetails({
@@ -122,20 +155,35 @@ export function buildSavedAlgorithmDetails({
     }));
 }
 
-export function buildAlgorithmSectionItems({
+export function buildAlgorithmSectionRows({
     algorithmDetails,
-    expanded,
+    isExpanded,
     isDraft,
     onToggle,
-}: BuildAlgorithmSectionItemsOptions): CardModalListPartItem[] {
-    return algorithmDetails.map(({ algorithm, parameters }) => ({
-        id: isDraft ? `draft-${algorithm.id}-${algorithm.name}` : `${algorithm.id}-${algorithm.computationProviderId}`,
-        title: algorithm.label,
-        subtitle: algorithm.name,
-        expanded: !!expanded[algorithm.id],
-        onToggle: () => onToggle(algorithm.id),
-        emptyMessage: "No parameters",
-        columns: [...ALGORITHM_PARAMETER_COLUMNS],
-        rows: buildParameterRows(algorithm.id, parameters),
-    }));
+}: BuildAlgorithmSectionRowsOptions): CardModalListPartRow[] {
+    return algorithmDetails.map(({ algorithm, parameters }) => {
+        const rowId = isDraft ? `draft-algorithm-${algorithm.id}-${algorithm.name}` : `algorithm-${algorithm.id}-${algorithm.computationProviderId}`;
+
+        return {
+            kind: "group",
+            id: rowId,
+            label: algorithm.label,
+            expanded: isExpanded(rowId, true),
+            onToggle: () => onToggle(rowId, true),
+            children: buildParameterRows(algorithm.id, parameters).map((row) => {
+                if (row.kind !== "group") {
+                    return row;
+                }
+
+                const groupRowId = `${rowId}-${row.id}`;
+
+                return {
+                    ...row,
+                    id: groupRowId,
+                    expanded: isExpanded(groupRowId, true),
+                    onToggle: () => onToggle(groupRowId, true),
+                };
+            }),
+        };
+    });
 }

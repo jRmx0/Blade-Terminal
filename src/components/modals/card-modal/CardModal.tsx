@@ -4,19 +4,33 @@ import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import InternalCardModalHeader, { type InternalCardModalSavedState } from "./internal/InternalCardModalHeader";
 import InternalCardModalFastTab from "./internal/InternalCardModalFastTab";
 import InternalCardModalFastTabField, { type InternalCardModalTextFieldHintState } from "./internal/InternalCardModalFastTabField";
-import InternalCardModalListPart, { type InternalCardModalListPartItem } from "./internal/InternalCardModalListPart";
+import InternalCardModalListPart, {
+    type InternalCardModalListPartColumn,
+    type InternalCardModalListPartRow,
+    type InternalCardModalListPartRowId,
+    type InternalCardModalListPartTableActions,
+} from "./internal/InternalCardModalListPart";
 import { useModalLifecycle } from "../../../hooks/modals/useModalLifecycle";
 
 export type CardModalSavedState = InternalCardModalSavedState;
-export type CardModalListPartItem = InternalCardModalListPartItem;
+export type CardModalListPartColumn = InternalCardModalListPartColumn;
+export type CardModalListPartRow = InternalCardModalListPartRow;
+export type CardModalListPartRowId = InternalCardModalListPartRowId;
+export type CardModalListPartTableActions = InternalCardModalListPartTableActions;
 
 export interface CardModalListPartConfig {
     title?: ReactNode;
     badge?: ReactNode;
     content?: ReactNode;
-    items?: InternalCardModalListPartItem[];
+    columns?: InternalCardModalListPartColumn[];
+    rows?: InternalCardModalListPartRow[];
     emptyMessage?: ReactNode;
     maxHeightClassName?: string;
+    editable?: boolean;
+    storageKey?: string;
+    selectedRowIds?: InternalCardModalListPartRowId[];
+    onSelectedRowIdsChange?: (nextSelectedRowIds: InternalCardModalListPartRowId[]) => void;
+    tableActions?: InternalCardModalListPartTableActions;
 }
 
 export interface CardModalHeaderConfig {
@@ -137,9 +151,15 @@ export default function CardModal({
                                 <InternalCardModalListPart
                                     title={fastTab.listPart.title}
                                     badge={fastTab.listPart.badge}
-                                    items={fastTab.listPart.items}
+                                    columns={fastTab.listPart.columns}
+                                    rows={fastTab.listPart.rows}
                                     emptyMessage={fastTab.listPart.emptyMessage}
                                     maxHeightClassName={fastTab.listPart.maxHeightClassName}
+                                    editable={fastTab.listPart.editable}
+                                    storageKey={fastTab.listPart.storageKey}
+                                    selectedRowIds={fastTab.listPart.selectedRowIds}
+                                    onSelectedRowIdsChange={fastTab.listPart.onSelectedRowIdsChange}
+                                    tableActions={fastTab.listPart.tableActions}
                                 >
                                     {fastTab.listPart.content}
                                 </InternalCardModalListPart>
@@ -152,9 +172,15 @@ export default function CardModal({
                             key={section.id}
                             title={section.title}
                             badge={section.badge}
-                            items={section.items}
+                            columns={section.columns}
+                            rows={section.rows}
                             emptyMessage={section.emptyMessage}
                             maxHeightClassName={section.maxHeightClassName}
+                            editable={section.editable}
+                            storageKey={section.storageKey}
+                            selectedRowIds={section.selectedRowIds}
+                            onSelectedRowIdsChange={section.onSelectedRowIdsChange}
+                            tableActions={section.tableActions}
                         >
                             {section.content}
                         </InternalCardModalListPart>
