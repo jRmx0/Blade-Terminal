@@ -7,13 +7,13 @@ import { useComputationProvidersListModalStore } from "@/features/computation-pr
 import { saveComputationProvider, deleteComputationProvider } from "@server/db/computationProviders";
 import { testConnection, fetchMetadataPreview, persistFetchedMetadata } from "@/features/computation-provider/data/computationProviderService";
 import { useComputationProviderAutosave } from "@/features/computation-provider/hooks/useComputationProviderAutosave";
+import { buildAlgorithmSectionItems } from "@/features/computation-provider/utils/buildAlgorithmSectionItems";
 import { validateComputationProviderUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 import CardModal, {
     type CardModalFastTabConfig,
     type CardModalHeaderConfig,
-    type CardModalListPartItem,
     type CardModalSavedState,
     type CardModalSectionConfig,
 } from "@/components/modals/card-modal/CardModal";
@@ -36,11 +36,6 @@ type ActionFeedback = {
 
 const EMPTY_ACTION_FEEDBACK: ActionFeedback = {};
 const MIN_ACTION_LOADING_MS = 500;
-const ALGORITHM_PARAMETER_COLUMNS = [
-    { id: "parameter", title: "Parameter" },
-    { id: "type", title: "Type" },
-    { id: "values", title: "Values / Default" },
-] as const;
 
 function normalizeForm(form: ComputationProviderForm): ComputationProviderForm {
     return {
@@ -213,47 +208,15 @@ export default function ComputationProviderCard() {
             parameters: parametersByAlgorithmId.get(algorithm.id) ?? [],
         }));
     }, [algorithmParameters, algorithms]);
-    const algorithmSectionItems = useMemo<CardModalListPartItem[]>(() => {
-        const sourceAlgorithms = visibleAlgorithms ?? savedAlgorithmDetails;
-
-        return sourceAlgorithms.map(({ algorithm, parameters }) => ({
-            id: visibleAlgorithms ? `draft-${algorithm.id}-${algorithm.name}` : `${algorithm.id}-${algorithm.computationProviderId}`,
-            title: algorithm.label,
-            subtitle: algorithm.name,
-            expanded: !!algoExpanded[algorithm.id],
-            onToggle: () => toggleAlgo(algorithm.id),
-            emptyMessage: "No parameters",
-            columns: [...ALGORITHM_PARAMETER_COLUMNS],
-            rows: parameters.map((parameter) => ({
-                id: `${algorithm.id}-${parameter.id}-${parameter.name}`,
-                cells: [
-                    {
-                        value: parameter.label,
-                        secondaryValue: parameter.name,
-                        secondaryTone: "muted",
-                        secondaryMono: true,
-                    },
-                    {
-                        value: parameter.paramType,
-                        mono: true,
-                    },
-                    parameter.enumValues.length > 0
-                        ? {
-                            value: parameter.enumValues.join(", "),
-                        }
-                        : parameter.defaultValue
-                            ? {
-                                value: `default: ${parameter.defaultValue}`,
-                                tone: "muted",
-                            }
-                            : {
-                                value: "—",
-                                tone: "subtle",
-                            },
-                ],
-            })),
-        }));
-    }, [algoExpanded, savedAlgorithmDetails, visibleAlgorithms]);
+    const algorithmSectionItems = useMemo(
+        () => buildAlgorithmSectionItems({
+            algorithmDetails: visibleAlgorithms ?? savedAlgorithmDetails,
+            expanded: algoExpanded,
+            isDraft: visibleAlgorithms !== null,
+            onToggle: toggleAlgo,
+        }),
+        [algoExpanded, savedAlgorithmDetails, visibleAlgorithms],
+    );
     const algorithmSectionEmptyMessage = !visibleAlgorithms && !isSavedProvider
         ? "Fetch metadata to preview algorithms. Save provider to keep them."
         : "No algorithms. Fetch metadata first.";
