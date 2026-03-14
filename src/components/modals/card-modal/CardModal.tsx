@@ -4,10 +4,11 @@ import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import InternalCardModalHeader, { type InternalCardModalSavedState } from "./internal/InternalCardModalHeader";
 import InternalCardModalFastTab from "./internal/InternalCardModalFastTab";
 import InternalCardModalFastTabField, { type InternalCardModalTextFieldHintState } from "./internal/InternalCardModalFastTabField";
-import InternalCardModalListPart from "./internal/InternalCardModalListPart";
+import InternalCardModalListPart, { type InternalCardModalListPartItem } from "./internal/InternalCardModalListPart";
 import { useModalLifecycle } from "../../../hooks/modals/useModalLifecycle";
 
 export type CardModalSavedState = InternalCardModalSavedState;
+export type CardModalListPartItem = InternalCardModalListPartItem;
 
 export interface CardModalHeaderConfig {
     recordId: number | null;
@@ -50,7 +51,9 @@ export interface CardModalSectionConfig {
     id: string;
     title: string;
     badge?: ReactNode;
-    content: ReactNode;
+    content?: ReactNode;
+    items?: InternalCardModalListPartItem[];
+    emptyMessage?: ReactNode;
 }
 
 export interface CardModalProps {
@@ -128,7 +131,13 @@ export default function CardModal({
                         </InternalCardModalFastTab>
                     ))}
                     {sections.map((section) => (
-                        <InternalCardModalListPart key={section.id} title={section.title} badge={section.badge}>
+                        <InternalCardModalListPart
+                            key={section.id}
+                            title={section.title}
+                            badge={section.badge}
+                            items={section.items}
+                            emptyMessage={section.emptyMessage}
+                        >
                             {section.content}
                         </InternalCardModalListPart>
                     ))}

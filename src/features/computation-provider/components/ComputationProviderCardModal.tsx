@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@server/db/db";
-import { getParametersByAlgorithm } from "@server/db/algorithmParameters";
 import type { ComputationProvider, ComputationAlgorithm, AlgorithmParameter, ComputationAlgorithmDetails, FetchedComputationMetadata } from "@/types/serviceTypes";
 import { useComputationProviderCardStore } from "@/features/computation-provider/stores/computationProviderCardStore";
 import { useComputationProvidersListModalStore } from "@/features/computation-provider/stores/computationProvidersListModalStore";
@@ -14,6 +13,7 @@ import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 import CardModal, {
     type CardModalFastTabConfig,
     type CardModalHeaderConfig,
+    type CardModalListPartItem,
     type CardModalSavedState,
     type CardModalSectionConfig,
 } from "@/components/modals/card-modal/CardModal";
@@ -36,6 +36,11 @@ type ActionFeedback = {
 
 const EMPTY_ACTION_FEEDBACK: ActionFeedback = {};
 const MIN_ACTION_LOADING_MS = 500;
+const ALGORITHM_PARAMETER_COLUMNS = [
+    { id: "parameter", title: "Parameter" },
+    { id: "type", title: "Type" },
+    { id: "values", title: "Values / Default" },
+] as const;
 
 function normalizeForm(form: ComputationProviderForm): ComputationProviderForm {
     return {
@@ -127,77 +132,6 @@ async function withMinimumLoadingTime<T>(operation: () => Promise<T>, minDuratio
     }
 }
 
-// ─── AlgorithmRow ─────────────────────────────────────────────────────────────
-
-function AlgorithmRow({ algo, parameters, expanded, onToggle }: {
-    algo: ComputationAlgorithm;
-    parameters?: AlgorithmParameter[];
-    expanded: boolean;
-    onToggle: () => void;
-}) {
-    const liveParameters = useLiveQuery<AlgorithmParameter[]>(
-        () =>
-            parameters !== undefined
-                ? Promise.resolve(parameters)
-                : getParametersByAlgorithm(algo.id, algo.computationProviderId),
-        [algo.id, algo.computationProviderId, parameters],
-    );
-    const resolvedParameters = parameters ?? liveParameters;
-
-    return (
-        <div className="border-b border-gray-100 last:border-b-0">
-            <button
-                type="button"
-                onClick={onToggle}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-                <span className="material-symbols-outlined text-gray-400 shrink-0" style={{ fontSize: 16 }}>
-                    {expanded ? "expand_more" : "chevron_right"}
-                </span>
-                <span className="text-sm font-medium text-gray-800">{algo.label}</span>
-                <span className="text-xs text-gray-400 font-mono ml-1">{algo.name}</span>
-            </button>
-            {expanded && (
-                <div className="ml-7 mr-3 pb-3">
-                    {!resolvedParameters || resolvedParameters.length === 0 ? (
-                        <p className="text-xs text-gray-400 italic px-1 py-1">No parameters</p>
-                    ) : (
-                        <table className="w-full text-xs">
-                            <thead>
-                                <tr className="text-gray-400 uppercase tracking-wide">
-                                    <th className="text-left font-medium pb-1 pr-4">Parameter</th>
-                                    <th className="text-left font-medium pb-1 pr-4">Type</th>
-                                    <th className="text-left font-medium pb-1">Values / Default</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {resolvedParameters.map((p) => (
-                                    <tr key={p.name} className="border-t border-gray-100">
-                                        <td className="py-1 pr-4">
-                                            <span className="text-gray-800">{p.label}</span>
-                                            <span className="ml-1.5 text-gray-400 font-mono">{p.name}</span>
-                                        </td>
-                                        <td className="py-1 pr-4 font-mono text-gray-600">{p.paramType}</td>
-                                        <td className="py-1 text-gray-600">
-                                            {p.enumValues.length > 0 ? (
-                                                <span>{p.enumValues.join(", ")}</span>
-                                            ) : p.defaultValue ? (
-                                                <span className="text-gray-400">default: {p.defaultValue}</span>
-                                            ) : (
-                                                <span className="text-gray-300">—</span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-}
-
 // ─── ComputationProviderCard ──────────────────────────────────────────────────
 
 export default function ComputationProviderCard() {
@@ -232,6 +166,13 @@ export default function ComputationProviderCard() {
                 : Promise.resolve([]),
         [editingId],
     );
+    const algorithmParameters = useLiveQuery<AlgorithmParameter[]>(
+        () =>
+            editingId !== null
+                ? db.table("computationAlgorithmParameters").where("computationProviderId").equals(editingId).toArray()
+                : Promise.resolve([]),
+        [editingId],
+    );
 
     const isStale = form.urlAtLastFetch !== null && form.url.trim() !== form.urlAtLastFetch;
     const lastFetchLabel =
@@ -249,6 +190,73 @@ export default function ComputationProviderCard() {
     const savedState: CardModalSavedState = isDirty ? "unsaved" : editingId === null ? "nothing_to_save" : "saved";
     const isSavedProvider = editingId !== null;
     const visibleAlgorithms = draftMetadata?.algorithms ?? null;
+    const savedAlgorithmDetails = useMemo<ComputationAlgorithmDetails[]>(() => {
+        if (!algorithms) {
+            return [];
+        }
+
+        const parametersByAlgorithmId = new Map<number, AlgorithmParameter[]>();
+
+        for (const parameter of algorithmParameters ?? []) {
+            const existingParameters = parametersByAlgorithmId.get(parameter.algorithmId);
+
+            if (existingParameters) {
+                existingParameters.push(parameter);
+                continue;
+            }
+
+            parametersByAlgorithmId.set(parameter.algorithmId, [parameter]);
+        }
+
+        return algorithms.map((algorithm) => ({
+            algorithm,
+            parameters: parametersByAlgorithmId.get(algorithm.id) ?? [],
+        }));
+    }, [algorithmParameters, algorithms]);
+    const algorithmSectionItems = useMemo<CardModalListPartItem[]>(() => {
+        const sourceAlgorithms = visibleAlgorithms ?? savedAlgorithmDetails;
+
+        return sourceAlgorithms.map(({ algorithm, parameters }) => ({
+            id: visibleAlgorithms ? `draft-${algorithm.id}-${algorithm.name}` : `${algorithm.id}-${algorithm.computationProviderId}`,
+            title: algorithm.label,
+            subtitle: algorithm.name,
+            expanded: !!algoExpanded[algorithm.id],
+            onToggle: () => toggleAlgo(algorithm.id),
+            emptyMessage: "No parameters",
+            columns: [...ALGORITHM_PARAMETER_COLUMNS],
+            rows: parameters.map((parameter) => ({
+                id: `${algorithm.id}-${parameter.id}-${parameter.name}`,
+                cells: [
+                    {
+                        value: parameter.label,
+                        secondaryValue: parameter.name,
+                        secondaryTone: "muted",
+                        secondaryMono: true,
+                    },
+                    {
+                        value: parameter.paramType,
+                        mono: true,
+                    },
+                    parameter.enumValues.length > 0
+                        ? {
+                            value: parameter.enumValues.join(", "),
+                        }
+                        : parameter.defaultValue
+                            ? {
+                                value: `default: ${parameter.defaultValue}`,
+                                tone: "muted",
+                            }
+                            : {
+                                value: "—",
+                                tone: "subtle",
+                            },
+                ],
+            })),
+        }));
+    }, [algoExpanded, savedAlgorithmDetails, visibleAlgorithms]);
+    const algorithmSectionEmptyMessage = !visibleAlgorithms && !isSavedProvider
+        ? "Fetch metadata to preview algorithms. Save provider to keep them."
+        : "No algorithms. Fetch metadata first.";
 
     useEffect(() => {
         if (!isOpen) {
@@ -548,38 +556,8 @@ export default function ComputationProviderCard() {
         {
             id: "algorithms",
             title: "Algorithms",
-            content: !visibleAlgorithms && !isSavedProvider ? (
-                <p className="text-sm text-gray-400 italic text-center py-6">
-                    Fetch metadata to preview algorithms. Save provider to keep them.
-                </p>
-            ) : visibleAlgorithms ? (
-                <div className="border border-gray-200 rounded bg-white overflow-hidden">
-                    {visibleAlgorithms.map(({ algorithm, parameters }) => (
-                        <AlgorithmRow
-                            key={`draft-${algorithm.id}-${algorithm.name}`}
-                            algo={algorithm}
-                            parameters={parameters}
-                            expanded={!!algoExpanded[algorithm.id]}
-                            onToggle={() => toggleAlgo(algorithm.id)}
-                        />
-                    ))}
-                </div>
-            ) : !algorithms || algorithms.length === 0 ? (
-                <p className="text-sm text-gray-400 italic text-center py-6">
-                    No algorithms. Fetch metadata first.
-                </p>
-            ) : (
-                <div className="border border-gray-200 rounded bg-white overflow-hidden">
-                    {algorithms.map((algo) => (
-                        <AlgorithmRow
-                            key={`${algo.id}-${algo.computationProviderId}`}
-                            algo={algo}
-                            expanded={!!algoExpanded[algo.id]}
-                            onToggle={() => toggleAlgo(algo.id)}
-                        />
-                    ))}
-                </div>
-            ),
+            items: algorithmSectionItems,
+            emptyMessage: algorithmSectionEmptyMessage,
         },
     ];
 
