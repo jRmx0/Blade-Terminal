@@ -87,7 +87,7 @@ export default function CardModal({
     fastTabs = [],
     sections = [],
     children,
-    widthClassName = "w-180",
+    widthClassName = "w-240",
     bodyClassName = "flex flex-col flex-1 min-h-0 overflow-y-auto p-4 gap-3",
     canCloseOnEscape = true,
 }: CardModalProps) {
