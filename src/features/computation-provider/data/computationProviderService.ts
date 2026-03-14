@@ -72,6 +72,7 @@ function buildFetchedMetadata(provider: ComputationProvider, data: MetadataRespo
                     id: parameterIndex + 1,
                     algorithmId,
                     computationProviderId,
+                    section: parameter.section,
                     name: parameter.name,
                     label: parameter.label,
                     paramType: parameter.paramType,

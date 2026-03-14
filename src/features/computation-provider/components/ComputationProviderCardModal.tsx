@@ -15,7 +15,6 @@ import CardModal, {
     type CardModalFastTabConfig,
     type CardModalHeaderConfig,
     type CardModalSavedState,
-    type CardModalSectionConfig,
 } from "@/components/modals/card-modal/CardModal";
 import type { ModalActionStatus } from "@/components/modal/modal-action-bar/ModalActionBarAction";
 
@@ -86,6 +85,7 @@ function areAlgorithmDetailsEqual(a: ComputationAlgorithmDetails[], b: Computati
                 && leftParam.algorithmId === rightParam.algorithmId
                 && leftParam.name === rightParam.name
                 && leftParam.label === rightParam.label
+                && leftParam.section === rightParam.section
                 && leftParam.paramType === rightParam.paramType
                 && leftParam.defaultValue === rightParam.defaultValue
                 && leftParam.enumValues.length === rightParam.enumValues.length
@@ -143,7 +143,10 @@ export default function ComputationProviderCard() {
     const [savedForm, setSavedForm] = useState<ComputationProviderForm>(EMPTY_FORM);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [isEditMode, setIsEditMode] = useState(false);
-    const [fastTabOpen, setFastTabOpen] = useState<Record<string, boolean>>({ general: true });
+    const [fastTabOpen, setFastTabOpen] = useState<Record<string, boolean>>({
+        general: true,
+        algorithms: true,
+    });
     const [algoExpanded, setAlgoExpanded] = useState<Record<number, boolean>>({});
     const [draftMetadata, setDraftMetadata] = useState<FetchedComputationMetadata | null>(null);
     const [testActionFeedback, setTestActionFeedback] = useState<ActionFeedback>(EMPTY_ACTION_FEEDBACK);
@@ -189,7 +192,7 @@ export default function ComputationProviderCard() {
         () => buildSavedAlgorithmDetails({ algorithms, algorithmParameters }),
         [algorithmParameters, algorithms],
     );
-    const algorithmSectionItems = useMemo(
+    const algorithmListPartItems = useMemo(
         () => buildAlgorithmSectionItems({
             algorithmDetails: visibleAlgorithms ?? savedAlgorithmDetails,
             expanded: algoExpanded,
@@ -198,7 +201,7 @@ export default function ComputationProviderCard() {
         }),
         [algoExpanded, savedAlgorithmDetails, visibleAlgorithms],
     );
-    const algorithmSectionEmptyMessage = !visibleAlgorithms && !isSavedProvider
+    const algorithmListEmptyMessage = !visibleAlgorithms && !isSavedProvider
         ? "Fetch metadata to preview algorithms. Save provider to keep them."
         : "No algorithms. Fetch metadata first.";
 
@@ -494,14 +497,15 @@ export default function ComputationProviderCard() {
                 },
             ],
         },
-    ];
-
-    const sections: CardModalSectionConfig[] = [
         {
             id: "algorithms",
             title: "Algorithms",
-            items: algorithmSectionItems,
-            emptyMessage: algorithmSectionEmptyMessage,
+            expanded: !!fastTabOpen.algorithms,
+            onToggle: () => toggleFastTab("algorithms"),
+            listPart: {
+                items: algorithmListPartItems,
+                emptyMessage: algorithmListEmptyMessage,
+            },
         },
     ];
 
@@ -536,7 +540,6 @@ export default function ComputationProviderCard() {
                 },
             ]}
             fastTabs={fastTabs}
-            sections={sections}
         />
     );
 }

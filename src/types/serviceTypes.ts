@@ -23,6 +23,13 @@ export interface ComputationAlgorithm {
 
 // ─── Algorithm Parameter ──────────────────────────────────────────────────────
 
+export type MetadataParamSection =
+    | "General"
+    | "Coverage path"
+    | "Environment"
+    | "Object"
+    | "Execution";
+
 export type AlgoParamType =
     | "integer"
     | "decimal"
@@ -38,6 +45,7 @@ export interface AlgorithmParameter {
     id: number;
     algorithmId: number;
     computationProviderId: number;
+    section?: MetadataParamSection;
     name: string;
     label: string;
     paramType: AlgoParamType;
@@ -90,6 +98,7 @@ export type FetchMetadataPreviewResult =
 // ─── /metadata response contract ─────────────────────────────────────────────
 
 export interface MetadataParamResponse {
+    section?: MetadataParamSection;
     name: string;
     label: string;
     paramType: AlgoParamType;

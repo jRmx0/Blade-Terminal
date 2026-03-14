@@ -10,6 +10,14 @@ import { useModalLifecycle } from "../../../hooks/modals/useModalLifecycle";
 export type CardModalSavedState = InternalCardModalSavedState;
 export type CardModalListPartItem = InternalCardModalListPartItem;
 
+export interface CardModalListPartConfig {
+    title?: ReactNode;
+    badge?: ReactNode;
+    content?: ReactNode;
+    items?: InternalCardModalListPartItem[];
+    emptyMessage?: ReactNode;
+}
+
 export interface CardModalHeaderConfig {
     recordId: number | null;
     recordName: string;
@@ -44,17 +52,14 @@ export interface CardModalFastTabConfig {
     onToggle: () => void;
     disabled?: boolean;
     fields?: CardModalFieldConfig[];
+    listPart?: CardModalListPartConfig;
     content?: ReactNode;
 }
 
-export interface CardModalSectionConfig {
+export type CardModalSectionConfig = CardModalListPartConfig & {
     id: string;
-    title: string;
-    badge?: ReactNode;
-    content?: ReactNode;
-    items?: InternalCardModalListPartItem[];
-    emptyMessage?: ReactNode;
-}
+    title: ReactNode;
+};
 
 export interface CardModalProps {
     isOpen: boolean;
@@ -127,6 +132,16 @@ export default function CardModal({
                                     onConfirm={field.onConfirm}
                                 />
                             ))}
+                            {fastTab.listPart ? (
+                                <InternalCardModalListPart
+                                    title={fastTab.listPart.title}
+                                    badge={fastTab.listPart.badge}
+                                    items={fastTab.listPart.items}
+                                    emptyMessage={fastTab.listPart.emptyMessage}
+                                >
+                                    {fastTab.listPart.content}
+                                </InternalCardModalListPart>
+                            ) : null}
                             {fastTab.content}
                         </InternalCardModalFastTab>
                     ))}

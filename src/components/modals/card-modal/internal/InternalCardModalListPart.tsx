@@ -7,6 +7,8 @@ export interface InternalCardModalListPartColumn {
 
 export interface InternalCardModalListPartRow {
     id: string;
+    variant?: "data" | "section";
+    sectionTitle?: ReactNode;
     cells: InternalCardModalListPartCell[];
 }
 
@@ -31,7 +33,7 @@ export interface InternalCardModalListPartItem {
 }
 
 interface InternalCardModalListPartProps {
-    title: string;
+    title?: ReactNode;
     badge?: ReactNode;
     items?: InternalCardModalListPartItem[];
     emptyMessage?: ReactNode;
@@ -46,6 +48,7 @@ export default function InternalCardModalListPart({
     children,
 }: InternalCardModalListPartProps) {
     const hasListContent = items !== undefined;
+    const hasHeader = title !== undefined || badge !== undefined;
 
     function getToneClassName(tone: InternalCardModalListPartCell["tone"] = "default") {
         switch (tone) {
@@ -60,10 +63,12 @@ export default function InternalCardModalListPart({
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 px-1">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{title}</span>
-                {badge}
-            </div>
+            {hasHeader ? (
+                <div className="flex items-center gap-2 px-1">
+                    {title ? <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{title}</span> : null}
+                    {badge}
+                </div>
+            ) : null}
             {hasListContent ? (
                 items.length === 0 ? (
                     emptyMessage ? (
@@ -111,25 +116,33 @@ export default function InternalCardModalListPart({
                                                     ) : null}
                                                     <tbody>
                                                         {item.rows.map((row) => (
-                                                            <tr key={row.id} className="border-t border-gray-100">
-                                                                {row.cells.map((cell, index) => (
-                                                                    <td
-                                                                        key={`${row.id}-${index}`}
-                                                                        className={`py-1 ${index < row.cells.length - 1 ? "pr-4" : ""} text-gray-600`}
-                                                                    >
-                                                                        <span className={`${getToneClassName(cell.tone)} ${cell.mono ? "font-mono" : ""}`.trim()}>
-                                                                            {cell.value}
-                                                                        </span>
-                                                                        {cell.secondaryValue ? (
-                                                                            <span
-                                                                                className={`ml-1.5 ${getToneClassName(cell.secondaryTone ?? "muted")} ${cell.secondaryMono ? "font-mono" : ""}`.trim()}
-                                                                            >
-                                                                                {cell.secondaryValue}
-                                                                            </span>
-                                                                        ) : null}
+                                                            row.variant === "section" ? (
+                                                                <tr key={row.id} className="border-t border-gray-100 bg-gray-50">
+                                                                    <td colSpan={Math.max(columns.length, 1)} className="py-2 pr-4 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                                                        {row.sectionTitle}
                                                                     </td>
-                                                                ))}
-                                                            </tr>
+                                                                </tr>
+                                                            ) : (
+                                                                <tr key={row.id} className="border-t border-gray-100">
+                                                                    {row.cells.map((cell, index) => (
+                                                                        <td
+                                                                            key={`${row.id}-${index}`}
+                                                                            className={`py-1 ${index < row.cells.length - 1 ? "pr-4" : ""} text-gray-600`}
+                                                                        >
+                                                                            <span className={`${getToneClassName(cell.tone)} ${cell.mono ? "font-mono" : ""}`.trim()}>
+                                                                                {cell.value}
+                                                                            </span>
+                                                                            {cell.secondaryValue ? (
+                                                                                <span
+                                                                                    className={`ml-1.5 ${getToneClassName(cell.secondaryTone ?? "muted")} ${cell.secondaryMono ? "font-mono" : ""}`.trim()}
+                                                                                >
+                                                                                    {cell.secondaryValue}
+                                                                                </span>
+                                                                            ) : null}
+                                                                        </td>
+                                                                    ))}
+                                                                </tr>
+                                                            )
                                                         ))}
                                                     </tbody>
                                                 </table>
