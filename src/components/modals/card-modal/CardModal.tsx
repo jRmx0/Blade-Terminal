@@ -16,6 +16,7 @@ export interface CardModalListPartConfig {
     content?: ReactNode;
     items?: InternalCardModalListPartItem[];
     emptyMessage?: ReactNode;
+    maxHeightClassName?: string;
 }
 
 export interface CardModalHeaderConfig {
@@ -87,7 +88,7 @@ export default function CardModal({
     sections = [],
     children,
     widthClassName = "w-180",
-    bodyClassName = "flex flex-col flex-1 overflow-y-auto p-4 gap-3",
+    bodyClassName = "flex flex-col flex-1 min-h-0 overflow-y-auto p-4 gap-3",
     canCloseOnEscape = true,
 }: CardModalProps) {
     const { handleBackdropMouseDown } = useModalLifecycle({
@@ -104,7 +105,7 @@ export default function CardModal({
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 select-none"
             onMouseDown={handleBackdropMouseDown}
         >
-            <div className={`flex flex-col ${widthClassName} max-h-[90vh] bg-gray-100 rounded-lg shadow-xl overflow-visible`}>
+            <div className={`flex flex-col ${widthClassName} max-h-[90vh] min-h-0 bg-gray-100 rounded-lg shadow-xl overflow-hidden`}>
                 <ModalTitle title={title} onClose={onClose} />
                 {header ? <InternalCardModalHeader {...header} /> : null}
                 <ModalActionBar actions={actionBarActions} />
@@ -138,6 +139,7 @@ export default function CardModal({
                                     badge={fastTab.listPart.badge}
                                     items={fastTab.listPart.items}
                                     emptyMessage={fastTab.listPart.emptyMessage}
+                                    maxHeightClassName={fastTab.listPart.maxHeightClassName}
                                 >
                                     {fastTab.listPart.content}
                                 </InternalCardModalListPart>
@@ -152,6 +154,7 @@ export default function CardModal({
                             badge={section.badge}
                             items={section.items}
                             emptyMessage={section.emptyMessage}
+                            maxHeightClassName={section.maxHeightClassName}
                         >
                             {section.content}
                         </InternalCardModalListPart>

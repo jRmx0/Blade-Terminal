@@ -505,6 +505,7 @@ export default function ComputationProviderCard() {
             listPart: {
                 items: algorithmListPartItems,
                 emptyMessage: algorithmListEmptyMessage,
+                maxHeightClassName: "max-h-96",
             },
         },
     ];

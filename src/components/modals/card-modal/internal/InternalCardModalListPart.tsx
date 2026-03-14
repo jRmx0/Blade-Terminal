@@ -32,11 +32,12 @@ export interface InternalCardModalListPartItem {
     rows?: InternalCardModalListPartRow[];
 }
 
-interface InternalCardModalListPartProps {
+export interface InternalCardModalListPartProps {
     title?: ReactNode;
     badge?: ReactNode;
     items?: InternalCardModalListPartItem[];
     emptyMessage?: ReactNode;
+    maxHeightClassName?: string;
     children?: ReactNode;
 }
 
@@ -45,10 +46,12 @@ export default function InternalCardModalListPart({
     badge,
     items,
     emptyMessage,
+    maxHeightClassName,
     children,
 }: InternalCardModalListPartProps) {
     const hasListContent = items !== undefined;
     const hasHeader = title !== undefined || badge !== undefined;
+    const listContentClassName = maxHeightClassName ? `overflow-y-auto ${maxHeightClassName}` : "";
 
     function getToneClassName(tone: InternalCardModalListPartCell["tone"] = "default") {
         switch (tone) {
@@ -62,7 +65,7 @@ export default function InternalCardModalListPart({
     }
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex shrink-0 flex-col gap-2">
             {hasHeader ? (
                 <div className="flex items-center gap-2 px-1">
                     {title ? <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{title}</span> : null}
@@ -76,82 +79,84 @@ export default function InternalCardModalListPart({
                     ) : null
                 ) : (
                     <div className="border border-gray-200 rounded bg-white overflow-hidden">
-                        {items.map((item) => {
-                            const columns = item.columns ?? [];
+                        <div className={listContentClassName}>
+                            {items.map((item) => {
+                                const columns = item.columns ?? [];
 
-                            return (
-                                <div key={item.id} className="border-b border-gray-100 last:border-b-0">
-                                    <button
-                                        type="button"
-                                        onClick={item.onToggle}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 transition-colors cursor-pointer"
-                                    >
-                                        <span className="material-symbols-outlined text-gray-400 shrink-0" style={{ fontSize: 16 }}>
-                                            {item.expanded ? "expand_more" : "chevron_right"}
-                                        </span>
-                                        <span className="text-sm font-medium text-gray-800">{item.title}</span>
-                                        {item.subtitle ? (
-                                            <span className="text-xs text-gray-400 font-mono ml-1">{item.subtitle}</span>
-                                        ) : null}
-                                    </button>
-                                    {item.expanded ? (
-                                        <div className="ml-7 mr-3 pb-3">
-                                            {!item.rows || item.rows.length === 0 ? (
-                                                <p className="text-xs text-gray-400 italic px-1 py-1">{item.emptyMessage ?? "No items"}</p>
-                                            ) : (
-                                                <table className="w-full text-xs">
-                                                    {columns.length > 0 ? (
-                                                        <thead>
-                                                            <tr className="text-gray-400 uppercase tracking-wide">
-                                                                {columns.map((column, index) => (
-                                                                    <th
-                                                                        key={column.id}
-                                                                        className={`text-left font-medium pb-1 ${index < columns.length - 1 ? "pr-4" : ""}`}
-                                                                    >
-                                                                        {column.title}
-                                                                    </th>
-                                                                ))}
-                                                            </tr>
-                                                        </thead>
-                                                    ) : null}
-                                                    <tbody>
-                                                        {item.rows.map((row) => (
-                                                            row.variant === "section" ? (
-                                                                <tr key={row.id} className="border-t border-gray-100 bg-gray-50">
-                                                                    <td colSpan={Math.max(columns.length, 1)} className="py-2 pr-4 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                                                                        {row.sectionTitle}
-                                                                    </td>
-                                                                </tr>
-                                                            ) : (
-                                                                <tr key={row.id} className="border-t border-gray-100">
-                                                                    {row.cells.map((cell, index) => (
-                                                                        <td
-                                                                            key={`${row.id}-${index}`}
-                                                                            className={`py-1 ${index < row.cells.length - 1 ? "pr-4" : ""} text-gray-600`}
+                                return (
+                                    <div key={item.id} className="border-b border-gray-100 last:border-b-0">
+                                        <button
+                                            type="button"
+                                            onClick={item.onToggle}
+                                            className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 transition-colors cursor-pointer"
+                                        >
+                                            <span className="material-symbols-outlined text-gray-400 shrink-0" style={{ fontSize: 16 }}>
+                                                {item.expanded ? "expand_more" : "chevron_right"}
+                                            </span>
+                                            <span className="text-sm font-medium text-gray-800">{item.title}</span>
+                                            {item.subtitle ? (
+                                                <span className="text-xs text-gray-400 font-mono ml-1">{item.subtitle}</span>
+                                            ) : null}
+                                        </button>
+                                        {item.expanded ? (
+                                            <div className="ml-7 mr-3 pb-3 min-h-0">
+                                                {!item.rows || item.rows.length === 0 ? (
+                                                    <p className="text-xs text-gray-400 italic px-1 py-1">{item.emptyMessage ?? "No items"}</p>
+                                                ) : (
+                                                    <table className="w-full text-xs">
+                                                        {columns.length > 0 ? (
+                                                            <thead>
+                                                                <tr className="text-gray-400 uppercase tracking-wide">
+                                                                    {columns.map((column, index) => (
+                                                                        <th
+                                                                            key={column.id}
+                                                                            className={`text-left font-medium pb-1 ${index < columns.length - 1 ? "pr-4" : ""}`}
                                                                         >
-                                                                            <span className={`${getToneClassName(cell.tone)} ${cell.mono ? "font-mono" : ""}`.trim()}>
-                                                                                {cell.value}
-                                                                            </span>
-                                                                            {cell.secondaryValue ? (
-                                                                                <span
-                                                                                    className={`ml-1.5 ${getToneClassName(cell.secondaryTone ?? "muted")} ${cell.secondaryMono ? "font-mono" : ""}`.trim()}
-                                                                                >
-                                                                                    {cell.secondaryValue}
-                                                                                </span>
-                                                                            ) : null}
-                                                                        </td>
+                                                                            {column.title}
+                                                                        </th>
                                                                     ))}
                                                                 </tr>
-                                                            )
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            )}
-                                        </div>
-                                    ) : null}
-                                </div>
-                            );
-                        })}
+                                                            </thead>
+                                                        ) : null}
+                                                        <tbody>
+                                                            {item.rows.map((row) => (
+                                                                row.variant === "section" ? (
+                                                                    <tr key={row.id} className="border-t border-gray-100 bg-gray-50">
+                                                                        <td colSpan={Math.max(columns.length, 1)} className="py-2 pr-4 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                                                            {row.sectionTitle}
+                                                                        </td>
+                                                                    </tr>
+                                                                ) : (
+                                                                    <tr key={row.id} className="border-t border-gray-100">
+                                                                        {row.cells.map((cell, index) => (
+                                                                            <td
+                                                                                key={`${row.id}-${index}`}
+                                                                                className={`py-1 ${index < row.cells.length - 1 ? "pr-4" : ""} text-gray-600`}
+                                                                            >
+                                                                                <span className={`${getToneClassName(cell.tone)} ${cell.mono ? "font-mono" : ""}`.trim()}>
+                                                                                    {cell.value}
+                                                                                </span>
+                                                                                {cell.secondaryValue ? (
+                                                                                    <span
+                                                                                        className={`ml-1.5 ${getToneClassName(cell.secondaryTone ?? "muted")} ${cell.secondaryMono ? "font-mono" : ""}`.trim()}
+                                                                                    >
+                                                                                        {cell.secondaryValue}
+                                                                                    </span>
+                                                                                ) : null}
+                                                                            </td>
+                                                                        ))}
+                                                                    </tr>
+                                                                )
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                )}
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 )
             ) : children}

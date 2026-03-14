@@ -16,7 +16,7 @@ export default function InternalCardModalFastTab({
     children,
 }: InternalCardModalFastTabProps) {
     return (
-        <div className="border border-gray-200 rounded overflow-hidden">
+        <div className="flex shrink-0 flex-col min-h-0 border border-gray-200 rounded overflow-hidden">
             <button
                 type="button"
                 onClick={onToggle}
@@ -28,7 +28,7 @@ export default function InternalCardModalFastTab({
                 {title}
             </button>
             {expanded && (
-                <div className={`px-4 py-3 flex flex-col gap-3 ${disabled ? "bg-gray-50" : "bg-white"}`}>
+                <div className={`px-4 py-3 flex flex-col gap-3 min-h-0 ${disabled ? "bg-gray-50" : "bg-white"}`}>
                     {children}
                 </div>
             )}
