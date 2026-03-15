@@ -1,5 +1,15 @@
 import type { EnvFormat, GlobalType as EnvType, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
 
+export type EnvironmentComputationTargetKey = string;
+
+export type EnvironmentComputationValueMap = Record<EnvironmentComputationTargetKey, Record<string, string>>;
+
+export interface EnvironmentComputationConfig {
+    selectedProviderId: number | null;
+    selectedAlgorithmId: number | null;
+    parameterValuesByTarget: EnvironmentComputationValueMap;
+}
+
 export interface Environment {
     id: number;
     name: string;
@@ -7,6 +17,7 @@ export interface Environment {
     type: EnvType;
     zoneCount: number;
     obstacleCount: number;
+    computation: EnvironmentComputationConfig;
 }
 
 export interface Object {

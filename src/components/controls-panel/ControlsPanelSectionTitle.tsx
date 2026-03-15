@@ -6,7 +6,7 @@ export default function ControlsPanelSectionTitle({
   title,
 }: ControlsPanelSectionTitleProps) {
   const isExpanded = useControlsPanelStore(
-    (state) => state.expandedSections[sectionId],
+    (state) => state.expandedSections[sectionId] ?? true,
   );
   const toggleSection = useControlsPanelStore((state) => state.toggleSection);
 

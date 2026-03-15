@@ -1,5 +1,7 @@
 // ─── Computation Provider ───────────────────────────────────────────────────
 
+import type { SupportedAppParameterHandler } from "@/config/computation/appParameterHandlers";
+
 export interface ComputationProvider {
     id?: number;
     name: string;
@@ -18,27 +20,24 @@ export interface ComputationAlgorithm {
     id: number;
     computationProviderId: number;
     name: string;
-    label: string;
 }
 
 // ─── Algorithm Parameter ──────────────────────────────────────────────────────
 
+/**
+ * Provider-defined metadata section label.
+ * `General` is reserved as the frontend fallback when the provider leaves the section undefined.
+ */
 export type MetadataParamSection =
     | "General"
-    | "Coverage path"
-    | "Environment"
-    | "Object"
-    | "Execution";
+    | (string & {});
 
 export type AlgoParamType =
-    | "integer"
-    | "decimal"
-    | "boolean"
-    | "string"
-    | "enum"
-    | "format"
-    | "type"
-    | "coordsystem";
+    | "Integer"
+    | "Decimal"
+    | "Boolean"
+    | "String"
+    | "Enum";
 
 export interface AlgorithmParameter {
     /** Local sequential id within this algorithm. */
@@ -47,12 +46,13 @@ export interface AlgorithmParameter {
     computationProviderId: number;
     section?: MetadataParamSection;
     name: string;
-    label: string;
     paramType: AlgoParamType;
-    /** Valid values for enum / format / type / coordsystem params. */
+    /** Valid values for enum params. */
     enumValues: string[];
     /** Serialized string default value. Empty string when not set. */
     defaultValue: string;
+    /** Optional application-level behavior handler for enum params. */
+    appHandler?: SupportedAppParameterHandler;
 }
 
 export interface ComputationAlgorithmDetails {
@@ -81,9 +81,16 @@ export type TestConnectionResult =
     | ({ ok: true } & ServiceHttpResponseDetails)
     | ({ ok: false; error: string } & Partial<ServiceHttpResponseDetails>);
 
+export interface UnsupportedAppHandlerFailure {
+    ok: false;
+    error: string;
+    errorCode: "unsupported_app_handler";
+    unsupportedHandlers: string[];
+}
+
 export type FetchMetadataResult =
     | ({ ok: true; algorithmCount: number } & ServiceHttpResponseDetails)
-    | ({ ok: false; error: string } & Partial<ServiceHttpResponseDetails>);
+    | (({ ok: false; error: string } & Partial<ServiceHttpResponseDetails>) | UnsupportedAppHandlerFailure);
 
 export interface FetchedComputationMetadata {
     metadataFetchedAt: number;
@@ -93,22 +100,21 @@ export interface FetchedComputationMetadata {
 
 export type FetchMetadataPreviewResult =
     | ({ ok: true; algorithmCount: number; metadata: FetchedComputationMetadata } & ServiceHttpResponseDetails)
-    | ({ ok: false; error: string } & Partial<ServiceHttpResponseDetails>);
+    | (({ ok: false; error: string } & Partial<ServiceHttpResponseDetails>) | UnsupportedAppHandlerFailure);
 
 // ─── /metadata response contract ─────────────────────────────────────────────
 
 export interface MetadataParamResponse {
     section?: MetadataParamSection;
     name: string;
-    label: string;
     paramType: AlgoParamType;
     enumValues?: string[];
     defaultValue?: string;
+    appHandler?: SupportedAppParameterHandler;
 }
 
 export interface MetadataAlgorithmResponse {
     name: string;
-    label: string;
     parameters: MetadataParamResponse[];
 }
 

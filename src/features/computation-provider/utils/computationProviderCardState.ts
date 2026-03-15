@@ -60,8 +60,7 @@ export function areComputationAlgorithmDetailsEqual(
         }
 
         const sameAlgorithm = leftDetails.algorithm.id === rightDetails.algorithm.id
-            && leftDetails.algorithm.name === rightDetails.algorithm.name
-            && leftDetails.algorithm.label === rightDetails.algorithm.label;
+            && leftDetails.algorithm.name === rightDetails.algorithm.name;
 
         if (!sameAlgorithm || leftDetails.parameters.length !== rightDetails.parameters.length) {
             return false;
@@ -76,9 +75,9 @@ export function areComputationAlgorithmDetailsEqual(
             return leftParam.id === rightParam.id
                 && leftParam.algorithmId === rightParam.algorithmId
                 && leftParam.name === rightParam.name
-                && leftParam.label === rightParam.label
                 && leftParam.section === rightParam.section
                 && leftParam.paramType === rightParam.paramType
+                && leftParam.appHandler === rightParam.appHandler
                 && leftParam.defaultValue === rightParam.defaultValue
                 && leftParam.enumValues.length === rightParam.enumValues.length
                 && leftParam.enumValues.every((value, enumIndex) => value === rightParam.enumValues[enumIndex]);

@@ -1,19 +1,12 @@
-import type { CardModalListPartColumn, CardModalListPartRow } from "@/components/modals/card-modal/CardModalListPart.types";
+import type { CardModalListPartColumn, CardModalListPartGroupRow, CardModalListPartRow } from "@/components/modals/card-modal/CardModalListPart.types";
 import type { AlgorithmParameter, ComputationAlgorithm, ComputationAlgorithmDetails, MetadataParamSection } from "@/types/serviceTypes";
 
-const SECTION_ORDER: MetadataParamSection[] = [
-    "General",
-    "Coverage path",
-    "Environment",
-    "Object",
-    "Execution",
-];
-
 export const ALGORITHM_PARAMETER_COLUMNS: CardModalListPartColumn[] = [
-    { id: "label", title: "Name", width: 220 },
+    { id: "name", title: "Name", width: 220 },
     { id: "type", title: "Type", width: 120 },
     { id: "defaultValue", title: "Default Value", width: 180 },
     { id: "enumValues", title: "Enum Values", width: 240 },
+    { id: "appHandler", title: "App Handler", width: 220 },
 ];
 
 interface BuildSavedAlgorithmDetailsOptions {
@@ -28,13 +21,9 @@ interface BuildAlgorithmSectionRowsOptions {
     onToggle: (rowId: string, defaultExpanded?: boolean) => void;
 }
 
-function getSectionRank(section: MetadataParamSection | undefined): number {
-    if (!section) {
-        return SECTION_ORDER.length;
-    }
-
-    const rank = SECTION_ORDER.indexOf(section);
-    return rank === -1 ? SECTION_ORDER.length : rank;
+function normalizeSection(section: MetadataParamSection | undefined): MetadataParamSection {
+    const trimmedSection = section?.trim();
+    return trimmedSection ? trimmedSection : "General";
 }
 
 function buildParameterRecordRow(algorithmId: number, parameter: AlgorithmParameter): CardModalListPartRow {
@@ -43,15 +32,9 @@ function buildParameterRecordRow(algorithmId: number, parameter: AlgorithmParame
         id: `algorithm-${algorithmId}-parameter-${parameter.id}`,
         recordId: parameter.id,
         cells: {
-            label: {
-                value: parameter.label,
-                title: parameter.label,
-            },
             name: {
                 value: parameter.name,
                 title: parameter.name,
-                mono: true,
-                tone: "muted",
             },
             type: {
                 value: parameter.paramType,
@@ -75,57 +58,47 @@ function buildParameterRecordRow(algorithmId: number, parameter: AlgorithmParame
                     value: "—",
                     tone: "subtle",
                 },
+            appHandler: parameter.appHandler
+                ? {
+                    value: parameter.appHandler,
+                    title: parameter.appHandler,
+                    mono: true,
+                }
+                : {
+                    value: "—",
+                    tone: "subtle",
+                },
         },
     };
 }
 
-function buildParameterRows(algorithmId: number, parameters: AlgorithmParameter[]) {
-    const sortedParameters = [...parameters].sort((left, right) => {
-        const sectionDiff = getSectionRank(left.section) - getSectionRank(right.section);
-        if (sectionDiff !== 0) {
-            return sectionDiff;
+function buildParameterRows(algorithmId: number, parameters: AlgorithmParameter[]): CardModalListPartRow[] {
+    const parametersBySection = new Map<MetadataParamSection, AlgorithmParameter[]>();
+
+    for (const parameter of parameters) {
+        const section = normalizeSection(parameter.section);
+        const sectionParameters = parametersBySection.get(section);
+
+        if (sectionParameters) {
+            sectionParameters.push(parameter);
+            continue;
         }
 
-        return left.label.localeCompare(right.label);
+        parametersBySection.set(section, [parameter]);
+    }
+
+    return Array.from(parametersBySection.entries()).map(([section, sectionParameters]) => {
+        const sectionRow: CardModalListPartGroupRow = {
+            kind: "group",
+            id: `algorithm-${algorithmId}-section-${section}`,
+            label: section,
+            expanded: true,
+            onToggle: () => undefined,
+            children: sectionParameters.map((parameter) => buildParameterRecordRow(algorithmId, parameter)),
+        };
+
+        return sectionRow;
     });
-
-    const rows: CardModalListPartRow[] = [];
-    let currentSection: MetadataParamSection | undefined;
-    let currentSectionRows: AlgorithmParameter[] = [];
-
-    function pushCurrentSectionRows() {
-        if (currentSectionRows.length === 0) {
-            return;
-        }
-
-        if (currentSection) {
-            rows.push({
-                kind: "group",
-                id: `algorithm-${algorithmId}-section-${currentSection}`,
-                label: currentSection,
-                expanded: true,
-                onToggle: () => undefined,
-                children: currentSectionRows.map((parameter) => buildParameterRecordRow(algorithmId, parameter)),
-            });
-        } else {
-            rows.push(...currentSectionRows.map((parameter) => buildParameterRecordRow(algorithmId, parameter)));
-        }
-
-        currentSectionRows = [];
-    }
-
-    for (const parameter of sortedParameters) {
-        if (parameter.section !== currentSection) {
-            pushCurrentSectionRows();
-            currentSection = parameter.section;
-        }
-
-        currentSectionRows.push(parameter);
-    }
-
-    pushCurrentSectionRows();
-
-    return rows;
 }
 
 export function buildSavedAlgorithmDetails({
@@ -164,26 +137,31 @@ export function buildAlgorithmSectionRows({
     return algorithmDetails.map(({ algorithm, parameters }) => {
         const rowId = isDraft ? `draft-algorithm-${algorithm.id}-${algorithm.name}` : `algorithm-${algorithm.id}-${algorithm.computationProviderId}`;
 
-        return {
+        const children = buildParameterRows(algorithm.id, parameters).map((row): CardModalListPartRow => {
+            if (row.kind !== "group") {
+                return row;
+            }
+
+            const groupRowId = `${rowId}-${row.id}`;
+            const nestedGroupRow: CardModalListPartGroupRow = {
+                ...row,
+                id: groupRowId,
+                expanded: isExpanded(groupRowId, true),
+                onToggle: () => onToggle(groupRowId, true),
+            };
+
+            return nestedGroupRow;
+        });
+
+        const algorithmRow: CardModalListPartGroupRow = {
             kind: "group",
             id: rowId,
-            label: algorithm.label,
+            label: algorithm.name,
             expanded: isExpanded(rowId, true),
             onToggle: () => onToggle(rowId, true),
-            children: buildParameterRows(algorithm.id, parameters).map((row) => {
-                if (row.kind !== "group") {
-                    return row;
-                }
-
-                const groupRowId = `${rowId}-${row.id}`;
-
-                return {
-                    ...row,
-                    id: groupRowId,
-                    expanded: isExpanded(groupRowId, true),
-                    onToggle: () => onToggle(groupRowId, true),
-                };
-            }),
+            children,
         };
+
+        return algorithmRow;
     });
 }

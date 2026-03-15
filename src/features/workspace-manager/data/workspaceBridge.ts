@@ -8,6 +8,7 @@ import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObj
 import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
 import { resolveNextEnvironmentId, loadCanvasForEnvironment, saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
+import { createEmptyEnvironmentComputationConfig } from "@/utils/environmentComputation";
 
 const BLANK_ENV: Omit<Environment, "id"> = {
     name: "Untitled Environment",
@@ -15,6 +16,7 @@ const BLANK_ENV: Omit<Environment, "id"> = {
     type: GLOBAL_TYPE.OFFLINE,
     zoneCount: 0,
     obstacleCount: 0,
+    computation: createEmptyEnvironmentComputationConfig(),
 };
 
 function countByCategory(objects: { category: string }[], category: string): number {

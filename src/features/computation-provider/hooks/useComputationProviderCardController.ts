@@ -349,6 +349,15 @@ export function useComputationProviderCardController() {
         setFetchActionFeedback({ status: "loading", message: "Fetching metadata…" });
         const result = await withMinimumLoadingTime(() => fetchMetadataPreview(providerRecord), MIN_ACTION_LOADING_MS);
         if (!result.ok) {
+            if ("errorCode" in result && result.errorCode === "unsupported_app_handler") {
+                useConfirmationModalStore.getState().requestConfirmation({
+                    title: "Unsupported App Handler",
+                    message: `This provider uses unsupported application handler(s): ${result.unsupportedHandlers.join(", ")}. Update the provider metadata or add support in the terminal before fetching again.`,
+                    tone: "warning",
+                    confirmLabel: "OK",
+                });
+            }
+
             setFetchActionFeedback({ status: "error", message: result.error });
             return;
         }

@@ -1,7 +1,7 @@
-export type ControlsPanelSectionId = "general" | "algo" | "env" | "object" | "debug";
+export type ControlsPanelSectionId = string;
 
 export interface ControlsPanelState {
-  expandedSections: Record<ControlsPanelSectionId, boolean>;
+  expandedSections: Record<string, boolean>;
   toggleSection: (sectionId: ControlsPanelSectionId) => void;
   expandSection: (sectionId: ControlsPanelSectionId) => void;
   collapseSection: (sectionId: ControlsPanelSectionId) => void;

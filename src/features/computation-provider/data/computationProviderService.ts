@@ -7,6 +7,7 @@ import type {
     FetchMetadataPreviewResult,
     FetchedComputationMetadata,
 } from "@/types/serviceTypes";
+import { isSupportedAppParameterHandler } from "@/config/computation/appParameterHandlers";
 import { db } from "@server/db/db";
 import { updateMetadataTimestamp } from "@server/db/computationProviders";
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
@@ -66,7 +67,6 @@ function buildFetchedMetadata(provider: ComputationProvider, data: MetadataRespo
                     id: algorithmId,
                     computationProviderId,
                     name: algorithmResponse.name,
-                    label: algorithmResponse.label,
                 },
                 parameters: algorithmResponse.parameters.map((parameter, parameterIndex) => ({
                     id: parameterIndex + 1,
@@ -74,14 +74,32 @@ function buildFetchedMetadata(provider: ComputationProvider, data: MetadataRespo
                     computationProviderId,
                     section: parameter.section,
                     name: parameter.name,
-                    label: parameter.label,
                     paramType: parameter.paramType,
                     enumValues: parameter.enumValues ?? [],
                     defaultValue: parameter.defaultValue ?? "",
+                    appHandler: parameter.appHandler,
                 })),
             };
         }),
     };
+}
+
+function collectUnsupportedAppHandlers(data: MetadataResponse): string[] {
+    const unsupportedHandlers = new Set<string>();
+
+    data.algorithms.forEach((algorithm) => {
+        algorithm.parameters.forEach((parameter) => {
+            if (!parameter.appHandler) {
+                return;
+            }
+
+            if (!isSupportedAppParameterHandler(parameter.appHandler)) {
+                unsupportedHandlers.add(parameter.appHandler);
+            }
+        });
+    });
+
+    return Array.from(unsupportedHandlers).sort((left, right) => left.localeCompare(right));
 }
 
 async function requestMetadata(provider: ComputationProvider): Promise<
@@ -129,6 +147,18 @@ export async function fetchMetadataPreview(provider: ComputationProvider): Promi
     const result = await requestMetadata(provider);
     if (!result.ok) {
         return result;
+    }
+
+    const unsupportedHandlers = collectUnsupportedAppHandlers(result.data);
+    if (unsupportedHandlers.length > 0) {
+        return {
+            ok: false,
+            errorCode: "unsupported_app_handler",
+            unsupportedHandlers,
+            error: `Unsupported app handler(s): ${unsupportedHandlers.join(", ")}.`,
+            statusCode: result.statusCode,
+            statusText: result.statusText,
+        };
     }
 
     return {
@@ -230,7 +260,7 @@ export async function fetchMetadata(provider: ComputationProvider): Promise<Fetc
 
     const preview = await fetchMetadataPreview(provider);
     if (!preview.ok) {
-        return { ok: false, error: preview.error };
+        return preview;
     }
 
     try {
