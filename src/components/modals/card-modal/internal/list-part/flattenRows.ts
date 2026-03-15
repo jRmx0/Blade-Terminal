@@ -1,15 +1,15 @@
-import type { InternalCardModalListPartRow, InternalCardModalListPartRowId } from "./types";
+import type { CardModalListPartRow, CardModalListPartRowId } from "@/components/modals/card-modal/CardModalListPart.types";
 
 export interface FlattenedInternalCardModalListPartRow {
-    row: InternalCardModalListPartRow;
+    row: CardModalListPartRow;
     depth: number;
-    parentIds: InternalCardModalListPartRowId[];
+    parentIds: CardModalListPartRowId[];
 }
 
 export function flattenInternalCardModalListPartRows(
-    rows: InternalCardModalListPartRow[],
+    rows: CardModalListPartRow[],
     depth = 0,
-    parentIds: InternalCardModalListPartRowId[] = [],
+    parentIds: CardModalListPartRowId[] = [],
 ): FlattenedInternalCardModalListPartRow[] {
     const flattenedRows: FlattenedInternalCardModalListPartRow[] = [];
 

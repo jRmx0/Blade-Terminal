@@ -4,34 +4,33 @@ import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import InternalCardModalHeader, { type InternalCardModalSavedState } from "./internal/InternalCardModalHeader";
 import InternalCardModalFastTab from "./internal/InternalCardModalFastTab";
 import InternalCardModalFastTabField, { type InternalCardModalTextFieldHintState } from "./internal/InternalCardModalFastTabField";
-import InternalCardModalListPart, {
-    type InternalCardModalListPartColumn,
-    type InternalCardModalListPartRow,
-    type InternalCardModalListPartRowId,
-    type InternalCardModalListPartTableActions,
-} from "./internal/InternalCardModalListPart";
+import InternalCardModalListPart from "./internal/InternalCardModalListPart";
+import type {
+    CardModalListPartConfig,
+    CardModalListPartColumn,
+    CardModalListPartRow,
+    CardModalListPartRowId,
+    CardModalListPartTableActions,
+} from "./CardModalListPart.types";
 import { useModalLifecycle } from "../../../hooks/modals/useModalLifecycle";
 
 export type CardModalSavedState = InternalCardModalSavedState;
-export type CardModalListPartColumn = InternalCardModalListPartColumn;
-export type CardModalListPartRow = InternalCardModalListPartRow;
-export type CardModalListPartRowId = InternalCardModalListPartRowId;
-export type CardModalListPartTableActions = InternalCardModalListPartTableActions;
-
-export interface CardModalListPartConfig {
-    title?: ReactNode;
-    badge?: ReactNode;
-    content?: ReactNode;
-    columns?: InternalCardModalListPartColumn[];
-    rows?: InternalCardModalListPartRow[];
-    emptyMessage?: ReactNode;
-    maxHeightClassName?: string;
-    editable?: boolean;
-    storageKey?: string;
-    selectedRowIds?: InternalCardModalListPartRowId[];
-    onSelectedRowIdsChange?: (nextSelectedRowIds: InternalCardModalListPartRowId[]) => void;
-    tableActions?: InternalCardModalListPartTableActions;
-}
+export type {
+    CardModalListPartBaseRow,
+    CardModalListPartCell,
+    CardModalListPartCellEditor,
+    CardModalListPartColumn,
+    CardModalListPartConfig,
+    CardModalListPartGroupRow,
+    CardModalListPartNewResult,
+    CardModalListPartRecordAction,
+    CardModalListPartRecordRow,
+    CardModalListPartRow,
+    CardModalListPartRowId,
+    CardModalListPartTableAction,
+    CardModalListPartTableActionContext,
+    CardModalListPartTableActions,
+} from "./CardModalListPart.types";
 
 export interface CardModalHeaderConfig {
     recordId: number | null;
@@ -71,10 +70,29 @@ export interface CardModalFastTabConfig {
     content?: ReactNode;
 }
 
-export type CardModalSectionConfig = CardModalListPartConfig & {
-    id: string;
-    title: ReactNode;
-};
+function CardModalField({
+    id: _id,
+    ...fieldProps
+}: CardModalFieldConfig) {
+    return <InternalCardModalFastTabField {...fieldProps} />;
+}
+
+function CardModalRenderedListPart({
+    listPart,
+}: {
+    listPart: CardModalListPartConfig;
+}) {
+    const {
+        content,
+        ...listPartProps
+    } = listPart;
+
+    return (
+        <InternalCardModalListPart {...listPartProps}>
+            {content}
+        </InternalCardModalListPart>
+    );
+}
 
 export interface CardModalProps {
     isOpen: boolean;
@@ -84,7 +102,6 @@ export interface CardModalProps {
     header?: CardModalHeaderConfig;
     actionBarActions?: ModalActionBarItem[];
     fastTabs?: CardModalFastTabConfig[];
-    sections?: CardModalSectionConfig[];
     children?: ReactNode;
     widthClassName?: string;
     bodyClassName?: string;
@@ -99,7 +116,6 @@ export default function CardModal({
     header,
     actionBarActions = [],
     fastTabs = [],
-    sections = [],
     children,
     widthClassName = "w-240",
     bodyClassName = "flex flex-col flex-1 min-h-0 overflow-y-auto p-4 gap-3",
@@ -133,57 +149,11 @@ export default function CardModal({
                             disabled={fastTab.disabled}
                         >
                             {fastTab.fields?.map((field) => (
-                                <InternalCardModalFastTabField
-                                    key={field.id}
-                                    label={field.label}
-                                    value={field.value}
-                                    placeholder={field.placeholder}
-                                    type={field.type}
-                                    required={field.required}
-                                    disabled={field.disabled}
-                                    hint={field.hint}
-                                    hintState={field.hintState}
-                                    onChange={field.onChange}
-                                    onConfirm={field.onConfirm}
-                                />
+                                <CardModalField key={field.id} {...field} />
                             ))}
-                            {fastTab.listPart ? (
-                                <InternalCardModalListPart
-                                    title={fastTab.listPart.title}
-                                    badge={fastTab.listPart.badge}
-                                    columns={fastTab.listPart.columns}
-                                    rows={fastTab.listPart.rows}
-                                    emptyMessage={fastTab.listPart.emptyMessage}
-                                    maxHeightClassName={fastTab.listPart.maxHeightClassName}
-                                    editable={fastTab.listPart.editable}
-                                    storageKey={fastTab.listPart.storageKey}
-                                    selectedRowIds={fastTab.listPart.selectedRowIds}
-                                    onSelectedRowIdsChange={fastTab.listPart.onSelectedRowIdsChange}
-                                    tableActions={fastTab.listPart.tableActions}
-                                >
-                                    {fastTab.listPart.content}
-                                </InternalCardModalListPart>
-                            ) : null}
+                            {fastTab.listPart ? <CardModalRenderedListPart listPart={fastTab.listPart} /> : null}
                             {fastTab.content}
                         </InternalCardModalFastTab>
-                    ))}
-                    {sections.map((section) => (
-                        <InternalCardModalListPart
-                            key={section.id}
-                            title={section.title}
-                            badge={section.badge}
-                            columns={section.columns}
-                            rows={section.rows}
-                            emptyMessage={section.emptyMessage}
-                            maxHeightClassName={section.maxHeightClassName}
-                            editable={section.editable}
-                            storageKey={section.storageKey}
-                            selectedRowIds={section.selectedRowIds}
-                            onSelectedRowIdsChange={section.onSelectedRowIdsChange}
-                            tableActions={section.tableActions}
-                        >
-                            {section.content}
-                        </InternalCardModalListPart>
                     ))}
                     {children}
                 </div>

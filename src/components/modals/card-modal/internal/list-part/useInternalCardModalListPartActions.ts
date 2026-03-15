@@ -1,14 +1,14 @@
 import { useCallback, useState } from "react";
-import type { InternalCardModalListPartRowId } from "./types";
+import type { CardModalListPartRowId } from "@/components/modals/card-modal/CardModalListPart.types";
 
 interface UseInternalCardModalListPartActionsOptions {
-    onReplaceSelection?: (rowId: InternalCardModalListPartRowId) => void;
+    onReplaceSelection?: (rowId: CardModalListPartRowId) => void;
 }
 
 export default function useInternalCardModalListPartActions({
     onReplaceSelection,
 }: UseInternalCardModalListPartActionsOptions) {
-    const [openMenuRowId, setOpenMenuRowId] = useState<InternalCardModalListPartRowId | null>(null);
+    const [openMenuRowId, setOpenMenuRowId] = useState<CardModalListPartRowId | null>(null);
     const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
 
     const closeMenu = useCallback(() => {
@@ -16,7 +16,7 @@ export default function useInternalCardModalListPartActions({
         setMenuPos(null);
     }, []);
 
-    const handleMoreClick = useCallback((event: React.MouseEvent<HTMLButtonElement>, rowId: InternalCardModalListPartRowId) => {
+    const handleMoreClick = useCallback((event: React.MouseEvent<HTMLButtonElement>, rowId: CardModalListPartRowId) => {
         event.stopPropagation();
         onReplaceSelection?.(rowId);
 

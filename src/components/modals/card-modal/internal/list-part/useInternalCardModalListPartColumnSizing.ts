@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { InternalCardModalListPartColumn } from "./types";
+import type { CardModalListPartColumn } from "@/components/modals/card-modal/CardModalListPart.types";
 
 const DEFAULT_COLUMN_WIDTH = 180;
 const DEFAULT_MIN_WIDTH = 120;
@@ -8,7 +8,7 @@ function clampColumnWidth(width: number, minWidth: number) {
     return Math.max(minWidth, Math.round(width));
 }
 
-function buildDefaultWidths(columns: InternalCardModalListPartColumn[]) {
+function buildDefaultWidths(columns: CardModalListPartColumn[]) {
     return Object.fromEntries(
         columns.map((column) => {
             const minWidth = column.minWidth ?? DEFAULT_MIN_WIDTH;
@@ -38,7 +38,7 @@ function readStoredWidths(storageKey: string | undefined) {
     }
 }
 
-function buildResolvedWidths(columns: InternalCardModalListPartColumn[], overrides: Record<string, number>) {
+function buildResolvedWidths(columns: CardModalListPartColumn[], overrides: Record<string, number>) {
     const defaults = buildDefaultWidths(columns);
 
     for (const column of columns) {
@@ -55,7 +55,7 @@ function buildResolvedWidths(columns: InternalCardModalListPartColumn[], overrid
 
 interface UseInternalCardModalListPartColumnSizingOptions {
     storageKey?: string;
-    columns: InternalCardModalListPartColumn[];
+    columns: CardModalListPartColumn[];
 }
 
 export default function useInternalCardModalListPartColumnSizing({
