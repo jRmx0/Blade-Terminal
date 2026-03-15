@@ -19,12 +19,14 @@ interface GlobalTypeSelectionProps {
     providerId?: number;
     algorithmId?: number;
     parameterName?: string;
+    enumValues?: string[];
 }
 
 export default function GlobalTypeSelection({
     providerId,
     algorithmId,
     parameterName,
+    enumValues,
 }: GlobalTypeSelectionProps) {
     const type = useEnvStore((state) => state.env.type);
     const setType = useEnvStore((state) => state.setType);
@@ -74,12 +76,16 @@ export default function GlobalTypeSelection({
         applyType(nextType);
     }
 
+    const options = enumValues === undefined
+        ? GLOBAL_TYPE_OPTIONS
+        : GLOBAL_TYPE_OPTIONS.filter((opt) => enumValues.includes(opt.label));
+
     return (
         <ControlsPanelSectionSelect
             label={parameterName ?? "Global Type"}
             value={type}
             onChange={handleChange}
-            options={GLOBAL_TYPE_OPTIONS}
+            options={options}
         />
     );
 }

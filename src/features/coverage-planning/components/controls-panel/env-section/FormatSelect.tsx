@@ -12,12 +12,14 @@ interface FormatSelectionProps {
     providerId?: number;
     algorithmId?: number;
     parameterName?: string;
+    enumValues?: string[];
 }
 
 export default function FormatSelection({
     providerId,
     algorithmId,
     parameterName,
+    enumValues,
 }: FormatSelectionProps) {
     const format = useEnvStore((state) => state.env.format);
     const setFormat = useEnvStore((state) => state.setFormat);
@@ -37,12 +39,16 @@ export default function FormatSelection({
         }
     }
 
+    const options = enumValues === undefined
+        ? ENV_FORMAT_OPTIONS
+        : ENV_FORMAT_OPTIONS.filter((opt) => enumValues.includes(opt.label));
+
     return (
         <ControlsPanelSectionSelect
             label={parameterName ?? "Format"}
             value={format}
             onChange={handleChange}
-            options={ENV_FORMAT_OPTIONS}
+            options={options}
         />
     );
 }

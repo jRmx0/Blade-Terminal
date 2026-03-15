@@ -9,19 +9,16 @@ interface CoordinateSystemSelectProps {
 }
 
 function buildCoordinateSystemOptions(appEnums: AppEnumValue[], fallbackValues: string[]): Array<{ value: string; label: string }> {
-    const matchingEnums = appEnums.filter((item) => item.enumGroup === "coordsystem");
-
-    if (fallbackValues.length > 0) {
-        return [
-            { value: "", label: "" },
-            ...fallbackValues.map((value) => ({
-                value,
-                label: matchingEnums.find((item) => item.value === value)?.label ?? value,
-            })),
-        ];
+    if (fallbackValues.length === 0) {
+        return [];
     }
 
-    return [{ value: "", label: "" }, ...matchingEnums.map((item) => ({ value: item.value, label: item.label }))];
+    const matchingEnums = appEnums.filter((item) => item.enumGroup === "coordsystem");
+
+    return fallbackValues.map((value) => ({
+        value,
+        label: matchingEnums.find((item) => item.value === value)?.label ?? value,
+    }));
 }
 
 export default function CoordinateSystemSelect({

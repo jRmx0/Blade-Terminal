@@ -111,6 +111,7 @@ function DynamicParameterField({
                     providerId={selectedProviderId}
                     algorithmId={selectedAlgorithmId}
                     parameterName={parameter.name}
+                    enumValues={parameter.enumValues}
                 />
             );
 
@@ -120,6 +121,7 @@ function DynamicParameterField({
                     providerId={selectedProviderId}
                     algorithmId={selectedAlgorithmId}
                     parameterName={parameter.name}
+                    enumValues={parameter.enumValues}
                 />
             );
     }
