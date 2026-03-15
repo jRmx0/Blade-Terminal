@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import ControlsPanelSection from "@/components/controls-panel/ControlsPanelSection";
+import ControlsPanelSeparator from "@/components/controls-panel/ControlsPanelSeparator";
 import ControlsPanelSectionCheckbox from "@/components/controls-panel/ControlsPanelSectionCheckbox";
 import ControlsPanelSectionInput from "@/components/controls-panel/ControlsPanelSectionInput";
 import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
@@ -267,6 +268,8 @@ export default function CoveragePlanningControlsPanel() {
                     disabled={computation.selectedProviderId === null || (algorithms?.length ?? 0) === 0}
                 />
             </ControlsPanelSection>
+
+            <ControlsPanelSeparator />
 
             {computation.selectedProviderId !== null && computation.selectedAlgorithmId !== null && parameterSections.map((section) => (
                 <ControlsPanelSection
