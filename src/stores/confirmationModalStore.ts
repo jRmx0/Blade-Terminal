@@ -13,6 +13,7 @@ interface ConfirmationModalState {
     confirmDisabled: boolean;
     confirmAction: (() => Promise<void>) | null;
     secondaryAction: (() => Promise<void>) | null;
+    cancelAction: (() => Promise<void>) | null;
 
     requestConfirmation: (options: {
         title: string;
@@ -24,6 +25,7 @@ interface ConfirmationModalState {
         confirmDisabled?: boolean;
         confirmAction?: () => Promise<void>;
         secondaryAction?: () => Promise<void>;
+        cancelAction?: () => Promise<void>;
     }) => void;
     confirm: () => Promise<void>;
     secondary: () => Promise<void>;
@@ -41,6 +43,7 @@ const INITIAL_STATE = {
     confirmDisabled: false,
     confirmAction: null,
     secondaryAction: null,
+    cancelAction: null,
 };
 
 export const useConfirmationModalStore = create<ConfirmationModalState>()((set, get) => ({
@@ -56,6 +59,7 @@ export const useConfirmationModalStore = create<ConfirmationModalState>()((set, 
         confirmDisabled = false,
         confirmAction = null,
         secondaryAction = null,
+        cancelAction = null,
     }) => {
         set({
             isOpen: true,
@@ -68,6 +72,7 @@ export const useConfirmationModalStore = create<ConfirmationModalState>()((set, 
             confirmDisabled,
             confirmAction,
             secondaryAction,
+            cancelAction,
         });
     },
 
@@ -83,5 +88,9 @@ export const useConfirmationModalStore = create<ConfirmationModalState>()((set, 
         await secondaryAction?.();
     },
 
-    cancel: () => set(INITIAL_STATE),
+    cancel: () => {
+        const { cancelAction } = get();
+        set(INITIAL_STATE);
+        cancelAction?.().catch(console.error);
+    },
 }));

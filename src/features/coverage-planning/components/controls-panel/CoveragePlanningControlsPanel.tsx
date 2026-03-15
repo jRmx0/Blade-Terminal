@@ -6,6 +6,14 @@ import ControlsPanelSectionCheckbox from "@/components/controls-panel/ControlsPa
 import ControlsPanelSectionInput from "@/components/controls-panel/ControlsPanelSectionInput";
 import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
 import { APP_PARAMETER_HANDLER } from "@/config/computation/appParameterHandlers";
+import {
+    ENV_FORMAT_OPTIONS,
+    GLOBAL_TYPE_OPTIONS,
+    defaultObjectTypeForGlobal,
+    isGlobalTypeFixed,
+    type EnvFormat,
+    type GlobalType,
+} from "@/config/db-ops/enums";
 import CoordinateSystemSelect from "@/features/coverage-planning/components/controls-panel/env-section/CoordinateSystemSelect";
 import FormatSelection from "@/features/coverage-planning/components/controls-panel/env-section/FormatSelect";
 import GlobalTypeSelection from "@/features/coverage-planning/components/controls-panel/env-section/GlobalTypeSelect";
@@ -14,6 +22,8 @@ import { getAlgorithmsByProvider } from "@server/db/computationAlgorithms";
 import { getParametersByAlgorithm } from "@server/db/algorithmParameters";
 import { getAllAppEnums } from "@server/db/appEnums";
 import { useEnvStore } from "@/stores/envStore";
+import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 import type { AlgorithmParameter, AppEnumValue } from "@/types/serviceTypes";
 import { getEnvironmentComputationParameterValue } from "@/utils/environmentComputation";
 
@@ -221,6 +231,90 @@ export default function CoveragePlanningControlsPanel() {
         }
     }, [algorithms, computation.selectedAlgorithmId, setComputationAlgorithmId]);
 
+    // Validate format/type constraints against the new algorithm's params before committing the change.
+    // Format is reset silently. Type changes that would update object types require confirmation.
+    // Cancel leaves everything unchanged — no rollback needed.
+    async function handleAlgorithmChange(value: string) {
+        const newAlgorithmId = value === "" ? null : Number(value);
+
+        if (newAlgorithmId === null) {
+            setComputationAlgorithmId(null);
+            return;
+        }
+
+        const { env, setFormat, setType } = useEnvStore.getState();
+        const providerId = env.computation.selectedProviderId;
+
+        if (providerId === null) {
+            setComputationAlgorithmId(newAlgorithmId);
+            return;
+        }
+
+        const newParams = await getParametersByAlgorithm(newAlgorithmId, providerId);
+        const { objects, updateObjectsType } = useCanvasObjectStore.getState();
+
+        // ── Format (silent reset) ─────────────────────────────────────────────
+        const formatParam = newParams.find((p) => p.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_FORMAT);
+        let newFormat: EnvFormat | undefined;
+
+        if (formatParam !== undefined && formatParam.enumValues.length > 0) {
+            const currentFormatLabel = ENV_FORMAT_OPTIONS.find((opt) => opt.value === env.format)?.label;
+            const isValid = currentFormatLabel !== undefined && formatParam.enumValues.includes(currentFormatLabel);
+
+            if (!isValid) {
+                const resolved =
+                    ENV_FORMAT_OPTIONS.find((opt) => opt.label !== "" && opt.label === formatParam.defaultValue) ??
+                    ENV_FORMAT_OPTIONS.find((opt) => opt.label !== "" && formatParam.enumValues.includes(opt.label));
+                if (resolved !== undefined) newFormat = resolved.value as EnvFormat;
+            }
+        }
+
+        // ── Type (confirm if objects would be affected) ───────────────────────
+        const typeParam = newParams.find((p) => p.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_TYPE);
+        let newType: GlobalType | undefined;
+
+        if (typeParam !== undefined && typeParam.enumValues.length > 0) {
+            const currentTypeLabel = GLOBAL_TYPE_OPTIONS.find((opt) => opt.value === env.type)?.label;
+            const isValid = currentTypeLabel !== undefined && typeParam.enumValues.includes(currentTypeLabel);
+
+            if (!isValid) {
+                const resolved =
+                    GLOBAL_TYPE_OPTIONS.find((opt) => opt.label !== "" && opt.label === typeParam.defaultValue) ??
+                    GLOBAL_TYPE_OPTIONS.find((opt) => opt.label !== "" && typeParam.enumValues.includes(opt.label));
+                if (resolved !== undefined) newType = resolved.value as GlobalType;
+            }
+        }
+
+        if (newType !== undefined && isGlobalTypeFixed(newType)) {
+            const nextObjectType = defaultObjectTypeForGlobal(newType);
+            const mismatchCount = objects.filter((obj) => obj.type !== nextObjectType).length;
+
+            if (mismatchCount > 0) {
+                const typeLabel = nextObjectType === "online" ? "On-Line" : "Off-Line";
+                useConfirmationModalStore.getState().requestConfirmation({
+                    title: "Update object types",
+                    message: `Switching algorithm requires changing the global type to "${typeLabel}". ${mismatchCount} object${mismatchCount !== 1 ? "s" : ""} will be updated to match. Continue?`,
+                    tone: "warning",
+                    confirmLabel: "Confirm",
+                    cancelLabel: "Cancel",
+                    confirmAction: async () => {
+                        if (newFormat !== undefined) setFormat(newFormat);
+                        updateObjectsType(nextObjectType);
+                        setType(newType!);
+                        setComputationAlgorithmId(newAlgorithmId);
+                    },
+                });
+                return;
+            }
+
+            updateObjectsType(nextObjectType);
+        }
+
+        if (newFormat !== undefined) setFormat(newFormat);
+        if (newType !== undefined) setType(newType);
+        setComputationAlgorithmId(newAlgorithmId);
+    }
+
     const providerOptions = useMemo(
         () => [
             { value: "", label: "" },
@@ -265,7 +359,7 @@ export default function CoveragePlanningControlsPanel() {
                 <ControlsPanelSectionSelect
                     label="Algorithm"
                     value={selectedAlgorithmValue}
-                    onChange={(value) => setComputationAlgorithmId(value === "" ? null : Number(value))}
+                    onChange={(value) => { handleAlgorithmChange(value).catch(console.error); }}
                     options={algorithmOptions}
                     disabled={computation.selectedProviderId === null || (algorithms?.length ?? 0) === 0}
                 />
