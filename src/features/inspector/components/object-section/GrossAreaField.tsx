@@ -12,7 +12,6 @@ export default function GrossAreaField() {
     <InspectorPanelSectionField
       label="Gross area"
       value={area.toFixed(2)}
-      unit="m²"
     />
   );
 }

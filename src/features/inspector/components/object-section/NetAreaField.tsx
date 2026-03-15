@@ -19,7 +19,6 @@ export default function NetAreaField() {
     <InspectorPanelSectionField
       label="Net area"
       value={netArea.toFixed(2)}
-      unit="m²"
     />
   );
 }

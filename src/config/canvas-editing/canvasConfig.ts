@@ -9,9 +9,11 @@ export const COLOR_GRID = "#e2e8f0";
 
 export const COLOR_ZONE_STROKE = "#22c55e";
 export const COLOR_ZONE_FILL = "rgba(34,197,94,0.18)";
+export const COLOR_ZONE_STRIPE = "rgba(34,197,94,0.18)";
 
 export const COLOR_OBSTACLE_STROKE = "#ef4444";
 export const COLOR_OBSTACLE_FILL = "rgba(255,0,0,0.23)";
+export const COLOR_OBSTACLE_STRIPE = "rgba(239,68,68,0.18)";
 
 export const COLOR_VERTEX_FILL = "#ffffff";
 export const COLOR_VERTEX_SELECTED_STROKE = "#2b7fff";
