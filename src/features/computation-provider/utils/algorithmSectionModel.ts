@@ -1,4 +1,4 @@
-import type { CardModalListPartColumn, CardModalListPartRow } from "@/components/modals/card-modal/CardModal";
+import type { CardModalListPartColumn, CardModalListPartRow } from "@/components/modals/card-modal/CardModalListPart.types";
 import type { AlgorithmParameter, ComputationAlgorithm, ComputationAlgorithmDetails, MetadataParamSection } from "@/types/serviceTypes";
 
 const SECTION_ORDER: MetadataParamSection[] = [
