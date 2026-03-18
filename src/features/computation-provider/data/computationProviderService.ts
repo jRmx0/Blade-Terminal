@@ -68,8 +68,8 @@ function buildFetchedMetadata(provider: ComputationProvider, data: MetadataRespo
                     computationProviderId,
                     name: algorithmResponse.name,
                 },
-                parameters: algorithmResponse.parameters.map((parameter, parameterIndex) => ({
-                    id: parameterIndex + 1,
+                parameters: algorithmResponse.parameters.map((parameter) => ({
+                    id: parameter.id,
                     algorithmId,
                     computationProviderId,
                     section: parameter.section,

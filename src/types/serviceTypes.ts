@@ -105,6 +105,7 @@ export type FetchMetadataPreviewResult =
 // ─── /metadata response contract ─────────────────────────────────────────────
 
 export interface MetadataParamResponse {
+    id: number;
     section?: MetadataParamSection;
     name: string;
     paramType: AlgoParamType;
