@@ -59,8 +59,8 @@ function buildFetchedMetadata(provider: ComputationProvider, data: MetadataRespo
     return {
         metadataFetchedAt: Date.now(),
         urlAtLastFetch: provider.url.trim(),
-        algorithms: data.algorithms.map((algorithmResponse, algorithmIndex) => {
-            const algorithmId = algorithmIndex + 1;
+        algorithms: data.algorithms.map((algorithmResponse) => {
+            const algorithmId = algorithmResponse.id;
 
             return {
                 algorithm: {
