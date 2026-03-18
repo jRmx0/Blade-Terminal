@@ -7,6 +7,7 @@ import {
     type GlobalType,
 } from "@/config/db-ops/enums";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { setParameterValue } from "@server/db/environmentComputationParameterValues";
 import { useEnvStore } from "@/stores/envStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 
@@ -18,6 +19,7 @@ function globalTypeToMetadataValue(type: GlobalType): string {
 interface GlobalTypeSelectionProps {
     providerId?: number;
     algorithmId?: number;
+    parameterId?: number;
     parameterName?: string;
     enumValues?: string[];
 }
@@ -25,25 +27,26 @@ interface GlobalTypeSelectionProps {
 export default function GlobalTypeSelection({
     providerId,
     algorithmId,
+    parameterId,
     parameterName,
     enumValues,
 }: GlobalTypeSelectionProps) {
+    const envId = useEnvStore((state) => state.env.id);
     const type = useEnvStore((state) => state.env.type);
     const setType = useEnvStore((state) => state.setType);
-    const setComputationParameterValue = useEnvStore((state) => state.setComputationParameterValue);
     const objects = useCanvasObjectStore((state) => state.objects);
     const updateObjectsType = useCanvasObjectStore((state) => state.updateObjectsType);
 
     useEffect(() => {
-        if (providerId === undefined || algorithmId === undefined || parameterName === undefined) return;
-        setComputationParameterValue(providerId, algorithmId, parameterName, globalTypeToMetadataValue(type));
-    }, [algorithmId, parameterName, providerId, setComputationParameterValue, type]);
+        if (providerId === undefined || algorithmId === undefined || parameterId === undefined) return;
+        setParameterValue(parameterId, algorithmId, providerId, envId, globalTypeToMetadataValue(type)).catch(console.error);
+    }, [algorithmId, envId, parameterId, providerId, type]);
 
     function applyType(nextType: GlobalType) {
         setType(nextType);
 
-        if (providerId !== undefined && algorithmId !== undefined && parameterName !== undefined) {
-            setComputationParameterValue(providerId, algorithmId, parameterName, globalTypeToMetadataValue(nextType));
+        if (providerId !== undefined && algorithmId !== undefined && parameterId !== undefined) {
+            setParameterValue(parameterId, algorithmId, providerId, envId, globalTypeToMetadataValue(nextType)).catch(console.error);
         }
     }
 

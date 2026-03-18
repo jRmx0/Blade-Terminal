@@ -5,10 +5,8 @@ import { getSaveMode } from "@/stores/saveModeStore";
 import { saveEnvironment } from "@server/db/environments";
 import {
     createEmptyEnvironmentComputationConfig,
-    getEnvironmentComputationParameterValue,
     normalizeEnvironment,
     normalizeEnvironmentComputationConfig,
-    setEnvironmentComputationParameterValue,
 } from "@/utils/environmentComputation";
 
 interface EnvState {
@@ -27,8 +25,6 @@ interface EnvState {
     setComputationProviderId: (providerId: number | null) => void;
     /** Updates the active computation algorithm within the selected provider. */
     setComputationAlgorithmId: (algorithmId: number | null) => void;
-    /** Persists a parameter value for a provider/algorithm pair and marks the environment dirty. */
-    setComputationParameterValue: (providerId: number, algorithmId: number, parameterName: string, value: string) => void;
     /** Clears the dirty flag. Called by canvas bridge after a successful save. */
     clearDirty: () => void;
 }
@@ -107,33 +103,6 @@ export const useEnvStore = create<EnvState>()((set) => ({
                     ...computation,
                     selectedAlgorithmId: algorithmId,
                 },
-            };
-
-            autosaveEnv(nextEnv);
-            return { env: nextEnv, isEnvDirty: true };
-        });
-    },
-
-    setComputationParameterValue: (providerId, algorithmId, parameterName, value) => {
-        set((state) => {
-            const env = normalizeEnvironment(state.env);
-            const computation = normalizeEnvironmentComputationConfig(env.computation);
-
-            if (getEnvironmentComputationParameterValue(computation, providerId, algorithmId, parameterName) === value) {
-                return { env };
-            }
-
-            const nextComputation = setEnvironmentComputationParameterValue(
-                computation,
-                providerId,
-                algorithmId,
-                parameterName,
-                value,
-            );
-
-            const nextEnv = {
-                ...env,
-                computation: nextComputation,
             };
 
             autosaveEnv(nextEnv);

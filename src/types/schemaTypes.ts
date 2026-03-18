@@ -1,13 +1,16 @@
 import type { EnvFormat, GlobalType as EnvType, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
 
-export type EnvironmentComputationTargetKey = string;
-
-export type EnvironmentComputationValueMap = Record<EnvironmentComputationTargetKey, Record<string, string>>;
-
 export interface EnvironmentComputationConfig {
     selectedProviderId: number | null;
     selectedAlgorithmId: number | null;
-    parameterValuesByTarget: EnvironmentComputationValueMap;
+}
+
+export interface EnvironmentComputationParameterValue {
+    id: number;
+    environmentId: number;
+    providerId: number;
+    algorithmId: number;
+    value: string;
 }
 
 export interface Environment {

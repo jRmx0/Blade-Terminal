@@ -1,10 +1,11 @@
 import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
 import type { AlgorithmParameter, AppEnumValue } from "@/types/serviceTypes";
-import { getEnvironmentComputationParameterValue } from "@/utils/environmentComputation";
+import { setParameterValue } from "@server/db/environmentComputationParameterValues";
 import { useEnvStore } from "@/stores/envStore";
 
 interface CoordinateSystemSelectProps {
     parameter: AlgorithmParameter;
+    currentValue: string;
     appEnums: AppEnumValue[];
 }
 
@@ -23,30 +24,22 @@ function buildCoordinateSystemOptions(appEnums: AppEnumValue[], fallbackValues: 
 
 export default function CoordinateSystemSelect({
     parameter,
+    currentValue,
     appEnums,
 }: CoordinateSystemSelectProps) {
-    const computation = useEnvStore((state) => state.env.computation);
-    const setComputationParameterValue = useEnvStore((state) => state.setComputationParameterValue);
-
-    const value = getEnvironmentComputationParameterValue(
-        computation,
-        parameter.computationProviderId,
-        parameter.algorithmId,
-        parameter.name,
-    )
-        ?? parameter.defaultValue
-        ?? "";
+    const envId = useEnvStore((state) => state.env.id);
 
     return (
         <ControlsPanelSectionSelect
             label={parameter.name}
-            value={value}
-            onChange={(nextValue) => setComputationParameterValue(
-                parameter.computationProviderId,
+            value={currentValue}
+            onChange={(nextValue) => setParameterValue(
+                parameter.id,
                 parameter.algorithmId,
-                parameter.name,
+                parameter.computationProviderId,
+                envId,
                 nextValue,
-            )}
+            ).catch(console.error)}
             options={buildCoordinateSystemOptions(appEnums, parameter.enumValues)}
         />
     );

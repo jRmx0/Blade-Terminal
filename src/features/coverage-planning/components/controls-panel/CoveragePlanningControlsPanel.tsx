@@ -25,7 +25,8 @@ import { useEnvStore } from "@/stores/envStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 import type { AlgorithmParameter, AppEnumValue } from "@/types/serviceTypes";
-import { getEnvironmentComputationParameterValue } from "@/utils/environmentComputation";
+import { getParameterValues, setParameterValue } from "@server/db/environmentComputationParameterValues";
+import type { EnvironmentComputationParameterValue } from "@/types/schemaTypes";
 
 interface ParameterSectionGroup {
     title: string;
@@ -69,21 +70,9 @@ function groupParametersBySection(parameters: AlgorithmParameter[]): ParameterSe
 
 function getParameterDisplayValue(
     parameter: AlgorithmParameter,
-    selectedProviderId: number,
-    selectedAlgorithmId: number,
-    parameterValuesByTarget: Record<string, Record<string, string>>,
+    parameterValues: EnvironmentComputationParameterValue[],
 ): string {
-    const persistedValue = getEnvironmentComputationParameterValue(
-        {
-            selectedProviderId,
-            selectedAlgorithmId,
-            parameterValuesByTarget,
-        },
-        selectedProviderId,
-        selectedAlgorithmId,
-        parameter.name,
-    );
-
+    const persistedValue = parameterValues.find((pv) => pv.id === parameter.id)?.value;
     return persistedValue ?? parameter.defaultValue ?? "";
 }
 
@@ -91,27 +80,26 @@ interface DynamicParameterFieldProps {
     parameter: AlgorithmParameter;
     selectedProviderId: number;
     selectedAlgorithmId: number;
-    parameterValuesByTarget: Record<string, Record<string, string>>;
+    parameterValues: EnvironmentComputationParameterValue[];
     appEnums: AppEnumValue[];
-    onChange: (parameterName: string, value: string) => void;
+    onChange: (parameterId: number, value: string) => void;
 }
 
 function DynamicParameterField({
     parameter,
     selectedProviderId,
     selectedAlgorithmId,
-    parameterValuesByTarget,
+    parameterValues,
     appEnums,
     onChange,
 }: DynamicParameterFieldProps) {
-    const value = getParameterDisplayValue(parameter, selectedProviderId, selectedAlgorithmId, parameterValuesByTarget);
+    const value = getParameterDisplayValue(parameter, parameterValues);
 
     switch (parameter.appHandler) {
         case APP_PARAMETER_HANDLER.ENVIRONMENT_COORDSYSTEM:
             return (
                 <CoordinateSystemSelect
-                    parameter={parameter}
-                    appEnums={appEnums}
+                    parameter={parameter} currentValue={value} appEnums={appEnums}
                 />
             );
 
@@ -120,6 +108,7 @@ function DynamicParameterField({
                 <FormatSelection
                     providerId={selectedProviderId}
                     algorithmId={selectedAlgorithmId}
+                    parameterId={parameter.id}
                     parameterName={parameter.name}
                     enumValues={parameter.enumValues}
                 />
@@ -130,6 +119,7 @@ function DynamicParameterField({
                 <GlobalTypeSelection
                     providerId={selectedProviderId}
                     algorithmId={selectedAlgorithmId}
+                    parameterId={parameter.id}
                     parameterName={parameter.name}
                     enumValues={parameter.enumValues}
                 />
@@ -142,7 +132,7 @@ function DynamicParameterField({
                 <ControlsPanelSectionCheckbox
                     label={parameter.name}
                     checked={parseBooleanParameterValue(value)}
-                    onChange={(checked) => onChange(parameter.name, String(checked))}
+                    onChange={(checked) => onChange(parameter.id, String(checked))}
                 />
             );
 
@@ -151,7 +141,7 @@ function DynamicParameterField({
                 <ControlsPanelSectionSelect
                     label={parameter.name}
                     value={value}
-                    onChange={(nextValue) => onChange(parameter.name, nextValue)}
+                    onChange={(nextValue) => onChange(parameter.id, nextValue)}
                     options={buildEnumOptionsFromValues(parameter.enumValues)}
                 />
             );
@@ -161,7 +151,7 @@ function DynamicParameterField({
                 <ControlsPanelSectionInput
                     label={parameter.name}
                     value={value}
-                    onChange={(nextValue) => onChange(parameter.name, nextValue)}
+                    onChange={(nextValue) => onChange(parameter.id, nextValue)}
                     type="number"
                 />
             );
@@ -171,7 +161,7 @@ function DynamicParameterField({
                 <ControlsPanelSectionInput
                     label={parameter.name}
                     value={value}
-                    onChange={(nextValue) => onChange(parameter.name, nextValue)}
+                    onChange={(nextValue) => onChange(parameter.id, nextValue)}
                     type="number"
                 />
             );
@@ -182,7 +172,7 @@ function DynamicParameterField({
                 <ControlsPanelSectionInput
                     label={parameter.name}
                     value={value}
-                    onChange={(nextValue) => onChange(parameter.name, nextValue)}
+                    onChange={(nextValue) => onChange(parameter.id, nextValue)}
                 />
             );
     }
@@ -190,9 +180,9 @@ function DynamicParameterField({
 
 export default function CoveragePlanningControlsPanel() {
     const computation = useEnvStore((state) => state.env.computation);
+    const envId = useEnvStore((state) => state.env.id);
     const setComputationProviderId = useEnvStore((state) => state.setComputationProviderId);
     const setComputationAlgorithmId = useEnvStore((state) => state.setComputationAlgorithmId);
-    const setComputationParameterValue = useEnvStore((state) => state.setComputationParameterValue);
 
     const providers = useLiveQuery(() => getAllComputationProviders(), []);
     const algorithms = useLiveQuery(
@@ -208,6 +198,16 @@ export default function CoveragePlanningControlsPanel() {
             return getParametersByAlgorithm(computation.selectedAlgorithmId, computation.selectedProviderId);
         },
         [computation.selectedProviderId, computation.selectedAlgorithmId],
+    );
+    const parameterValues = useLiveQuery(
+        () => {
+            if (computation.selectedProviderId === null || computation.selectedAlgorithmId === null) {
+                return Promise.resolve([]);
+            }
+
+            return getParameterValues(computation.selectedAlgorithmId, computation.selectedProviderId, envId);
+        },
+        [envId, computation.selectedProviderId, computation.selectedAlgorithmId],
     );
     const appEnums = useLiveQuery(() => getAllAppEnums(), []);
 
@@ -379,15 +379,16 @@ export default function CoveragePlanningControlsPanel() {
                             parameter={parameter}
                             selectedProviderId={computation.selectedProviderId!}
                             selectedAlgorithmId={computation.selectedAlgorithmId!}
-                            parameterValuesByTarget={computation.parameterValuesByTarget}
+                            parameterValues={parameterValues ?? []}
                             appEnums={resolvedAppEnums}
-                            onChange={(parameterName, value) => {
-                                setComputationParameterValue(
-                                    computation.selectedProviderId!,
+                            onChange={(parameterId, value) => {
+                                setParameterValue(
+                                    parameterId,
                                     computation.selectedAlgorithmId!,
-                                    parameterName,
+                                    computation.selectedProviderId!,
+                                    envId,
                                     value,
-                                );
+                                ).catch(console.error);
                             }}
                         />
                     ))}
