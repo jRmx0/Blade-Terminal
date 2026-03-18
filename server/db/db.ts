@@ -3,6 +3,11 @@ import type { AppEnumValue } from "@/types/serviceTypes";
 
 const db = new Dexie("blade-terminal");
 
+// Schema versioning policy:
+// Always modify the single version(1) block directly — never add a new version block.
+// This is a development environment where data loss from schema changes is acceptable.
+// Keeping a single version avoids accumulating migration code that serves no purpose here.
+// When the schema changes, clear the browser's IndexedDB to apply the new layout.
 db.version(1).stores({
     environments: "id, name",
     objects: "[id+environmentId], environmentId",
