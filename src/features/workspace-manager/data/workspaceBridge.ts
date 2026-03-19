@@ -63,10 +63,14 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     const zoneObjectCount = countByCategory(objects, OBJECT_CATEGORY.ZONE);
     const obstacleObjectCount = countByCategory(objects, OBJECT_CATEGORY.OBSTACLE);
     useEnvStore.getState().setEnv({ ...env, zoneCount: zoneObjectCount, obstacleCount: obstacleObjectCount });
-    const computation = await getEnvironmentComputation(environmentId);
-    useEnvStore.getState().setComputation(computation);
-    const parameterValues = await getAllParameterValuesByEnvironment(environmentId);
+    const [computation, parameterValues] = await Promise.all([
+        getEnvironmentComputation(environmentId),
+        getAllParameterValuesByEnvironment(environmentId),
+    ]);
+    // Set parameter values before computation so the panel's init effect sees loaded values
+    // when it fires in response to the algorithm/provider selection being restored.
     useParameterValuesStore.getState().setParameterValues(parameterValues);
+    useEnvStore.getState().setComputation(computation);
     useCanvasHistoryStore.getState().resetHistory();
 }
 

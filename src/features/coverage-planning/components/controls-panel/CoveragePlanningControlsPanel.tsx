@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import ControlsPanelSection from "@/components/controls-panel/ControlsPanelSection";
 import ControlsPanelSeparator from "@/components/controls-panel/ControlsPanelSeparator";
@@ -326,6 +326,42 @@ export default function CoveragePlanningControlsPanel() {
     );
 
     const parameterSections = useMemo(() => groupParametersBySection(parameters), [parameters]);
+
+    // Seed defaults for any parameter not yet written to the store.
+    // ENVIRONMENT_FORMAT and ENVIRONMENT_TYPE are skipped — FormatSelect and GlobalTypeSelect
+    // already self-initialize from env state via their own useEffect hooks.
+    useEffect(() => {
+        if (computation.selectedAlgorithmId === null || computation.selectedProviderId === null) return;
+
+        const { parameterValues: storedValues, setParameterValue } = useParameterValuesStore.getState();
+
+        for (const parameter of parameters) {
+            if (
+                parameter.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_FORMAT ||
+                parameter.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_TYPE
+            ) {
+                continue;
+            }
+
+            const hasValue = storedValues.some(
+                (pv) =>
+                    pv.id === parameter.id &&
+                    pv.algorithmId === parameter.algorithmId &&
+                    pv.providerId === parameter.computationProviderId &&
+                    pv.environmentId === envId,
+            );
+
+            if (!hasValue && parameter.defaultValue !== "") {
+                setParameterValue(
+                    parameter.id,
+                    parameter.algorithmId,
+                    parameter.computationProviderId,
+                    envId,
+                    parameter.defaultValue,
+                );
+            }
+        }
+    }, [parameters, envId, computation.selectedAlgorithmId, computation.selectedProviderId]);
 
     const selectedProviderValue = computation.selectedProviderId === null ? "" : String(computation.selectedProviderId);
     const selectedAlgorithmValue = computation.selectedAlgorithmId === null ? "" : String(computation.selectedAlgorithmId);
