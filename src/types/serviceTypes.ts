@@ -44,13 +44,13 @@ export interface AlgorithmParameter {
     id: number;
     algorithmId: number;
     computationProviderId: number;
-    section?: MetadataParamSection;
     name: string;
     paramType: AlgoParamType;
     /** Valid values for enum params. */
     enumValues: string[];
     /** Serialized string default value. Empty string when not set. */
     defaultValue: string;
+    section?: MetadataParamSection;
     /** Optional application-level behavior handler for enum params. */
     appHandler?: SupportedAppParameterHandler;
 }
@@ -106,11 +106,11 @@ export type FetchMetadataPreviewResult =
 
 export interface MetadataParamResponse {
     id: number;
-    section?: MetadataParamSection;
     name: string;
     paramType: AlgoParamType;
     enumValues?: string[];
     defaultValue?: string;
+    section?: MetadataParamSection;
     appHandler?: SupportedAppParameterHandler;
 }
 

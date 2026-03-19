@@ -4,8 +4,8 @@ import type { AlgorithmParameter, ComputationAlgorithm, ComputationAlgorithmDeta
 export const ALGORITHM_PARAMETER_COLUMNS: CardModalListPartColumn[] = [
     { id: "name", title: "Name", width: 220 },
     { id: "type", title: "Type", width: 120 },
-    { id: "defaultValue", title: "Default Value", width: 180 },
     { id: "enumValues", title: "Enum Values", width: 240 },
+    { id: "defaultValue", title: "Default Value", width: 180 },
     { id: "appHandler", title: "App Handler", width: 220 },
 ];
 

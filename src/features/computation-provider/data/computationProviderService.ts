@@ -73,11 +73,11 @@ function buildFetchedMetadata(provider: ComputationProvider, data: MetadataRespo
                     id: parameter.id,
                     algorithmId,
                     computationProviderId,
-                    section: parameter.section,
                     name: parameter.name,
                     paramType: parameter.paramType,
                     enumValues: parameter.enumValues ?? [],
                     defaultValue: parameter.defaultValue ?? "",
+                    section: parameter.section,
                     appHandler: parameter.appHandler,
                 })),
             };
