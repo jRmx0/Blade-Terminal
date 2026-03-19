@@ -1,6 +1,7 @@
 import type { EnvFormat, GlobalType as EnvType, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
 
-export interface EnvironmentComputationConfig {
+export interface EnvironmentComputation {
+    environmentId: number;
     selectedProviderId: number | null;
     selectedAlgorithmId: number | null;
 }
@@ -20,7 +21,6 @@ export interface Environment {
     type: EnvType;
     zoneCount: number;
     obstacleCount: number;
-    computation: EnvironmentComputationConfig;
 }
 
 export interface Object {

@@ -1,20 +1,24 @@
 import { create } from "zustand";
 import { ENV_FORMAT, GLOBAL_TYPE, type EnvFormat, type GlobalType } from "@/config/db-ops/enums";
-import type { Environment } from "@/types/schemaTypes";
+import type { Environment, EnvironmentComputation } from "@/types/schemaTypes";
 import { getSaveMode } from "@/stores/saveModeStore";
 import { saveEnvironment } from "@server/db/environments";
+import { saveEnvironmentComputation } from "@server/db/environmentComputation";
 import {
-    createEmptyEnvironmentComputationConfig,
+    createEmptyEnvironmentComputation,
     normalizeEnvironment,
-    normalizeEnvironmentComputationConfig,
+    normalizeEnvironmentComputation,
 } from "@/utils/environmentComputation";
 
 interface EnvState {
     env: Environment;
-    /** True when env metadata has been changed since the last save or load. */
+    computation: EnvironmentComputation;
+    /** True when env metadata or computation selection has been changed since the last save or load. */
     isEnvDirty: boolean;
     /** Replaces the full environment record. Used by workspace bridge after load or init. Does not mark dirty. */
     setEnv: (env: Environment) => void;
+    /** Replaces the computation selection. Used by workspace bridge after load or init. Does not mark dirty. */
+    setComputation: (computation: EnvironmentComputation) => void;
     /** Updates the environment name and marks the record as dirty. Triggers autosave when mode is "autosave". */
     setName: (name: string) => void;
     /** Updates the environment format and marks the record as dirty. Triggers autosave when mode is "autosave". */
@@ -36,28 +40,33 @@ const INITIAL_ENV: Environment = {
     type: GLOBAL_TYPE.OFFLINE,
     zoneCount: 0,
     obstacleCount: 0,
-    computation: createEmptyEnvironmentComputationConfig(),
 };
 
-function autosaveEnv(env: Environment): void {
+const INITIAL_COMPUTATION: EnvironmentComputation = createEmptyEnvironmentComputation(0);
+
+function autosave(env: Environment, computation: EnvironmentComputation): void {
     if (getSaveMode() === "autosave") {
         saveEnvironment(env).catch(console.error);
+        saveEnvironmentComputation(computation).catch(console.error);
     }
 }
 
 function markEnvDirty(set: (fn: (state: EnvState) => Partial<EnvState>) => void, updater: (env: Environment) => Environment): void {
     set((state) => {
         const env = updater(normalizeEnvironment(state.env));
-        autosaveEnv(env);
+        autosave(env, state.computation);
         return { env, isEnvDirty: true };
     });
 }
 
 export const useEnvStore = create<EnvState>()((set) => ({
     env: INITIAL_ENV,
+    computation: INITIAL_COMPUTATION,
     isEnvDirty: false,
 
     setEnv: (env) => set({ env: normalizeEnvironment(env) }),
+
+    setComputation: (computation) => set({ computation: normalizeEnvironmentComputation(computation) }),
 
     setName: (name) => markEnvDirty(set, (env) => ({ ...env, name })),
 
@@ -67,46 +76,38 @@ export const useEnvStore = create<EnvState>()((set) => ({
 
     setComputationProviderId: (providerId) => {
         set((state) => {
-            const env = normalizeEnvironment(state.env);
-            const computation = normalizeEnvironmentComputationConfig(env.computation);
+            const computation = normalizeEnvironmentComputation(state.computation);
 
             if (computation.selectedProviderId === providerId) {
-                return { env };
+                return {};
             }
 
-            const nextEnv = {
-                ...env,
-                computation: {
-                    ...computation,
-                    selectedProviderId: providerId,
-                    selectedAlgorithmId: null,
-                },
+            const nextComputation: EnvironmentComputation = {
+                ...computation,
+                selectedProviderId: providerId,
+                selectedAlgorithmId: null,
             };
 
-            autosaveEnv(nextEnv);
-            return { env: nextEnv, isEnvDirty: true };
+            autosave(state.env, nextComputation);
+            return { computation: nextComputation, isEnvDirty: true };
         });
     },
 
     setComputationAlgorithmId: (algorithmId) => {
         set((state) => {
-            const env = normalizeEnvironment(state.env);
-            const computation = normalizeEnvironmentComputationConfig(env.computation);
+            const computation = normalizeEnvironmentComputation(state.computation);
 
             if (computation.selectedAlgorithmId === algorithmId) {
-                return { env };
+                return {};
             }
 
-            const nextEnv = {
-                ...env,
-                computation: {
-                    ...computation,
-                    selectedAlgorithmId: algorithmId,
-                },
+            const nextComputation: EnvironmentComputation = {
+                ...computation,
+                selectedAlgorithmId: algorithmId,
             };
 
-            autosaveEnv(nextEnv);
-            return { env: nextEnv, isEnvDirty: true };
+            autosave(state.env, nextComputation);
+            return { computation: nextComputation, isEnvDirty: true };
         });
     },
 

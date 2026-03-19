@@ -1,24 +1,23 @@
-import type { Environment, EnvironmentComputationConfig } from "@/types/schemaTypes";
+import type { Environment, EnvironmentComputation } from "@/types/schemaTypes";
 
-export function createEmptyEnvironmentComputationConfig(): EnvironmentComputationConfig {
+export function createEmptyEnvironmentComputation(environmentId: number): EnvironmentComputation {
     return {
+        environmentId,
         selectedProviderId: null,
         selectedAlgorithmId: null,
     };
 }
 
-export function normalizeEnvironmentComputationConfig(
-    config?: Partial<EnvironmentComputationConfig> | null,
-): EnvironmentComputationConfig {
+export function normalizeEnvironmentComputation(
+    computation: Partial<EnvironmentComputation> & { environmentId: number },
+): EnvironmentComputation {
     return {
-        selectedProviderId: typeof config?.selectedProviderId === "number" ? config.selectedProviderId : null,
-        selectedAlgorithmId: typeof config?.selectedAlgorithmId === "number" ? config.selectedAlgorithmId : null,
+        environmentId: computation.environmentId,
+        selectedProviderId: typeof computation.selectedProviderId === "number" ? computation.selectedProviderId : null,
+        selectedAlgorithmId: typeof computation.selectedAlgorithmId === "number" ? computation.selectedAlgorithmId : null,
     };
 }
 
 export function normalizeEnvironment(env: Environment): Environment {
-    return {
-        ...env,
-        computation: normalizeEnvironmentComputationConfig(env.computation),
-    };
+    return { ...env };
 }

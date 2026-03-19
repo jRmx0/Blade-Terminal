@@ -1,4 +1,5 @@
 import { getEnvironment, saveEnvironment } from "@server/db/environments";
+import { getEnvironmentComputation, saveEnvironmentComputation } from "@server/db/environmentComputation";
 import { deleteObjectsByEnvironment, saveObjects } from "@server/db/objects";
 import { saveVertices } from "@server/db/vertices";
 import { ENV_FORMAT, GLOBAL_TYPE, OBJECT_CATEGORY } from "@/config/db-ops/enums";
@@ -8,7 +9,7 @@ import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObj
 import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
 import { resolveNextEnvironmentId, loadCanvasForEnvironment, saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
-import { createEmptyEnvironmentComputationConfig } from "@/utils/environmentComputation";
+import { createEmptyEnvironmentComputation } from "@/utils/environmentComputation";
 
 const BLANK_ENV: Omit<Environment, "id"> = {
     name: "Untitled Environment",
@@ -16,7 +17,6 @@ const BLANK_ENV: Omit<Environment, "id"> = {
     type: GLOBAL_TYPE.OFFLINE,
     zoneCount: 0,
     obstacleCount: 0,
-    computation: createEmptyEnvironmentComputationConfig(),
 };
 
 function countByCategory(objects: { category: string }[], category: string): number {
@@ -30,13 +30,17 @@ function modeAfterFirstSave(): "manual" | "autosave" {
 /** Initializes a fresh blank environment at app startup. Seeds the ID counter from IndexedDB. */
 export async function initializeWorkspace(): Promise<void> {
     const nextId = await resolveNextEnvironmentId();
-    useEnvStore.getState().setEnv({ ...BLANK_ENV, id: nextId });
+    const env = { ...BLANK_ENV, id: nextId };
+    useEnvStore.getState().setEnv(env);
+    useEnvStore.getState().setComputation(createEmptyEnvironmentComputation(nextId));
 }
 
 /** Discards the current environment and starts a blank one without saving. */
 export async function resetWorkspace(): Promise<void> {
     const nextId = await resolveNextEnvironmentId();
-    useEnvStore.getState().setEnv({ ...BLANK_ENV, id: nextId });
+    const env = { ...BLANK_ENV, id: nextId };
+    useEnvStore.getState().setEnv(env);
+    useEnvStore.getState().setComputation(createEmptyEnvironmentComputation(nextId));
     useEnvStore.getState().clearDirty();
     useSaveModeStore.getState().setMode("session");
     useCanvasObjectStore.getState().setObjects([], []);
@@ -53,6 +57,8 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     const zoneObjectCount = countByCategory(objects, OBJECT_CATEGORY.ZONE);
     const obstacleObjectCount = countByCategory(objects, OBJECT_CATEGORY.OBSTACLE);
     useEnvStore.getState().setEnv({ ...env, zoneCount: zoneObjectCount, obstacleCount: obstacleObjectCount });
+    const computation = await getEnvironmentComputation(environmentId);
+    useEnvStore.getState().setComputation(computation);
     useCanvasHistoryStore.getState().resetHistory();
 }
 
@@ -69,6 +75,7 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
     const targetVertices = vertices.map((v) => ({ ...v, environmentId: targetId }));
     await Promise.all([
         saveEnvironment(targetEnv),
+        saveEnvironmentComputation(createEmptyEnvironmentComputation(targetId)),
         targetObjects.length > 0 ? saveObjects(targetObjects) : Promise.resolve(),
         targetVertices.length > 0 ? saveVertices(targetVertices) : Promise.resolve(),
     ]);

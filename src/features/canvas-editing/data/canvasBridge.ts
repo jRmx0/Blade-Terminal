@@ -1,4 +1,5 @@
 import { getLastEnvironmentId, saveEnvironment } from "@server/db/environments";
+import { saveEnvironmentComputation } from "@server/db/environmentComputation";
 import { getObjectsByEnvironment, saveObjects, deleteObject } from "@server/db/objects";
 import { getVerticesByObjects, saveVertices, deleteVertex } from "@server/db/vertices";
 import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
@@ -59,7 +60,7 @@ export async function saveCanvas(): Promise<void> {
 
     const { dirtyObjects, dirtyVertices, deletedObjects, deletedVertices, clearDirty } =
         useCanvasObjectStore.getState();
-    const { env, isEnvDirty, clearDirty: clearEnvDirty } = useEnvStore.getState();
+    const { env, isEnvDirty, computation, clearDirty: clearEnvDirty } = useEnvStore.getState();
 
     if (!isEnvDirty && !dirtyObjects.length && !deletedObjects.length && !dirtyVertices.length && !deletedVertices.length) return;
 
@@ -67,6 +68,7 @@ export async function saveCanvas(): Promise<void> {
     try {
         await Promise.all([
             isEnvDirty ? saveEnvironment(env) : Promise.resolve(),
+            isEnvDirty ? saveEnvironmentComputation(computation) : Promise.resolve(),
             persistDirtyObjects(dirtyObjects, deletedObjects),
             persistDirtyVertices(dirtyVertices, deletedVertices),
         ]);

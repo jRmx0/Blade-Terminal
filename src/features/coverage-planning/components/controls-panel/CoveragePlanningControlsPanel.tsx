@@ -179,7 +179,7 @@ function DynamicParameterField({
 }
 
 export default function CoveragePlanningControlsPanel() {
-    const computation = useEnvStore((state) => state.env.computation);
+    const computation = useEnvStore((state) => state.computation);
     const envId = useEnvStore((state) => state.env.id);
     const setComputationProviderId = useEnvStore((state) => state.setComputationProviderId);
     const setComputationAlgorithmId = useEnvStore((state) => state.setComputationAlgorithmId);
@@ -242,8 +242,8 @@ export default function CoveragePlanningControlsPanel() {
             return;
         }
 
-        const { env, setFormat, setType } = useEnvStore.getState();
-        const providerId = env.computation.selectedProviderId;
+        const { env, computation, setFormat, setType } = useEnvStore.getState();
+        const providerId = computation.selectedProviderId;
 
         if (providerId === null) {
             setComputationAlgorithmId(newAlgorithmId);

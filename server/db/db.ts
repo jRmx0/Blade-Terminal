@@ -16,6 +16,7 @@ db.version(1).stores({
     computationAlgorithms: "[id+computationProviderId], computationProviderId",
     computationAlgorithmParameters: "[id+algorithmId+computationProviderId], algorithmId, computationProviderId, [algorithmId+computationProviderId]",
     environmentComputationParameterValues: "[id+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId",
+    environmentComputation: "environmentId",
     appEnumValues: "[enumGroup+value], enumGroup",
 });
 
