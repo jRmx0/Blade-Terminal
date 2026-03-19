@@ -1,11 +1,13 @@
 import { getLastEnvironmentId, saveEnvironment } from "@server/db/environments";
 import { saveEnvironmentComputation } from "@server/db/environmentComputation";
+import { saveParameterValues } from "@server/db/environmentComputationParameterValues";
 import { getObjectsByEnvironment, saveObjects, deleteObject } from "@server/db/objects";
 import { getVerticesByObjects, saveVertices, deleteVertex } from "@server/db/vertices";
 import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
 import type { Object, Vertex, Environment } from "@/types/schemaTypes";
 import { useCanvasObjectStore } from "../stores/canvasObjectStore";
 import { useEnvStore } from "@/stores/envStore";
+import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 
 // ── Count synchronization ──────────────────────────────────────────────────
 // Reactively keeps envStore zone/obstacle counts derived from the canvas object
@@ -61,19 +63,22 @@ export async function saveCanvas(): Promise<void> {
     const { dirtyObjects, dirtyVertices, deletedObjects, deletedVertices, clearDirty } =
         useCanvasObjectStore.getState();
     const { env, isEnvDirty, computation, clearDirty: clearEnvDirty } = useEnvStore.getState();
+    const { parameterValues, isParameterValuesDirty, clearDirty: clearParamsDirty } = useParameterValuesStore.getState();
 
-    if (!isEnvDirty && !dirtyObjects.length && !deletedObjects.length && !dirtyVertices.length && !deletedVertices.length) return;
+    if (!isEnvDirty && !isParameterValuesDirty && !dirtyObjects.length && !deletedObjects.length && !dirtyVertices.length && !deletedVertices.length) return;
 
     _isSaving = true;
     try {
         await Promise.all([
             isEnvDirty ? saveEnvironment(env) : Promise.resolve(),
             isEnvDirty ? saveEnvironmentComputation(computation) : Promise.resolve(),
+            isParameterValuesDirty ? saveParameterValues(parameterValues) : Promise.resolve(),
             persistDirtyObjects(dirtyObjects, deletedObjects),
             persistDirtyVertices(dirtyVertices, deletedVertices),
         ]);
         clearDirty();
         clearEnvDirty();
+        clearParamsDirty();
     } finally {
         _isSaving = false;
     }

@@ -13,6 +13,10 @@ export async function getParametersByAlgorithm(
         .toArray();
 }
 
+export async function getAllAlgorithmParameters(): Promise<AlgorithmParameter[]> {
+    return table.toArray();
+}
+
 export async function bulkPutParameters(parameters: AlgorithmParameter[]): Promise<void> {
     await table.bulkPut(parameters);
 }

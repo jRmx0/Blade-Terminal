@@ -11,6 +11,7 @@ import { isSupportedAppParameterHandler } from "@/config/computation/appParamete
 import { db } from "@server/db/db";
 import { updateMetadataTimestamp } from "@server/db/computationProviders";
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
+import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 
 // ─── Request builder ──────────────────────────────────────────────────────────
 
@@ -202,6 +203,18 @@ export async function persistFetchedMetadata(
     });
 
     await updateMetadataTimestamp(providerId, metadata.urlAtLastFetch, metadata.metadataFetchedAt);
+
+    const savedAlgorithms = metadata.algorithms.map(({ algorithm }) => ({
+        ...algorithm,
+        computationProviderId: providerId,
+    }));
+    const savedParameters = metadata.algorithms.flatMap(({ parameters }) =>
+        parameters.map((parameter) => ({
+            ...parameter,
+            computationProviderId: providerId,
+        })),
+    );
+    useComputationCatalogStore.getState().setProviderAlgorithms(providerId, savedAlgorithms, savedParameters);
 }
 
 // ─── Test Connection ──────────────────────────────────────────────────────────

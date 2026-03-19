@@ -5,6 +5,10 @@ export async function getAlgorithmsByProvider(computationProviderId: number): Pr
     return db.table("computationAlgorithms").where("computationProviderId").equals(computationProviderId).toArray();
 }
 
+export async function getAllComputationAlgorithms(): Promise<ComputationAlgorithm[]> {
+    return db.table("computationAlgorithms").toArray();
+}
+
 export async function replaceAlgorithmsForProvider(
     computationProviderId: number,
     algorithms: Omit<ComputationAlgorithm, "id">[],

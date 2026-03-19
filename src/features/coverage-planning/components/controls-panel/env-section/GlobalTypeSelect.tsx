@@ -7,7 +7,7 @@ import {
     type GlobalType,
 } from "@/config/db-ops/enums";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
-import { setParameterValue } from "@server/db/environmentComputationParameterValues";
+import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 
@@ -36,17 +36,18 @@ export default function GlobalTypeSelection({
     const setType = useEnvStore((state) => state.setType);
     const objects = useCanvasObjectStore((state) => state.objects);
     const updateObjectsType = useCanvasObjectStore((state) => state.updateObjectsType);
+    const setParameterValue = useParameterValuesStore((state) => state.setParameterValue);
 
     useEffect(() => {
         if (providerId === undefined || algorithmId === undefined || parameterId === undefined) return;
-        setParameterValue(parameterId, algorithmId, providerId, envId, globalTypeToMetadataValue(type)).catch(console.error);
-    }, [algorithmId, envId, parameterId, providerId, type]);
+        setParameterValue(parameterId, algorithmId, providerId, envId, globalTypeToMetadataValue(type));
+    }, [algorithmId, envId, parameterId, providerId, setParameterValue, type]);
 
     function applyType(nextType: GlobalType) {
         setType(nextType);
 
         if (providerId !== undefined && algorithmId !== undefined && parameterId !== undefined) {
-            setParameterValue(parameterId, algorithmId, providerId, envId, globalTypeToMetadataValue(nextType)).catch(console.error);
+            setParameterValue(parameterId, algorithmId, providerId, envId, globalTypeToMetadataValue(nextType));
         }
     }
 

@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@server/db/db";
 import type { ComputationProvider } from "@/types/serviceTypes";
 import { useComputationProvidersListModalStore } from "@/features/computation-provider/stores/computationProvidersListModalStore";
 import { useComputationProviderCardStore } from "@/features/computation-provider/stores/computationProviderCardStore";
 import { deleteComputationProvider } from "@server/db/computationProviders";
+import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import ListModal, { type ListModalAction } from "@/components/modals/list-modal/ListModal";
@@ -14,10 +13,7 @@ export default function ComputationProvidersListModal() {
     const openCard = useComputationProviderCardStore((s) => s.open);
     const [selectedId, setSelectedId] = useState<number | null>(null);
 
-    const providers = useLiveQuery<ComputationProvider[]>(
-        () => db.table("computationProviders").toArray(),
-        [],
-    );
+    const providers = useComputationCatalogStore((s) => s.providers);
 
     useEffect(() => {
         if (!isOpen) setSelectedId(null);
@@ -34,10 +30,11 @@ export default function ComputationProvidersListModal() {
     }
 
     function handleDelete(id: number) {
-        const provider = providers?.find((p) => p.id === id);
+        const provider = providers.find((p) => p.id === id);
         if (!provider) return;
         useDeleteModalStore.getState().requestDelete(provider.name, async () => {
             await deleteComputationProvider(id);
+            useComputationCatalogStore.getState().removeProvider(id);
         });
     }
 
@@ -49,7 +46,7 @@ export default function ComputationProvidersListModal() {
             title="Computation Providers"
             shortcutToken="computation-provider-list-modal"
             onClose={close}
-            items={providers?.filter((p): p is ComputationProvider & { id: number } => p.id !== undefined) ?? []}
+            items={providers.filter((p): p is ComputationProvider & { id: number } => p.id !== undefined)}
             selectedId={selectedId}
             onSelect={setSelectedId}
             onDoubleClick={handleView}

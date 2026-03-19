@@ -26,6 +26,14 @@ export async function setParameterValue(
     await table.put({ id, environmentId, providerId, algorithmId, value });
 }
 
+export async function getAllParameterValuesByEnvironment(environmentId: number): Promise<EnvironmentComputationParameterValue[]> {
+    return table.where("environmentId").equals(environmentId).toArray();
+}
+
+export async function saveParameterValues(values: EnvironmentComputationParameterValue[]): Promise<void> {
+    await table.bulkPut(values);
+}
+
 export async function deleteParameterValuesByEnvironment(environmentId: number): Promise<void> {
     await table.where("environmentId").equals(environmentId).delete();
 }

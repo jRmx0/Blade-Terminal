@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@server/db/db";
 import { saveComputationProvider, deleteComputationProvider } from "@server/db/computationProviders";
+import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import type { ModalActionBarItem } from "@/components/modal/modal-action-bar/ModalActionBar";
 import type {
     CardModalFastTabConfig,
@@ -80,21 +80,15 @@ export function useComputationProviderCardController() {
     const canSaveRef = useRef(false);
     const skipNextProviderLoadRef = useRef<number | null>(null);
 
-    const algorithms = useLiveQuery<ComputationAlgorithm[]>(
-        () => (
-            editingId !== null
-                ? db.table("computationAlgorithms").where("computationProviderId").equals(editingId).toArray()
-                : Promise.resolve([])
-        ),
-        [editingId],
+    const allCatalogAlgorithms = useComputationCatalogStore((s) => s.algorithms);
+    const allCatalogParameters = useComputationCatalogStore((s) => s.parameters);
+    const algorithms = useMemo<ComputationAlgorithm[]>(
+        () => (editingId !== null ? allCatalogAlgorithms.filter((a) => a.computationProviderId === editingId) : []),
+        [allCatalogAlgorithms, editingId],
     );
-    const algorithmParameters = useLiveQuery<AlgorithmParameter[]>(
-        () => (
-            editingId !== null
-                ? db.table("computationAlgorithmParameters").where("computationProviderId").equals(editingId).toArray()
-                : Promise.resolve([])
-        ),
-        [editingId],
+    const algorithmParameters = useMemo<AlgorithmParameter[]>(
+        () => (editingId !== null ? allCatalogParameters.filter((p) => p.computationProviderId === editingId) : []),
+        [allCatalogParameters, editingId],
     );
 
     const normalizedForm = normalizeComputationProviderForm(form);
@@ -222,6 +216,9 @@ export function useComputationProviderCardController() {
                     : formSnapshot;
                 const savedId = await saveComputationProvider(record);
 
+                const savedProvider: ComputationProvider = { ...record, id: savedId };
+                useComputationCatalogStore.getState().upsertProvider(savedProvider);
+
                 if (draftMetadataSnapshot !== null) {
                     await persistFetchedMetadata(savedId, draftMetadataSnapshot);
                 }
@@ -316,6 +313,7 @@ export function useComputationProviderCardController() {
 
         useDeleteModalStore.getState().requestDelete(form.name || "this provider", async () => {
             await deleteComputationProvider(editingId);
+            useComputationCatalogStore.getState().removeProvider(editingId);
             close();
             openList();
         });

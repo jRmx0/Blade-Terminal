@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
 import { ENV_FORMAT_OPTIONS, type EnvFormat } from "@/config/db-ops/enums";
-import { setParameterValue } from "@server/db/environmentComputationParameterValues";
+import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useEnvStore } from "@/stores/envStore";
 
 function formatToMetadataValue(format: EnvFormat): string {
@@ -27,18 +27,19 @@ export default function FormatSelection({
     const envId = useEnvStore((state) => state.env.id);
     const format = useEnvStore((state) => state.env.format);
     const setFormat = useEnvStore((state) => state.setFormat);
+    const setParameterValue = useParameterValuesStore((state) => state.setParameterValue);
 
     useEffect(() => {
         if (providerId === undefined || algorithmId === undefined || parameterId === undefined) return;
-        setParameterValue(parameterId, algorithmId, providerId, envId, formatToMetadataValue(format)).catch(console.error);
-    }, [algorithmId, envId, format, parameterId, providerId]);
+        setParameterValue(parameterId, algorithmId, providerId, envId, formatToMetadataValue(format));
+    }, [algorithmId, envId, format, parameterId, providerId, setParameterValue]);
 
     function handleChange(nextValue: string) {
         const nextFormat = nextValue as EnvFormat;
         setFormat(nextFormat);
 
         if (providerId !== undefined && algorithmId !== undefined && parameterId !== undefined) {
-            setParameterValue(parameterId, algorithmId, providerId, envId, formatToMetadataValue(nextFormat)).catch(console.error);
+            setParameterValue(parameterId, algorithmId, providerId, envId, formatToMetadataValue(nextFormat));
         }
     }
 

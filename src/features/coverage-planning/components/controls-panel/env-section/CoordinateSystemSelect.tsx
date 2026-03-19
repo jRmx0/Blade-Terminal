@@ -1,6 +1,6 @@
 import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
 import type { AlgorithmParameter, AppEnumValue } from "@/types/serviceTypes";
-import { setParameterValue } from "@server/db/environmentComputationParameterValues";
+import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useEnvStore } from "@/stores/envStore";
 
 interface CoordinateSystemSelectProps {
@@ -28,6 +28,7 @@ export default function CoordinateSystemSelect({
     appEnums,
 }: CoordinateSystemSelectProps) {
     const envId = useEnvStore((state) => state.env.id);
+    const setParameterValue = useParameterValuesStore((state) => state.setParameterValue);
 
     return (
         <ControlsPanelSectionSelect
@@ -39,7 +40,7 @@ export default function CoordinateSystemSelect({
                 parameter.computationProviderId,
                 envId,
                 nextValue,
-            ).catch(console.error)}
+            )}
             options={buildCoordinateSystemOptions(appEnums, parameter.enumValues)}
         />
     );

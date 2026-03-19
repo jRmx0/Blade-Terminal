@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import ControlsPanelSection from "@/components/controls-panel/ControlsPanelSection";
 import ControlsPanelSeparator from "@/components/controls-panel/ControlsPanelSeparator";
@@ -17,15 +17,13 @@ import {
 import CoordinateSystemSelect from "@/features/coverage-planning/components/controls-panel/env-section/CoordinateSystemSelect";
 import FormatSelection from "@/features/coverage-planning/components/controls-panel/env-section/FormatSelect";
 import GlobalTypeSelection from "@/features/coverage-planning/components/controls-panel/env-section/GlobalTypeSelect";
-import { getAllComputationProviders } from "@server/db/computationProviders";
-import { getAlgorithmsByProvider } from "@server/db/computationAlgorithms";
-import { getParametersByAlgorithm } from "@server/db/algorithmParameters";
 import { getAllAppEnums } from "@server/db/appEnums";
 import { useEnvStore } from "@/stores/envStore";
+import { useParameterValuesStore } from "@/stores/parameterValuesStore";
+import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 import type { AlgorithmParameter, AppEnumValue } from "@/types/serviceTypes";
-import { getParameterValues, setParameterValue } from "@server/db/environmentComputationParameterValues";
 import type { EnvironmentComputationParameterValue } from "@/types/schemaTypes";
 
 interface ParameterSectionGroup {
@@ -184,52 +182,38 @@ export default function CoveragePlanningControlsPanel() {
     const setComputationProviderId = useEnvStore((state) => state.setComputationProviderId);
     const setComputationAlgorithmId = useEnvStore((state) => state.setComputationAlgorithmId);
 
-    const providers = useLiveQuery(() => getAllComputationProviders(), []);
-    const algorithms = useLiveQuery(
-        () => (computation.selectedProviderId === null ? Promise.resolve([]) : getAlgorithmsByProvider(computation.selectedProviderId)),
-        [computation.selectedProviderId],
-    );
-    const parameters = useLiveQuery(
-        () => {
-            if (computation.selectedProviderId === null || computation.selectedAlgorithmId === null) {
-                return Promise.resolve([]);
-            }
+    const allParameterValues = useParameterValuesStore((state) => state.parameterValues);
+    const setParameterValueInStore = useParameterValuesStore((state) => state.setParameterValue);
 
-            return getParametersByAlgorithm(computation.selectedAlgorithmId, computation.selectedProviderId);
-        },
-        [computation.selectedProviderId, computation.selectedAlgorithmId],
-    );
-    const parameterValues = useLiveQuery(
-        () => {
-            if (computation.selectedProviderId === null || computation.selectedAlgorithmId === null) {
-                return Promise.resolve([]);
-            }
+    const parameterValues = useMemo(() => {
+        if (computation.selectedProviderId === null || computation.selectedAlgorithmId === null) return [];
+        return allParameterValues.filter(
+            (pv) => pv.algorithmId === computation.selectedAlgorithmId && pv.providerId === computation.selectedProviderId,
+        );
+    }, [allParameterValues, computation.selectedAlgorithmId, computation.selectedProviderId]);
 
-            return getParameterValues(computation.selectedAlgorithmId, computation.selectedProviderId, envId);
-        },
-        [envId, computation.selectedProviderId, computation.selectedAlgorithmId],
-    );
+    const allProviders = useComputationCatalogStore((s) => s.providers);
+    const allAlgorithms = useComputationCatalogStore((s) => s.algorithms);
+    const allParameters = useComputationCatalogStore((s) => s.parameters);
     const appEnums = useLiveQuery(() => getAllAppEnums(), []);
 
-    useEffect(() => {
-        if (providers === undefined) return;
-        if (computation.selectedProviderId === null) return;
-
-        const providerExists = providers.some((provider) => provider.id === computation.selectedProviderId);
-        if (!providerExists) {
-            setComputationProviderId(null);
-        }
-    }, [providers, computation.selectedProviderId, setComputationProviderId]);
-
-    useEffect(() => {
-        if (algorithms === undefined) return;
-        if (computation.selectedAlgorithmId === null) return;
-
-        const algorithmExists = algorithms.some((algorithm) => algorithm.id === computation.selectedAlgorithmId);
-        if (!algorithmExists) {
-            setComputationAlgorithmId(null);
-        }
-    }, [algorithms, computation.selectedAlgorithmId, setComputationAlgorithmId]);
+    const providers = allProviders;
+    const algorithms = useMemo(
+        () => (computation.selectedProviderId === null
+            ? []
+            : allAlgorithms.filter((a) => a.computationProviderId === computation.selectedProviderId)),
+        [allAlgorithms, computation.selectedProviderId],
+    );
+    const parameters = useMemo(
+        () => {
+            if (computation.selectedProviderId === null || computation.selectedAlgorithmId === null) return [];
+            return allParameters.filter(
+                (p) => p.computationProviderId === computation.selectedProviderId
+                    && p.algorithmId === computation.selectedAlgorithmId,
+            );
+        },
+        [allParameters, computation.selectedProviderId, computation.selectedAlgorithmId],
+    );
 
     // Validate format/type constraints against the new algorithm's params before committing the change.
     // Format is reset silently. Type changes that would update object types require confirmation.
@@ -250,7 +234,9 @@ export default function CoveragePlanningControlsPanel() {
             return;
         }
 
-        const newParams = await getParametersByAlgorithm(newAlgorithmId, providerId);
+        const newParams = useComputationCatalogStore.getState().parameters.filter(
+            (p) => p.algorithmId === newAlgorithmId && p.computationProviderId === providerId,
+        );
         const { objects, updateObjectsType } = useCanvasObjectStore.getState();
 
         // ── Format (silent reset) ─────────────────────────────────────────────
@@ -318,7 +304,7 @@ export default function CoveragePlanningControlsPanel() {
     const providerOptions = useMemo(
         () => [
             { value: "", label: "" },
-            ...(providers ?? [])
+            ...providers
                 .filter((provider): provider is typeof provider & { id: number } => provider.id !== undefined)
                 .map((provider) => ({
                     value: String(provider.id),
@@ -331,7 +317,7 @@ export default function CoveragePlanningControlsPanel() {
     const algorithmOptions = useMemo(
         () => [
             { value: "", label: "" },
-            ...(algorithms ?? []).map((algorithm) => ({
+            ...algorithms.map((algorithm) => ({
                 value: String(algorithm.id),
                 label: algorithm.name,
             })),
@@ -339,7 +325,7 @@ export default function CoveragePlanningControlsPanel() {
         [algorithms],
     );
 
-    const parameterSections = useMemo(() => groupParametersBySection(parameters ?? []), [parameters]);
+    const parameterSections = useMemo(() => groupParametersBySection(parameters), [parameters]);
 
     const selectedProviderValue = computation.selectedProviderId === null ? "" : String(computation.selectedProviderId);
     const selectedAlgorithmValue = computation.selectedAlgorithmId === null ? "" : String(computation.selectedAlgorithmId);
@@ -353,7 +339,7 @@ export default function CoveragePlanningControlsPanel() {
                     value={selectedProviderValue}
                     onChange={(value) => setComputationProviderId(value === "" ? null : Number(value))}
                     options={providerOptions}
-                    disabled={(providers?.length ?? 0) === 0}
+                    disabled={providers.length === 0}
                 />
 
                 <ControlsPanelSectionSelect
@@ -361,7 +347,7 @@ export default function CoveragePlanningControlsPanel() {
                     value={selectedAlgorithmValue}
                     onChange={(value) => { handleAlgorithmChange(value).catch(console.error); }}
                     options={algorithmOptions}
-                    disabled={computation.selectedProviderId === null || (algorithms?.length ?? 0) === 0}
+                    disabled={computation.selectedProviderId === null || algorithms.length === 0}
                 />
             </ControlsPanelSection>
 
@@ -379,16 +365,16 @@ export default function CoveragePlanningControlsPanel() {
                             parameter={parameter}
                             selectedProviderId={computation.selectedProviderId!}
                             selectedAlgorithmId={computation.selectedAlgorithmId!}
-                            parameterValues={parameterValues ?? []}
+                            parameterValues={parameterValues}
                             appEnums={resolvedAppEnums}
                             onChange={(parameterId, value) => {
-                                setParameterValue(
+                                setParameterValueInStore(
                                     parameterId,
                                     computation.selectedAlgorithmId!,
                                     computation.selectedProviderId!,
                                     envId,
                                     value,
-                                ).catch(console.error);
+                                );
                             }}
                         />
                     ))}

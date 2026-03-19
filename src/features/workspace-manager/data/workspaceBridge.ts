@@ -1,5 +1,6 @@
 import { getEnvironment, saveEnvironment } from "@server/db/environments";
 import { getEnvironmentComputation, saveEnvironmentComputation } from "@server/db/environmentComputation";
+import { getAllParameterValuesByEnvironment, saveParameterValues } from "@server/db/environmentComputationParameterValues";
 import { deleteObjectsByEnvironment, saveObjects } from "@server/db/objects";
 import { saveVertices } from "@server/db/vertices";
 import { ENV_FORMAT, GLOBAL_TYPE, OBJECT_CATEGORY } from "@/config/db-ops/enums";
@@ -8,6 +9,8 @@ import { useEnvStore } from "@/stores/envStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
+import { useParameterValuesStore } from "@/stores/parameterValuesStore";
+import { loadComputationCatalog } from "@/stores/computationCatalogStore";
 import { resolveNextEnvironmentId, loadCanvasForEnvironment, saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
 import { createEmptyEnvironmentComputation } from "@/utils/environmentComputation";
 
@@ -33,6 +36,8 @@ export async function initializeWorkspace(): Promise<void> {
     const env = { ...BLANK_ENV, id: nextId };
     useEnvStore.getState().setEnv(env);
     useEnvStore.getState().setComputation(createEmptyEnvironmentComputation(nextId));
+    useParameterValuesStore.getState().setParameterValues([]);
+    await loadComputationCatalog();
 }
 
 /** Discards the current environment and starts a blank one without saving. */
@@ -42,6 +47,7 @@ export async function resetWorkspace(): Promise<void> {
     useEnvStore.getState().setEnv(env);
     useEnvStore.getState().setComputation(createEmptyEnvironmentComputation(nextId));
     useEnvStore.getState().clearDirty();
+    useParameterValuesStore.getState().setParameterValues([]);
     useSaveModeStore.getState().setMode("session");
     useCanvasObjectStore.getState().setObjects([], []);
     useCanvasHistoryStore.getState().resetHistory();
@@ -59,12 +65,14 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     useEnvStore.getState().setEnv({ ...env, zoneCount: zoneObjectCount, obstacleCount: obstacleObjectCount });
     const computation = await getEnvironmentComputation(environmentId);
     useEnvStore.getState().setComputation(computation);
+    const parameterValues = await getAllParameterValuesByEnvironment(environmentId);
+    useParameterValuesStore.getState().setParameterValues(parameterValues);
     useCanvasHistoryStore.getState().resetHistory();
 }
 
 /** Saves the current canvas as a new environment or overwrites an existing one, then loads it. */
 export async function saveAsWorkspace(name: string, selectedEnvId: number | null): Promise<void> {
-    const { env } = useEnvStore.getState();
+    const { env, computation } = useEnvStore.getState();
     const { objects, vertices } = useCanvasObjectStore.getState();
     const targetId = selectedEnvId ?? (await resolveNextEnvironmentId());
     const targetEnv: Environment = { ...env, id: targetId, name };
@@ -73,9 +81,12 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
     }
     const targetObjects = objects.map((o) => ({ ...o, environmentId: targetId }));
     const targetVertices = vertices.map((v) => ({ ...v, environmentId: targetId }));
+    const { parameterValues } = useParameterValuesStore.getState();
+    const targetParamValues = parameterValues.map((pv) => ({ ...pv, environmentId: targetId }));
     await Promise.all([
         saveEnvironment(targetEnv),
-        saveEnvironmentComputation(createEmptyEnvironmentComputation(targetId)),
+        saveEnvironmentComputation({ ...computation, environmentId: targetId }),
+        targetParamValues.length > 0 ? saveParameterValues(targetParamValues) : Promise.resolve(),
         targetObjects.length > 0 ? saveObjects(targetObjects) : Promise.resolve(),
         targetVertices.length > 0 ? saveVertices(targetVertices) : Promise.resolve(),
     ]);
