@@ -34,6 +34,7 @@ import {
 import { validateComputationProviderUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
+import { useSaveModeStore } from "@/stores/saveModeStore";
 import type {
     AlgorithmParameter,
     ComputationAlgorithm,
@@ -360,7 +361,8 @@ export function useComputationProviderCardController() {
             return;
         }
 
-        const shouldPersistImmediately = editingId !== null && !isDirty;
+        const shouldPersistImmediately = editingId !== null && !isDirty
+            && useSaveModeStore.getState().mode === "autosave";
 
         setForm((currentForm) => ({
             ...currentForm,
