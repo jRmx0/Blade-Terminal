@@ -114,6 +114,8 @@ export interface MetadataParamResponse {
     appHandler?: SupportedAppParameterHandler;
 }
 
+export type DebugLayerType = "Point" | "Line" | "Polygon";
+
 export interface DebugLayerStyle {
     className: string;
     pointRadius?: number;
@@ -124,6 +126,7 @@ export interface DebugLayerMetadata {
     id: number;
     key: string;
     name: string;
+    type: DebugLayerType;
     style: DebugLayerStyle;
 }
 
