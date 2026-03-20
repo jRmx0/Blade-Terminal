@@ -98,12 +98,12 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
         return { ok: false, error: "No zone drawn on canvas." };
     }
 
-    const zones = zoneObjects.map((o) =>
-        objectVertices(vertices, o.id).map(({ x, y }) => ({ x, y })),
-    );
-    const obstacles = obstacleObjects.map((o) =>
-        objectVertices(vertices, o.id).map(({ x, y }) => ({ x, y })),
-    );
+    const zones = zoneObjects.map((o) => ({
+        vertices: objectVertices(vertices, o.id).map(({ x, y }) => ({ x, y })),
+    }));
+    const obstacles = obstacleObjects.map((o) => ({
+        vertices: objectVertices(vertices, o.id).map(({ x, y }) => ({ x, y })),
+    }));
 
     const requestBody = {
         algorithmId: selectedAlgorithmId,
