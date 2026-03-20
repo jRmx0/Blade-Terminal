@@ -114,10 +114,24 @@ export interface MetadataParamResponse {
     appHandler?: SupportedAppParameterHandler;
 }
 
+export interface DebugLayerStyle {
+    className: string;
+    pointRadius?: number;
+    fontSize?: number;
+}
+
+export interface DebugLayerMetadata {
+    id: number;
+    key: string;
+    name: string;
+    style: DebugLayerStyle;
+}
+
 export interface MetadataAlgorithmResponse {
     id: number;
     name: string;
     parameters: MetadataParamResponse[];
+    debugLayers?: DebugLayerMetadata[];
 }
 
 export interface MetadataResponse {
