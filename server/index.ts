@@ -22,3 +22,5 @@ console.log(`🚀 Server running at ${server.url}`);
 export { getEnvironment, getAllEnvironments, saveEnvironment, deleteEnvironment } from "./db/environments";
 export { getObject, getObjectsByEnvironment, saveObject, saveObjects, deleteObject, deleteObjectsByEnvironment } from "./db/objects";
 export { getVertex, getVerticesByObject, getVerticesByObjects, saveVertex, saveVertices, updateVertex, deleteVertex, deleteVertices, deleteVerticesByObject, deleteVerticesByObjects, deleteVerticesByEnvironment } from "./db/vertices";
+export { getAllLayerSettings, getLayerSettingsByLayerId, upsertLayerSetting } from "./db/layerSettings";
+export { getAllLayers, getLayerByKey } from "./db/layers";
