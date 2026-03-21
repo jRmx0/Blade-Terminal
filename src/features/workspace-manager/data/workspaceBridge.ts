@@ -11,6 +11,7 @@ import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHi
 import { useSaveModeStore } from "@/stores/saveModeStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { loadComputationCatalog } from "@/stores/computationCatalogStore";
+import { loadLayerSettings } from "@/stores/layerSettingsStore";
 import { resolveNextEnvironmentId, loadCanvasForEnvironment, saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
 import { createEmptyEnvironmentComputation } from "@/utils/environmentComputation";
 
@@ -38,6 +39,7 @@ export async function initializeWorkspace(): Promise<void> {
     useEnvStore.getState().setComputation(createEmptyEnvironmentComputation(nextId));
     useParameterValuesStore.getState().setParameterValues([]);
     await loadComputationCatalog();
+    await loadLayerSettings();
 }
 
 /** Discards the current environment and starts a blank one without saving. */
@@ -51,6 +53,7 @@ export async function resetWorkspace(): Promise<void> {
     useSaveModeStore.getState().setMode("session");
     useCanvasObjectStore.getState().setObjects([], []);
     useCanvasHistoryStore.getState().resetHistory();
+    await loadLayerSettings();
 }
 
 /** Loads an existing environment and its canvas objects from IndexedDB. */
@@ -72,6 +75,7 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     useParameterValuesStore.getState().setParameterValues(parameterValues);
     useEnvStore.getState().setComputation(computation);
     useCanvasHistoryStore.getState().resetHistory();
+    await loadLayerSettings();
 }
 
 /** Saves the current canvas as a new environment or overwrites an existing one, then loads it. */
