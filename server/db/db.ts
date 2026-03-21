@@ -1,5 +1,6 @@
 import Dexie from "dexie";
 import type { AppEnumValue } from "@/types/serviceTypes";
+import { LAYER_REGISTRY, LAYER_SETTINGS_DEFAULTS } from "@/config/layers/layerRegistry";
 
 const db = new Dexie("blade-terminal");
 
@@ -18,12 +19,19 @@ db.version(1).stores({
     environmentComputationParameterValues: "[id+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId",
     environmentComputation: "environmentId",
     appEnumValues: "[enumGroup+value], enumGroup",
+    layers: "++id, key",
+    layerSettings: "[id+layerId], [layerId+name], layerId",
 });
 
 db.on("populate", () => {
-    // seed appEnumValues for fresh databases
-    return seedAppEnums();
+    // seed appEnumValues and layers/layerSettings for fresh databases
+    return seedInitialData();
 });
+
+async function seedInitialData(): Promise<void> {
+    await seedAppEnums();
+    await seedLayers();
+}
 
 async function seedAppEnums(): Promise<void> {
     const rows: AppEnumValue[] = [
@@ -38,3 +46,15 @@ async function seedAppEnums(): Promise<void> {
 }
 
 export { db };
+
+async function seedLayers(): Promise<void> {
+    for (const def of LAYER_REGISTRY) {
+        await db.table("layers").add({
+            key: def.id,
+            label: def.name,
+            type: def.type,
+            ...(def.placeholder ? { placeholder: true } : {}),
+        });
+    }
+    await db.table("layerSettings").bulkPut(LAYER_SETTINGS_DEFAULTS);
+}
