@@ -124,7 +124,7 @@ export interface DebugLayerStyle {
 
 export interface DebugLayerMetadata {
     id: number;
-    key: string;
+    debugKey: string;
     name: string;
     type: DebugLayerType;
     style: DebugLayerStyle;
