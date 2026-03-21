@@ -4,13 +4,13 @@ import type { Object, Vertex } from "@/types/schemaTypes";
 import { computeEdgeMidpoints, type Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import { sameVertex } from "@/features/canvas-editing/utils/canvasObjectUtils";
 import {
-    COLOR_ZONE_STROKE,
-    COLOR_OBSTACLE_STROKE,
     COLOR_VERTEX_FILL,
     COLOR_VERTEX_SELECTED_STROKE,
     COLOR_EDGE_MIDPOINT_FILL,
     COLOR_EDGE_MIDPOINT_STROKE,
 } from "@/config/canvas-editing/canvasConfig";
+import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
+import { LAYER_ID } from "@/config/layers/layerRegistry";
 
 interface CanvasVertexHandlesLayerProps {
     selectedObject: Object | null;
@@ -41,11 +41,14 @@ export function CanvasVertexHandlesLayer({
     onEdgeMidpointMouseDown,
     onHandleHoverChange,
 }: CanvasVertexHandlesLayerProps) {
+    const layers = useLayerSettingsStore((s) => s.layers);
     const isLayerListening = activeTool === "select" && selectedObject !== null;
-
     const edgeMidpoints = selectedObject ? computeEdgeMidpoints(selectedObjectVertices) : [];
-
     if (!selectedObject) return <Layer />;
+
+    const accentColor = selectedObject.category === "zone"
+        ? (getLayerParam(layers, LAYER_ID.ZONES, "Polygon Edge Color") ?? "#22c55e")
+        : (getLayerParam(layers, LAYER_ID.OBSTACLES, "Polygon Edge Color") ?? "#ef4444");
 
     return (
         <Layer listening={isLayerListening}>
@@ -53,8 +56,6 @@ export function CanvasVertexHandlesLayer({
                 const mid = edgeMidpoints[i];
                 if (!mid) return null;
 
-                const accentColor =
-                    selectedObject.category === "zone" ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE;
                 const isActiveVertex = selectedVertices.some((sv) => sameVertex(sv, v)) || (draggingVertex !== null && sameVertex(draggingVertex, v));
 
                 return [

@@ -4,14 +4,8 @@ import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import type React from "react";
 import type { Object, Vertex } from "@/types/schemaTypes";
 import { sameObject } from "@/features/canvas-editing/utils/canvasObjectUtils";
-import {
-    COLOR_ZONE_FILL,
-    COLOR_ZONE_STROKE,
-    COLOR_ZONE_STRIPE,
-    COLOR_OBSTACLE_FILL,
-    COLOR_OBSTACLE_STROKE,
-    COLOR_OBSTACLE_STRIPE,
-} from "@/config/canvas-editing/canvasConfig";
+import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
+import { LAYER_ID } from "@/config/layers/layerRegistry";
 import { OBJECT_TYPE } from "@/config/db-ops/enums";
 
 function createStripePatternCanvas(bgColor: string, stripeColor: string): HTMLCanvasElement {
@@ -64,13 +58,19 @@ export function CanvasPolygonObjectsLayer({
     // Coordinates onDragStart/onDragEnd: only true when a left-button drag is active.
     const primaryDragRef = useRef(false);
 
+    const layers = useLayerSettingsStore((s) => s.layers);
+    const zoneStroke = getLayerParam(layers, LAYER_ID.ZONES, "Polygon Edge Color") ?? "#22c55e";
+    const zoneFill = getLayerParam(layers, LAYER_ID.ZONES, "Polygon Fill Color") ?? "#22c55e2e";
+    const obstacleStroke = getLayerParam(layers, LAYER_ID.OBSTACLES, "Polygon Edge Color") ?? "#ef4444";
+    const obstacleFill = getLayerParam(layers, LAYER_ID.OBSTACLES, "Polygon Fill Color") ?? "#ef44443b";
+
     const zoneOnlinePattern = useMemo(
-        () => createStripePatternCanvas(COLOR_ZONE_FILL, COLOR_ZONE_STRIPE),
-        [],
+        () => createStripePatternCanvas(zoneFill, zoneFill),
+        [zoneFill],
     );
     const obstacleOnlinePattern = useMemo(
-        () => createStripePatternCanvas(COLOR_OBSTACLE_FILL, COLOR_OBSTACLE_STRIPE),
-        [],
+        () => createStripePatternCanvas(obstacleFill, obstacleFill),
+        [obstacleFill],
     );
 
     // Build lookup once per render — O(n) instead of O(n*m)
@@ -103,10 +103,10 @@ export function CanvasPolygonObjectsLayer({
                         key={obj.id}
                         points={objVerts.flatMap((v) => [v.x, v.y])}
                         closed
-                        fill={fillPattern ? undefined : (isZone ? COLOR_ZONE_FILL : COLOR_OBSTACLE_FILL)}
+                        fill={fillPattern ? undefined : (isZone ? zoneFill : obstacleFill)}
                         fillPatternImage={fillPattern as unknown as HTMLImageElement}
                         fillPatternRotation={fillPattern ? 45 : undefined}
-                        stroke={isZone ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE}
+                        stroke={isZone ? zoneStroke : obstacleStroke}
                         strokeWidth={(isSelected || isMoving ? 2.5 : 1.5) / scale}
                         opacity={isMoving ? 0.55 : 1}
                         dash={isMoving ? [8 / scale, 4 / scale] : isOnline ? [16 / scale, 4 / scale] : undefined}

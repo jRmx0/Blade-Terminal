@@ -1,6 +1,7 @@
 import { getLastEnvironmentId, saveEnvironment } from "@server/db/environments";
 import { saveEnvironmentComputation } from "@server/db/environmentComputation";
 import { saveParameterValues } from "@server/db/environmentComputationParameterValues";
+import { saveAllLayerSettings } from "@server/db/layerSettings";
 import { getObjectsByEnvironment, saveObjects, deleteObject } from "@server/db/objects";
 import { getVerticesByObjects, saveVertices, deleteVertex } from "@server/db/vertices";
 import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
@@ -8,6 +9,7 @@ import type { Object, Vertex, Environment } from "@/types/schemaTypes";
 import { useCanvasObjectStore } from "../stores/canvasObjectStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
+import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
 
 // ── Count synchronization ──────────────────────────────────────────────────
 // Reactively keeps envStore zone/obstacle counts derived from the canvas object
@@ -64,8 +66,9 @@ export async function saveCanvas(): Promise<void> {
         useCanvasObjectStore.getState();
     const { env, isEnvDirty, computation, clearDirty: clearEnvDirty } = useEnvStore.getState();
     const { parameterValues, isParameterValuesDirty, clearDirty: clearParamsDirty } = useParameterValuesStore.getState();
+    const { layers, isLayerSettingsDirty, clearDirty: clearLayersDirty } = useLayerSettingsStore.getState();
 
-    if (!isEnvDirty && !isParameterValuesDirty && !dirtyObjects.length && !deletedObjects.length && !dirtyVertices.length && !deletedVertices.length) return;
+    if (!isEnvDirty && !isParameterValuesDirty && !isLayerSettingsDirty && !dirtyObjects.length && !deletedObjects.length && !dirtyVertices.length && !deletedVertices.length) return;
 
     _isSaving = true;
     try {
@@ -73,12 +76,14 @@ export async function saveCanvas(): Promise<void> {
             isEnvDirty ? saveEnvironment(env) : Promise.resolve(),
             isEnvDirty ? saveEnvironmentComputation(computation) : Promise.resolve(),
             isParameterValuesDirty ? saveParameterValues(parameterValues) : Promise.resolve(),
+            isLayerSettingsDirty ? saveAllLayerSettings(layers.flatMap((l) => l.settings)) : Promise.resolve(),
             persistDirtyObjects(dirtyObjects, deletedObjects),
             persistDirtyVertices(dirtyVertices, deletedVertices),
         ]);
         clearDirty();
         clearEnvDirty();
         clearParamsDirty();
+        clearLayersDirty();
     } finally {
         _isSaving = false;
     }

@@ -1,5 +1,7 @@
 import { Layer, Line } from "react-konva";
-import { GRID_SPACING, COLOR_GRID } from "@/config/canvas-editing/canvasConfig";
+import { GRID_SPACING } from "@/config/canvas-editing/canvasConfig";
+import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
+import { LAYER_ID } from "@/config/layers/layerRegistry";
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 
 interface CanvasGridLayerProps {
@@ -9,6 +11,9 @@ interface CanvasGridLayerProps {
 }
 
 export function CanvasGridLayer({ position, scale, size }: CanvasGridLayerProps) {
+    const layers = useLayerSettingsStore((s) => s.layers);
+    const strokeColor = getLayerParam(layers, LAYER_ID.GRID, "Grid Line Color") ?? "#e2e8f0";
+
     if (size.width === 0) return null;
 
     const worldLeft = -position.x / scale;
@@ -25,7 +30,7 @@ export function CanvasGridLayer({ position, scale, size }: CanvasGridLayerProps)
             <Line
                 key={`vertical-grid-line-${x}`}
                 points={[x, worldTop - GRID_SPACING, x, worldBottom + GRID_SPACING]}
-                stroke={COLOR_GRID}
+                stroke={strokeColor}
                 strokeWidth={1 / scale}
                 listening={false}
             />,
@@ -36,7 +41,7 @@ export function CanvasGridLayer({ position, scale, size }: CanvasGridLayerProps)
             <Line
                 key={`horizontal-grid-line-${y}`}
                 points={[worldLeft - GRID_SPACING, y, worldRight + GRID_SPACING, y]}
-                stroke={COLOR_GRID}
+                stroke={strokeColor}
                 strokeWidth={1 / scale}
                 listening={false}
             />,

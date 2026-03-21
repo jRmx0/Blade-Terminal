@@ -1,10 +1,8 @@
 import { Layer, Line, Circle } from "react-konva";
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
-import {
-    COLOR_ZONE_STROKE,
-    COLOR_OBSTACLE_STROKE,
-} from "@/config/canvas-editing/canvasConfig";
+import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
+import { LAYER_ID } from "@/config/layers/layerRegistry";
 
 interface CanvasDrawingPreviewLayerProps {
     activeTool: ActiveTool | null;
@@ -19,14 +17,15 @@ export function CanvasDrawingPreviewLayer({
     mousePos,
     scale,
 }: CanvasDrawingPreviewLayerProps) {
+    const layers = useLayerSettingsStore((s) => s.layers);
     const isDrawing = activeTool === "addZone" || activeTool === "addObstacle";
 
     if (!isDrawing || drawingPoints.length === 0) return null;
 
-    const drawColor =
-        activeTool === "addZone" ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE;
-    const previewEdgeColor =
-        activeTool === "addZone" ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE;
+    const drawColor = activeTool === "addZone"
+        ? (getLayerParam(layers, LAYER_ID.ZONES, "Polygon Edge Color") ?? "#22c55e")
+        : (getLayerParam(layers, LAYER_ID.OBSTACLES, "Polygon Edge Color") ?? "#ef4444");
+    const previewEdgeColor = drawColor;
     const lastPoint = drawingPoints[drawingPoints.length - 1];
 
     return (
