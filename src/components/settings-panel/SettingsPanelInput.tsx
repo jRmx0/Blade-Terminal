@@ -40,7 +40,7 @@ export default function SettingsPanelInput({
                         }`}
                 />
                 {showSpinners && (
-                    <div className="absolute right-px top-1/2 -translate-y-1/2 flex flex-col w-3 pt-0.5">
+                    <div className="absolute right-px top-1/2 -translate-y-1/2 flex flex-col w-3 pt-0.5 mr-1.5">
                         <button
                             type="button"
                             tabIndex={-1}
@@ -52,7 +52,7 @@ export default function SettingsPanelInput({
                             className="flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer active:text-teal-700"
                             style={{ height: 10 }}
                         >
-                            <span className="material-symbols-outlined leading-none" style={{ fontSize: 12 }}>expand_less</span>
+                            <span className="material-symbols-outlined leading-none" style={{ fontSize: 14 }}>expand_less</span>
                         </button>
                         <button
                             type="button"
@@ -65,7 +65,7 @@ export default function SettingsPanelInput({
                             className="flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer active:text-teal-700"
                             style={{ height: 10 }}
                         >
-                            <span className="material-symbols-outlined leading-none" style={{ fontSize: 12 }}>expand_more</span>
+                            <span className="material-symbols-outlined leading-none" style={{ fontSize: 14 }}>expand_more</span>
                         </button>
                     </div>
                 )}
