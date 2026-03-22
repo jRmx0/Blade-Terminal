@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { Sketch } from "@uiw/react-color";
 
 interface SettingsPanelColorInputProps {
     label: string;
@@ -13,44 +14,41 @@ export default function SettingsPanelColorInput({
     onChange,
     disabled = false,
 }: SettingsPanelColorInputProps) {
-    const colorInputRef = useRef<HTMLInputElement>(null);
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
-    // Native <input type="color"> only accepts 6-digit hex; strip alpha if present
-    const hexForPicker = value.startsWith("#") ? value.slice(0, 7) : value;
-
-    function handlePickerChange(e: React.ChangeEvent<HTMLInputElement>) {
-        // Preserve existing alpha suffix if the stored value has one (#rrggbbaa = 9 chars)
-        if (value.length === 9) {
-            onChange(e.target.value + value.slice(7));
-        } else {
-            onChange(e.target.value);
+    useEffect(() => {
+        if (!isOpen) return;
+        function handleClickOutside(e: MouseEvent) {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setIsOpen(false);
+            }
         }
-    }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isOpen]);
 
     return (
         <div className="flex items-center gap-3 px-3 h-8">
             <span className="w-[55%] text-xs text-gray-500 shrink-0 truncate select-none">{label}</span>
             <div className={`flex items-center justify-end flex-1 min-w-0 ${disabled ? "opacity-50" : ""}`}>
-                {/* Swatch wrapper — no fixed height, relative for picker anchor */}
-                <div className="relative shrink-0">
+                <div className="relative shrink-0" ref={containerRef}>
                     <button
                         type="button"
                         aria-label="Pick color"
                         disabled={disabled}
-                        onClick={() => !disabled && colorInputRef.current?.click()}
+                        onClick={() => !disabled && setIsOpen((prev) => !prev)}
                         className="block w-5 h-4 rounded border border-gray-300 cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-teal-700"
                         style={{ background: value || "#ffffff" }}
                     />
-                    {/* Anchored at bottom of swatch so the OS dialog opens downward */}
-                    <input
-                        ref={colorInputRef}
-                        type="color"
-                        value={hexForPicker}
-                        onChange={handlePickerChange}
-                        disabled={disabled}
-                        tabIndex={-1}
-                        className="absolute top-full left-0 opacity-0 w-0 h-0 pointer-events-none"
-                    />
+                    {isOpen && (
+                        <div className="absolute right-0 top-full mt-1 z-50">
+                            <Sketch
+                                color={value}
+                                onChange={(c) => onChange(c.hexa)}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
