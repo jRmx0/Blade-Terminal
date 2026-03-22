@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Stage } from "react-konva";
 import type Konva from "konva";
 import type { Object, Vertex } from "@/types/schemaTypes";
@@ -10,6 +10,7 @@ import { beginBatch, endBatch } from "@/features/canvas-editing/stores/canvasHis
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useCanvasSize } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasSize";
 import { objectVertices } from "@/features/canvas-editing/utils/canvasGeometry";
+import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import { useCanvasPanning } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasPanning";
 import { useCanvasZoom } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasZoom";
 import { useCanvasDrawing } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasDrawing";
@@ -29,7 +30,9 @@ export default function CanvasEditor() {
   const [isHoveringHandle, setIsHoveringHandle] = useState(false);
   const [isHoveringObject, setIsHoveringObject] = useState<Object | null>(null);
 
-  const { position, scale, gridVisible, setPosition, setScale } = useCanvasViewStore();
+  const scale = useCanvasViewStore((s) => s.scale);
+  const setPosition = useCanvasViewStore((s) => s.setPosition);
+  const setScale = useCanvasViewStore((s) => s.setScale);
   const { activeTool, setActiveTool } = useCanvasToolStore();
   const {
     objects,
@@ -59,9 +62,8 @@ export default function CanvasEditor() {
     isPanning,
     isPanningRef,
     handlePanMouseDown,
-    handlePanMouseMove,
-    handlePanMouseUp,
-    handlePanMouseLeave,
+    handleDragMove,
+    handleDragEnd,
   } = useCanvasPanning(stageRef, setPosition);
 
   const { handleWheel } = useCanvasZoom(stageRef, setScale, setPosition);
@@ -106,43 +108,89 @@ export default function CanvasEditor() {
     containerRef.current?.focus();
   }, [activeTool, containerRef]);
 
-  // Compose mouse move: panning + drawing preview + midpoint drag
+  // Compose mouse move: drawing preview + midpoint drag
   const handleMouseMove = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
-      handlePanMouseMove(e);
       updateDrawingMousePosition(e);
       handleMidpointDragMouseMove(e);
     },
-    [handlePanMouseMove, updateDrawingMousePosition, handleMidpointDragMouseMove],
+    [updateDrawingMousePosition, handleMidpointDragMouseMove],
   );
 
-  // Compose mouse up: panning + midpoint drag
+  // Compose mouse up: midpoint drag
   const handleMouseUp = useCallback(
-    (e: Konva.KonvaEventObject<MouseEvent>) => {
-      handlePanMouseUp(e);
+    (_e: Konva.KonvaEventObject<MouseEvent>) => {
       handleMidpointDragEnd();
     },
-    [handlePanMouseUp, handleMidpointDragEnd],
+    [handleMidpointDragEnd],
   );
 
-  // Compose mouse leave: panning + drawing preview + midpoint drag
+  // Compose mouse leave: drawing preview + midpoint drag
   const handleMouseLeave = useCallback(() => {
-    handlePanMouseLeave();
     clearDrawingMousePosition();
     handleMidpointDragEnd();
-  }, [handlePanMouseLeave, clearDrawingMousePosition, handleMidpointDragEnd]);
+  }, [clearDrawingMousePosition, handleMidpointDragEnd]);
 
   const selectedObject =
     activeTool === "select" && selectedStoreObject &&
-    !(movingObject !== null && sameObject(movingObject, selectedStoreObject))
+      !(movingObject !== null && sameObject(movingObject, selectedStoreObject))
       ? selectedStoreObject
       : null;
 
-  const selectedObjectVertices = selectedObject
-    ? objectVertices(vertices, selectedObject.id)
-    : [];
+  const selectedObjectVertices = useMemo(
+    () => (selectedObject ? objectVertices(vertices, selectedObject.id) : []),
+    [selectedObject, vertices],
+  );
 
   const isDrawing = activeTool === "addZone" || activeTool === "addObstacle";
+
+  const handleDeleteObject = useCallback(
+    (obj: Object) => {
+      deleteObject(obj);
+      if (selectedStoreObject?.id === obj.id) clearSelection();
+    },
+    [deleteObject, selectedStoreObject?.id, clearSelection],
+  );
+
+  const handleObjectDragStart = useCallback(
+    (obj: Object) => {
+      if (obj.id !== selectedStoreObject?.id) {
+        clearSelection();
+        selectObject(obj);
+      } else {
+        selectVertex(null);
+      }
+      setMovingObject(obj);
+    },
+    [selectedStoreObject?.id, clearSelection, selectObject, selectVertex],
+  );
+
+  const handleObjectDragEnd = useCallback(
+    (obj: Object, dx: number, dy: number) => {
+      moveObject(obj, dx, dy);
+      setMovingObject(null);
+    },
+    [moveObject],
+  );
+
+  const handleVertexClick = useCallback(
+    (v: Vertex, ctrl: boolean) => toggleVertexSelection(v, ctrl),
+    [toggleVertexSelection],
+  );
+
+  const handleVertexDragStart = useCallback((v: Vertex) => {
+    setDraggingVertex(v);
+    beginBatch();
+  }, []);
+
+  const handleVertexDragEndCb = useCallback(
+    (vertex: Vertex, pos: Point) => {
+      setDraggingVertex(null);
+      handleVertexDragEnd(vertex, pos);
+      endBatch();
+    },
+    [handleVertexDragEnd],
+  );
 
   function resolveCursor() {
     if (isPanning) return "grabbing";
@@ -162,14 +210,16 @@ export default function CanvasEditor() {
       onKeyDown={handleKeyDown}
       onContextMenu={(e) => e.preventDefault()}
     >
+      <CanvasGridLayer />
       <Stage
         ref={stageRef}
         width={size.width}
         height={size.height}
-        x={position.x}
-        y={position.y}
+        x={useCanvasViewStore.getState().position.x}
+        y={useCanvasViewStore.getState().position.y}
         scaleX={scale}
         scaleY={scale}
+        draggable={false}
         onMouseDown={handlePanMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -177,10 +227,9 @@ export default function CanvasEditor() {
         onClick={handleStageClick}
         onContextMenu={handlePolygonClose}
         onWheel={handleWheel}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
       >
-        {gridVisible && (
-          <CanvasGridLayer position={position} scale={scale} size={size} />
-        )}
 
         <CanvasPolygonObjectsLayer
           objects={objects}
@@ -191,24 +240,10 @@ export default function CanvasEditor() {
           scale={scale}
           isPanningRef={isPanningRef}
           onSelectObject={selectObject}
-          onDeleteObject={(obj) => {
-            deleteObject(obj);
-            if (selectedStoreObject?.id === obj.id) clearSelection();
-          }}
+          onDeleteObject={handleDeleteObject}
           onObjectHoverChange={setIsHoveringObject}
-          onObjectDragStart={(obj) => {
-            if (obj.id !== selectedStoreObject?.id) {
-              clearSelection();
-              selectObject(obj);
-            } else {
-              selectVertex(null);
-            }
-            setMovingObject(obj);
-          }}
-          onObjectDragEnd={(obj, dx, dy) => {
-            moveObject(obj, dx, dy);
-            setMovingObject(null);
-          }}
+          onObjectDragStart={handleObjectDragStart}
+          onObjectDragEnd={handleObjectDragEnd}
         />
 
         <CanvasVertexHandlesLayer
@@ -218,17 +253,10 @@ export default function CanvasEditor() {
           scale={scale}
           selectedVertices={selectedVertices}
           draggingVertex={draggingVertex}
-          onVertexClick={(v, ctrl) => toggleVertexSelection(v, ctrl)}
-          onVertexDragStart={(v) => {
-            setDraggingVertex(v);
-            beginBatch();
-          }}
+          onVertexClick={handleVertexClick}
+          onVertexDragStart={handleVertexDragStart}
           onVertexDragMove={handleVertexDragMove}
-          onVertexDragEnd={(vertex, pos) => {
-            setDraggingVertex(null);
-            handleVertexDragEnd(vertex, pos);
-            endBatch();
-          }}
+          onVertexDragEnd={handleVertexDragEndCb}
           onEdgeMidpointMouseDown={handleMidpointMouseDown}
           onHandleHoverChange={setIsHoveringHandle}
         />

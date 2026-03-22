@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { memo, useMemo, useRef } from "react";
 import { Layer, Line } from "react-konva";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import type React from "react";
@@ -38,7 +38,7 @@ interface CanvasPolygonObjectsLayerProps {
     isPanningRef: React.RefObject<boolean>;
 }
 
-export function CanvasPolygonObjectsLayer({
+export function _CanvasPolygonObjectsLayer({
     objects,
     vertices,
     selectedObject,
@@ -152,3 +152,5 @@ export function CanvasPolygonObjectsLayer({
         </Layer>
     );
 }
+
+export const CanvasPolygonObjectsLayer = memo(_CanvasPolygonObjectsLayer);
