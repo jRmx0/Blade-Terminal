@@ -1,11 +1,15 @@
 import { useState } from "react";
-import type { LayerWithSettings } from "@/types/layerTypes";
+import type { LayerSettingParameter, LayerWithSettings } from "@/types/layerTypes";
 import LayerSettingsPanel from "@/features/inspector/components/calc-layers-section/LayerSettingsPanel";
+import type { SettingsSectionData } from "@/features/inspector/components/calc-layers-section/LayerSettingsPanel";
 
 interface CompositeLayerRowProps {
     name: string;
     /** Members ordered top-to-bottom by Z-Index (highest Z first). */
     members: LayerWithSettings[];
+    /** Settings from the group's dedicated ObjectGroup layer (e.g. "Show Vertex IDs"). */
+    groupSettings: LayerSettingParameter[];
+    onGroupParamChange: (name: string, value: string) => void;
     isFirst: boolean;
     isLast: boolean;
     onMoveUp: () => void;
@@ -17,6 +21,8 @@ interface CompositeLayerRowProps {
 export default function CompositeLayerRow({
     name,
     members,
+    groupSettings,
+    onGroupParamChange,
     isFirst,
     isLast,
     onMoveUp,
@@ -36,6 +42,11 @@ export default function CompositeLayerRow({
         onParamChange: (paramName: string, value: string) =>
             onParamChange(m.layer.key, paramName, value),
     }));
+
+    const groupSection: SettingsSectionData | null =
+        groupSettings.length > 0
+            ? { label: "", settings: groupSettings, onParamChange: onGroupParamChange }
+            : null;
 
     return (
         <div>
@@ -89,7 +100,12 @@ export default function CompositeLayerRow({
             </div>
 
             {expanded && (
-                <LayerSettingsPanel sections={sections} disabled={false} />
+                <>
+                    {groupSection && (
+                        <LayerSettingsPanel sections={[groupSection]} disabled={false} />
+                    )}
+                    <LayerSettingsPanel sections={sections} disabled={false} />
+                </>
             )}
         </div>
     );

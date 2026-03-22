@@ -3,9 +3,14 @@ import { POLYGON_EDGE_STYLE, POLYGON_FILL_STYLE } from "@/config/layers/layerReg
 import SettingsPanelRowInput from "@/components/settings-panel/SettingsPanelRowInput";
 import SettingsPanelRowSelect from "@/components/settings-panel/SettingsPanelRowSelect";
 import SettingsPanelRowColorInput from "@/components/settings-panel/SettingsPanelRowColorInput";
+import SettingsPanelRowToggle from "@/components/settings-panel/SettingsPanelRowToggle";
 import SettingsPanelSeparator from "@/components/settings-panel/SettingsPanelSeparator";
 
-// ─── Param type classification ────────────────────────────────────────────────
+// ─── Param type classification ──────────────────────────────────────────────
+const TOGGLE_PARAMS = new Set(["Show Vertex IDs"]);
+const PARAM_TOOLTIPS: Record<string, string> = {
+    "Show Vertex IDs": "Vertex IDs are visible only when the Select tool is active",
+};
 const NUMBER_PARAMS = new Set(["Z-Index", "Polygon Edge Width"]);
 const COLOR_PARAMS = new Set(["Polygon Edge Color", "Polygon Fill Color", "Grid Line Color"]);
 const STYLE_OPTIONS: Record<string, { value: string; label: string }[]> = {
@@ -32,6 +37,18 @@ function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
                 options={selectOptions}
                 disabled={disabled}
                 onChange={(v) => onParamChange(name, v)}
+            />
+        );
+    }
+
+    if (TOGGLE_PARAMS.has(name)) {
+        return (
+            <SettingsPanelRowToggle
+                label={name}
+                value={value === "true"}
+                disabled={disabled}
+                tooltip={PARAM_TOOLTIPS[name]}
+                onChange={(v) => onParamChange(name, String(v))}
             />
         );
     }

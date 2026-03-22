@@ -5,8 +5,10 @@ export type LayerId = number;
  * - "Polygon" | "Point" | "Line" — mirror the API DebugLayerType for compute result layers.
  *   Obstacles and Zones are "Polygon"; future debug layers from the provider will use Point/Line.
  * - "Grid" | "Map" — internal canvas utility layers with their own attribute sets.
+ * - "ObjectGroup" — a dedicated settings-owner layer for a group of polygon object types.
+ *   It stores group-level settings (e.g. "Show Vertex IDs") but never renders standalone.
  */
-export type LayerType = "Polygon" | "Point" | "Line" | "Grid" | "Map";
+export type LayerType = "Polygon" | "Point" | "Line" | "Grid" | "Map" | "ObjectGroup";
 
 export interface LayerDefinition {
     id: LayerId;
@@ -53,9 +55,14 @@ export interface LayerWithSettings {
 /**
  * A named group of logical layers that are rendered on the same canvas layer
  * and should be presented as a single entry in the layers UI.
+ *
+ * `settingsLayerId` points to the dedicated "ObjectGroup" layer that owns group-level
+ * settings (e.g. "Show Vertex IDs"). The group row reads its settings from that layer.
  */
 export interface LayerGroup {
     id: string;
     name: string;
     memberIds: LayerId[];
+    /** FK → the ObjectGroup layer that stores group-level settings. */
+    settingsLayerId?: LayerId;
 }

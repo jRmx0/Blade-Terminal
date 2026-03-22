@@ -2,7 +2,7 @@ import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
 import { LAYER_GROUPS } from "@/config/layers/layerRegistry";
 import LayerRow from "@/features/inspector/components/calc-layers-section/LayerRow";
 import CompositeLayerRow from "@/features/inspector/components/calc-layers-section/CompositeLayerRow";
-import type { LayerWithSettings } from "@/types/layerTypes";
+import type { LayerSettingParameter, LayerWithSettings } from "@/types/layerTypes";
 
 type DisplayItem =
     | { type: "single"; item: LayerWithSettings }
@@ -37,6 +37,18 @@ export default function LayersTab() {
         return bz - az;
     });
 
+    // ── Pre-compute group-level settings (ObjectGroup layers) ─────────────────
+    const groupSettingsMap = new Map<string, { settings: LayerSettingParameter[]; layerKey: number }>();
+    for (const g of LAYER_GROUPS) {
+        if (g.settingsLayerId !== undefined) {
+            const sl = layers.find((l) => l.layer.key === g.settingsLayerId);
+            if (sl) groupSettingsMap.set(g.id, { settings: sl.settings, layerKey: g.settingsLayerId });
+        }
+    }
+
+    // Filter out ObjectGroup settings-owner layers — they surface only via their group row
+    const displayableSorted = sorted.filter((item) => item.layer.type !== "ObjectGroup");
+
     // ── Build display items, collapsing grouped layers into one entry ─────────
     const groupByMemberKey = new Map<number, { groupId: string; name: string; memberIds: number[] }>();
     for (const g of LAYER_GROUPS) {
@@ -48,7 +60,7 @@ export default function LayersTab() {
     const seenGroupIds = new Set<string>();
     const displayItems: DisplayItem[] = [];
 
-    for (const item of sorted) {
+    for (const item of displayableSorted) {
         const group = groupByMemberKey.get(item.layer.key);
         if (group) {
             if (seenGroupIds.has(group.groupId)) continue;
@@ -106,11 +118,16 @@ export default function LayersTab() {
                     (displayItem.type === "single" && displayItem.item.layer.placeholder === true);
 
                 if (displayItem.type === "group") {
+                    const gData = groupSettingsMap.get(displayItem.groupId);
                     return (
                         <CompositeLayerRow
                             key={displayItem.groupId}
                             name={displayItem.name}
                             members={displayItem.members}
+                            groupSettings={gData?.settings ?? []}
+                            onGroupParamChange={(name, value) => {
+                                if (gData) setParam(gData.layerKey, name, value);
+                            }}
                             isFirst={isFirst}
                             isLast={isLast}
                             onMoveUp={() => handleMoveUp(displayIndex)}

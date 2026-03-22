@@ -5,6 +5,7 @@ export const LAYER_NAME = {
     ZONES: "Zones",
     GRID: "Grid",
     MAP_BASE: "Map Base",
+    OBJECTS: "Objects",
 } as const;
 
 export type LayerName = (typeof LAYER_NAME)[keyof typeof LAYER_NAME];
@@ -14,14 +15,23 @@ export const LAYER_ID = {
     ZONES: 2,
     GRID: 3,
     MAP_BASE: 4,
+    /** ObjectGroup settings-owner for the Objects group (Zones + Obstacles). */
+    OBJECTS: 5,
 } as const;
 
 /**
  * Groups of LAYER_ID values that map to a single canvas rendering layer and
  * should appear as one combined entry in the layers UI.
+ *
+ * `settingsLayerId` links each group to its ObjectGroup owner layer.
  */
 export const LAYER_GROUPS: LayerGroup[] = [
-    { id: "objects", name: "Objects", memberIds: [LAYER_ID.ZONES, LAYER_ID.OBSTACLES] },
+    {
+        id: "objects",
+        name: "Objects",
+        memberIds: [LAYER_ID.ZONES, LAYER_ID.OBSTACLES],
+        settingsLayerId: LAYER_ID.OBJECTS,
+    },
 ];
 
 export const LAYER_REGISTRY: LayerDefinition[] = [
@@ -29,6 +39,8 @@ export const LAYER_REGISTRY: LayerDefinition[] = [
     { id: LAYER_ID.ZONES, name: LAYER_NAME.ZONES, type: "Polygon" },
     { id: LAYER_ID.GRID, name: LAYER_NAME.GRID, type: "Grid" },
     { id: LAYER_ID.MAP_BASE, name: LAYER_NAME.MAP_BASE, type: "Map", placeholder: true },
+    /** ObjectGroup: owns group-level settings for Zones + Obstacles; never renders standalone. */
+    { id: LAYER_ID.OBJECTS, name: LAYER_NAME.OBJECTS, type: "ObjectGroup" },
 ];
 
 export const POLYGON_EDGE_STYLE = {
@@ -52,6 +64,7 @@ export type PolygonFillStyle = (typeof POLYGON_FILL_STYLE)[keyof typeof POLYGON_
 //
 // Internal attributes (not part of the API spec):
 //   id 1  → "Visible"      (all layers)
+//   id 2  → "Show Vertex IDs"  (Objects ObjectGroup layer only)
 //
 // API attribute IDs in use:
 //   id 5  → "Z-Index"            (all layers)
@@ -94,5 +107,9 @@ export const LAYER_SETTINGS_DEFAULTS: LayerSettingsDefault[] = [
     // ── Map Base (internal Map type) ─────────────────────────────────────────
     { id: 1, layerId: LAYER_ID.MAP_BASE, name: "Visible", value: "true" },
     { id: 5, layerId: LAYER_ID.MAP_BASE, name: "Z-Index", value: "0" },
+
+    // ── Objects (ObjectGroup — group-level settings owner) ───────────────────
+    { id: 1, layerId: LAYER_ID.OBJECTS, name: "Visible", value: "true" },
+    { id: 2, layerId: LAYER_ID.OBJECTS, name: "Show Vertex IDs", value: "false" },
 ];
 

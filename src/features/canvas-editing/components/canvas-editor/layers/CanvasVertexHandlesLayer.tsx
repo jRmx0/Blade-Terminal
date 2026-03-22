@@ -46,6 +46,7 @@ export function _CanvasVertexHandlesLayer({
     const layers = useLayerSettingsStore((s) => s.layers);
     const isLayerListening = activeTool === "select" && selectedObject !== null;
     const edgeMidpoints = selectedObject ? computeEdgeMidpoints(selectedObjectVertices) : [];
+    const showVertexIds = getLayerParam(layers, LAYER_ID.OBJECTS, "Show Vertex IDs") !== "false";
     if (!selectedObject) return <Layer />;
 
     const accentColor = selectedObject.category === "zone"
@@ -81,14 +82,16 @@ export function _CanvasVertexHandlesLayer({
                         onMouseEnter={() => onHandleHoverChange(true)}
                         onMouseLeave={() => onHandleHoverChange(false)}
                     />,
-                    <CanvasVertexIdLabel
-                        key={`vertex-id-label-${v.id}`}
-                        id={v.id}
-                        x={v.x}
-                        y={v.y}
-                        scale={scale}
-                        accentColor={borderColor}
-                    />,
+                    showVertexIds && (
+                        <CanvasVertexIdLabel
+                            key={`vertex-id-label-${v.id}`}
+                            id={v.id}
+                            x={v.x}
+                            y={v.y}
+                            scale={scale}
+                            accentColor={borderColor}
+                        />
+                    ),
                     <Circle
                         key={`edge-midpoint-handle-${v.id}`}
                         x={mid.x}
