@@ -1,5 +1,4 @@
 import { useEffect, useMemo } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
 import ControlsPanelSection from "@/components/controls-panel/ControlsPanelSection";
 import ControlsPanelSeparator from "@/components/controls-panel/ControlsPanelSeparator";
 import ControlsPanelSectionCheckbox from "@/components/controls-panel/ControlsPanelSectionCheckbox";
@@ -17,7 +16,6 @@ import {
 import CoordinateSystemSelect from "@/features/coverage-planning/components/controls-panel/env-section/CoordinateSystemSelect";
 import FormatSelection from "@/features/coverage-planning/components/controls-panel/env-section/FormatSelect";
 import GlobalTypeSelection from "@/features/coverage-planning/components/controls-panel/env-section/GlobalTypeSelect";
-import { getAllAppEnums } from "@server/db/appEnums";
 import { useEnvStore } from "@/stores/envStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
@@ -195,7 +193,7 @@ export default function CoveragePlanningControlsPanel() {
     const allProviders = useComputationCatalogStore((s) => s.providers);
     const allAlgorithms = useComputationCatalogStore((s) => s.algorithms);
     const allParameters = useComputationCatalogStore((s) => s.parameters);
-    const appEnums = useLiveQuery(() => getAllAppEnums(), []);
+    const appEnums = useComputationCatalogStore((s) => s.appEnums);
 
     const providers = allProviders;
     const algorithms = useMemo(
@@ -365,7 +363,7 @@ export default function CoveragePlanningControlsPanel() {
 
     const selectedProviderValue = computation.selectedProviderId === null ? "" : String(computation.selectedProviderId);
     const selectedAlgorithmValue = computation.selectedAlgorithmId === null ? "" : String(computation.selectedAlgorithmId);
-    const resolvedAppEnums = appEnums ?? [];
+    const resolvedAppEnums = appEnums;
 
     return (
         <div>

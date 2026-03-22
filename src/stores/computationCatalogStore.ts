@@ -2,17 +2,20 @@ import { create } from "zustand";
 import { getAllComputationProviders } from "@server/db/computationProviders";
 import { getAllComputationAlgorithms } from "@server/db/computationAlgorithms";
 import { getAllAlgorithmParameters } from "@server/db/algorithmParameters";
-import type { AlgorithmParameter, ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
+import { getAllAppEnums } from "@server/db/appEnums";
+import type { AlgorithmParameter, AppEnumValue, ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
 
 interface ComputationCatalogState {
     providers: ComputationProvider[];
     algorithms: ComputationAlgorithm[];
     parameters: AlgorithmParameter[];
+    appEnums: AppEnumValue[];
 
     setCatalog: (
         providers: ComputationProvider[],
         algorithms: ComputationAlgorithm[],
         parameters: AlgorithmParameter[],
+        appEnums: AppEnumValue[],
     ) => void;
 
     setProviderAlgorithms: (
@@ -30,9 +33,10 @@ export const useComputationCatalogStore = create<ComputationCatalogState>((set) 
     providers: [],
     algorithms: [],
     parameters: [],
+    appEnums: [],
 
-    setCatalog: (providers, algorithms, parameters) => {
-        set({ providers, algorithms, parameters });
+    setCatalog: (providers, algorithms, parameters, appEnums) => {
+        set({ providers, algorithms, parameters, appEnums });
     },
 
     setProviderAlgorithms: (providerId, algorithms, parameters) => {
@@ -69,10 +73,11 @@ export const useComputationCatalogStore = create<ComputationCatalogState>((set) 
 }));
 
 export async function loadComputationCatalog(): Promise<void> {
-    const [providers, algorithms, parameters] = await Promise.all([
+    const [providers, algorithms, parameters, appEnums] = await Promise.all([
         getAllComputationProviders(),
         getAllComputationAlgorithms(),
         getAllAlgorithmParameters(),
+        getAllAppEnums(),
     ]);
-    useComputationCatalogStore.getState().setCatalog(providers, algorithms, parameters);
+    useComputationCatalogStore.getState().setCatalog(providers, algorithms, parameters, appEnums);
 }
