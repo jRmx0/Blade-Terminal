@@ -1,8 +1,8 @@
 import type { LayerSettingParameter } from "@/types/layerTypes";
 import { POLYGON_EDGE_STYLE, POLYGON_FILL_STYLE } from "@/config/layers/layerRegistry";
-import SettingsPanelInput from "@/components/settings-panel/SettingsPanelInput";
-import SettingsPanelSelect from "@/components/settings-panel/SettingsPanelSelect";
-import SettingsPanelColorInput from "@/components/settings-panel/SettingsPanelColorInput";
+import SettingsPanelInput from "@/components/settings-panel/SettingsPanelRowInput";
+import SettingsPanelSelect from "@/components/settings-panel/SettingsPanelRowSelect";
+import SettingsPanelColorInput from "@/components/settings-panel/SettingsPanelRowColorInput";
 
 // ─── Param type classification ────────────────────────────────────────────────
 const NUMBER_PARAMS = new Set(["Z-Index", "Polygon Edge Width"]);
