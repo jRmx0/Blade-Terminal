@@ -13,6 +13,12 @@ interface LayerSettingsState {
     setVisible: (layerId: number, visible: boolean) => void;
     setParam: (layerKey: number, name: string, value: string) => void;
     swapZIndex: (layerIdA: number, layerIdB: number) => void;
+    /**
+     * Reassigns Z-Index values based on display order. `orderedLayerDbIds` lists
+     * layer DB ids from top (highest z) to bottom (lowest z). Each layer gets
+     * z = (n - 1 - position) * 10.
+     */
+    reorderLayers: (orderedLayerDbIds: number[]) => void;
     /** Clears the dirty flag. Called by canvas bridge after a successful save. */
     clearDirty: () => void;
 }
@@ -81,6 +87,18 @@ export const useLayerSettingsStore = create<LayerSettingsState>()((set) => ({
             const zB = paramValue(b.settings, "Z-Index") ?? "0";
             let layers = updateParam(state.layers, layerIdA, "Z-Index", zB);
             layers = updateParam(layers, layerIdB, "Z-Index", zA);
+            autosave(layers);
+            return { layers, isLayerSettingsDirty: true };
+        });
+    },
+
+    reorderLayers: (orderedLayerDbIds) => {
+        set((state) => {
+            const n = orderedLayerDbIds.length;
+            let layers = state.layers;
+            orderedLayerDbIds.forEach((layerDbId, idx) => {
+                layers = updateParam(layers, layerDbId, "Z-Index", String((n - 1 - idx) * 10));
+            });
             autosave(layers);
             return { layers, isLayerSettingsDirty: true };
         });

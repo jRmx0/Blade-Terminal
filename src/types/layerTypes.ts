@@ -49,3 +49,13 @@ export interface LayerWithSettings {
     layer: LayerRecord;
     settings: LayerSettingParameter[];
 }
+
+/**
+ * A named group of logical layers that are rendered on the same canvas layer
+ * and should be presented as a single entry in the layers UI.
+ */
+export interface LayerGroup {
+    id: string;
+    name: string;
+    memberIds: LayerId[];
+}

@@ -1,8 +1,9 @@
 import type { LayerSettingParameter } from "@/types/layerTypes";
 import { POLYGON_EDGE_STYLE, POLYGON_FILL_STYLE } from "@/config/layers/layerRegistry";
-import SettingsPanelInput from "@/components/settings-panel/SettingsPanelRowInput";
-import SettingsPanelSelect from "@/components/settings-panel/SettingsPanelRowSelect";
-import SettingsPanelColorInput from "@/components/settings-panel/SettingsPanelRowColorInput";
+import SettingsPanelRowInput from "@/components/settings-panel/SettingsPanelRowInput";
+import SettingsPanelRowSelect from "@/components/settings-panel/SettingsPanelRowSelect";
+import SettingsPanelRowColorInput from "@/components/settings-panel/SettingsPanelRowColorInput";
+import SettingsPanelSeparator from "@/components/settings-panel/SettingsPanelSeparator";
 
 // ─── Param type classification ────────────────────────────────────────────────
 const NUMBER_PARAMS = new Set(["Z-Index", "Polygon Edge Width"]);
@@ -25,7 +26,7 @@ function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
     const selectOptions = STYLE_OPTIONS[name];
     if (selectOptions) {
         return (
-            <SettingsPanelSelect
+            <SettingsPanelRowSelect
                 label={name}
                 value={value}
                 options={selectOptions}
@@ -37,7 +38,7 @@ function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
 
     if (NUMBER_PARAMS.has(name)) {
         return (
-            <SettingsPanelInput
+            <SettingsPanelRowInput
                 label={name}
                 value={value}
                 type="number"
@@ -49,7 +50,7 @@ function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
 
     if (COLOR_PARAMS.has(name)) {
         return (
-            <SettingsPanelColorInput
+            <SettingsPanelRowColorInput
                 label={name}
                 value={value}
                 disabled={disabled}
@@ -60,7 +61,7 @@ function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
 
     // Text fallback
     return (
-        <SettingsPanelInput
+        <SettingsPanelRowInput
             label={name}
             value={value}
             disabled={disabled}
@@ -69,28 +70,45 @@ function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
     );
 }
 
-// ─── Panel ────────────────────────────────────────────────────────────────────
-interface LayerSettingsPanelProps {
+// ─── Section ──────────────────────────────────────────────────────────────────
+export interface SettingsSectionData {
+    label: string;
     settings: LayerSettingParameter[];
-    disabled: boolean;
     onParamChange: (name: string, value: string) => void;
 }
 
-export default function LayerSettingsPanel({ settings, disabled, onParamChange }: LayerSettingsPanelProps) {
-    const visible = settings.filter((p) => p.name !== "Visible");
+// ─── Panel ────────────────────────────────────────────────────────────────────
+interface LayerSettingsPanelProps {
+    sections: SettingsSectionData[];
+    disabled: boolean;
+}
 
-    if (visible.length === 0) return null;
+export default function LayerSettingsPanel({ sections, disabled }: LayerSettingsPanelProps) {
+    const showSectionLabels = sections.length > 1;
+    const nonEmpty = sections.filter((s) => s.settings.some((p) => p.name !== "Visible"));
+
+    if (nonEmpty.length === 0) return null;
 
     return (
         <div className="border-t border-gray-100 bg-gray-50 py-1">
-            {visible.map((param) => (
-                <SettingField
-                    key={param.name}
-                    param={param}
-                    disabled={disabled}
-                    onParamChange={onParamChange}
-                />
-            ))}
+            {nonEmpty.map((section, idx) => {
+                const visibleParams = section.settings.filter((p) => p.name !== "Visible");
+                return (
+                    <div key={section.label} className={idx > 0 ? "mt-2" : ""}>
+                        {showSectionLabels && (
+                            <SettingsPanelSeparator label={section.label} />
+                        )}
+                        {visibleParams.map((param) => (
+                            <SettingField
+                                key={param.name}
+                                param={param}
+                                disabled={disabled}
+                                onParamChange={section.onParamChange}
+                            />
+                        ))}
+                    </div>
+                );
+            })}
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import type { LayerDefinition, LayerSettingsDefault } from "@/types/layerTypes";
+import type { LayerDefinition, LayerGroup, LayerSettingsDefault } from "@/types/layerTypes";
 
 export const LAYER_NAME = {
     OBSTACLES: "Obstacles",
@@ -15,6 +15,14 @@ export const LAYER_ID = {
     GRID: 3,
     MAP_BASE: 4,
 } as const;
+
+/**
+ * Groups of LAYER_ID values that map to a single canvas rendering layer and
+ * should appear as one combined entry in the layers UI.
+ */
+export const LAYER_GROUPS: LayerGroup[] = [
+    { id: "objects", name: "Objects", memberIds: [LAYER_ID.ZONES, LAYER_ID.OBSTACLES] },
+];
 
 export const LAYER_REGISTRY: LayerDefinition[] = [
     { id: LAYER_ID.OBSTACLES, name: LAYER_NAME.OBSTACLES, type: "Polygon" },
