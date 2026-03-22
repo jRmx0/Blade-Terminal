@@ -1,4 +1,6 @@
+import { memo } from "react";
 import { Layer, Circle } from "react-konva";
+import { CanvasVertexIdLabel } from "@/features/canvas-editing/components/canvas-editor/shapes/CanvasVertexIdLabel";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import type { Object, Vertex } from "@/types/schemaTypes";
 import { computeEdgeMidpoints, type Point } from "@/features/canvas-editing/utils/canvasGeometry";
@@ -27,7 +29,7 @@ interface CanvasVertexHandlesLayerProps {
     onHandleHoverChange: (hovered: boolean) => void;
 }
 
-export function CanvasVertexHandlesLayer({
+export function _CanvasVertexHandlesLayer({
     selectedObject,
     selectedObjectVertices,
     activeTool,
@@ -57,6 +59,7 @@ export function CanvasVertexHandlesLayer({
                 if (!mid) return null;
 
                 const isActiveVertex = selectedVertices.some((sv) => sameVertex(sv, v)) || (draggingVertex !== null && sameVertex(draggingVertex, v));
+                const borderColor = isActiveVertex ? COLOR_VERTEX_SELECTED_STROKE : accentColor;
 
                 return [
                     <Circle
@@ -78,6 +81,14 @@ export function CanvasVertexHandlesLayer({
                         onMouseEnter={() => onHandleHoverChange(true)}
                         onMouseLeave={() => onHandleHoverChange(false)}
                     />,
+                    <CanvasVertexIdLabel
+                        key={`vertex-id-label-${v.id}`}
+                        id={v.id}
+                        x={v.x}
+                        y={v.y}
+                        scale={scale}
+                        accentColor={borderColor}
+                    />,
                     <Circle
                         key={`edge-midpoint-handle-${v.id}`}
                         x={mid.x}
@@ -98,3 +109,5 @@ export function CanvasVertexHandlesLayer({
         </Layer>
     );
 }
+
+export const CanvasVertexHandlesLayer = memo(_CanvasVertexHandlesLayer);
