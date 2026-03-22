@@ -1,0 +1,75 @@
+import { useState } from "react";
+
+interface SettingsPanelInputProps {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    disabled?: boolean;
+    type?: "text" | "number";
+}
+
+export default function SettingsPanelInput({
+    label,
+    value,
+    onChange,
+    disabled = false,
+    type = "text",
+}: SettingsPanelInputProps) {
+    const [isFocused, setIsFocused] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
+    const showSpinners = type === "number" && (isFocused || isHovered) && !disabled;
+
+    return (
+        <div
+            className="flex items-center gap-3 px-3 h-8"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            <span className="w-[55%] text-xs text-gray-500 shrink-0 truncate select-none">{label}</span>
+            <div className="relative flex-1 min-w-0">
+                <input
+                    type={type}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    disabled={disabled}
+                    className={`w-full border rounded bg-white text-xs px-2 py-0.5 focus:outline-none transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${type === "number" ? "pr-5" : ""
+                        } ${isFocused ? "border-teal-700" : "border-gray-300"
+                        } ${disabled ? "text-gray-400 cursor-not-allowed opacity-50" : "text-gray-900"
+                        }`}
+                />
+                {showSpinners && (
+                    <div className="absolute right-px top-1/2 -translate-y-1/2 flex flex-col w-3 pt-0.5">
+                        <button
+                            type="button"
+                            tabIndex={-1}
+                            disabled={disabled}
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                onChange(String(Number(value) + 1));
+                            }}
+                            className="flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer active:text-teal-700"
+                            style={{ height: 10 }}
+                        >
+                            <span className="material-symbols-outlined leading-none" style={{ fontSize: 12 }}>expand_less</span>
+                        </button>
+                        <button
+                            type="button"
+                            tabIndex={-1}
+                            disabled={disabled}
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                onChange(String(Number(value) - 1));
+                            }}
+                            className="flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer active:text-teal-700"
+                            style={{ height: 10 }}
+                        >
+                            <span className="material-symbols-outlined leading-none" style={{ fontSize: 12 }}>expand_more</span>
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

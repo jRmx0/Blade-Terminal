@@ -1,11 +1,6 @@
-import type { LayerRecord, LayerSettingParameter, LayerType } from "@/types/layerTypes";
-
-/** Returns the name of the primary color attribute for a layer type, or undefined if it has none. */
-function primaryColorParam(type: LayerType | undefined): string | undefined {
-    if (type === "Polygon") return "Polygon Edge Color";
-    if (type === "Grid") return "Grid Line Color";
-    return undefined;
-}
+import { useState } from "react";
+import type { LayerRecord, LayerSettingParameter } from "@/types/layerTypes";
+import LayerSettingsPanel from "@/features/inspector/components/calc-layers-section/LayerSettingsPanel";
 
 interface LayerRowProps {
     layer: LayerRecord;
@@ -28,15 +23,15 @@ export default function LayerRow({
     onVisibilityChange,
     onParamChange,
 }: LayerRowProps) {
+    const [expanded, setExpanded] = useState(false);
+
     const disabled = layer.placeholder === true;
     const visible = settings.find((p) => p.name === "Visible")?.value === "true";
-    const colorParamName = primaryColorParam(layer.type);
-    const primaryColor = colorParamName ? settings.find((p) => p.name === colorParamName)?.value : undefined;
 
     return (
-        <div className={`px-4 py-2 ${disabled ? "opacity-50" : ""}`}>
-            {/* Row 1: visibility + name */}
-            <div className="flex items-center gap-2">
+        <div className={disabled ? "opacity-50" : ""}>
+            {/* Row: visibility + name + controls */}
+            <div className="flex items-center gap-2 px-4 py-2">
                 <input
                     type="checkbox"
                     checked={visible}
@@ -50,16 +45,6 @@ export default function LayerRow({
                         <span className="ml-1 text-xs text-gray-400">(placeholder)</span>
                     )}
                 </span>
-                {primaryColor && colorParamName && (
-                    <input
-                        type="color"
-                        value={primaryColor}
-                        disabled={disabled}
-                        onChange={(e) => onParamChange(colorParamName, e.target.value)}
-                        className="h-4 w-4 shrink-0 cursor-pointer rounded border-none bg-transparent p-0 disabled:cursor-not-allowed"
-                        title={colorParamName}
-                    />
-                )}
                 {/* Z-order controls */}
                 <div className="flex shrink-0 gap-0.5">
                     <button
@@ -85,8 +70,31 @@ export default function LayerRow({
                         </span>
                     </button>
                 </div>
+                {/* Expand / collapse settings */}
+                <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => setExpanded((prev) => !prev)}
+                    title={expanded ? "Collapse settings" : "Expand settings"}
+                    className="flex items-center justify-center rounded p-0.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                    <span
+                        className="material-symbols-outlined transition-transform duration-150"
+                        style={{ fontSize: 14, transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
+                    >
+                        expand_more
+                    </span>
+                </button>
             </div>
 
+            {/* Settings panel */}
+            {expanded && (
+                <LayerSettingsPanel
+                    settings={settings}
+                    disabled={disabled}
+                    onParamChange={onParamChange}
+                />
+            )}
         </div>
     );
 }
