@@ -37,7 +37,7 @@ export default function SettingsPanelColorInput({
                     aria-label="Pick color"
                     disabled={disabled}
                     onClick={() => !disabled && setIsOpen((prev) => !prev)}
-                    className="w-5 h-3.5 mr-1.5 shrink-0 cursor-pointer disabled:cursor-not-allowed focus:outline-none"
+                    className="w-5 h-3.5 mr-1.5 border border-gray-300 shrink-0 cursor-pointer disabled:cursor-not-allowed focus:outline-none"
                     style={{ background: value || "#ffffff" }}
                 />
                 {isOpen && (
