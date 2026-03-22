@@ -1,4 +1,5 @@
 import { useState } from "react";
+import SettingsPanelRow from "./SettingsPanelRow";
 
 interface SettingsPanelInputProps {
     label: string;
@@ -20,12 +21,11 @@ export default function SettingsPanelInput({
     const showSpinners = type === "number" && (isFocused || isHovered) && !disabled;
 
     return (
-        <div
-            className="flex items-center gap-3 px-3 h-8"
+        <SettingsPanelRow
+            label={label}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <span className="w-[55%] text-xs text-gray-500 shrink-0 truncate select-none">{label}</span>
             <div className="relative flex-1 min-w-0">
                 <input
                     type={type}
@@ -70,6 +70,6 @@ export default function SettingsPanelInput({
                     </div>
                 )}
             </div>
-        </div>
+        </SettingsPanelRow>
     );
 }

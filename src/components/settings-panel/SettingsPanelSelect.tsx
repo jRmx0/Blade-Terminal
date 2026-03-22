@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+import { useClickOutside } from "../../hooks/useClickOutside";
+import SettingsPanelRow from "./SettingsPanelRow";
 
 export interface SettingsPanelSelectOption {
     value: string;
@@ -21,24 +23,12 @@ export default function SettingsPanelSelect({
     disabled = false,
 }: SettingsPanelSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
+    const containerRef = useClickOutside<HTMLDivElement>(isOpen, () => setIsOpen(false));
 
     const selectedOption = options.find((o) => o.value === value);
 
-    useEffect(() => {
-        if (!isOpen) return;
-        function handleClickOutside(e: MouseEvent) {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                setIsOpen(false);
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [isOpen]);
-
     return (
-        <div className="flex items-center gap-3 px-3 h-8" ref={containerRef}>
-            <span className="w-[55%] text-xs text-gray-500 shrink-0 truncate select-none">{label}</span>
+        <SettingsPanelRow ref={containerRef} label={label}>
             <div className="relative flex-1 min-w-0">
                 <button
                     type="button"
@@ -86,6 +76,6 @@ export default function SettingsPanelSelect({
                     </ul>
                 )}
             </div>
-        </div>
+        </SettingsPanelRow>
     );
 }

@@ -1,5 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Sketch } from "@uiw/react-color";
+import { useClickOutside } from "../../hooks/useClickOutside";
+import SettingsPanelRow from "./SettingsPanelRow";
 
 interface SettingsPanelColorInputProps {
     label: string;
@@ -15,22 +17,10 @@ export default function SettingsPanelColorInput({
     disabled = false,
 }: SettingsPanelColorInputProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!isOpen) return;
-        function handleClickOutside(e: MouseEvent) {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                setIsOpen(false);
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [isOpen]);
+    const containerRef = useClickOutside<HTMLDivElement>(isOpen, () => setIsOpen(false));
 
     return (
-        <div className="flex items-center gap-3 px-3 h-8">
-            <span className="w-[55%] text-xs text-gray-500 shrink-0 truncate select-none">{label}</span>
+        <SettingsPanelRow label={label}>
             <div
                 ref={containerRef}
                 className={`relative flex-1 min-w-0 flex items-center border border-gray-300 rounded bg-white h-6 ${disabled ? "opacity-50" : ""}`}
@@ -59,6 +49,6 @@ export default function SettingsPanelColorInput({
                     </div>
                 )}
             </div>
-        </div>
+        </SettingsPanelRow>
     );
 }
