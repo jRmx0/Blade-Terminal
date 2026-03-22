@@ -46,7 +46,7 @@ export default function SettingsPanelSelect({
                     aria-expanded={isOpen}
                     onClick={() => !disabled && setIsOpen((prev) => !prev)}
                     disabled={disabled}
-                    className={`w-full flex items-center gap-1 border rounded bg-white text-left select-none focus:outline-none transition-colors px-2 py-0.5 ${isOpen ? "border-teal-700" : "border-gray-300"
+                    className={`w-full flex items-center gap-1 border rounded bg-white text-left select-none focus:outline-none transition-colors px-2 h-6 ${isOpen ? "border-teal-700" : "border-gray-300"
                         } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
                         }`}
                 >

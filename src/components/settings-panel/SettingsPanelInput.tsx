@@ -34,7 +34,7 @@ export default function SettingsPanelInput({
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                     disabled={disabled}
-                    className={`w-full border rounded bg-white text-xs px-2 py-0.5 focus:outline-none transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${type === "number" ? "pr-5" : ""
+                    className={`w-full border rounded bg-white text-xs px-2 h-6 focus:outline-none transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${type === "number" ? "pr-5" : ""
                         } ${isFocused ? "border-teal-700" : "border-gray-300"
                         } ${disabled ? "text-gray-400 cursor-not-allowed opacity-50" : "text-gray-900"
                         }`}
