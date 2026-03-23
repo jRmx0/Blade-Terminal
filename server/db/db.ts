@@ -19,8 +19,8 @@ db.version(1).stores({
     environmentComputationParameterValues: "[id+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId",
     environmentComputation: "environmentId",
     appEnumValues: "[enumGroup+value], enumGroup",
-    layers: "++id, key",
-    layerSettings: "[id+layerId], [layerId+name], layerId",
+    layers: "[id+algorithmId+providerId], algorithmId, providerId, key",
+    layerSettings: "[id+layerId+algorithmId+providerId], [layerId+algorithmId+providerId], [layerId+algorithmId+providerId+name]",
 });
 
 db.on("populate", () => {
@@ -50,6 +50,9 @@ export { db };
 async function seedLayers(): Promise<void> {
     for (const def of LAYER_REGISTRY) {
         await db.table("layers").add({
+            id: def.id,
+            algorithmId: 0,
+            providerId: 0,
             key: def.id,
             label: def.name,
             type: def.type,

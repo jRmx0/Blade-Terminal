@@ -80,36 +80,36 @@ export type PolygonFillStyle = (typeof POLYGON_FILL_STYLE)[keyof typeof POLYGON_
 
 export const LAYER_SETTINGS_DEFAULTS: LayerSettingsDefault[] = [
     // ── Grid (internal Grid type) ────────────────────────────────────────────
-    { id: 1, layerId: LAYER_ID.GRID, name: "Visible", value: "true" },
-    { id: 5, layerId: LAYER_ID.GRID, name: "Z-Index", value: "10" },
-    { id: 10, layerId: LAYER_ID.GRID, name: "Grid Line Color", value: "#e2e8f0" },
+    { id: 1, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, name: "Visible", value: "true" },
+    { id: 5, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, name: "Z-Index", value: "10" },
+    { id: 10, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, name: "Grid Line Color", value: "#e2e8f0" },
 
     // ── Objects (ObjectGroup — group-level settings owner) ───────────────────
-    { id: 1, layerId: LAYER_ID.OBJECTS, name: "Visible", value: "true" },
-    { id: 2, layerId: LAYER_ID.OBJECTS, name: "Show Vertex IDs", value: "false" },
+    { id: 1, layerId: LAYER_ID.OBJECTS, algorithmId: 0, providerId: 0, name: "Visible", value: "true" },
+    { id: 2, layerId: LAYER_ID.OBJECTS, algorithmId: 0, providerId: 0, name: "Show Vertex IDs", value: "false" },
 
     // ── Zones (Polygon) ──────────────────────────────────────────────────────
-    { id: 1, layerId: LAYER_ID.ZONES, name: "Visible", value: "true" },
-    { id: 5, layerId: LAYER_ID.ZONES, name: "Z-Index", value: "20" },
-    { id: 60, layerId: LAYER_ID.ZONES, name: "Polygon Edge Color", value: "#22c55e" },
-    { id: 61, layerId: LAYER_ID.ZONES, name: "Polygon Edge Width", value: "1" },
-    { id: 62, layerId: LAYER_ID.ZONES, name: "Polygon Edge Style", value: POLYGON_EDGE_STYLE.SOLID },
+    { id: 1, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, name: "Visible", value: "true" },
+    { id: 5, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, name: "Z-Index", value: "20" },
+    { id: 60, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, name: "Polygon Edge Color", value: "#22c55e" },
+    { id: 61, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, name: "Polygon Edge Width", value: "1" },
+    { id: 62, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, name: "Polygon Edge Style", value: POLYGON_EDGE_STYLE.SOLID },
     // rgba(34,197,94,0.18) ≈ #22c55e2e
-    { id: 80, layerId: LAYER_ID.ZONES, name: "Polygon Fill Color", value: "#22c55e2e" },
-    { id: 81, layerId: LAYER_ID.ZONES, name: "Polygon Fill Style", value: POLYGON_FILL_STYLE.SOLID },
+    { id: 80, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, name: "Polygon Fill Color", value: "#22c55e2e" },
+    { id: 81, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, name: "Polygon Fill Style", value: POLYGON_FILL_STYLE.SOLID },
 
     // ── Obstacles (Polygon) ──────────────────────────────────────────────────
-    { id: 1, layerId: LAYER_ID.OBSTACLES, name: "Visible", value: "true" },
-    { id: 5, layerId: LAYER_ID.OBSTACLES, name: "Z-Index", value: "30" },
-    { id: 60, layerId: LAYER_ID.OBSTACLES, name: "Polygon Edge Color", value: "#ef4444" },
-    { id: 61, layerId: LAYER_ID.OBSTACLES, name: "Polygon Edge Width", value: "1" },
-    { id: 62, layerId: LAYER_ID.OBSTACLES, name: "Polygon Edge Style", value: POLYGON_EDGE_STYLE.SOLID },
+    { id: 1, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Visible", value: "true" },
+    { id: 5, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Z-Index", value: "30" },
+    { id: 60, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Polygon Edge Color", value: "#ef4444" },
+    { id: 61, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Polygon Edge Width", value: "1" },
+    { id: 62, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Polygon Edge Style", value: POLYGON_EDGE_STYLE.SOLID },
     // rgba(239,68,68,0.23) ≈ #ef44443b
-    { id: 80, layerId: LAYER_ID.OBSTACLES, name: "Polygon Fill Color", value: "#ef44443b" },
-    { id: 81, layerId: LAYER_ID.OBSTACLES, name: "Polygon Fill Style", value: POLYGON_FILL_STYLE.SOLID },
+    { id: 80, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Polygon Fill Color", value: "#ef44443b" },
+    { id: 81, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Polygon Fill Style", value: POLYGON_FILL_STYLE.SOLID },
 
     // ── Map Base (internal Map type) ─────────────────────────────────────────
-    { id: 1, layerId: LAYER_ID.MAP_BASE, name: "Visible", value: "true" },
-    { id: 5, layerId: LAYER_ID.MAP_BASE, name: "Z-Index", value: "0" },
+    { id: 1, layerId: LAYER_ID.MAP_BASE, algorithmId: 0, providerId: 0, name: "Visible", value: "true" },
+    { id: 5, layerId: LAYER_ID.MAP_BASE, algorithmId: 0, providerId: 0, name: "Z-Index", value: "0" },
 ];
 

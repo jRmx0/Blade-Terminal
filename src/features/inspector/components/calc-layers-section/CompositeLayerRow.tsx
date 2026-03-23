@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { LayerSettingParameter, LayerWithSettings } from "@/types/layerTypes";
+import type { LayerPK, LayerSettingParameter, LayerWithSettings } from "@/types/layerTypes";
 import LayerSettingsPanel from "@/features/inspector/components/calc-layers-section/LayerSettingsPanel";
 import type { SettingsSectionData } from "@/features/inspector/components/calc-layers-section/LayerSettingsPanel";
 
@@ -14,7 +14,7 @@ interface CompositeLayerRowProps {
     isLast: boolean;
     onMoveUp: () => void;
     onMoveDown: () => void;
-    onVisibilityChange: (layerDbId: number, visible: boolean) => void;
+    onVisibilityChange: (pk: LayerPK, visible: boolean) => void;
     onParamChange: (layerKey: number, name: string, value: string) => void;
 }
 
@@ -55,7 +55,7 @@ export default function CompositeLayerRow({
                     type="checkbox"
                     checked={allVisible}
                     onChange={(e) => {
-                        members.forEach((m) => onVisibilityChange(m.layer.id!, e.target.checked));
+                        members.forEach((m) => onVisibilityChange({ id: m.layer.id, algorithmId: m.layer.algorithmId, providerId: m.layer.providerId }, e.target.checked));
                     }}
                     className="h-3.5 w-3.5 shrink-0 accent-teal-600 cursor-pointer"
                 />

@@ -2,17 +2,17 @@ import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
 import { LAYER_GROUPS } from "@/config/layers/layerRegistry";
 import LayerRow from "@/features/inspector/components/calc-layers-section/LayerRow";
 import CompositeLayerRow from "@/features/inspector/components/calc-layers-section/CompositeLayerRow";
-import type { LayerSettingParameter, LayerWithSettings } from "@/types/layerTypes";
+import type { LayerPK, LayerSettingParameter, LayerWithSettings } from "@/types/layerTypes";
 
 type DisplayItem =
     | { type: "single"; item: LayerWithSettings }
     | { type: "group"; groupId: string; name: string; members: LayerWithSettings[] };
 
-function getFlatLayerDbIds(items: DisplayItem[]): number[] {
+function getFlatLayerDbIds(items: DisplayItem[]): LayerPK[] {
     return items.flatMap((item) =>
         item.type === "group"
-            ? item.members.map((m) => m.layer.id!)
-            : [item.item.layer.id!],
+            ? item.members.map((m) => ({ id: m.layer.id, algorithmId: m.layer.algorithmId, providerId: m.layer.providerId }))
+            : [{ id: item.item.layer.id, algorithmId: item.item.layer.algorithmId, providerId: item.item.layer.providerId }],
     );
 }
 
@@ -132,7 +132,7 @@ export default function LayersTab() {
                             isLast={isLast}
                             onMoveUp={() => handleMoveUp(displayIndex)}
                             onMoveDown={() => handleMoveDown(displayIndex)}
-                            onVisibilityChange={(layerDbId, visible) => setVisible(layerDbId, visible)}
+                            onVisibilityChange={(pk, visible) => setVisible(pk, visible)}
                             onParamChange={(layerKey, name, value) => setParam(layerKey, name, value)}
                         />
                     );
@@ -147,7 +147,7 @@ export default function LayersTab() {
                         isLast={isLast}
                         onMoveUp={() => handleMoveUp(displayIndex)}
                         onMoveDown={() => handleMoveDown(displayIndex)}
-                        onVisibilityChange={(visible) => setVisible(displayItem.item.layer.id!, visible)}
+                        onVisibilityChange={(visible) => setVisible({ id: displayItem.item.layer.id, algorithmId: displayItem.item.layer.algorithmId, providerId: displayItem.item.layer.providerId }, visible)}
                         onParamChange={(name, value) => setParam(displayItem.item.layer.key, name, value)}
                     />
                 );

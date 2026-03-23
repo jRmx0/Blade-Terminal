@@ -21,17 +21,29 @@ export interface LayerDefinition {
 export interface LayerSettingsDefault {
     id: number;
     layerId: LayerId;
+    algorithmId: number;
+    providerId: number;
     name: string;
     value: string;
 }
 
+/** Compound primary key for the `layers` table. System layers use `algorithmId: 0, providerId: 0`. */
+export interface LayerPK {
+    id: number;
+    algorithmId: number;
+    providerId: number;
+}
+
 /**
  * DB record for a canvas layer definition (`layers` table).
- * `id` is auto-assigned by Dexie (`++id`); optional so inserts can omit it.
+ * `id` is a natural key from the layer definition or provider metadata.
+ * System layers use `algorithmId: 0, providerId: 0` as sentinels.
  * `type` is optional for backward compatibility with DB records that pre-date the type field.
  */
 export interface LayerRecord {
-    id?: number;
+    id: number;
+    algorithmId: number;
+    providerId: number;
     key: LayerId;
     label: string;
     type?: LayerType;
@@ -39,10 +51,12 @@ export interface LayerRecord {
 }
 
 export interface LayerSettingParameter {
-    /** API attribute ID — forms the compound PK with `layerId`. Matches the attribute `id` from the blade-provider Debug Layer Styles spec. */
+    /** API attribute ID — part of the compound PK. Matches the attribute `id` from the blade-provider Debug Layer Styles spec. */
     id: number;
-    /** FK → layers.id; forms the compound PK with `id`. */
+    /** FK → layers.id (the `id` part of the layer compound PK). */
     layerId: number;
+    algorithmId: number;
+    providerId: number;
     name: string;
     value: string;
 }
