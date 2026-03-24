@@ -47,8 +47,8 @@ export function useWorkbenchShortcuts() {
     useShortcut("workspace.save", S["workspace.save"].keys, () => {
         const { mode, setMode, isAutoSaveEnabled } = useSaveModeStore.getState();
         saveCanvas()
-            .then(() => {
-                if (mode === "session") setMode(isAutoSaveEnabled ? "autosave" : "manual");
+            .then((saved) => {
+                if (saved && mode === "session") setMode(isAutoSaveEnabled ? "autosave" : "manual");
             })
             .catch(console.error);
     });

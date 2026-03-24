@@ -57,10 +57,11 @@ async function persistDirtyVertices(dirtyVertices: Vertex[], deletedVertices: Ve
 
 /**
  * Persists all dirty canvas state and environment metadata to IndexedDB.
- * No-ops when nothing has changed or a save is already in progress.
+ * Returns true when data was actually written to IndexedDB, false when nothing
+ * was dirty or a save was already in progress.
  */
-export async function saveCanvas(): Promise<void> {
-    if (_isSaving) return;
+export async function saveCanvas(): Promise<boolean> {
+    if (_isSaving) return false;
 
     const { dirtyObjects, dirtyVertices, deletedObjects, deletedVertices, clearDirty } =
         useCanvasObjectStore.getState();
@@ -68,7 +69,7 @@ export async function saveCanvas(): Promise<void> {
     const { parameterValues, isParameterValuesDirty, clearDirty: clearParamsDirty } = useParameterValuesStore.getState();
     const { layers, isLayerSettingsDirty, clearDirty: clearLayersDirty } = useLayerSettingsStore.getState();
 
-    if (!isEnvDirty && !isParameterValuesDirty && !isLayerSettingsDirty && !dirtyObjects.length && !deletedObjects.length && !dirtyVertices.length && !deletedVertices.length) return;
+    if (!isEnvDirty && !isParameterValuesDirty && !isLayerSettingsDirty && !dirtyObjects.length && !deletedObjects.length && !dirtyVertices.length && !deletedVertices.length) return false;
 
     _isSaving = true;
     try {
@@ -84,6 +85,7 @@ export async function saveCanvas(): Promise<void> {
         clearEnvDirty();
         clearParamsDirty();
         clearLayersDirty();
+        return true;
     } finally {
         _isSaving = false;
     }

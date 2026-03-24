@@ -43,9 +43,11 @@ export const useSaveStatusStore = create<SaveStatusState>()(() => ({
     status: computeStatus(),
 
     save: async () => {
-        await saveCanvas();
-        const { mode, setMode, isAutoSaveEnabled } = useSaveModeStore.getState();
-        if (mode === "session") setMode(isAutoSaveEnabled ? "autosave" : "manual");
+        const saved = await saveCanvas();
+        if (saved) {
+            const { mode, setMode, isAutoSaveEnabled } = useSaveModeStore.getState();
+            if (mode === "session") setMode(isAutoSaveEnabled ? "autosave" : "manual");
+        }
     },
 }));
 

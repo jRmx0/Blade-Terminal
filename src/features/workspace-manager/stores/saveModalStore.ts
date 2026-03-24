@@ -34,11 +34,13 @@ export const useSaveModalStore = create<SaveModalState>()(() => ({
             secondaryLabel: "Don't Save",
             cancelLabel: "Cancel",
             confirmAction: async () => {
-                await saveCanvas();
+                const saved = await saveCanvas();
 
-                const { mode, setMode, isAutoSaveEnabled } = useSaveModeStore.getState();
-                if (mode === "session") {
-                    setMode(isAutoSaveEnabled ? "autosave" : "manual");
+                if (saved) {
+                    const { mode, setMode, isAutoSaveEnabled } = useSaveModeStore.getState();
+                    if (mode === "session") {
+                        setMode(isAutoSaveEnabled ? "autosave" : "manual");
+                    }
                 }
 
                 await action();
