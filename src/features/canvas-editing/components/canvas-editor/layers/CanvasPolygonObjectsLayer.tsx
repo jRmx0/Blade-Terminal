@@ -59,6 +59,8 @@ export function _CanvasPolygonObjectsLayer({
     const primaryDragRef = useRef(false);
 
     const layers = useLayerSettingsStore((s) => s.layers);
+    const zonesVisible = getLayerParam(layers, LAYER_ID.ZONES, "Visible") !== "false";
+    const obstaclesVisible = getLayerParam(layers, LAYER_ID.OBSTACLES, "Visible") !== "false";
     const zoneStroke = getLayerParam(layers, LAYER_ID.ZONES, "Polygon Edge Color") ?? "#22c55e";
     const zoneFill = getLayerParam(layers, LAYER_ID.ZONES, "Polygon Fill Color") ?? "#22c55e2e";
     const obstacleStroke = getLayerParam(layers, LAYER_ID.OBSTACLES, "Polygon Edge Color") ?? "#ef4444";
@@ -81,10 +83,12 @@ export function _CanvasPolygonObjectsLayer({
         verticesByObjectId.set(v.objectId, list);
     }
 
-    const sortedObjects = [...objects].sort((a, b) => {
-        if (a.category === b.category) return 0;
-        return a.category === "zone" ? -1 : 1;
-    });
+    const sortedObjects = [...objects]
+        .filter((obj) => (obj.category === "zone" ? zonesVisible : obstaclesVisible))
+        .sort((a, b) => {
+            if (a.category === b.category) return 0;
+            return a.category === "zone" ? -1 : 1;
+        });
 
     return (
         <Layer>

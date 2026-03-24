@@ -13,6 +13,8 @@ import { objectVertices } from "@/features/canvas-editing/utils/canvasGeometry";
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import { useCanvasPanning } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasPanning";
 import { useCanvasZoom } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasZoom";
+import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
+import { LAYER_ID } from "@/config/layers/layerRegistry";
 import { useCanvasDrawing } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasDrawing";
 import { useCanvasMidpointDrag } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasMidpointDrag";
 import { useCanvasVertexDrag } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasVertexDrag";
@@ -34,6 +36,7 @@ export default function CanvasEditor() {
   const setPosition = useCanvasViewStore((s) => s.setPosition);
   const setScale = useCanvasViewStore((s) => s.setScale);
   const { activeTool, setActiveTool } = useCanvasToolStore();
+  const layerSettings = useLayerSettingsStore((s) => s.layers);
   const {
     objects,
     vertices,
@@ -137,9 +140,17 @@ export default function CanvasEditor() {
       ? selectedStoreObject
       : null;
 
+  // Suppress vertex handles when the selected object's layer is hidden.
+  const zonesVisible = getLayerParam(layerSettings, LAYER_ID.ZONES, "Visible") !== "false";
+  const obstaclesVisible = getLayerParam(layerSettings, LAYER_ID.OBSTACLES, "Visible") !== "false";
+  const selectedObjectForHandles =
+    selectedObject === null ? null :
+    selectedObject.category === "zone" ? (zonesVisible ? selectedObject : null) :
+    obstaclesVisible ? selectedObject : null;
+
   const selectedObjectVertices = useMemo(
-    () => (selectedObject ? objectVertices(vertices, selectedObject.id) : []),
-    [selectedObject, vertices],
+    () => (selectedObjectForHandles ? objectVertices(vertices, selectedObjectForHandles.id) : []),
+    [selectedObjectForHandles, vertices],
   );
 
   const isDrawing = activeTool === "addZone" || activeTool === "addObstacle";
@@ -247,7 +258,7 @@ export default function CanvasEditor() {
         />
 
         <CanvasVertexHandlesLayer
-          selectedObject={selectedObject}
+          selectedObject={selectedObjectForHandles}
           selectedObjectVertices={selectedObjectVertices}
           activeTool={activeTool}
           scale={scale}

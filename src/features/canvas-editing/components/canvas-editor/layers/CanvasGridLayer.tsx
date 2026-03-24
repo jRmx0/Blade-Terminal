@@ -11,10 +11,10 @@ import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewS
  */
 export function CanvasGridLayer() {
     const layers = useLayerSettingsStore((s) => s.layers);
+    const gridVisible = getLayerParam(layers, LAYER_ID.GRID, "Visible") !== "false";
     const strokeColor = getLayerParam(layers, LAYER_ID.GRID, "Grid Line Color") ?? "#e2e8f0";
     const position = useCanvasViewStore((s) => s.position);
     const scale = useCanvasViewStore((s) => s.scale);
-    const gridVisible = useCanvasViewStore((s) => s.gridVisible);
 
     if (!gridVisible) return null;
 

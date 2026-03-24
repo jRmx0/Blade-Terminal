@@ -5,19 +5,16 @@ import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 interface CanvasViewState {
     position: Point;
     scale: number;
-    gridVisible: boolean;
     setPosition: (position: Point) => void;
     setScale: (scale: number) => void;
     zoomIn: () => void;
     zoomOut: () => void;
     resetView: () => void;
-    toggleGrid: () => void;
 }
 
-export const useCanvasViewStore = create<CanvasViewState>((set, get) => ({
+export const useCanvasViewStore = create<CanvasViewState>((set) => ({
     position: { x: 0, y: 0 },
     scale: 1,
-    gridVisible: true,
 
     setPosition: (position) => set({ position }),
 
@@ -35,6 +32,4 @@ export const useCanvasViewStore = create<CanvasViewState>((set, get) => ({
         })),
 
     resetView: () => set({ position: { x: 0, y: 0 }, scale: 1 }),
-
-    toggleGrid: () => set((state) => ({ gridVisible: !state.gridVisible })),
 }));
