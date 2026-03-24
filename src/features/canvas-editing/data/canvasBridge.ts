@@ -73,8 +73,8 @@ export async function saveCanvas(): Promise<void> {
     _isSaving = true;
     try {
         await Promise.all([
-            isEnvDirty ? saveEnvironment(env) : Promise.resolve(),
-            isEnvDirty ? saveEnvironmentComputation(computation) : Promise.resolve(),
+            saveEnvironment(env),
+            saveEnvironmentComputation(computation),
             isParameterValuesDirty ? saveParameterValues(parameterValues) : Promise.resolve(),
             isLayerSettingsDirty ? saveAllLayerSettings(layers.flatMap((l) => l.settings)) : Promise.resolve(),
             persistDirtyObjects(dirtyObjects, deletedObjects),
