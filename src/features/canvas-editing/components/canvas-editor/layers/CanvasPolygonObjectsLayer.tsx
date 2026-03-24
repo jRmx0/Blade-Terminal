@@ -61,6 +61,8 @@ export function _CanvasPolygonObjectsLayer({
     const layers = useLayerSettingsStore((s) => s.layers);
     const zonesVisible = getLayerParam(layers, LAYER_ID.ZONES, "Visible") !== "false";
     const obstaclesVisible = getLayerParam(layers, LAYER_ID.OBSTACLES, "Visible") !== "false";
+    const zoneZIndex = parseInt(getLayerParam(layers, LAYER_ID.ZONES, "Z-Index") ?? "20", 10);
+    const obstacleZIndex = parseInt(getLayerParam(layers, LAYER_ID.OBSTACLES, "Z-Index") ?? "30", 10);
     const zoneStroke = getLayerParam(layers, LAYER_ID.ZONES, "Polygon Edge Color") ?? "#22c55e";
     const zoneFill = getLayerParam(layers, LAYER_ID.ZONES, "Polygon Fill Color") ?? "#22c55e2e";
     const obstacleStroke = getLayerParam(layers, LAYER_ID.OBSTACLES, "Polygon Edge Color") ?? "#ef4444";
@@ -86,8 +88,9 @@ export function _CanvasPolygonObjectsLayer({
     const sortedObjects = [...objects]
         .filter((obj) => (obj.category === "zone" ? zonesVisible : obstaclesVisible))
         .sort((a, b) => {
-            if (a.category === b.category) return 0;
-            return a.category === "zone" ? -1 : 1;
+            const az = a.category === "zone" ? zoneZIndex : obstacleZIndex;
+            const bz = b.category === "zone" ? zoneZIndex : obstacleZIndex;
+            return az - bz; // lower Z-Index renders first (beneath higher)
         });
 
     return (
