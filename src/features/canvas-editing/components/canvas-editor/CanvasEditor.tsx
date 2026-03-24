@@ -146,8 +146,14 @@ export default function CanvasEditor() {
   const gridZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.GRID, "Z-Index") ?? "10", 10);
   const zoneZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.ZONES, "Z-Index") ?? "20", 10);
   const obstacleZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.OBSTACLES, "Z-Index") ?? "30", 10);
-  // Grid renders above the polygon layer when its Z-Index exceeds the lowest polygon Z-Index.
-  const gridAbovePolygons = gridZIndex >= Math.min(zoneZIndex, obstacleZIndex);
+
+  // Sort the three system layers by Z-Index ascending so lower Z renders beneath higher.
+  const systemLayerOrder = ([
+    { id: "grid" as const, zIndex: gridZIndex },
+    { id: "zones" as const, zIndex: zoneZIndex },
+    { id: "obstacles" as const, zIndex: obstacleZIndex },
+  ] as const).slice().sort((a, b) => a.zIndex - b.zIndex);
+
   const selectedObjectForHandles =
     selectedObject === null ? null :
       selectedObject.category === "zone" ? (zonesVisible ? selectedObject : null) :
@@ -245,24 +251,49 @@ export default function CanvasEditor() {
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       >
-        {!gridAbovePolygons && <CanvasGridLayer width={size.width} height={size.height} />}
-
-        <CanvasPolygonObjectsLayer
-          objects={objects}
-          vertices={vertices}
-          selectedObject={selectedStoreObject}
-          movingObject={movingObject}
-          activeTool={activeTool}
-          scale={scale}
-          isPanningRef={isPanningRef}
-          onSelectObject={selectObject}
-          onDeleteObject={handleDeleteObject}
-          onObjectHoverChange={setIsHoveringObject}
-          onObjectDragStart={handleObjectDragStart}
-          onObjectDragEnd={handleObjectDragEnd}
-        />
-
-        {gridAbovePolygons && <CanvasGridLayer width={size.width} height={size.height} />}
+        {systemLayerOrder.map(({ id }) => {
+          if (id === "grid") {
+            return <CanvasGridLayer key="grid" width={size.width} height={size.height} />;
+          }
+          if (id === "zones") {
+            return (
+              <CanvasPolygonObjectsLayer
+                key="zones"
+                category="zone"
+                objects={objects}
+                vertices={vertices}
+                selectedObject={selectedStoreObject}
+                movingObject={movingObject}
+                activeTool={activeTool}
+                scale={scale}
+                isPanningRef={isPanningRef}
+                onSelectObject={selectObject}
+                onDeleteObject={handleDeleteObject}
+                onObjectHoverChange={setIsHoveringObject}
+                onObjectDragStart={handleObjectDragStart}
+                onObjectDragEnd={handleObjectDragEnd}
+              />
+            );
+          }
+          return (
+            <CanvasPolygonObjectsLayer
+              key="obstacles"
+              category="obstacle"
+              objects={objects}
+              vertices={vertices}
+              selectedObject={selectedStoreObject}
+              movingObject={movingObject}
+              activeTool={activeTool}
+              scale={scale}
+              isPanningRef={isPanningRef}
+              onSelectObject={selectObject}
+              onDeleteObject={handleDeleteObject}
+              onObjectHoverChange={setIsHoveringObject}
+              onObjectDragStart={handleObjectDragStart}
+              onObjectDragEnd={handleObjectDragEnd}
+            />
+          );
+        })}
 
         <CanvasVertexHandlesLayer
           selectedObject={selectedObjectForHandles}

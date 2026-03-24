@@ -45,6 +45,7 @@ export interface LayerRecord {
     key: LayerId;
     label: string;
     type?: LayerType;
+    placeholder?: boolean;
 }
 
 export interface LayerSettingParameter {
@@ -61,19 +62,4 @@ export interface LayerSettingParameter {
 export interface LayerWithSettings {
     layer: LayerRecord;
     settings: LayerSettingParameter[];
-}
-
-/**
- * A named group of logical layers that are rendered on the same canvas layer
- * and should be presented as a single entry in the layers UI.
- *
- * `settingsLayerId` points to the dedicated "ObjectGroup" layer that owns group-level
- * settings (e.g. "Show Vertex IDs"). The group row reads its settings from that layer.
- */
-export interface LayerGroup {
-    id: string;
-    name: string;
-    memberIds: LayerId[];
-    /** FK → the ObjectGroup layer that stores group-level settings. */
-    settingsLayerId?: LayerId;
 }

@@ -1,8 +1,7 @@
-import type { LayerDefinition, LayerGroup, LayerSettingsDefault } from "@/types/layerTypes";
+import type { LayerDefinition, LayerSettingsDefault } from "@/types/layerTypes";
 
 export const LAYER_NAME = {
     GRID: "Grid",
-    OBJECTS: "Objects",
     ZONES: "Zones",
     OBSTACLES: "Obstacles",
 } as const;
@@ -11,31 +10,12 @@ export type LayerName = (typeof LAYER_NAME)[keyof typeof LAYER_NAME];
 
 export const LAYER_ID = {
     GRID: 1,
-    /** ObjectGroup settings-owner for the Objects group (Zones + Obstacles). */
-    OBJECTS: 2,
-    ZONES: 3,
-    OBSTACLES: 4,
+    ZONES: 2,
+    OBSTACLES: 3,
 } as const;
-
-/**
- * Groups of LAYER_ID values that map to a single canvas rendering layer and
- * should appear as one combined entry in the layers UI.
- *
- * `settingsLayerId` links each group to its ObjectGroup owner layer.
- */
-export const LAYER_GROUPS: LayerGroup[] = [
-    {
-        id: "objects",
-        name: "Objects",
-        memberIds: [LAYER_ID.ZONES, LAYER_ID.OBSTACLES],
-        settingsLayerId: LAYER_ID.OBJECTS,
-    },
-];
 
 export const LAYER_REGISTRY: LayerDefinition[] = [
     { id: LAYER_ID.GRID, name: LAYER_NAME.GRID, type: "Grid" },
-    /** ObjectGroup: owns group-level settings for Zones + Obstacles; never renders standalone. */
-    { id: LAYER_ID.OBJECTS, name: LAYER_NAME.OBJECTS, type: "ObjectGroup" },
     { id: LAYER_ID.ZONES, name: LAYER_NAME.ZONES, type: "Polygon" },
     { id: LAYER_ID.OBSTACLES, name: LAYER_NAME.OBSTACLES, type: "Polygon" },
 ];
@@ -61,7 +41,7 @@ export type PolygonFillStyle = (typeof POLYGON_FILL_STYLE)[keyof typeof POLYGON_
 //
 // Internal attributes (not part of the API spec):
 //   id 1  → "Visible"      (all layers)
-//   id 2  → "Show Vertex IDs"  (Objects ObjectGroup layer only)
+//   id 2  → "Show Vertex IDs"  (Polygon layers)
 //
 // API attribute IDs in use:
 //   id 5  → "Z-Index"            (all layers)
@@ -81,12 +61,9 @@ export const LAYER_SETTINGS_DEFAULTS: LayerSettingsDefault[] = [
     { id: 5, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, name: "Z-Index", value: "10" },
     { id: 10, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, name: "Grid Line Color", value: "#e2e8f0" },
 
-    // ── Objects (ObjectGroup — group-level settings owner) ───────────────────
-    { id: 1, layerId: LAYER_ID.OBJECTS, algorithmId: 0, providerId: 0, name: "Visible", value: "true" },
-    { id: 2, layerId: LAYER_ID.OBJECTS, algorithmId: 0, providerId: 0, name: "Show Vertex IDs", value: "false" },
-
     // ── Zones (Polygon) ──────────────────────────────────────────────────────
     { id: 1, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, name: "Visible", value: "true" },
+    { id: 2, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, name: "Show Vertex IDs", value: "false" },
     { id: 5, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, name: "Z-Index", value: "20" },
     { id: 60, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, name: "Polygon Edge Color", value: "#22c55e" },
     { id: 61, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, name: "Polygon Edge Width", value: "1" },
@@ -97,6 +74,7 @@ export const LAYER_SETTINGS_DEFAULTS: LayerSettingsDefault[] = [
 
     // ── Obstacles (Polygon) ──────────────────────────────────────────────────
     { id: 1, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Visible", value: "true" },
+    { id: 2, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Show Vertex IDs", value: "false" },
     { id: 5, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Z-Index", value: "30" },
     { id: 60, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Polygon Edge Color", value: "#ef4444" },
     { id: 61, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Polygon Edge Width", value: "1" },

@@ -24,6 +24,7 @@ function createStripePatternCanvas(bgColor: string, stripeColor: string): HTMLCa
 }
 
 interface CanvasPolygonObjectsLayerProps {
+    category: "zone" | "obstacle";
     objects: Object[];
     vertices: Vertex[];
     selectedObject: Object | null;
@@ -39,6 +40,7 @@ interface CanvasPolygonObjectsLayerProps {
 }
 
 export function _CanvasPolygonObjectsLayer({
+    category,
     objects,
     vertices,
     selectedObject,
@@ -58,23 +60,15 @@ export function _CanvasPolygonObjectsLayer({
     // Coordinates onDragStart/onDragEnd: only true when a left-button drag is active.
     const primaryDragRef = useRef(false);
 
+    const layerId = category === "zone" ? LAYER_ID.ZONES : LAYER_ID.OBSTACLES;
     const layers = useLayerSettingsStore((s) => s.layers);
-    const zonesVisible = getLayerParam(layers, LAYER_ID.ZONES, "Visible") !== "false";
-    const obstaclesVisible = getLayerParam(layers, LAYER_ID.OBSTACLES, "Visible") !== "false";
-    const zoneZIndex = parseInt(getLayerParam(layers, LAYER_ID.ZONES, "Z-Index") ?? "20", 10);
-    const obstacleZIndex = parseInt(getLayerParam(layers, LAYER_ID.OBSTACLES, "Z-Index") ?? "30", 10);
-    const zoneStroke = getLayerParam(layers, LAYER_ID.ZONES, "Polygon Edge Color") ?? "#22c55e";
-    const zoneFill = getLayerParam(layers, LAYER_ID.ZONES, "Polygon Fill Color") ?? "#22c55e2e";
-    const obstacleStroke = getLayerParam(layers, LAYER_ID.OBSTACLES, "Polygon Edge Color") ?? "#ef4444";
-    const obstacleFill = getLayerParam(layers, LAYER_ID.OBSTACLES, "Polygon Fill Color") ?? "#ef44443b";
+    const visible = getLayerParam(layers, layerId, "Visible") !== "false";
+    const stroke = getLayerParam(layers, layerId, "Polygon Edge Color") ?? (category === "zone" ? "#22c55e" : "#ef4444");
+    const fill = getLayerParam(layers, layerId, "Polygon Fill Color") ?? (category === "zone" ? "#22c55e2e" : "#ef44443b");
 
-    const zoneOnlinePattern = useMemo(
-        () => createStripePatternCanvas(zoneFill, zoneFill),
-        [zoneFill],
-    );
-    const obstacleOnlinePattern = useMemo(
-        () => createStripePatternCanvas(obstacleFill, obstacleFill),
-        [obstacleFill],
+    const onlinePattern = useMemo(
+        () => createStripePatternCanvas(fill, fill),
+        [fill],
     );
 
     // Build lookup once per render — O(n) instead of O(n*m)
@@ -85,35 +79,28 @@ export function _CanvasPolygonObjectsLayer({
         verticesByObjectId.set(v.objectId, list);
     }
 
-    const sortedObjects = [...objects]
-        .filter((obj) => (obj.category === "zone" ? zonesVisible : obstaclesVisible))
-        .sort((a, b) => {
-            const az = a.category === "zone" ? zoneZIndex : obstacleZIndex;
-            const bz = b.category === "zone" ? zoneZIndex : obstacleZIndex;
-            return az - bz; // lower Z-Index renders first (beneath higher)
-        });
+    const visibleObjects = visible
+        ? objects.filter((obj) => obj.category === category)
+        : [];
 
     return (
         <Layer>
-            {sortedObjects.map((obj) => {
-                const isZone = obj.category === "zone";
+            {visibleObjects.map((obj) => {
                 const isOnline = obj.type === OBJECT_TYPE.ONLINE;
                 const isSelected = selectedObject !== null && sameObject(obj, selectedObject) && activeTool === "select";
                 const isMoving = movingObject !== null && sameObject(obj, movingObject);
                 const objVerts = verticesByObjectId.get(obj.id) ?? [];
-                const fillPattern = isOnline
-                    ? (isZone ? zoneOnlinePattern : obstacleOnlinePattern)
-                    : undefined;
+                const fillPattern = isOnline ? onlinePattern : undefined;
 
                 return (
                     <Line
                         key={obj.id}
                         points={objVerts.flatMap((v) => [v.x, v.y])}
                         closed
-                        fill={fillPattern ? undefined : (isZone ? zoneFill : obstacleFill)}
+                        fill={fillPattern ? undefined : fill}
                         fillPatternImage={fillPattern as unknown as HTMLImageElement}
                         fillPatternRotation={fillPattern ? 45 : undefined}
-                        stroke={isZone ? zoneStroke : obstacleStroke}
+                        stroke={stroke}
                         strokeWidth={(isSelected || isMoving ? 2.5 : 1.5) / scale}
                         opacity={isMoving ? 0.55 : 1}
                         dash={isMoving ? [8 / scale, 4 / scale] : isOnline ? [16 / scale, 4 / scale] : undefined}

@@ -46,7 +46,8 @@ export function _CanvasVertexHandlesLayer({
     const layers = useLayerSettingsStore((s) => s.layers);
     const isLayerListening = activeTool === "select" && selectedObject !== null;
     const edgeMidpoints = selectedObject ? computeEdgeMidpoints(selectedObjectVertices) : [];
-    const showVertexIds = getLayerParam(layers, LAYER_ID.OBJECTS, "Show Vertex IDs") !== "false";
+    const showVertexIdsLayerId = selectedObject?.category === "zone" ? LAYER_ID.ZONES : LAYER_ID.OBSTACLES;
+    const showVertexIds = getLayerParam(layers, showVertexIdsLayerId, "Show Vertex IDs") !== "false";
     if (!selectedObject) return <Layer />;
 
     const accentColor = selectedObject.category === "zone"
