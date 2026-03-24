@@ -7,10 +7,10 @@ import { computeEdgeMidpoints, type Point } from "@/features/canvas-editing/util
 import { sameVertex } from "@/features/canvas-editing/utils/canvasObjectUtils";
 import {
     COLOR_VERTEX_FILL,
-    COLOR_VERTEX_SELECTED_STROKE,
     COLOR_EDGE_MIDPOINT_FILL,
     COLOR_EDGE_MIDPOINT_STROKE,
 } from "@/config/canvas-editing/canvasConfig";
+import { deriveActiveFill } from "@/utils/colorUtils";
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
 import { LAYER_ID } from "@/config/layers/layerRegistry";
 
@@ -50,9 +50,17 @@ export function _CanvasVertexHandlesLayer({
     const showVertexIds = getLayerParam(layers, showVertexIdsLayerId, "Show Vertex IDs") !== "false";
     if (!selectedObject) return <Layer />;
 
-    const accentColor = selectedObject.category === "zone"
+    const layerId = selectedObject.category === "zone" ? LAYER_ID.ZONES : LAYER_ID.OBSTACLES;
+    const accentColor = layerId === LAYER_ID.ZONES
         ? (getLayerParam(layers, LAYER_ID.ZONES, "Polygon Edge Color") ?? "#22c55e")
         : (getLayerParam(layers, LAYER_ID.OBSTACLES, "Polygon Edge Color") ?? "#ef4444");
+    const edgeWidth = parseFloat(getLayerParam(layers, layerId, "Polygon Edge Width") ?? "1.5");
+    const vertexRadius = Math.max(6, edgeWidth * 1.5) / scale;
+    const vertexStrokeNormal = Math.max(2, edgeWidth * 0.4) / scale;
+    const vertexStrokeActive = Math.max(3, edgeWidth * 0.6) / scale;
+    const midpointRadius = Math.max(4, edgeWidth) / scale;
+    const midpointStroke = Math.max(1.5, edgeWidth * 0.3) / scale;
+    const activeFill = deriveActiveFill(COLOR_VERTEX_FILL);
 
     return (
         <Layer listening={isLayerListening}>
@@ -61,17 +69,16 @@ export function _CanvasVertexHandlesLayer({
                 if (!mid) return null;
 
                 const isActiveVertex = selectedVertices.some((sv) => sameVertex(sv, v)) || (draggingVertex !== null && sameVertex(draggingVertex, v));
-                const borderColor = isActiveVertex ? COLOR_VERTEX_SELECTED_STROKE : accentColor;
 
                 return [
                     <Circle
                         key={`vertex-handle-${v.id}`}
                         x={v.x}
                         y={v.y}
-                        radius={6 / scale}
-                        fill={COLOR_VERTEX_FILL}
-                        stroke={isActiveVertex ? COLOR_VERTEX_SELECTED_STROKE : accentColor}
-                        strokeWidth={isActiveVertex ? 3 / scale : 2 / scale}
+                        radius={vertexRadius}
+                        fill={isActiveVertex ? activeFill : COLOR_VERTEX_FILL}
+                        stroke={accentColor}
+                        strokeWidth={isActiveVertex ? vertexStrokeActive : vertexStrokeNormal}
                         draggable
                         onClick={(e) => {
                             e.cancelBubble = true;
@@ -90,17 +97,17 @@ export function _CanvasVertexHandlesLayer({
                             x={v.x}
                             y={v.y}
                             scale={scale}
-                            accentColor={borderColor}
+                            accentColor={accentColor}
                         />
                     ),
                     <Circle
                         key={`edge-midpoint-handle-${v.id}`}
                         x={mid.x}
                         y={mid.y}
-                        radius={4 / scale}
+                        radius={midpointRadius}
                         fill={COLOR_EDGE_MIDPOINT_FILL}
                         stroke={COLOR_EDGE_MIDPOINT_STROKE}
-                        strokeWidth={1.5 / scale}
+                        strokeWidth={midpointStroke}
                         onMouseDown={(e) => {
                             e.cancelBubble = true;
                             onEdgeMidpointMouseDown(v, mid);

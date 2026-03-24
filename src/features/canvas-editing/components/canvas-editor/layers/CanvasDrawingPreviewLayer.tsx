@@ -22,10 +22,14 @@ export function CanvasDrawingPreviewLayer({
 
     if (!isDrawing || drawingPoints.length === 0) return null;
 
-    const drawColor = activeTool === "addZone"
+    const drawLayerId = activeTool === "addZone" ? LAYER_ID.ZONES : LAYER_ID.OBSTACLES;
+    const drawColor = drawLayerId === LAYER_ID.ZONES
         ? (getLayerParam(layers, LAYER_ID.ZONES, "Polygon Edge Color") ?? "#22c55e")
         : (getLayerParam(layers, LAYER_ID.OBSTACLES, "Polygon Edge Color") ?? "#ef4444");
     const previewEdgeColor = drawColor;
+    const drawEdgeWidth = parseFloat(getLayerParam(layers, drawLayerId, "Polygon Edge Width") ?? "1.5");
+    const previewDotRadius = Math.max(4, drawEdgeWidth) / scale;
+    const previewStrokeWidth = Math.max(2, drawEdgeWidth) / scale;
     const lastPoint = drawingPoints[drawingPoints.length - 1];
 
     return (
@@ -33,7 +37,7 @@ export function CanvasDrawingPreviewLayer({
             <Line
                 points={drawingPoints.flatMap((p) => [p.x, p.y])}
                 stroke={drawColor}
-                strokeWidth={2 / scale}
+                strokeWidth={previewStrokeWidth}
                 closed={false}
                 dash={[6 / scale, 3 / scale]}
             />
@@ -41,7 +45,7 @@ export function CanvasDrawingPreviewLayer({
                 <Line
                     points={[lastPoint.x, lastPoint.y, mousePos.x, mousePos.y]}
                     stroke={previewEdgeColor}
-                    strokeWidth={1.5 / scale}
+                    strokeWidth={previewStrokeWidth * 0.75}
                     dash={[4 / scale, 4 / scale]}
                 />
             )}
@@ -50,7 +54,7 @@ export function CanvasDrawingPreviewLayer({
                     key={`drawing-preview-point-${idx}`}
                     x={p.x}
                     y={p.y}
-                    radius={4 / scale}
+                    radius={previewDotRadius}
                     fill={drawColor}
                 />
             ))}
