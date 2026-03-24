@@ -1,7 +1,5 @@
 import type { LayerSettingParameter } from "@/types/layerTypes";
-import { POLYGON_EDGE_STYLE, POLYGON_FILL_STYLE } from "@/config/layers/layerRegistry";
 import SettingsPanelRowInput from "@/components/settings-panel/SettingsPanelRowInput";
-import SettingsPanelRowSelect from "@/components/settings-panel/SettingsPanelRowSelect";
 import SettingsPanelRowColorInput from "@/components/settings-panel/SettingsPanelRowColorInput";
 import SettingsPanelRowToggle from "@/components/settings-panel/SettingsPanelRowToggle";
 import SettingsPanelSeparator from "@/components/settings-panel/SettingsPanelSeparator";
@@ -13,10 +11,6 @@ const PARAM_TOOLTIPS: Record<string, string> = {
 };
 const NUMBER_PARAMS = new Set(["Z-Index", "Polygon Edge Width"]);
 const COLOR_PARAMS = new Set(["Polygon Edge Color", "Polygon Fill Color", "Grid Line Color"]);
-const STYLE_OPTIONS: Record<string, { value: string; label: string }[]> = {
-    "Polygon Edge Style": Object.values(POLYGON_EDGE_STYLE).map((v) => ({ value: v, label: v })),
-    "Polygon Fill Style": Object.values(POLYGON_FILL_STYLE).map((v) => ({ value: v, label: v })),
-};
 
 // ─── Individual setting field ─────────────────────────────────────────────────
 interface SettingFieldProps {
@@ -27,19 +21,6 @@ interface SettingFieldProps {
 
 function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
     const { name, value } = param;
-
-    const selectOptions = STYLE_OPTIONS[name];
-    if (selectOptions) {
-        return (
-            <SettingsPanelRowSelect
-                label={name}
-                value={value}
-                options={selectOptions}
-                disabled={disabled}
-                onChange={(v) => onParamChange(name, v)}
-            />
-        );
-    }
 
     if (TOGGLE_PARAMS.has(name)) {
         return (
