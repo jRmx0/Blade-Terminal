@@ -1,4 +1,14 @@
+/** Base world-unit size that one grid cell represents at scale 1. */
 export const GRID_SPACING = 40;
+
+/**
+ * Multiplier steps used to pick a readable grid level at any zoom.
+ * The grid snaps to the first step where (GRID_SPACING * step * scale) >= GRID_MIN_CELL_PX.
+ */
+export const GRID_LEVEL_STEPS = [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000] as const;
+
+/** Minimum grid cell size in pixels before stepping up to the next level. */
+export const GRID_MIN_CELL_PX = 40;
 
 export const ZOOM_MIN = 0.1;
 export const ZOOM_MAX = 8;

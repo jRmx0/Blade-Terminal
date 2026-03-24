@@ -143,10 +143,15 @@ export default function CanvasEditor() {
   // Suppress vertex handles when the selected object's layer is hidden.
   const zonesVisible = getLayerParam(layerSettings, LAYER_ID.ZONES, "Visible") !== "false";
   const obstaclesVisible = getLayerParam(layerSettings, LAYER_ID.OBSTACLES, "Visible") !== "false";
+  const gridZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.GRID, "Z-Index") ?? "10", 10);
+  const zoneZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.ZONES, "Z-Index") ?? "20", 10);
+  const obstacleZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.OBSTACLES, "Z-Index") ?? "30", 10);
+  // Grid renders above the polygon layer when its Z-Index exceeds the lowest polygon Z-Index.
+  const gridAbovePolygons = gridZIndex >= Math.min(zoneZIndex, obstacleZIndex);
   const selectedObjectForHandles =
     selectedObject === null ? null :
-    selectedObject.category === "zone" ? (zonesVisible ? selectedObject : null) :
-    obstaclesVisible ? selectedObject : null;
+      selectedObject.category === "zone" ? (zonesVisible ? selectedObject : null) :
+        obstaclesVisible ? selectedObject : null;
 
   const selectedObjectVertices = useMemo(
     () => (selectedObjectForHandles ? objectVertices(vertices, selectedObjectForHandles.id) : []),
@@ -221,7 +226,6 @@ export default function CanvasEditor() {
       onKeyDown={handleKeyDown}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <CanvasGridLayer />
       <Stage
         ref={stageRef}
         width={size.width}
@@ -241,6 +245,7 @@ export default function CanvasEditor() {
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       >
+        {!gridAbovePolygons && <CanvasGridLayer width={size.width} height={size.height} />}
 
         <CanvasPolygonObjectsLayer
           objects={objects}
@@ -256,6 +261,8 @@ export default function CanvasEditor() {
           onObjectDragStart={handleObjectDragStart}
           onObjectDragEnd={handleObjectDragEnd}
         />
+
+        {gridAbovePolygons && <CanvasGridLayer width={size.width} height={size.height} />}
 
         <CanvasVertexHandlesLayer
           selectedObject={selectedObjectForHandles}
