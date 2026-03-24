@@ -25,9 +25,10 @@ function computeStatus(): SaveStatus {
     const { isEnvDirty } = useEnvStore.getState();
     const isCanvasDirty = selectIsDirty(useCanvasObjectStore.getState());
     const { isParameterValuesDirty } = useParameterValuesStore.getState();
+    const { isLayerSettingsDirty } = useLayerSettingsStore.getState();
     const { mode } = useSaveModeStore.getState();
 
-    const isDirty = isEnvDirty || isCanvasDirty || isParameterValuesDirty;
+    const isDirty = isEnvDirty || isCanvasDirty || isParameterValuesDirty || isLayerSettingsDirty;
 
     if (isDirty && mode !== "autosave") return "unsaved";
     if (mode === "autosave" || (mode === "manual" && !isDirty)) return "saved";
