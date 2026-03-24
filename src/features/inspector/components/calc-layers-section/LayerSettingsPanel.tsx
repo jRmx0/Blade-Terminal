@@ -97,10 +97,10 @@ export interface SettingsSectionData {
 // ─── Panel ────────────────────────────────────────────────────────────────────
 interface LayerSettingsPanelProps {
     sections: SettingsSectionData[];
-    disabled: boolean;
+    disabled?: boolean;
 }
 
-export default function LayerSettingsPanel({ sections, disabled }: LayerSettingsPanelProps) {
+export default function LayerSettingsPanel({ sections, disabled = false }: LayerSettingsPanelProps) {
     const showSectionLabels = sections.length > 1;
     const nonEmpty = sections.filter((s) => s.settings.some((p) => p.name !== "Visible"));
 

@@ -5,7 +5,6 @@ export const LAYER_NAME = {
     OBJECTS: "Objects",
     ZONES: "Zones",
     OBSTACLES: "Obstacles",
-    MAP_BASE: "Map Base",
 } as const;
 
 export type LayerName = (typeof LAYER_NAME)[keyof typeof LAYER_NAME];
@@ -16,7 +15,6 @@ export const LAYER_ID = {
     OBJECTS: 2,
     ZONES: 3,
     OBSTACLES: 4,
-    MAP_BASE: 5,
 } as const;
 
 /**
@@ -40,7 +38,6 @@ export const LAYER_REGISTRY: LayerDefinition[] = [
     { id: LAYER_ID.OBJECTS, name: LAYER_NAME.OBJECTS, type: "ObjectGroup" },
     { id: LAYER_ID.ZONES, name: LAYER_NAME.ZONES, type: "Polygon" },
     { id: LAYER_ID.OBSTACLES, name: LAYER_NAME.OBSTACLES, type: "Polygon" },
-    { id: LAYER_ID.MAP_BASE, name: LAYER_NAME.MAP_BASE, type: "Map", placeholder: true },
 ];
 
 export const POLYGON_EDGE_STYLE = {
@@ -108,8 +105,5 @@ export const LAYER_SETTINGS_DEFAULTS: LayerSettingsDefault[] = [
     { id: 80, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Polygon Fill Color", value: "#ef44443b" },
     { id: 81, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, name: "Polygon Fill Style", value: POLYGON_FILL_STYLE.SOLID },
 
-    // ── Map Base (internal Map type) ─────────────────────────────────────────
-    { id: 1, layerId: LAYER_ID.MAP_BASE, algorithmId: 0, providerId: 0, name: "Visible", value: "true" },
-    { id: 5, layerId: LAYER_ID.MAP_BASE, algorithmId: 0, providerId: 0, name: "Z-Index", value: "0" },
 ];
 

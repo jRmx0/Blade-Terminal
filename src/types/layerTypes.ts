@@ -4,18 +4,16 @@ export type LayerId = number;
  * Typed layer kinds.
  * - "Polygon" | "Point" | "Line" — mirror the API DebugLayerType for compute result layers.
  *   Obstacles and Zones are "Polygon"; future debug layers from the provider will use Point/Line.
- * - "Grid" | "Map" — internal canvas utility layers with their own attribute sets.
+ * - "Grid" — internal canvas utility layer.
  * - "ObjectGroup" — a dedicated settings-owner layer for a group of polygon object types.
  *   It stores group-level settings (e.g. "Show Vertex IDs") but never renders standalone.
  */
-export type LayerType = "Polygon" | "Point" | "Line" | "Grid" | "Map" | "ObjectGroup";
+export type LayerType = "Polygon" | "Point" | "Line" | "Grid" | "ObjectGroup";
 
 export interface LayerDefinition {
     id: LayerId;
     name: string;
     type: LayerType;
-    /** Placeholder layers are registered but not yet functionally wired. */
-    placeholder?: boolean;
 }
 
 export interface LayerSettingsDefault {
@@ -47,7 +45,6 @@ export interface LayerRecord {
     key: LayerId;
     label: string;
     type?: LayerType;
-    placeholder?: boolean;
 }
 
 export interface LayerSettingParameter {

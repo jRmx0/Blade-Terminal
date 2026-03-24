@@ -56,7 +56,6 @@ async function seedLayers(): Promise<void> {
             key: def.id,
             label: def.name,
             type: def.type,
-            ...(def.placeholder ? { placeholder: true } : {}),
         });
     }
     await db.table("layerSettings").bulkPut(LAYER_SETTINGS_DEFAULTS);

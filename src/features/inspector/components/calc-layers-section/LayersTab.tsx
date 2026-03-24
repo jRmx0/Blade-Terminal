@@ -78,44 +78,35 @@ export default function LayersTab() {
         }
     }
 
-    const movableDisplay = displayItems.filter(
-        (d) => d.type === "group" || !d.item.layer.placeholder,
-    );
-    const placeholderDisplay = displayItems.filter(
-        (d) => d.type === "single" && d.item.layer.placeholder === true,
-    );
-
     // ── Move handlers ─────────────────────────────────────────────────────────
     function handleMoveUp(displayIndex: number) {
-        if (displayIndex <= 0 || displayIndex >= movableDisplay.length) return;
-        const newMovable = [...movableDisplay];
-        [newMovable[displayIndex - 1], newMovable[displayIndex]] = [
-            newMovable[displayIndex]!,
-            newMovable[displayIndex - 1]!,
+        if (displayIndex <= 0 || displayIndex >= displayItems.length) return;
+        const newItems = [...displayItems];
+        [newItems[displayIndex - 1], newItems[displayIndex]] = [
+            newItems[displayIndex]!,
+            newItems[displayIndex - 1]!,
         ];
-        reorderLayers([...getFlatLayerDbIds(newMovable), ...getFlatLayerDbIds(placeholderDisplay)]);
+        reorderLayers(getFlatLayerDbIds(newItems));
     }
 
     function handleMoveDown(displayIndex: number) {
-        if (displayIndex < 0 || displayIndex >= movableDisplay.length - 1) return;
-        const newMovable = [...movableDisplay];
-        [newMovable[displayIndex], newMovable[displayIndex + 1]] = [
-            newMovable[displayIndex + 1]!,
-            newMovable[displayIndex]!,
+        if (displayIndex < 0 || displayIndex >= displayItems.length - 1) return;
+        const newItems = [...displayItems];
+        [newItems[displayIndex], newItems[displayIndex + 1]] = [
+            newItems[displayIndex + 1]!,
+            newItems[displayIndex]!,
         ];
-        reorderLayers([...getFlatLayerDbIds(newMovable), ...getFlatLayerDbIds(placeholderDisplay)]);
+        reorderLayers(getFlatLayerDbIds(newItems));
     }
 
     // ── Render ────────────────────────────────────────────────────────────────
-    const orderedDisplay = [...movableDisplay, ...placeholderDisplay];
+    const orderedDisplay = displayItems;
 
     return (
         <div className="flex flex-col divide-y divide-gray-200">
             {orderedDisplay.map((displayItem, displayIndex) => {
                 const isFirst = displayIndex === 0;
-                const isLast =
-                    displayIndex === movableDisplay.length - 1 ||
-                    (displayItem.type === "single" && displayItem.item.layer.placeholder === true);
+                const isLast = displayIndex === orderedDisplay.length - 1;
 
                 if (displayItem.type === "group") {
                     const gData = groupSettingsMap.get(displayItem.groupId);
