@@ -172,6 +172,7 @@ export function useComputationProviderCardController() {
             setForm(EMPTY_COMPUTATION_PROVIDER_FORM);
             setSavedForm(EMPTY_COMPUTATION_PROVIDER_FORM);
             setDraftMetadata(null);
+            setIsEditMode(true);
             return;
         }
 
