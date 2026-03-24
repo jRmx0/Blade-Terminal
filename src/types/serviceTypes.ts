@@ -52,7 +52,7 @@ export interface AlgorithmParameter {
     defaultValue: string;
     section?: MetadataParamSection;
     /** Optional application-level behavior handler for enum params. */
-    appHandler?: SupportedAppParameterHandler;
+    appHandler: string | null;
 }
 
 export interface ComputationAlgorithmDetails {
@@ -108,10 +108,10 @@ export interface MetadataParamResponse {
     id: number;
     name: string;
     paramType: AlgoParamType;
-    enumValues?: string[];
+    enumValues: string[];
     defaultValue?: string;
     section?: MetadataParamSection;
-    appHandler?: SupportedAppParameterHandler;
+    appHandler: string | null;
 }
 
 export type DebugLayerType = "Point" | "Line" | "Polygon";
@@ -130,13 +130,103 @@ export interface DebugLayerMetadata {
     style: DebugLayerStyle;
 }
 
+export interface LayerStyleAttribute {
+    id: number;
+    name: string;
+    value: string | null;
+}
+
+export interface LayerLabelEnumValue {
+    value: string;
+    color: string | null;
+}
+
+export interface LayerLabel {
+    key: string;
+    enumValues: LayerLabelEnumValue[];
+}
+
+export interface MetadataCppLayerResponse {
+    id: number;
+    cppLayer: string;
+    name: string;
+    type: DebugLayerType;
+    style: LayerStyleAttribute[];
+    label: LayerLabel | null;
+}
+
+export interface MetadataAlgoDebugLayerResponse {
+    id: number;
+    debugLayer: string;
+    name: string;
+    type: DebugLayerType;
+    style: LayerStyleAttribute[];
+    label: LayerLabel | null;
+}
+
+export type MetadataLayerResponse = MetadataCppLayerResponse | MetadataAlgoDebugLayerResponse;
+
 export interface MetadataAlgorithmResponse {
     id: number;
     name: string;
     parameters: MetadataParamResponse[];
-    debugLayers?: DebugLayerMetadata[];
+    layers: MetadataLayerResponse[];
 }
 
 export interface MetadataResponse {
     algorithms: MetadataAlgorithmResponse[];
 }
+
+// ─── Compute Result ───────────────────────────────────────────────────────────
+
+export type CoveragePathPlanSegmentType = "coverage" | "transit" | (string & {});
+
+export interface CoveragePathPlanSegment {
+    id: number;
+    type: CoveragePathPlanSegmentType;
+    path: { x: number; y: number }[];
+}
+
+export interface CoveragePathPlan {
+    segments: CoveragePathPlanSegment[];
+}
+
+export type AlgorithmDebug = Record<string, object[]>;
+
+export interface ComputeResult {
+    coveragePathPlan: CoveragePathPlan;
+    debug?: AlgorithmDebug;
+}
+
+export interface ComputeJobStatePending {
+    jobId: string;
+    status: "queued" | "running";
+    algorithmName: string;
+    createdAt: string;
+    startedAt?: string;
+    requestId?: string;
+}
+
+export interface ComputeJobStateCompleted {
+    jobId: string;
+    status: "completed";
+    algorithmName: string;
+    createdAt: string;
+    startedAt?: string;
+    completedAt?: string;
+    requestId?: string;
+    result: ComputeResult;
+}
+
+export interface ComputeJobStateFailed {
+    jobId: string;
+    status: "failed";
+    algorithmName: string;
+    createdAt: string;
+    startedAt?: string;
+    completedAt?: string;
+    requestId?: string;
+    error: { code: string; message: string };
+}
+
+export type ComputeJobState = ComputeJobStatePending | ComputeJobStateCompleted | ComputeJobStateFailed;
