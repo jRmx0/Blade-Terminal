@@ -65,6 +65,7 @@ export function _CanvasPolygonObjectsLayer({
     const visible = getLayerParam(layers, layerId, "Visible") !== "false";
     const stroke = getLayerParam(layers, layerId, "Polygon Edge Color") ?? (category === "zone" ? "#22c55e" : "#ef4444");
     const fill = getLayerParam(layers, layerId, "Polygon Fill Color") ?? (category === "zone" ? "#22c55e2e" : "#ef44443b");
+    const edgeWidth = parseFloat(getLayerParam(layers, layerId, "Polygon Edge Width") ?? "1.5");
 
     const onlinePattern = useMemo(
         () => createStripePatternCanvas(fill, fill),
@@ -101,7 +102,7 @@ export function _CanvasPolygonObjectsLayer({
                         fillPatternImage={fillPattern as unknown as HTMLImageElement}
                         fillPatternRotation={fillPattern ? 45 : undefined}
                         stroke={stroke}
-                        strokeWidth={(isSelected || isMoving ? 2.5 : 1.5) / scale}
+                        strokeWidth={(isSelected || isMoving ? edgeWidth * 1.5 : edgeWidth) / scale}
                         opacity={isMoving ? 0.55 : 1}
                         dash={isMoving ? [8 / scale, 4 / scale] : isOnline ? [16 / scale, 4 / scale] : undefined}
                         listening={canInteract}
