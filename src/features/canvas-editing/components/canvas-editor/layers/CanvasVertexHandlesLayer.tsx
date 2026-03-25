@@ -97,6 +97,7 @@ export function _CanvasVertexHandlesLayer({
                             x={v.x}
                             y={v.y}
                             scale={scale}
+                            edgeWidth={edgeWidth}
                             accentColor={accentColor}
                         />
                     ),
