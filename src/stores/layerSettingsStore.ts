@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { getLayerSettingsByEnvironment, saveAllLayerSettings } from "@server/db/layerSettings";
+import { getAllLayers } from "@server/db/layers";
 import { getSaveMode } from "@/stores/saveModeStore";
 import type { LayerPK, LayerRecord, LayerSettingParameter, LayerWithSettings } from "@/types/layerTypes";
 
@@ -111,7 +112,14 @@ export const useLayerSettingsStore = create<LayerSettingsState>()((set) => ({
 }));
 
 export async function loadLayerSettings(environmentId: number): Promise<void> {
-    const allParams = await getLayerSettingsByEnvironment(environmentId);
+    const [allParams, allLayers] = await Promise.all([
+        getLayerSettingsByEnvironment(environmentId),
+        getAllLayers(),
+    ]);
+    const layerInfoMap = new Map<string, LayerRecord>();
+    for (const l of allLayers) {
+        layerInfoMap.set(`${l.id}:${l.algorithmId}:${l.providerId}`, l);
+    }
     const paramsByKey = new Map<string, LayerSettingParameter[]>();
     for (const param of allParams) {
         const key = `${param.layerId}:${param.algorithmId}:${param.providerId}`;
@@ -119,19 +127,19 @@ export async function loadLayerSettings(environmentId: number): Promise<void> {
         list.push(param);
         paramsByKey.set(key, list);
     }
-    // Build LayerRecord stubs from the settings so we don't need a separate layers table read.
-    // The full LayerRecord detail (label, type, placeholder) isn't needed here — only the PK fields
-    // and key are required to drive the canvas. Those are embedded in every LayerSettingParameter.
     const layerKeySet = new Map<string, LayerRecord>();
     for (const param of allParams) {
         const compositeKey = `${param.layerId}:${param.algorithmId}:${param.providerId}`;
         if (!layerKeySet.has(compositeKey)) {
+            const info = layerInfoMap.get(compositeKey);
             layerKeySet.set(compositeKey, {
                 id: param.layerId,
                 algorithmId: param.algorithmId,
                 providerId: param.providerId,
                 key: param.layerId,
-                label: "",
+                label: info?.label ?? "",
+                type: info?.type,
+                placeholder: info?.placeholder,
             });
         }
     }
