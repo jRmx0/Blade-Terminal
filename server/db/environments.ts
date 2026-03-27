@@ -3,7 +3,7 @@ import { db } from "./db";
 import type { Environment } from "@/types/schemaTypes";
 import { WORKSPACE_NAME_MAX_LENGTH } from "@/config/db-ops/databaseConstraintsConfig";
 import { deleteObjectsByEnvironment } from "./objects";
-import { deleteParameterValuesByEnvironment } from "./environmentComputationParameterValues";
+import { deleteParameterValuesByEnvironment } from "./computationAlgorithmParameters";
 import { deleteEnvironmentComputation } from "./environmentComputation";
 import { deleteLayerSettingsForEnvironment } from "./layerSettings";
 

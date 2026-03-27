@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { EnvironmentComputationParameterValue } from "@/types/schemaTypes";
 import { getSaveMode } from "@/stores/saveModeStore";
-import { saveParameterValues } from "@server/db/environmentComputationParameterValues";
+import { saveParameterValues } from "@server/db/computationAlgorithmParameters";
 
 interface ParameterValuesState {
     parameterValues: EnvironmentComputationParameterValue[];

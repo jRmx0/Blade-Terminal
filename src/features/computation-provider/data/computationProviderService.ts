@@ -129,11 +129,11 @@ export async function persistFetchedMetadata(
 ): Promise<void> {
     await db.transaction("rw", [
         db.table("computationAlgorithms"),
-        db.table("computationAlgorithmParameters"),
+        db.table("computationAlgorithmParametersSetup"),
         db.table("layersSetup"),
         db.table("layerSettingsSetup"),
     ], async () => {
-        await db.table("computationAlgorithmParameters").where("computationProviderId").equals(providerId).delete();
+        await db.table("computationAlgorithmParametersSetup").where("computationProviderId").equals(providerId).delete();
         await db.table("computationAlgorithms").where("computationProviderId").equals(providerId).delete();
 
         const algorithms = metadata.algorithms.map(({ algorithm }) => ({
@@ -152,7 +152,7 @@ export async function persistFetchedMetadata(
         }
 
         if (parameters.length > 0) {
-            await db.table("computationAlgorithmParameters").bulkPut(parameters);
+            await db.table("computationAlgorithmParametersSetup").bulkPut(parameters);
         }
 
         for (const { algorithm } of metadata.algorithms) {

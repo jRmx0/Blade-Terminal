@@ -15,9 +15,9 @@ export async function replaceAlgorithmsForProvider(
 ): Promise<ComputationAlgorithm[]> {
     return db.transaction("rw", [
         db.table("computationAlgorithms"),
-        db.table("computationAlgorithmParameters"),
+        db.table("computationAlgorithmParametersSetup"),
     ], async () => {
-        await db.table("computationAlgorithmParameters").where("computationProviderId").equals(computationProviderId).delete();
+        await db.table("computationAlgorithmParametersSetup").where("computationProviderId").equals(computationProviderId).delete();
         await db.table("computationAlgorithms").where("computationProviderId").equals(computationProviderId).delete();
 
         const saved: ComputationAlgorithm[] = [];

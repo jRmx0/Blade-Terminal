@@ -1,6 +1,6 @@
 import { getLastEnvironmentId, saveEnvironment } from "@server/db/environments";
 import { saveEnvironmentComputation } from "@server/db/environmentComputation";
-import { saveParameterValues } from "@server/db/environmentComputationParameterValues";
+import { saveParameterValues } from "@server/db/computationAlgorithmParameters";
 import { saveAllLayerSettings } from "@server/db/layerSettings";
 import { getObjectsByEnvironment, saveObjects, deleteObject } from "@server/db/objects";
 import { getVerticesByObjects, saveVertices, deleteVertex } from "@server/db/vertices";

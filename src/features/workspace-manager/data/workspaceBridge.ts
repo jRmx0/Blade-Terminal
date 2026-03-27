@@ -1,6 +1,6 @@
 import { getEnvironment, saveEnvironment } from "@server/db/environments";
 import { getEnvironmentComputation, saveEnvironmentComputation } from "@server/db/environmentComputation";
-import { getAllParameterValuesByEnvironment, saveParameterValues } from "@server/db/environmentComputationParameterValues";
+import { getAllParameterValuesByEnvironment, saveParameterValues } from "@server/db/computationAlgorithmParameters";
 import { deleteObjectsByEnvironment, saveObjects } from "@server/db/objects";
 import { saveVertices } from "@server/db/vertices";
 import { ENV_FORMAT, GLOBAL_TYPE, OBJECT_CATEGORY } from "@/config/db-ops/enums";

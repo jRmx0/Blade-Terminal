@@ -20,9 +20,9 @@ export async function deleteComputationProvider(id: number): Promise<void> {
     await db.transaction("rw", [
         db.table("computationProviders"),
         db.table("computationAlgorithms"),
-        db.table("computationAlgorithmParameters"),
+        db.table("computationAlgorithmParametersSetup"),
     ], async () => {
-        await db.table("computationAlgorithmParameters").where("computationProviderId").equals(id).delete();
+        await db.table("computationAlgorithmParametersSetup").where("computationProviderId").equals(id).delete();
         await db.table("computationAlgorithms").where("computationProviderId").equals(id).delete();
         await table.delete(id);
     });

@@ -1,7 +1,7 @@
 import { db } from "./db";
 import type { AlgorithmParameter } from "@/types/serviceTypes";
 
-const table = db.table<AlgorithmParameter, [number, number, number]>("computationAlgorithmParameters");
+const table = db.table<AlgorithmParameter, [number, number, number]>("computationAlgorithmParametersSetup");
 
 export async function getParametersByAlgorithm(
     algorithmId: number,
