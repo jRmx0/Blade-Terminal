@@ -10,19 +10,36 @@ export type LayerId = number;
  */
 export type LayerType = "Polygon" | "Point" | "Line" | "Grid" | "ObjectGroup";
 
+/**
+ * Attribute keys managed internally by the terminal (not part of the provider metadata spec).
+ * These are seeded as part of the system layer defaults.
+ */
+export type InternalStyleAttributeKey = "Visible" | "Show Vertex IDs";
+
 export interface LayerDefinition {
     id: LayerId;
     name: string;
     type: LayerType;
 }
 
-export interface LayerSettingsDefault {
+/**
+ * DB record for the `layerSettingsSetup` table.
+ * Stores the full attribute metadata fetched from a provider (or seeded for system layers).
+ * This is the source-of-truth template from which per-environment `layerSettings` rows are initialized.
+ * System layers use `algorithmId: 0, providerId: 0`.
+ */
+export interface LayerSettingsSetup {
+    /** API attribute ID — part of the compound PK. */
     id: number;
+    /** FK → layers.id */
     layerId: LayerId;
     algorithmId: number;
     providerId: number;
-    name: string;
-    value: string;
+    /** Human-readable attribute key — doubles as the display label. */
+    key: string;
+    /** Attribute value type from the provider spec. */
+    styleType: string;
+    defaultValue: string | null;
 }
 
 /** Compound primary key for the `layers` table. System layers use `algorithmId: 0, providerId: 0`. */
@@ -48,14 +65,22 @@ export interface LayerRecord {
     placeholder?: boolean;
 }
 
+/**
+ * DB record for the `layerSettings` table.
+ * Per-environment working copy initialized from `layerSettingsSetup`.
+ * Each environment holds its own independent copy for all layers (system + provider).
+ */
 export interface LayerSettingParameter {
-    /** API attribute ID — part of the compound PK. Matches the attribute `id` from the blade-provider Debug Layer Styles spec. */
+    /** API attribute ID — part of the compound PK. Matches `LayerSettingsSetup.id`. */
     id: number;
-    /** FK → layers.id (the `id` part of the layer compound PK). */
+    /** FK → layers.id */
     layerId: number;
     algorithmId: number;
     providerId: number;
-    name: string;
+    /** FK → environments.id */
+    environmentId: number;
+    /** Attribute key de-normalized from setup — used as the display label. */
+    key: string;
     value: string;
 }
 

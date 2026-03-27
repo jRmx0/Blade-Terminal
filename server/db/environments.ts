@@ -5,6 +5,7 @@ import { WORKSPACE_NAME_MAX_LENGTH } from "@/config/db-ops/databaseConstraintsCo
 import { deleteObjectsByEnvironment } from "./objects";
 import { deleteParameterValuesByEnvironment } from "./environmentComputationParameterValues";
 import { deleteEnvironmentComputation } from "./environmentComputation";
+import { deleteLayerSettingsForEnvironment } from "./layerSettings";
 
 const environmentsTable: Table<Environment, number> = db.table("environments");
 
@@ -28,6 +29,7 @@ export async function deleteEnvironment(env: Environment): Promise<void> {
     await deleteObjectsByEnvironment(env);
     await deleteParameterValuesByEnvironment(env.id);
     await deleteEnvironmentComputation(env.id);
+    await deleteLayerSettingsForEnvironment(env.id);
     await environmentsTable.delete(env.id);
 }
 

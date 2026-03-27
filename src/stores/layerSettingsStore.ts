@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import { db } from "@server/db/db";
-import { saveAllLayerSettings } from "@server/db/layerSettings";
+import { getLayerSettingsByEnvironment, saveAllLayerSettings } from "@server/db/layerSettings";
 import { getSaveMode } from "@/stores/saveModeStore";
 import type { LayerPK, LayerRecord, LayerSettingParameter, LayerWithSettings } from "@/types/layerTypes";
 
@@ -40,17 +39,17 @@ function layerPKMatches(layer: LayerRecord, pk: LayerPK): boolean {
 function updateParam(
     layers: LayerWithSettings[],
     pk: LayerPK,
-    name: string,
+    key: string,
     value: string,
 ): LayerWithSettings[] {
     return layers.map((l) => {
         if (!layerPKMatches(l.layer, pk)) return l;
-        return { ...l, settings: l.settings.map((p) => (p.name === name ? { ...p, value } : p)) };
+        return { ...l, settings: l.settings.map((p) => (p.key === key ? { ...p, value } : p)) };
     });
 }
 
-function paramValue(settings: LayerSettingParameter[], name: string): string | undefined {
-    return settings.find((p) => p.name === name)?.value;
+function paramValue(settings: LayerSettingParameter[], key: string): string | undefined {
+    return settings.find((p) => p.key === key)?.value;
 }
 
 export const useLayerSettingsStore = create<LayerSettingsState>()((set) => ({
@@ -75,7 +74,7 @@ export const useLayerSettingsStore = create<LayerSettingsState>()((set) => ({
             if (!item || paramValue(item.settings, name) === value) return {};
             const layers = state.layers.map((l) => {
                 if (l.layer.key !== layerKey) return l;
-                return { ...l, settings: l.settings.map((p) => (p.name === name ? { ...p, value } : p)) };
+                return { ...l, settings: l.settings.map((p) => (p.key === name ? { ...p, value } : p)) };
             });
             autosave(layers);
             return { layers, isLayerSettingsDirty: true };
@@ -111,9 +110,8 @@ export const useLayerSettingsStore = create<LayerSettingsState>()((set) => ({
     clearDirty: () => set({ isLayerSettingsDirty: false }),
 }));
 
-export async function loadLayerSettings(): Promise<void> {
-    const layerRecords = await db.table<LayerRecord>("layers").toArray();
-    const allParams = await db.table<LayerSettingParameter>("layerSettings").toArray();
+export async function loadLayerSettings(environmentId: number): Promise<void> {
+    const allParams = await getLayerSettingsByEnvironment(environmentId);
     const paramsByKey = new Map<string, LayerSettingParameter[]>();
     for (const param of allParams) {
         const key = `${param.layerId}:${param.algorithmId}:${param.providerId}`;
@@ -121,15 +119,29 @@ export async function loadLayerSettings(): Promise<void> {
         list.push(param);
         paramsByKey.set(key, list);
     }
-    const layers: LayerWithSettings[] = layerRecords
-        .map((layer) => {
-            const key = `${layer.id}:${layer.algorithmId}:${layer.providerId}`;
-            return { layer, settings: paramsByKey.get(key) ?? [] };
-        })
-        .filter((item) => item.settings.length > 0);
+    // Build LayerRecord stubs from the settings so we don't need a separate layers table read.
+    // The full LayerRecord detail (label, type, placeholder) isn't needed here — only the PK fields
+    // and key are required to drive the canvas. Those are embedded in every LayerSettingParameter.
+    const layerKeySet = new Map<string, LayerRecord>();
+    for (const param of allParams) {
+        const compositeKey = `${param.layerId}:${param.algorithmId}:${param.providerId}`;
+        if (!layerKeySet.has(compositeKey)) {
+            layerKeySet.set(compositeKey, {
+                id: param.layerId,
+                algorithmId: param.algorithmId,
+                providerId: param.providerId,
+                key: param.layerId,
+                label: "",
+            });
+        }
+    }
+    const layers: LayerWithSettings[] = Array.from(layerKeySet.values()).map((layer) => {
+        const key = `${layer.id}:${layer.algorithmId}:${layer.providerId}`;
+        return { layer, settings: paramsByKey.get(key) ?? [] };
+    });
     useLayerSettingsStore.getState().setLayers(layers);
 }
 
-export function getLayerParam(layers: LayerWithSettings[], layerKey: number, name: string): string | undefined {
-    return layers.find((l) => l.layer.key === layerKey)?.settings.find((p) => p.name === name)?.value;
+export function getLayerParam(layers: LayerWithSettings[], layerKey: number, key: string): string | undefined {
+    return layers.find((l) => l.layer.key === layerKey)?.settings.find((p) => p.key === key)?.value;
 }

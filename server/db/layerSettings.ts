@@ -1,39 +1,39 @@
 import { db } from "./db";
-import type { LayerPK, LayerSettingParameter } from "@/types/layerTypes";
+import type { LayerSettingParameter, LayerSettingsSetup } from "@/types/layerTypes";
 
-export async function getAllLayerSettings(): Promise<LayerSettingParameter[]> {
-    return db.table<LayerSettingParameter>("layerSettings").toArray();
-}
-
-export async function getLayerSettingsByLayerPK(pk: LayerPK): Promise<LayerSettingParameter[]> {
+export async function getLayerSettingsByEnvironment(environmentId: number): Promise<LayerSettingParameter[]> {
     return db
         .table<LayerSettingParameter>("layerSettings")
-        .where("[layerId+algorithmId+providerId]")
-        .equals([pk.id, pk.algorithmId, pk.providerId])
+        .where("environmentId")
+        .equals(environmentId)
         .toArray();
 }
 
-export async function upsertLayerSetting(param: LayerSettingParameter): Promise<void> {
-    await db.table<LayerSettingParameter>("layerSettings").put(param);
+export async function initLayerSettingsForEnvironment(environmentId: number): Promise<void> {
+    const setups = await db.table<LayerSettingsSetup>("layerSettingsSetup").toArray();
+    const settings: LayerSettingParameter[] = setups.map((s) => ({
+        id: s.id,
+        layerId: s.layerId,
+        algorithmId: s.algorithmId,
+        providerId: s.providerId,
+        environmentId,
+        key: s.key,
+        value: s.defaultValue ?? "",
+    }));
+    if (settings.length > 0) {
+        await db.table<LayerSettingParameter>("layerSettings").bulkPut(settings);
+    }
+}
+
+export async function deleteLayerSettingsForEnvironment(environmentId: number): Promise<void> {
+    await db
+        .table<LayerSettingParameter>("layerSettings")
+        .where("environmentId")
+        .equals(environmentId)
+        .delete();
 }
 
 export async function saveAllLayerSettings(params: LayerSettingParameter[]): Promise<void> {
     await db.table<LayerSettingParameter>("layerSettings").bulkPut(params);
 }
 
-export async function replaceLayerSettingsForAlgorithm(
-    providerId: number,
-    algorithmId: number,
-    settings: LayerSettingParameter[],
-): Promise<void> {
-    await db.transaction("rw", db.table("layerSettings"), async () => {
-        await db
-            .table<LayerSettingParameter>("layerSettings")
-            .where("[algorithmId+providerId]")
-            .equals([algorithmId, providerId])
-            .delete();
-        if (settings.length > 0) {
-            await db.table<LayerSettingParameter>("layerSettings").bulkPut(settings);
-        }
-    });
-}

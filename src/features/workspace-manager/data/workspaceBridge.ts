@@ -12,6 +12,7 @@ import { useSaveModeStore } from "@/stores/saveModeStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { loadComputationCatalog } from "@/stores/computationCatalogStore";
 import { loadLayerSettings } from "@/stores/layerSettingsStore";
+import { initLayerSettingsForEnvironment } from "@server/db/layerSettings";
 import { resolveNextEnvironmentId, loadCanvasForEnvironment, saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
 import { createEmptyEnvironmentComputation } from "@/utils/environmentComputation";
 
@@ -39,7 +40,8 @@ export async function initializeWorkspace(): Promise<void> {
     useEnvStore.getState().setComputation(createEmptyEnvironmentComputation(nextId));
     useParameterValuesStore.getState().setParameterValues([]);
     await loadComputationCatalog();
-    await loadLayerSettings();
+    await initLayerSettingsForEnvironment(nextId);
+    await loadLayerSettings(nextId);
 }
 
 /** Discards the current environment and starts a blank one without saving. */
@@ -53,7 +55,8 @@ export async function resetWorkspace(): Promise<void> {
     useSaveModeStore.getState().setMode("session");
     useCanvasObjectStore.getState().setObjects([], []);
     useCanvasHistoryStore.getState().resetHistory();
-    await loadLayerSettings();
+    await initLayerSettingsForEnvironment(nextId);
+    await loadLayerSettings(nextId);
 }
 
 /** Loads an existing environment and its canvas objects from IndexedDB. */
@@ -75,7 +78,7 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     useParameterValuesStore.getState().setParameterValues(parameterValues);
     useEnvStore.getState().setComputation(computation);
     useCanvasHistoryStore.getState().resetHistory();
-    await loadLayerSettings();
+    await loadLayerSettings(environmentId);
 }
 
 /** Saves the current canvas as a new environment or overwrites an existing one, then loads it. */
@@ -97,6 +100,7 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
         targetParamValues.length > 0 ? saveParameterValues(targetParamValues) : Promise.resolve(),
         targetObjects.length > 0 ? saveObjects(targetObjects) : Promise.resolve(),
         targetVertices.length > 0 ? saveVertices(targetVertices) : Promise.resolve(),
+        selectedEnvId === null ? initLayerSettingsForEnvironment(targetId) : Promise.resolve(),
     ]);
     await loadWorkspace(targetId);
 }

@@ -20,39 +20,39 @@ interface SettingFieldProps {
 }
 
 function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
-    const { name, value } = param;
+    const { key, value } = param;
 
-    if (TOGGLE_PARAMS.has(name)) {
+    if (TOGGLE_PARAMS.has(key)) {
         return (
             <SettingsPanelRowToggle
-                label={name}
+                label={key}
                 value={value === "true"}
                 disabled={disabled}
-                tooltip={PARAM_TOOLTIPS[name]}
-                onChange={(v) => onParamChange(name, String(v))}
+                tooltip={PARAM_TOOLTIPS[key]}
+                onChange={(v) => onParamChange(key, String(v))}
             />
         );
     }
 
-    if (NUMBER_PARAMS.has(name)) {
+    if (NUMBER_PARAMS.has(key)) {
         return (
             <SettingsPanelRowInput
-                label={name}
+                label={key}
                 value={value}
                 type="number"
                 disabled={disabled}
-                onChange={(v) => onParamChange(name, v)}
+                onChange={(v) => onParamChange(key, v)}
             />
         );
     }
 
-    if (COLOR_PARAMS.has(name)) {
+    if (COLOR_PARAMS.has(key)) {
         return (
             <SettingsPanelRowColorInput
-                label={name}
+                label={key}
                 value={value}
                 disabled={disabled}
-                onChange={(v) => onParamChange(name, v)}
+                onChange={(v) => onParamChange(key, v)}
             />
         );
     }
@@ -60,10 +60,10 @@ function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
     // Text fallback
     return (
         <SettingsPanelRowInput
-            label={name}
+            label={key}
             value={value}
             disabled={disabled}
-            onChange={(v) => onParamChange(name, v)}
+            onChange={(v) => onParamChange(key, v)}
         />
     );
 }
@@ -83,14 +83,14 @@ interface LayerSettingsPanelProps {
 
 export default function LayerSettingsPanel({ sections, disabled = false }: LayerSettingsPanelProps) {
     const showSectionLabels = sections.length > 1;
-    const nonEmpty = sections.filter((s) => s.settings.some((p) => p.name !== "Visible"));
+    const nonEmpty = sections.filter((s) => s.settings.some((p) => p.key !== "Visible"));
 
     if (nonEmpty.length === 0) return null;
 
     return (
         <div className="border-t border-gray-100 bg-gray-50 py-1">
             {nonEmpty.map((section, idx) => {
-                const visibleParams = section.settings.filter((p) => p.name !== "Visible");
+                const visibleParams = section.settings.filter((p) => p.key !== "Visible");
                 return (
                     <div key={section.label} className={idx > 0 ? "mt-2" : ""}>
                         {showSectionLabels && (
@@ -98,7 +98,7 @@ export default function LayerSettingsPanel({ sections, disabled = false }: Layer
                         )}
                         {visibleParams.map((param) => (
                             <SettingField
-                                key={param.name}
+                                key={param.key}
                                 param={param}
                                 disabled={disabled}
                                 onParamChange={section.onParamChange}

@@ -1,6 +1,6 @@
 import Dexie from "dexie";
 import type { AppEnumValue } from "@/types/serviceTypes";
-import { LAYER_REGISTRY, LAYER_SETTINGS_DEFAULTS } from "@/config/layers/layerRegistry";
+import { LAYER_REGISTRY, LAYER_SETTINGS_SETUP_DEFAULTS } from "@/config/layers/layerRegistry";
 
 const db = new Dexie("blade-terminal");
 
@@ -20,7 +20,8 @@ db.version(1).stores({
     environmentComputation: "environmentId",
     appEnumValues: "[enumGroup+value], enumGroup",
     layers: "[id+algorithmId+providerId], algorithmId, providerId, key, [algorithmId+providerId]",
-    layerSettings: "[id+layerId+algorithmId+providerId], [layerId+algorithmId+providerId], [layerId+algorithmId+providerId+name], [algorithmId+providerId]",
+    layerSettingsSetup: "[id+layerId+algorithmId+providerId], [layerId+algorithmId+providerId], [algorithmId+providerId]",
+    layerSettings: "[id+layerId+algorithmId+providerId+environmentId], [layerId+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId",
 });
 
 db.on("populate", () => {
@@ -58,5 +59,5 @@ async function seedLayers(): Promise<void> {
             type: def.type,
         });
     }
-    await db.table("layerSettings").bulkPut(LAYER_SETTINGS_DEFAULTS);
+    await db.table("layerSettingsSetup").bulkPut(LAYER_SETTINGS_SETUP_DEFAULTS);
 }

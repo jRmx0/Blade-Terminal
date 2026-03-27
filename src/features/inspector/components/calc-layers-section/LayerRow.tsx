@@ -25,7 +25,7 @@ export default function LayerRow({
 }: LayerRowProps) {
     const [expanded, setExpanded] = useState(false);
 
-    const visible = settings.find((p) => p.name === "Visible")?.value === "true";
+    const visible = settings.find((p) => p.key === "Visible")?.value === "true";
 
     return (
         <div>

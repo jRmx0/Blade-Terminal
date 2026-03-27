@@ -8,7 +8,7 @@ import type {
     FetchedComputationMetadata,
     ProviderLayerRecord,
 } from "@/types/serviceTypes";
-import type { LayerRecord, LayerSettingParameter } from "@/types/layerTypes";
+import type { LayerRecord, LayerSettingsSetup } from "@/types/layerTypes";
 import { STYLE_ATTRIBUTE_KEY_ID } from "@/config/computation/supportedLayerAttributes";
 import { db } from "@server/db/db";
 import { updateMetadataTimestamp } from "@server/db/computationProviders";
@@ -131,7 +131,7 @@ export async function persistFetchedMetadata(
         db.table("computationAlgorithms"),
         db.table("computationAlgorithmParameters"),
         db.table("layers"),
-        db.table("layerSettings"),
+        db.table("layerSettingsSetup"),
     ], async () => {
         await db.table("computationAlgorithmParameters").where("computationProviderId").equals(providerId).delete();
         await db.table("computationAlgorithms").where("computationProviderId").equals(providerId).delete();
@@ -162,7 +162,7 @@ export async function persistFetchedMetadata(
                 .equals([algorithm.id, providerId])
                 .delete();
             await db
-                .table("layerSettings")
+                .table("layerSettingsSetup")
                 .where("[algorithmId+providerId]")
                 .equals([algorithm.id, providerId])
                 .delete();
@@ -183,7 +183,7 @@ export async function persistFetchedMetadata(
             await db.table("layers").bulkPut(layerRecords);
         }
 
-        const settingRecords: LayerSettingParameter[] = metadata.algorithms.flatMap(({ algorithm, layers }) =>
+        const setupRecords: LayerSettingsSetup[] = metadata.algorithms.flatMap(({ algorithm, layers }) =>
             layers.flatMap((l: ProviderLayerRecord) => [
                 ...l.universalStyleAttributes,
                 ...l.pointStyleAttributes,
@@ -194,13 +194,14 @@ export async function persistFetchedMetadata(
                 layerId: l.id,
                 algorithmId: algorithm.id,
                 providerId,
-                name: attr.key,
-                value: attr.defaultValue ?? "",
+                key: attr.key,
+                styleType: attr.styleType,
+                defaultValue: attr.defaultValue,
             }))),
         );
 
-        if (settingRecords.length > 0) {
-            await db.table("layerSettings").bulkPut(settingRecords);
+        if (setupRecords.length > 0) {
+            await db.table("layerSettingsSetup").bulkPut(setupRecords);
         }
     });
 
