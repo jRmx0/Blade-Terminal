@@ -20,3 +20,20 @@ export async function upsertLayerSetting(param: LayerSettingParameter): Promise<
 export async function saveAllLayerSettings(params: LayerSettingParameter[]): Promise<void> {
     await db.table<LayerSettingParameter>("layerSettings").bulkPut(params);
 }
+
+export async function replaceLayerSettingsForAlgorithm(
+    providerId: number,
+    algorithmId: number,
+    settings: LayerSettingParameter[],
+): Promise<void> {
+    await db.transaction("rw", db.table("layerSettings"), async () => {
+        await db
+            .table<LayerSettingParameter>("layerSettings")
+            .where("[algorithmId+providerId]")
+            .equals([algorithmId, providerId])
+            .delete();
+        if (settings.length > 0) {
+            await db.table<LayerSettingParameter>("layerSettings").bulkPut(settings);
+        }
+    });
+}

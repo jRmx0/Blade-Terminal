@@ -52,12 +52,13 @@ export interface AlgorithmParameter {
     defaultValue: string;
     section?: MetadataParamSection;
     /** Optional application-level behavior handler for enum params. */
-    appHandler: string | null;
+    appHandler: SupportedAppParameterHandler | null;
 }
 
 export interface ComputationAlgorithmDetails {
     algorithm: ComputationAlgorithm;
     parameters: AlgorithmParameter[];
+    layers: ProviderLayerRecord[];
 }
 
 // ─── App Enum Values ──────────────────────────────────────────────────────────
@@ -88,9 +89,19 @@ export interface UnsupportedAppHandlerFailure {
     unsupportedHandlers: string[];
 }
 
+export interface UnsupportedLayerAttributeFailure {
+    ok: false;
+    error: string;
+    errorCode: "unsupported_layer_attribute";
+    unsupportedAttributes: string[];
+}
+
+export type MetadataValidationFailure = UnsupportedAppHandlerFailure | UnsupportedLayerAttributeFailure;
+
 export type FetchMetadataResult =
     | ({ ok: true; algorithmCount: number } & ServiceHttpResponseDetails)
-    | (({ ok: false; error: string } & Partial<ServiceHttpResponseDetails>) | UnsupportedAppHandlerFailure);
+    | ({ ok: false; error: string } & Partial<ServiceHttpResponseDetails>)
+    | MetadataValidationFailure;
 
 export interface FetchedComputationMetadata {
     metadataFetchedAt: number;
@@ -100,7 +111,8 @@ export interface FetchedComputationMetadata {
 
 export type FetchMetadataPreviewResult =
     | ({ ok: true; algorithmCount: number; metadata: FetchedComputationMetadata } & ServiceHttpResponseDetails)
-    | (({ ok: false; error: string } & Partial<ServiceHttpResponseDetails>) | UnsupportedAppHandlerFailure);
+    | ({ ok: false; error: string } & Partial<ServiceHttpResponseDetails>)
+    | MetadataValidationFailure;
 
 // ─── /metadata response contract ─────────────────────────────────────────────
 
@@ -111,7 +123,124 @@ export interface MetadataParamResponse {
     enumValues: string[];
     defaultValue?: string;
     section?: MetadataParamSection;
-    appHandler: string | null;
+    appHandler: SupportedAppParameterHandler | null;
+}
+
+export type MetadataLayerType = "Point" | "Line" | "Polygon";
+
+export type StyleAttributeKey =
+    | "Z-Index"
+    // Point — Marker Shape
+    | "Point Shape"
+    | "Point Radius"
+    // Point — Overlap
+    | "Point Overlap Spacing"
+    | "Point Overlap Layout"
+    // Point — Border
+    | "Point Border Color"
+    | "Point Border Width"
+    | "Point Border Style"
+    // Point — Fill
+    | "Point Fill Color"
+    // Point — Id Label
+    | "Point ID Color"
+    | "Point ID Font Size"
+    | "Point ID Font Weight"
+    | "Point ID Placement"
+    | "Point ID Offset"
+    // Point — Text Label
+    | "Point Label Color"
+    | "Point Label Font Size"
+    | "Point Label Font Weight"
+    | "Point Label Placement"
+    | "Point Label Offset"
+    // Line — Edge
+    | "Line Edge Color"
+    | "Line Edge Width"
+    | "Line Edge Style"
+    // Line — Arrow
+    | "Line Arrow Start"
+    | "Line Arrow End"
+    | "Line Arrow Mid"
+    | "Line Arrow Mid Spacing"
+    | "Line Arrow Size"
+    // Polygon — Edge
+    | "Polygon Edge Color"
+    | "Polygon Edge Width"
+    | "Polygon Edge Style"
+    // Polygon — Fill
+    | "Polygon Fill Color"
+    | "Polygon Fill Style"
+    // Polygon — ID
+    | "Polygon ID Color"
+    | "Polygon ID Font Size"
+    | "Polygon ID Font Weight"
+    | "Polygon ID Shape"
+    | "Polygon ID Radius"
+    | "Polygon ID Border Color"
+    | "Polygon ID Border Width"
+    | "Polygon ID Border Style"
+    | "Polygon ID Fill Color"
+    | "Polygon ID Placement"
+    | "Polygon ID Offset";
+
+export type StyleType =
+    | "Integer"
+    | "Color"
+    | "Spacing"
+    | "PointShapeEnum"
+    | "PolygonIDShapeEnum"
+    | "StrokeStyleEnum"
+    | "FillStyleEnum"
+    | "OverlapLayoutEnum"
+    | "PlacementEnum"
+    | "FontSizeEnum"
+    | "FontWeightEnum"
+    | "LineArrowStartEnum"
+    | "LineArrowEndEnum"
+    | "LineArrowMidEnum";
+
+export interface PointLabelColorEntry {
+    value: string;
+    color: string | null;
+}
+
+export interface ProviderLayerStyleAttr {
+    key: StyleAttributeKey;
+    styleType: StyleType;
+    defaultValue: string | null;
+}
+
+export interface LayerStyle {
+    universalStyleAttributes: ProviderLayerStyleAttr[];
+    pointStyleAttributes?: ProviderLayerStyleAttr[];
+    lineStyleAttributes?: ProviderLayerStyleAttr[];
+    polygonStyleAttributes?: ProviderLayerStyleAttr[];
+    pointLabelColorMapping?: PointLabelColorEntry[];
+}
+
+export interface MetadataLayerResponse {
+    id: number;
+    computeLayer: string;
+    name: string;
+    layerType: MetadataLayerType;
+    style: LayerStyle;
+    pointLabelEnumValues?: string[];
+}
+
+export interface ProviderLayerRecord {
+    id: number;
+    algorithmId: number;
+    providerId: number;
+    computeLayer: string;
+    name: string;
+    layerType: MetadataLayerType;
+    universalStyleAttributes: ProviderLayerStyleAttr[];
+    pointStyleAttributes: ProviderLayerStyleAttr[];
+    lineStyleAttributes: ProviderLayerStyleAttr[];
+    polygonStyleAttributes: ProviderLayerStyleAttr[];
+    pointLabelColorMapping: PointLabelColorEntry[];
+    pointLabelEnumValues: string[];
 }
 
 export type DebugLayerType = "Point" | "Line" | "Polygon";
@@ -129,42 +258,6 @@ export interface DebugLayerMetadata {
     type: DebugLayerType;
     style: DebugLayerStyle;
 }
-
-export interface LayerStyleAttribute {
-    id: number;
-    name: string;
-    value: string | null;
-}
-
-export interface LayerLabelEnumValue {
-    value: string;
-    color: string | null;
-}
-
-export interface LayerLabel {
-    key: string;
-    enumValues: LayerLabelEnumValue[];
-}
-
-export interface MetadataCppLayerResponse {
-    id: number;
-    cppLayer: string;
-    name: string;
-    type: DebugLayerType;
-    style: LayerStyleAttribute[];
-    label: LayerLabel | null;
-}
-
-export interface MetadataAlgoDebugLayerResponse {
-    id: number;
-    debugLayer: string;
-    name: string;
-    type: DebugLayerType;
-    style: LayerStyleAttribute[];
-    label: LayerLabel | null;
-}
-
-export type MetadataLayerResponse = MetadataCppLayerResponse | MetadataAlgoDebugLayerResponse;
 
 export interface MetadataAlgorithmResponse {
     id: number;

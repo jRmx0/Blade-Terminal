@@ -6,12 +6,16 @@ import type {
     FetchMetadataResult,
     FetchMetadataPreviewResult,
     FetchedComputationMetadata,
+    ProviderLayerRecord,
 } from "@/types/serviceTypes";
-import { isSupportedAppParameterHandler } from "@/config/computation/appParameterHandlers";
+import type { LayerRecord, LayerSettingParameter } from "@/types/layerTypes";
+import { STYLE_ATTRIBUTE_KEY_ID } from "@/config/computation/supportedLayerAttributes";
 import { db } from "@server/db/db";
 import { updateMetadataTimestamp } from "@server/db/computationProviders";
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
+import { useProviderLayerStore } from "@/stores/providerLayerStore";
+import { ingestProviderMetadata } from "@/features/computation-provider/data/metadataBridge";
 
 // ─── Request builder ──────────────────────────────────────────────────────────
 
@@ -52,55 +56,6 @@ function getHttpResponseDetails(response: Response): ServiceHttpResponseDetails 
         statusCode: response.status,
         statusText: response.statusText,
     };
-}
-
-function buildFetchedMetadata(provider: ComputationProvider, data: MetadataResponse): FetchedComputationMetadata {
-    const computationProviderId = provider.id ?? 0;
-
-    return {
-        metadataFetchedAt: Date.now(),
-        urlAtLastFetch: provider.url.trim(),
-        algorithms: data.algorithms.map((algorithmResponse) => {
-            const algorithmId = algorithmResponse.id;
-
-            return {
-                algorithm: {
-                    id: algorithmId,
-                    computationProviderId,
-                    name: algorithmResponse.name,
-                },
-                parameters: algorithmResponse.parameters.map((parameter) => ({
-                    id: parameter.id,
-                    algorithmId,
-                    computationProviderId,
-                    name: parameter.name,
-                    paramType: parameter.paramType,
-                    enumValues: parameter.enumValues ?? [],
-                    defaultValue: parameter.defaultValue ?? "",
-                    section: parameter.section,
-                    appHandler: parameter.appHandler,
-                })),
-            };
-        }),
-    };
-}
-
-function collectUnsupportedAppHandlers(data: MetadataResponse): string[] {
-    const unsupportedHandlers = new Set<string>();
-
-    data.algorithms.forEach((algorithm) => {
-        algorithm.parameters.forEach((parameter) => {
-            if (!parameter.appHandler) {
-                return;
-            }
-
-            if (!isSupportedAppParameterHandler(parameter.appHandler)) {
-                unsupportedHandlers.add(parameter.appHandler);
-            }
-        });
-    });
-
-    return Array.from(unsupportedHandlers).sort((left, right) => left.localeCompare(right));
 }
 
 async function requestMetadata(provider: ComputationProvider): Promise<
@@ -150,22 +105,19 @@ export async function fetchMetadataPreview(provider: ComputationProvider): Promi
         return result;
     }
 
-    const unsupportedHandlers = collectUnsupportedAppHandlers(result.data);
-    if (unsupportedHandlers.length > 0) {
-        return {
-            ok: false,
-            errorCode: "unsupported_app_handler",
-            unsupportedHandlers,
-            error: `Unsupported app handler(s): ${unsupportedHandlers.join(", ")}.`,
-            statusCode: result.statusCode,
-            statusText: result.statusText,
-        };
+    const ingestResult = ingestProviderMetadata(provider.id ?? 0, result.data);
+    if (!ingestResult.ok) {
+        return { ...ingestResult, statusCode: result.statusCode, statusText: result.statusText };
     }
 
     return {
         ok: true,
         algorithmCount: result.data.algorithms.length,
-        metadata: buildFetchedMetadata(provider, result.data),
+        metadata: {
+            metadataFetchedAt: Date.now(),
+            urlAtLastFetch: provider.url.trim(),
+            algorithms: ingestResult.algorithms,
+        },
         statusCode: result.statusCode,
         statusText: result.statusText,
     };
@@ -178,6 +130,8 @@ export async function persistFetchedMetadata(
     await db.transaction("rw", [
         db.table("computationAlgorithms"),
         db.table("computationAlgorithmParameters"),
+        db.table("layers"),
+        db.table("layerSettings"),
     ], async () => {
         await db.table("computationAlgorithmParameters").where("computationProviderId").equals(providerId).delete();
         await db.table("computationAlgorithms").where("computationProviderId").equals(providerId).delete();
@@ -200,6 +154,54 @@ export async function persistFetchedMetadata(
         if (parameters.length > 0) {
             await db.table("computationAlgorithmParameters").bulkPut(parameters);
         }
+
+        for (const { algorithm } of metadata.algorithms) {
+            await db
+                .table("layers")
+                .where("[algorithmId+providerId]")
+                .equals([algorithm.id, providerId])
+                .delete();
+            await db
+                .table("layerSettings")
+                .where("[algorithmId+providerId]")
+                .equals([algorithm.id, providerId])
+                .delete();
+        }
+
+        const layerRecords: LayerRecord[] = metadata.algorithms.flatMap(({ algorithm, layers }) =>
+            layers.map((l: ProviderLayerRecord) => ({
+                id: l.id,
+                algorithmId: algorithm.id,
+                providerId,
+                key: l.id,
+                label: l.name,
+                type: l.layerType,
+            })),
+        );
+
+        if (layerRecords.length > 0) {
+            await db.table("layers").bulkPut(layerRecords);
+        }
+
+        const settingRecords: LayerSettingParameter[] = metadata.algorithms.flatMap(({ algorithm, layers }) =>
+            layers.flatMap((l: ProviderLayerRecord) => [
+                ...l.universalStyleAttributes,
+                ...l.pointStyleAttributes,
+                ...l.lineStyleAttributes,
+                ...l.polygonStyleAttributes,
+            ].map((attr) => ({
+                id: STYLE_ATTRIBUTE_KEY_ID.get(attr.key) ?? 0,
+                layerId: l.id,
+                algorithmId: algorithm.id,
+                providerId,
+                name: attr.key,
+                value: attr.defaultValue ?? "",
+            }))),
+        );
+
+        if (settingRecords.length > 0) {
+            await db.table("layerSettings").bulkPut(settingRecords);
+        }
     });
 
     await updateMetadataTimestamp(providerId, metadata.urlAtLastFetch, metadata.metadataFetchedAt);
@@ -215,6 +217,10 @@ export async function persistFetchedMetadata(
         })),
     );
     useComputationCatalogStore.getState().setProviderAlgorithms(providerId, savedAlgorithms, savedParameters);
+
+    for (const { algorithm, layers } of metadata.algorithms) {
+        useProviderLayerStore.getState().setProviderLayers(providerId, algorithm.id, layers);
+    }
 }
 
 // ─── Test Connection ──────────────────────────────────────────────────────────

@@ -19,8 +19,8 @@ db.version(1).stores({
     environmentComputationParameterValues: "[id+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId",
     environmentComputation: "environmentId",
     appEnumValues: "[enumGroup+value], enumGroup",
-    layers: "[id+algorithmId+providerId], algorithmId, providerId, key",
-    layerSettings: "[id+layerId+algorithmId+providerId], [layerId+algorithmId+providerId], [layerId+algorithmId+providerId+name]",
+    layers: "[id+algorithmId+providerId], algorithmId, providerId, key, [algorithmId+providerId]",
+    layerSettings: "[id+layerId+algorithmId+providerId], [layerId+algorithmId+providerId], [layerId+algorithmId+providerId+name], [algorithmId+providerId]",
 });
 
 db.on("populate", () => {

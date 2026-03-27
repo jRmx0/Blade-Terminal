@@ -125,6 +125,7 @@ export function buildSavedAlgorithmDetails({
     return algorithms.map((algorithm) => ({
         algorithm,
         parameters: parametersByAlgorithmId.get(algorithm.id) ?? [],
+        layers: [],
     }));
 }
 
