@@ -1,22 +1,22 @@
 import { db } from "./db";
-import type { EnvironmentComputationParameterValue } from "@/types/schemaTypes";
+import type { ComputationAlgorithmParameter } from "@/types/schemaTypes";
 
-const table = db.table<EnvironmentComputationParameterValue, [number, number, number, number]>(
+const table = db.table<ComputationAlgorithmParameter, [number, number, number, number]>(
     "computationAlgorithmParameters",
 );
 
-export async function getParameterValues(
+export async function getAlgorithmParameters(
     algorithmId: number,
     providerId: number,
     environmentId: number,
-): Promise<EnvironmentComputationParameterValue[]> {
+): Promise<ComputationAlgorithmParameter[]> {
     return table
         .where("[algorithmId+providerId+environmentId]")
         .equals([algorithmId, providerId, environmentId])
         .toArray();
 }
 
-export async function setParameterValue(
+export async function setAlgorithmParameter(
     id: number,
     algorithmId: number,
     providerId: number,
@@ -26,14 +26,14 @@ export async function setParameterValue(
     await table.put({ id, environmentId, providerId, algorithmId, value });
 }
 
-export async function getAllParameterValuesByEnvironment(environmentId: number): Promise<EnvironmentComputationParameterValue[]> {
+export async function getAlgorithmParametersByEnvironment(environmentId: number): Promise<ComputationAlgorithmParameter[]> {
     return table.where("environmentId").equals(environmentId).toArray();
 }
 
-export async function saveParameterValues(values: EnvironmentComputationParameterValue[]): Promise<void> {
+export async function saveAlgorithmParameters(values: ComputationAlgorithmParameter[]): Promise<void> {
     await table.bulkPut(values);
 }
 
-export async function deleteParameterValuesByEnvironment(environmentId: number): Promise<void> {
+export async function deleteAlgorithmParametersByEnvironment(environmentId: number): Promise<void> {
     await table.where("environmentId").equals(environmentId).delete();
 }

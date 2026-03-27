@@ -22,7 +22,7 @@ import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 import type { AlgorithmParameter, AppEnumValue } from "@/types/serviceTypes";
-import type { EnvironmentComputationParameterValue } from "@/types/schemaTypes";
+import type { ComputationAlgorithmParameter } from "@/types/schemaTypes";
 
 interface ParameterSectionGroup {
     title: string;
@@ -66,7 +66,7 @@ function groupParametersBySection(parameters: AlgorithmParameter[]): ParameterSe
 
 function getParameterDisplayValue(
     parameter: AlgorithmParameter,
-    parameterValues: EnvironmentComputationParameterValue[],
+    parameterValues: ComputationAlgorithmParameter[],
 ): string {
     const persistedValue = parameterValues.find((pv) => pv.id === parameter.id)?.value;
     return persistedValue ?? parameter.defaultValue ?? "";
@@ -76,7 +76,7 @@ interface DynamicParameterFieldProps {
     parameter: AlgorithmParameter;
     selectedProviderId: number;
     selectedAlgorithmId: number;
-    parameterValues: EnvironmentComputationParameterValue[];
+    parameterValues: ComputationAlgorithmParameter[];
     appEnums: AppEnumValue[];
     onChange: (parameterId: number, value: string) => void;
 }

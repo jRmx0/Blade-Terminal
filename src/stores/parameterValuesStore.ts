@@ -1,23 +1,23 @@
 import { create } from "zustand";
-import type { EnvironmentComputationParameterValue } from "@/types/schemaTypes";
+import type { ComputationAlgorithmParameter } from "@/types/schemaTypes";
 import { getSaveMode } from "@/stores/saveModeStore";
-import { saveParameterValues } from "@server/db/computationAlgorithmParameters";
+import { saveAlgorithmParameters } from "@server/db/computationAlgorithmParameters";
 
 interface ParameterValuesState {
-    parameterValues: EnvironmentComputationParameterValue[];
+    parameterValues: ComputationAlgorithmParameter[];
     /** True when parameter values have been changed since the last save or load. */
     isParameterValuesDirty: boolean;
     /** Replaces the full parameter values array. Used by workspace bridge after load or init. Does not mark dirty. */
-    setParameterValues: (values: EnvironmentComputationParameterValue[]) => void;
+    setParameterValues: (values: ComputationAlgorithmParameter[]) => void;
     /** Upserts a single parameter value and marks dirty. Triggers autosave when mode is "autosave". */
     setParameterValue: (id: number, algorithmId: number, providerId: number, environmentId: number, value: string) => void;
     /** Clears the dirty flag. Called by canvas bridge after a successful save. */
     clearDirty: () => void;
 }
 
-function autosave(values: EnvironmentComputationParameterValue[]): void {
+function autosave(values: ComputationAlgorithmParameter[]): void {
     if (getSaveMode() === "autosave") {
-        saveParameterValues(values).catch(console.error);
+        saveAlgorithmParameters(values).catch(console.error);
     }
 }
 

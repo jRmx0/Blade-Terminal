@@ -1,6 +1,6 @@
 import { getLastEnvironmentId, saveEnvironment } from "@server/db/environments";
 import { saveEnvironmentComputation } from "@server/db/environmentComputation";
-import { saveParameterValues } from "@server/db/computationAlgorithmParameters";
+import { saveAlgorithmParameters } from "@server/db/computationAlgorithmParameters";
 import { saveAllLayerSettings } from "@server/db/layerSettings";
 import { getObjectsByEnvironment, saveObjects, deleteObject } from "@server/db/objects";
 import { getVerticesByObjects, saveVertices, deleteVertex } from "@server/db/vertices";
@@ -76,7 +76,7 @@ export async function saveCanvas(): Promise<boolean> {
         await Promise.all([
             saveEnvironment(env),
             saveEnvironmentComputation(computation),
-            isParameterValuesDirty ? saveParameterValues(parameterValues) : Promise.resolve(),
+            isParameterValuesDirty ? saveAlgorithmParameters(parameterValues) : Promise.resolve(),
             isLayerSettingsDirty ? saveAllLayerSettings(layers.flatMap((l) => l.settings)) : Promise.resolve(),
             persistDirtyObjects(dirtyObjects, deletedObjects),
             persistDirtyVertices(dirtyVertices, deletedVertices),

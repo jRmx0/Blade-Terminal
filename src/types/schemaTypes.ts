@@ -6,7 +6,7 @@ export interface EnvironmentComputation {
     selectedAlgorithmId: number | null;
 }
 
-export interface EnvironmentComputationParameterValue {
+export interface ComputationAlgorithmParameter {
     id: number;
     environmentId: number;
     providerId: number;

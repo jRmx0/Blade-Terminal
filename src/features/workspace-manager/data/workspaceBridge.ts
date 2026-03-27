@@ -1,6 +1,6 @@
 import { getEnvironment, saveEnvironment } from "@server/db/environments";
 import { getEnvironmentComputation, saveEnvironmentComputation } from "@server/db/environmentComputation";
-import { getAllParameterValuesByEnvironment, saveParameterValues } from "@server/db/computationAlgorithmParameters";
+import { getAlgorithmParametersByEnvironment, saveAlgorithmParameters } from "@server/db/computationAlgorithmParameters";
 import { deleteObjectsByEnvironment, saveObjects } from "@server/db/objects";
 import { saveVertices } from "@server/db/vertices";
 import { ENV_FORMAT, GLOBAL_TYPE, OBJECT_CATEGORY } from "@/config/db-ops/enums";
@@ -71,7 +71,7 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     useEnvStore.getState().setEnv({ ...env, zoneCount: zoneObjectCount, obstacleCount: obstacleObjectCount });
     const [computation, parameterValues] = await Promise.all([
         getEnvironmentComputation(environmentId),
-        getAllParameterValuesByEnvironment(environmentId),
+        getAlgorithmParametersByEnvironment(environmentId),
     ]);
     // Set parameter values before computation so the panel's init effect sees loaded values
     // when it fires in response to the algorithm/provider selection being restored.
@@ -97,7 +97,7 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
     await Promise.all([
         saveEnvironment(targetEnv),
         saveEnvironmentComputation({ ...computation, environmentId: targetId }),
-        targetParamValues.length > 0 ? saveParameterValues(targetParamValues) : Promise.resolve(),
+        targetParamValues.length > 0 ? saveAlgorithmParameters(targetParamValues) : Promise.resolve(),
         targetObjects.length > 0 ? saveObjects(targetObjects) : Promise.resolve(),
         targetVertices.length > 0 ? saveVertices(targetVertices) : Promise.resolve(),
         selectedEnvId === null ? initLayerSettingsForEnvironment(targetId) : Promise.resolve(),
