@@ -130,7 +130,7 @@ export async function persistFetchedMetadata(
     await db.transaction("rw", [
         db.table("computationAlgorithms"),
         db.table("computationAlgorithmParameters"),
-        db.table("layers"),
+        db.table("layersSetup"),
         db.table("layerSettingsSetup"),
     ], async () => {
         await db.table("computationAlgorithmParameters").where("computationProviderId").equals(providerId).delete();
@@ -157,7 +157,7 @@ export async function persistFetchedMetadata(
 
         for (const { algorithm } of metadata.algorithms) {
             await db
-                .table("layers")
+                .table("layersSetup")
                 .where("[algorithmId+providerId]")
                 .equals([algorithm.id, providerId])
                 .delete();
@@ -180,7 +180,7 @@ export async function persistFetchedMetadata(
         );
 
         if (layerRecords.length > 0) {
-            await db.table("layers").bulkPut(layerRecords);
+            await db.table("layersSetup").bulkPut(layerRecords);
         }
 
         const setupRecords: LayerSettingsSetup[] = metadata.algorithms.flatMap(({ algorithm, layers }) =>
