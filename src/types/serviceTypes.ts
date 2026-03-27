@@ -185,6 +185,7 @@ export type StyleAttributeKey =
     | "Polygon ID Offset";
 
 export type StyleType =
+    | "Boolean"
     | "Integer"
     | "Color"
     | "Spacing"

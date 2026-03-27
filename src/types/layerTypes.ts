@@ -1,3 +1,5 @@
+import type { StyleAttributeKey, StyleType } from "@/types/serviceTypes";
+
 export type LayerId = number;
 
 /**
@@ -14,7 +16,7 @@ export type LayerType = "Polygon" | "Point" | "Line" | "Grid" | "ObjectGroup";
  * Attribute keys managed internally by the terminal (not part of the provider metadata spec).
  * These are seeded as part of the system layer defaults.
  */
-export type InternalStyleAttributeKey = "Visible" | "Show Vertex IDs";
+export type InternalStyleAttributeKey = "Visible" | "Show Vertex IDs" | "Grid Line Color";
 
 export interface LayerDefinition {
     id: LayerId;
@@ -36,9 +38,9 @@ export interface LayerSettingsSetup {
     algorithmId: number;
     providerId: number;
     /** Human-readable attribute key — doubles as the display label. */
-    key: string;
+    key: StyleAttributeKey | InternalStyleAttributeKey;
     /** Attribute value type from the provider spec. */
-    styleType: string;
+    styleType: StyleType;
     defaultValue: string | null;
 }
 
@@ -80,7 +82,7 @@ export interface LayerSettingParameter {
     /** FK → environments.id */
     environmentId: number;
     /** Attribute key de-normalized from setup — used as the display label. */
-    key: string;
+    key: StyleAttributeKey | InternalStyleAttributeKey;
     value: string;
 }
 
