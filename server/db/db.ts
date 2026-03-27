@@ -18,14 +18,14 @@ db.version(1).stores({
     computationAlgorithmParameters: "[id+algorithmId+computationProviderId], algorithmId, computationProviderId, [algorithmId+computationProviderId]",
     environmentComputationParameterValues: "[id+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId",
     environmentComputation: "environmentId",
-    appEnumValues: "[enumGroup+value], enumGroup",
+    appEnumSetup: "[enumGroup+value], enumGroup",
     layers: "[id+algorithmId+providerId], algorithmId, providerId, key, [algorithmId+providerId]",
     layerSettingsSetup: "[id+layerId+algorithmId+providerId], [layerId+algorithmId+providerId], [algorithmId+providerId]",
     layerSettings: "[id+layerId+algorithmId+providerId+environmentId], [layerId+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId",
 });
 
 db.on("populate", () => {
-    // seed appEnumValues and layers/layerSettings for fresh databases
+    // seed appEnumSetup and layers/layerSettings for fresh databases
     return seedInitialData();
 });
 
@@ -43,7 +43,7 @@ async function seedAppEnums(): Promise<void> {
         { enumGroup: "coordsystem", value: "decimal", label: "Decimal" },
         { enumGroup: "coordsystem", value: "latlong", label: "Lat/Long" },
     ];
-    await db.table("appEnumValues").bulkPut(rows);
+    await db.table("appEnumSetup").bulkPut(rows);
 }
 
 export { db };
