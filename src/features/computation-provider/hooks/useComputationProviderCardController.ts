@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { db } from "@server/db/db";
-import { saveComputationProvider, deleteComputationProvider } from "@server/db/computationProviders";
+import { saveComputationProvider } from "@server/db/computationProviders";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useProviderLayerStore } from "@/stores/providerLayerStore";
 import type { ModalActionBarItem } from "@/components/modal/modal-action-bar/ModalActionBar";
@@ -13,7 +13,7 @@ import type {
     CardModalListPartConfig,
     CardModalListPartRowId,
 } from "@/components/modals/card-modal/CardModalListPart.types";
-import { testConnection, fetchMetadataPreview, persistFetchedMetadata } from "@/features/computation-provider/data/computationProviderService";
+import { testConnection, fetchMetadataPreview, persistFetchedMetadata, deleteProviderWithCleanup } from "@/features/computation-provider/data/computationProviderService";
 import { useComputationProviderAutosave } from "@/features/computation-provider/hooks/useComputationProviderAutosave";
 import { useAlgorithmCardStore } from "@/features/computation-provider/stores/algorithmCardStore";
 import { useComputationProviderCardStore } from "@/features/computation-provider/stores/computationProviderCardStore";
@@ -382,8 +382,7 @@ export function useComputationProviderCardController() {
         }
 
         useDeleteModalStore.getState().requestDelete(form.name || "this provider", async () => {
-            await deleteComputationProvider(editingId);
-            useComputationCatalogStore.getState().removeProvider(editingId);
+            await deleteProviderWithCleanup(editingId);
             close();
             openList();
         });

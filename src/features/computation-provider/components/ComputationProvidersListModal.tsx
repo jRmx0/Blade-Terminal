@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import type { ComputationProvider } from "@/types/serviceTypes";
 import { useComputationProvidersListModalStore } from "@/features/computation-provider/stores/computationProvidersListModalStore";
 import { useComputationProviderCardStore } from "@/features/computation-provider/stores/computationProviderCardStore";
-import { deleteComputationProvider } from "@server/db/computationProviders";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useDeleteModalStore } from "@/features/workspace-manager/stores/deleteModalStore";
+import { deleteProviderWithCleanup } from "@/features/computation-provider/data/computationProviderService";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import ListModal, { type ListModalAction } from "@/components/modals/list-modal/ListModal";
 
@@ -33,8 +33,7 @@ export default function ComputationProvidersListModal() {
         const provider = providers.find((p) => p.id === id);
         if (!provider) return;
         useDeleteModalStore.getState().requestDelete(provider.name, async () => {
-            await deleteComputationProvider(id);
-            useComputationCatalogStore.getState().removeProvider(id);
+            await deleteProviderWithCleanup(id);
         });
     }
 

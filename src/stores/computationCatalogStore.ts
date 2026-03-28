@@ -81,6 +81,7 @@ export const useComputationCatalogStore = create<ComputationCatalogState>((set) 
             providers: state.providers.filter((p) => p.id !== providerId),
             algorithms: state.algorithms.filter((a) => a.computationProviderId !== providerId),
             parameters: state.parameters.filter((p) => p.computationProviderId !== providerId),
+            layerSettingsSetup: state.layerSettingsSetup.filter((s) => s.providerId !== providerId),
         }));
     },
 

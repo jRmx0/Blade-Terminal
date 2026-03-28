@@ -11,7 +11,7 @@ import type {
 import type { LayerRecord, LayerSettingsSetup } from "@/types/layerTypes";
 import { STYLE_ATTRIBUTE_KEY_ID } from "@/config/computation/supportedLayerAttributes";
 import { db } from "@server/db/db";
-import { updateMetadataTimestamp } from "@server/db/computationProviders";
+import { deleteComputationProvider, updateMetadataTimestamp } from "@server/db/computationProviders";
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useProviderLayerStore } from "@/stores/providerLayerStore";
@@ -230,6 +230,22 @@ export async function persistFetchedMetadata(
     const envId = useEnvStore.getState().env?.id;
     if (envId != null) {
         await addMissingLayerSettingsForEnvironment(envId, setupRecords);
+        await loadLayerSettings(envId);
+    }
+}
+
+// ─── Delete Provider ──────────────────────────────────────────────────────────
+
+/**
+ * Full provider deletion: cascades through all DB tables (layersSetup,
+ * layerSettingsSetup, layerSettings included) then syncs all in-memory stores.
+ */
+export async function deleteProviderWithCleanup(providerId: number): Promise<void> {
+    await deleteComputationProvider(providerId);
+    useComputationCatalogStore.getState().removeProvider(providerId);
+    useProviderLayerStore.getState().clearProviderLayers(providerId);
+    const envId = useEnvStore.getState().env?.id;
+    if (envId != null) {
         await loadLayerSettings(envId);
     }
 }
