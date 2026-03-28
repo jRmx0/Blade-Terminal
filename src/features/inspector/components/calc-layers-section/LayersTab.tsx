@@ -56,7 +56,7 @@ export default function LayersTab() {
 
                 return (
                     <LayerRow
-                        key={item.layer.id}
+                        key={`${item.layer.id}-${item.layer.algorithmId}-${item.layer.providerId}`}
                         layer={item.layer}
                         settings={item.settings}
                         isFirst={isFirst}
