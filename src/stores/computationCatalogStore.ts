@@ -3,7 +3,9 @@ import { getAllComputationProviders } from "@server/db/computationProviders";
 import { getAllComputationAlgorithms } from "@server/db/computationProviderAlgorithms";
 import { getAllAlgorithmParameters } from "@server/db/computationAlgorithmParametersSetup";
 import { getAllAppEnums } from "@server/db/appEnumSetup";
-import type { AlgorithmParameter, AppEnumValue, ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
+import { getAllLayers } from "@server/db/layersSetup";
+import { useProviderLayerStore } from "@/stores/providerLayerStore";
+import type { AlgorithmParameter, AppEnumValue, ComputationAlgorithm, ComputationProvider, ProviderLayerRecord } from "@/types/serviceTypes";
 
 interface ComputationCatalogState {
     providers: ComputationProvider[];
@@ -105,11 +107,43 @@ export const useComputationCatalogStore = create<ComputationCatalogState>((set) 
 }));
 
 export async function loadComputationCatalog(): Promise<void> {
-    const [providers, algorithms, parameters, appEnums] = await Promise.all([
+    const [providers, algorithms, parameters, appEnums, allLayers] = await Promise.all([
         getAllComputationProviders(),
         getAllComputationAlgorithms(),
         getAllAlgorithmParameters(),
         getAllAppEnums(),
+        getAllLayers(),
     ]);
     useComputationCatalogStore.getState().setCatalog(providers, algorithms, parameters, appEnums);
+
+    // Hydrate providerLayerStore from persisted layersSetup records.
+    // System layers have algorithmId === 0 and are skipped.
+    const providerLayersByAlgorithm = new Map<string, ProviderLayerRecord[]>();
+    for (const layer of allLayers) {
+        if (!layer.algorithmId || !layer.providerId) continue;
+        const key = `${layer.providerId}-${layer.algorithmId}`;
+        const stub: ProviderLayerRecord = {
+            id: layer.id,
+            algorithmId: layer.algorithmId,
+            providerId: layer.providerId,
+            computeLayer: layer.label,
+            name: layer.label,
+            layerType: (layer.type as ProviderLayerRecord["layerType"]) ?? "polygon",
+            universalStyleAttributes: [],
+            pointStyleAttributes: [],
+            lineStyleAttributes: [],
+            polygonStyleAttributes: [],
+            pointLabelColorMapping: [],
+            pointLabelEnumValues: [],
+        };
+        const group = providerLayersByAlgorithm.get(key);
+        if (group) group.push(stub);
+        else providerLayersByAlgorithm.set(key, [stub]);
+    }
+    for (const layers of providerLayersByAlgorithm.values()) {
+        const first = layers[0];
+        if (first) {
+            useProviderLayerStore.getState().setProviderLayers(first.providerId, first.algorithmId, layers);
+        }
+    }
 }
