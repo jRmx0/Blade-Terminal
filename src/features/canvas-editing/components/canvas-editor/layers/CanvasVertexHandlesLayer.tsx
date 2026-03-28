@@ -11,8 +11,7 @@ import {
     COLOR_EDGE_MIDPOINT_STROKE,
 } from "@/config/canvas-editing/canvasConfig";
 import { deriveActiveFill } from "@/utils/colorUtils";
-import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
-import { LAYER_ID } from "@/config/layers/layerRegistry";
+import { usePolygonLayerStyle } from "@/features/canvas-editing/hooks/canvas-editor/usePolygonLayerStyle";
 
 interface CanvasVertexHandlesLayerProps {
     selectedObject: Object | null;
@@ -43,18 +42,11 @@ export function _CanvasVertexHandlesLayer({
     onEdgeMidpointMouseDown,
     onHandleHoverChange,
 }: CanvasVertexHandlesLayerProps) {
-    const layers = useLayerSettingsStore((s) => s.layers);
+    const category = (selectedObject?.category ?? "zone") as "zone" | "obstacle";
+    const { stroke: accentColor, edgeWidth, showVertexIds } = usePolygonLayerStyle(category);
     const isLayerListening = activeTool === "select" && selectedObject !== null;
     const edgeMidpoints = selectedObject ? computeEdgeMidpoints(selectedObjectVertices) : [];
-    const showVertexIdsLayerId = selectedObject?.category === "zone" ? LAYER_ID.ZONES : LAYER_ID.OBSTACLES;
-    const showVertexIds = getLayerParam(layers, showVertexIdsLayerId, "Show Vertex IDs") !== "false";
     if (!selectedObject) return <Layer />;
-
-    const layerId = selectedObject.category === "zone" ? LAYER_ID.ZONES : LAYER_ID.OBSTACLES;
-    const accentColor = layerId === LAYER_ID.ZONES
-        ? (getLayerParam(layers, LAYER_ID.ZONES, "Polygon Edge Color") ?? "#22c55e")
-        : (getLayerParam(layers, LAYER_ID.OBSTACLES, "Polygon Edge Color") ?? "#ef4444");
-    const edgeWidth = parseFloat(getLayerParam(layers, layerId, "Polygon Edge Width") ?? "1.5");
     const vertexRadius = Math.max(6, edgeWidth * 1.5) / scale;
     const vertexStrokeNormal = Math.max(2, edgeWidth * 0.4) / scale;
     const vertexStrokeActive = Math.max(3, edgeWidth * 0.6) / scale;

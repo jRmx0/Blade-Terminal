@@ -1,21 +1,30 @@
 import type { Object } from "@/types/schemaTypes";
 import type { VertexRef } from "@/features/canvas-editing/types/canvas";
-import { shoelaceArea } from "./canvasGeometry";
+import { computePolygonArea, ensureWinding } from "@/utils/geometry";
+
+// ---------------------------------------------------------------------------
+// Normalize
+// ---------------------------------------------------------------------------
+
+/**
+ * Enforces winding order and recomputes vertexCount + area for a single object.
+ * This is the single source of truth for all post-mutation normalization.
+ */
+export function normalizeObject(o: Object): Object {
+    const vertices = o.vertices.length >= 3 ? ensureWinding(o.vertices, o.category) : o.vertices;
+    return { ...o, vertices, vertexCount: vertices.length, area: vertices.length >= 3 ? computePolygonArea(vertices) : 0 };
+}
 
 // ---------------------------------------------------------------------------
 // Sync
 // ---------------------------------------------------------------------------
 
 /**
- * After any mutation to an object's vertices, call this to recompute
- * vertexCount + area on the EnvObject.
+ * After any mutation to an object's vertices, call this to enforce winding and
+ * recompute vertexCount + area.
  */
 export function syncObject(objects: Object[], objectId: number): Object[] {
-    return objects.map((o) => {
-        if (o.id !== objectId) return o;
-        const n = o.vertices.length;
-        return { ...o, vertexCount: n, area: n >= 3 ? shoelaceArea(o.vertices) : 0 };
-    });
+    return objects.map((o) => o.id === objectId ? normalizeObject(o) : o);
 }
 
 // ---------------------------------------------------------------------------

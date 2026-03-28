@@ -4,9 +4,8 @@ import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import type React from "react";
 import type { Object } from "@/types/schemaTypes";
 import { sameObject } from "@/features/canvas-editing/utils/canvasObjectUtils";
-import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
-import { LAYER_ID } from "@/config/layers/layerRegistry";
 import { OBJECT_TYPE } from "@/config/db-ops/enums";
+import { usePolygonLayerStyle } from "@/features/canvas-editing/hooks/canvas-editor/usePolygonLayerStyle";
 
 function createStripePatternCanvas(bgColor: string, stripeColor: string): HTMLCanvasElement {
     const stripeH = 16;
@@ -58,12 +57,7 @@ export function _CanvasPolygonObjectsLayer({
     // Coordinates onDragStart/onDragEnd: only true when a left-button drag is active.
     const primaryDragRef = useRef(false);
 
-    const layerId = category === "zone" ? LAYER_ID.ZONES : LAYER_ID.OBSTACLES;
-    const layers = useLayerSettingsStore((s) => s.layers);
-    const visible = getLayerParam(layers, layerId, "Visible") !== "false";
-    const stroke = getLayerParam(layers, layerId, "Polygon Edge Color") ?? (category === "zone" ? "#22c55e" : "#ef4444");
-    const fill = getLayerParam(layers, layerId, "Polygon Fill Color") ?? (category === "zone" ? "#22c55e2e" : "#ef44443b");
-    const edgeWidth = parseFloat(getLayerParam(layers, layerId, "Polygon Edge Width") ?? "1.5");
+    const { visible, stroke, fill, edgeWidth } = usePolygonLayerStyle(category);
 
     const onlinePattern = useMemo(
         () => createStripePatternCanvas(fill, fill),

@@ -4,8 +4,24 @@ import type { VertexRef } from "@/features/canvas-editing/types/canvas";
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import { type ObjectCategory, type ObjectType } from "@/config/db-ops/enums";
 import { useEnvStore } from "@/stores/envStore";
-import { syncObject, markDirty, markDeleted } from "@/features/canvas-editing/utils/canvasObjectUtils";
-import { ensureWinding } from "@/utils/geometry";
+import { syncObject, normalizeObject, markDirty, markDeleted } from "@/features/canvas-editing/utils/canvasObjectUtils";
+
+// ---------------------------------------------------------------------------
+// Private helpers
+// ---------------------------------------------------------------------------
+
+type MutationState = Pick<CanvasObjectState, "objects" | "dirtyObjects" | "deletedObjects">;
+
+/**
+ * Applies syncObject (winding + stats) to the object at objectId, marks it dirty,
+ * and returns the updated slice of store state. Used by every mutation that modifies vertices.
+ */
+function commitObject(state: MutationState, pending: Object[], objectId: number): MutationState {
+    const objects = syncObject(pending, objectId);
+    const obj = objects.find((o) => o.id === objectId)!;
+    const { dirty: dirtyObjects, deleted: deletedObjects } = markDirty(state.dirtyObjects, state.deletedObjects, obj);
+    return { objects, dirtyObjects, deletedObjects };
+}
 
 // ---------------------------------------------------------------------------
 // Store
@@ -64,13 +80,9 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
                 type,
                 vertexCount: 0,
                 area: 0,
-                vertices: ensureWinding(points.map((p) => ({ x: p.x, y: p.y })), category),
+                vertices: points.map((p) => ({ x: p.x, y: p.y })),
             };
-            const newObjects = syncObject([...state.objects, newObj], objectId);
-            const updatedObj = newObjects.find((o) => o.id === objectId)!;
-            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, updatedObj));
-            return { objects: newObjects, dirtyObjects: dObj, deletedObjects: xObj };
+            return commitObject(state, [...state.objects, newObj], objectId);
         });
     },
 
@@ -96,43 +108,22 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
         })),
 
     finalizeVertexMoveAt: (ref) =>
-        set((state) => {
-            const pre = state.objects.map((o) => {
-                if (o.id !== ref.objectId) return o;
-                const fixed = ensureWinding(o.vertices, o.category as "zone" | "obstacle");
-                return fixed === o.vertices ? o : { ...o, vertices: fixed };
-            });
-            const newObjects = syncObject(pre, ref.objectId);
-            const updatedObj = newObjects.find((o) => o.id === ref.objectId)!;
-            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, updatedObj));
-            return { objects: newObjects, dirtyObjects: dObj, deletedObjects: xObj };
-        }),
+        set((state) => commitObject(state, state.objects, ref.objectId)),
 
     moveObject: (obj, dx, dy) =>
         set((state) => {
-            const withMovedVerts = state.objects.map((o) => {
-                if (o.id !== obj.id) return o;
-                return { ...o, vertices: o.vertices.map((v) => ({ x: v.x + dx, y: v.y + dy })) };
-            });
-            const newObjects = syncObject(withMovedVerts, obj.id);
-            const updatedObj = newObjects.find((o) => o.id === obj.id)!;
-            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, updatedObj));
-            return { objects: newObjects, dirtyObjects: dObj, deletedObjects: xObj };
+            const pending = state.objects.map((o) =>
+                o.id !== obj.id ? o : { ...o, vertices: o.vertices.map((v) => ({ x: v.x + dx, y: v.y + dy })) },
+            );
+            return commitObject(state, pending, obj.id);
         }),
 
     deleteVertex: (obj, index) =>
         set((state) => {
             const o = state.objects.find((x) => x.id === obj.id);
             if (!o || o.vertices.length <= 3) return state;
-            const newVerts = o.vertices.filter((_, i) => i !== index);
-            const withUpdated = state.objects.map((x) => x.id === obj.id ? { ...x, vertices: newVerts } : x);
-            const newObjects = syncObject(withUpdated, obj.id);
-            const updatedObj = newObjects.find((x) => x.id === obj.id)!;
-            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, updatedObj));
-            return { objects: newObjects, dirtyObjects: dObj, deletedObjects: xObj };
+            const vertices = o.vertices.filter((_, i) => i !== index);
+            return commitObject(state, state.objects.map((x) => x.id === obj.id ? { ...x, vertices } : x), obj.id);
         }),
 
     deleteVertices: (obj, refs) =>
@@ -141,13 +132,8 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
             if (!o) return state;
             const indexSet = new Set(refs.map((r) => r.index));
             if (o.vertices.length - indexSet.size < 3) return state;
-            const newVerts = o.vertices.filter((_, i) => !indexSet.has(i));
-            const withUpdated = state.objects.map((x) => x.id === obj.id ? { ...x, vertices: newVerts } : x);
-            const newObjects = syncObject(withUpdated, obj.id);
-            const updatedObj = newObjects.find((x) => x.id === obj.id)!;
-            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, updatedObj));
-            return { objects: newObjects, dirtyObjects: dObj, deletedObjects: xObj };
+            const vertices = o.vertices.filter((_, i) => !indexSet.has(i));
+            return commitObject(state, state.objects.map((x) => x.id === obj.id ? { ...x, vertices } : x), obj.id);
         }),
 
     insertVertex: (objectId, afterIndex, pos) => {
@@ -155,17 +141,12 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
         set((state) => {
             const o = state.objects.find((x) => x.id === objectId);
             if (!o) return state;
-            const newVerts = [
+            const vertices = [
                 ...o.vertices.slice(0, afterIndex + 1),
                 { x: pos.x, y: pos.y },
                 ...o.vertices.slice(afterIndex + 1),
             ];
-            const withUpdated = state.objects.map((x) => x.id === objectId ? { ...x, vertices: newVerts } : x);
-            const newObjects = syncObject(withUpdated, objectId);
-            const updatedObj = newObjects.find((x) => x.id === objectId)!;
-            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, updatedObj));
-            return { objects: newObjects, dirtyObjects: dObj, deletedObjects: xObj };
+            return commitObject(state, state.objects.map((x) => x.id === objectId ? { ...x, vertices } : x), objectId);
         });
         return newRef;
     },
@@ -173,22 +154,19 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
     updateObjectType: (obj, type) =>
         set((state) => {
             if (!state.objects.some((o) => o.id === obj.id)) return state;
-            const updated = { ...obj, type };
-            const newObjects = state.objects.map((o) => o.id === obj.id ? updated : o);
-            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
-            ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, updated));
-            return { objects: newObjects, dirtyObjects: dObj, deletedObjects: xObj };
+            return commitObject(state, state.objects.map((o) => o.id === obj.id ? { ...o, type } : o), obj.id);
         }),
 
     updateObjectsType: (type) =>
         set((state) => {
             if (state.objects.length === 0) return state;
-            const newObjects = state.objects.map((o) => ({ ...o, type }));
-            let dObj = state.dirtyObjects, xObj = state.deletedObjects;
-            for (const o of newObjects) {
-                ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, o));
+            const objects = state.objects.map((o) => ({ ...o, type }));
+            let dirtyObjects = state.dirtyObjects;
+            let deletedObjects = state.deletedObjects;
+            for (const o of objects) {
+                ({ dirty: dirtyObjects, deleted: deletedObjects } = markDirty(dirtyObjects, deletedObjects, o));
             }
-            return { objects: newObjects, dirtyObjects: dObj, deletedObjects: xObj };
+            return { objects, dirtyObjects, deletedObjects };
         }),
 
     clearDirty: () =>
@@ -199,7 +177,7 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
 
     setObjects: (objects) =>
         set({
-            objects,
+            objects: objects.map(normalizeObject),
             dirtyObjects: [],
             deletedObjects: [],
         }),

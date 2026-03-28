@@ -34,15 +34,15 @@ export function computePolygonArea(vertices: Point[]): number {
  * In screen coordinates (Y↓): zones must be CW (signed area > 0),
  * obstacles must be CCW (signed area < 0).
  * Returns the same array reference when winding is already correct.
+ * Unknown categories are returned unchanged.
  */
 export function ensureWinding(
     vertices: Array<{ x: number; y: number }>,
-    category: "zone" | "obstacle",
+    category: string,
 ): Array<{ x: number; y: number }> {
     if (vertices.length < 3) return vertices;
     const signed = computeSignedPolygonArea(vertices);
-    const needsCW = category === "zone";
-    const isCW = signed > 0;
-    if (needsCW === isCW) return vertices;
-    return [...vertices].reverse();
+    if (category === "zone") return signed > 0 ? vertices : [...vertices].reverse();
+    if (category === "obstacle") return signed < 0 ? vertices : [...vertices].reverse();
+    return vertices;
 }

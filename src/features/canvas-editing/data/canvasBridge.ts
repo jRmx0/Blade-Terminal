@@ -6,7 +6,6 @@ import { getObjectsByEnvironment, saveObjects, deleteObject } from "@server/db/o
 import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
 import type { Object, Environment } from "@/types/schemaTypes";
 import { useCanvasObjectStore } from "../stores/canvasObjectStore";
-import { ensureWinding } from "@/utils/geometry";
 import { useEnvStore } from "@/stores/envStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
@@ -90,9 +89,5 @@ export async function saveCanvas(): Promise<boolean> {
  */
 export async function loadCanvasForEnvironment(env: Environment): Promise<void> {
     const objects = await getObjectsByEnvironment(env);
-    const corrected = objects.map((o) => {
-        const fixed = ensureWinding(o.vertices, o.category as "zone" | "obstacle");
-        return fixed === o.vertices ? o : { ...o, vertices: fixed };
-    });
-    useCanvasObjectStore.getState().setObjects(corrected);
+    useCanvasObjectStore.getState().setObjects(objects);
 }

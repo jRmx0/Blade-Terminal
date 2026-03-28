@@ -1,5 +1,6 @@
 import type { Object } from "@/types/schemaTypes";
 import type { ObjectCategory } from "@/config/db-ops/enums";
+import { computePolygonArea } from "@/utils/geometry";
 
 export interface Point {
     x: number;
@@ -9,18 +10,6 @@ export interface Point {
 export interface EdgeMidpoint extends Point {
     /** Index of the edge's start vertex (edge goes from vertices[afterIndex] to vertices[afterIndex+1]) */
     afterIndex: number;
-}
-
-/** Shoelace formula — always positive. */
-export function shoelaceArea(verts: Point[]): number {
-    let sum = 0;
-    const n = verts.length;
-    for (let i = 0; i < n; i++) {
-        const a = verts[i]!;
-        const b = verts[(i + 1) % n]!;
-        sum += a.x * b.y - b.x * a.y;
-    }
-    return Math.abs(sum / 2);
 }
 
 /**
@@ -116,7 +105,7 @@ export function computeNetArea(
         const obstPoints: Point[] = o.vertices;
         const clipped = clipPolygon(obstPoints, zonePoints);
         if (clipped.length >= 3) {
-            overlapArea += shoelaceArea(clipped);
+            overlapArea += computePolygonArea(clipped);
         }
     }
 
