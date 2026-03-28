@@ -129,7 +129,16 @@ export function InternalCardModalListPartGroupRow({
             </div>
             <div className="border-r border-gray-200" />
             {dataColumns.map((column) => (
-                <div key={`${row.id}-${column.id}`} className="border-r last:border-r-0 border-gray-200" />
+                <InternalCardModalListPartCell
+                    key={`${row.id}-${column.id}`}
+                    cell={row.cells?.[column.id]}
+                    editable={false}
+                    isEditing={false}
+                    isCellEditable={false}
+                    wrapperClassName="flex min-w-0 items-center px-3 py-2 border-r last:border-r-0 border-gray-200 text-sm text-gray-500"
+                    contentClassName="flex min-w-0 w-full items-center"
+                    onStopEditing={() => undefined}
+                />
             ))}
         </div>
     );

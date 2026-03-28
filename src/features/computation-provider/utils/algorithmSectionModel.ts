@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import type { CardModalListPartColumn, CardModalListPartGroupRow, CardModalListPartRecordRow, CardModalListPartRow } from "@/components/modals/card-modal/CardModalListPart.types";
 import type { AlgorithmParameter, ComputationAlgorithm, ComputationAlgorithmDetails, MetadataParamSection } from "@/types/serviceTypes";
+import type { LayerRecord, LayerSettingsSetup } from "@/types/layerTypes";
 
 export const ALGORITHM_LIST_COLUMNS: CardModalListPartColumn[] = [
     { id: "name", title: "Name", width: 220 },
@@ -14,6 +15,12 @@ export const ALGORITHM_PARAMETER_COLUMNS: CardModalListPartColumn[] = [
     { id: "enumValues", title: "Enum Values", width: 240 },
     { id: "defaultValue", title: "Default Value", width: 180 },
     { id: "appHandler", title: "App Handler", width: 220 },
+];
+
+export const ALGORITHM_LAYER_COLUMNS: CardModalListPartColumn[] = [
+    { id: "name", title: "Name", width: 220 },
+    { id: "type", title: "Type", width: 270 },
+    { id: "defaultValue", title: "Default Value", width: 180 },
 ];
 
 interface BuildSavedAlgorithmDetailsOptions {
@@ -171,8 +178,66 @@ export function buildAlgorithmSectionRows({
                 parameterCount: { value: String(parameters.length) },
                 layerCount: { value: String(layerCount) },
             },
+            actions: onAlgorithmClick
+                ? [
+                    {
+                        id: "open",
+                        icon: "open_in_new",
+                        title: "Open",
+                        onClick: () => onAlgorithmClick(details),
+                    },
+                ]
+                : undefined,
         };
 
         return algorithmRow;
+    });
+}
+
+function buildLayerSettingRows(
+    algorithmId: number,
+    providerId: number,
+    layerSetupId: number,
+    setups: LayerSettingsSetup[],
+): CardModalListPartRow[] {
+    return setups
+        .filter((s) => s.layerId === layerSetupId && s.algorithmId === algorithmId && s.providerId === providerId)
+        .map((setup): CardModalListPartRow => ({
+            kind: "record",
+            id: `layer-${layerSetupId}-setup-${setup.id}`,
+            cells: {
+                name: { value: setup.key },
+                type: { value: setup.styleType, mono: true },
+                defaultValue: setup.defaultValue != null
+                    ? { value: setup.defaultValue }
+                    : { value: "—", tone: "subtle" },
+            },
+        }));
+}
+
+export function buildLayerRows(
+    algorithmId: number,
+    providerId: number,
+    layers: LayerRecord[],
+    setups: LayerSettingsSetup[],
+    layerExpanded: Record<string, boolean>,
+    toggleLayerSection: (rowId: string | number) => void,
+): CardModalListPartRow[] {
+    return layers.map((layer): CardModalListPartGroupRow => {
+        const rowId = `layer-${layer.id}-${algorithmId}-${providerId}`;
+        return {
+            kind: "group",
+            id: rowId,
+            label: layer.label,
+            cells: {
+                type: layer.type != null
+                    ? { value: layer.type, mono: true }
+                    : { value: "—", tone: "subtle" },
+                defaultValue: undefined,
+            },
+            expanded: layerExpanded[rowId] ?? true,
+            onToggle: () => toggleLayerSection(rowId),
+            children: buildLayerSettingRows(algorithmId, providerId, layer.id, setups),
+        };
     });
 }

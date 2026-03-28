@@ -4,20 +4,24 @@ import { getAllComputationAlgorithms } from "@server/db/computationProviderAlgor
 import { getAllAlgorithmParameters } from "@server/db/computationAlgorithmParametersSetup";
 import { getAllAppEnums } from "@server/db/appEnumSetup";
 import { getAllLayers } from "@server/db/layersSetup";
+import { getAllLayerSettingsSetup } from "@server/db/layerSettingsSetup";
 import { useProviderLayerStore } from "@/stores/providerLayerStore";
 import type { AlgorithmParameter, AppEnumValue, ComputationAlgorithm, ComputationProvider, ProviderLayerRecord } from "@/types/serviceTypes";
+import type { LayerSettingsSetup } from "@/types/layerTypes";
 
 interface ComputationCatalogState {
     providers: ComputationProvider[];
     algorithms: ComputationAlgorithm[];
     parameters: AlgorithmParameter[];
     appEnums: AppEnumValue[];
+    layerSettingsSetup: LayerSettingsSetup[];
 
     setCatalog: (
         providers: ComputationProvider[],
         algorithms: ComputationAlgorithm[],
         parameters: AlgorithmParameter[],
         appEnums: AppEnumValue[],
+        layerSettingsSetup: LayerSettingsSetup[],
     ) => void;
 
     setProviderAlgorithms: (
@@ -40,9 +44,10 @@ export const useComputationCatalogStore = create<ComputationCatalogState>((set) 
     algorithms: [],
     parameters: [],
     appEnums: [],
+    layerSettingsSetup: [],
 
-    setCatalog: (providers, algorithms, parameters, appEnums) => {
-        set({ providers, algorithms, parameters, appEnums });
+    setCatalog: (providers, algorithms, parameters, appEnums, layerSettingsSetup) => {
+        set({ providers, algorithms, parameters, appEnums, layerSettingsSetup });
     },
 
     setProviderAlgorithms: (providerId, algorithms, parameters) => {
@@ -107,14 +112,15 @@ export const useComputationCatalogStore = create<ComputationCatalogState>((set) 
 }));
 
 export async function loadComputationCatalog(): Promise<void> {
-    const [providers, algorithms, parameters, appEnums, allLayers] = await Promise.all([
+    const [providers, algorithms, parameters, appEnums, layerSettingsSetupData, allLayers] = await Promise.all([
         getAllComputationProviders(),
         getAllComputationAlgorithms(),
         getAllAlgorithmParameters(),
         getAllAppEnums(),
+        getAllLayerSettingsSetup(),
         getAllLayers(),
     ]);
-    useComputationCatalogStore.getState().setCatalog(providers, algorithms, parameters, appEnums);
+    useComputationCatalogStore.getState().setCatalog(providers, algorithms, parameters, appEnums, layerSettingsSetupData);
 
     // Hydrate providerLayerStore from persisted layersSetup records.
     // System layers have algorithmId === 0 and are skipped.

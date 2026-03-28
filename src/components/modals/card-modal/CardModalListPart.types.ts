@@ -51,6 +51,7 @@ export interface CardModalListPartGroupRow extends CardModalListPartBaseRow {
     expanded: boolean;
     onToggle: () => void;
     children: CardModalListPartRow[];
+    cells?: Record<string, CardModalListPartCell | undefined>;
 }
 
 export interface CardModalListPartRecordRow extends CardModalListPartBaseRow {
