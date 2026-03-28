@@ -37,6 +37,8 @@ interface ComputationCatalogState {
     upsertAlgorithm: (algorithm: ComputationAlgorithm) => void;
 
     removeAlgorithm: (id: number, computationProviderId: number) => void;
+    /** Replaces in-memory layerSettingsSetup entries for a given provider after a metadata fetch. */
+    setProviderLayerSettingsSetup: (providerId: number, setups: LayerSettingsSetup[]) => void;
 }
 
 export const useComputationCatalogStore = create<ComputationCatalogState>((set) => ({
@@ -107,6 +109,15 @@ export const useComputationCatalogStore = create<ComputationCatalogState>((set) 
             parameters: state.parameters.filter(
                 (p) => !(p.algorithmId === id && p.computationProviderId === computationProviderId),
             ),
+        }));
+    },
+
+    setProviderLayerSettingsSetup: (providerId, setups) => {
+        set((state) => ({
+            layerSettingsSetup: [
+                ...state.layerSettingsSetup.filter((s) => s.providerId !== providerId),
+                ...setups,
+            ],
         }));
     },
 }));

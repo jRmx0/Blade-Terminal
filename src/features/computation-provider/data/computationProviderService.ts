@@ -15,6 +15,9 @@ import { updateMetadataTimestamp } from "@server/db/computationProviders";
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useProviderLayerStore } from "@/stores/providerLayerStore";
+import { useEnvStore } from "@/stores/envStore";
+import { loadLayerSettings } from "@/stores/layerSettingsStore";
+import { addMissingLayerSettingsForEnvironment } from "@server/db/layerSettings";
 import { ingestProviderMetadata } from "@/features/computation-provider/data/metadataBridge";
 
 // ─── Request builder ──────────────────────────────────────────────────────────
@@ -127,6 +130,23 @@ export async function persistFetchedMetadata(
     providerId: number,
     metadata: FetchedComputationMetadata,
 ): Promise<void> {
+    const setupRecords: LayerSettingsSetup[] = metadata.algorithms.flatMap(({ algorithm, layers }) =>
+        layers.flatMap((l: ProviderLayerRecord) => [
+            ...l.universalStyleAttributes,
+            ...l.pointStyleAttributes,
+            ...l.lineStyleAttributes,
+            ...l.polygonStyleAttributes,
+        ].map((attr) => ({
+            id: STYLE_ATTRIBUTE_KEY_ID.get(attr.key) ?? 0,
+            layerId: l.id,
+            algorithmId: algorithm.id,
+            providerId,
+            key: attr.key,
+            styleType: attr.styleType,
+            defaultValue: attr.defaultValue,
+        }))),
+    );
+
     await db.transaction("rw", [
         db.table("computationProviderAlgorithms"),
         db.table("computationAlgorithmParametersSetup"),
@@ -183,23 +203,6 @@ export async function persistFetchedMetadata(
             await db.table("layersSetup").bulkPut(layerRecords);
         }
 
-        const setupRecords: LayerSettingsSetup[] = metadata.algorithms.flatMap(({ algorithm, layers }) =>
-            layers.flatMap((l: ProviderLayerRecord) => [
-                ...l.universalStyleAttributes,
-                ...l.pointStyleAttributes,
-                ...l.lineStyleAttributes,
-                ...l.polygonStyleAttributes,
-            ].map((attr) => ({
-                id: STYLE_ATTRIBUTE_KEY_ID.get(attr.key) ?? 0,
-                layerId: l.id,
-                algorithmId: algorithm.id,
-                providerId,
-                key: attr.key,
-                styleType: attr.styleType,
-                defaultValue: attr.defaultValue,
-            }))),
-        );
-
         if (setupRecords.length > 0) {
             await db.table("layerSettingsSetup").bulkPut(setupRecords);
         }
@@ -218,9 +221,16 @@ export async function persistFetchedMetadata(
         })),
     );
     useComputationCatalogStore.getState().setProviderAlgorithms(providerId, savedAlgorithms, savedParameters);
+    useComputationCatalogStore.getState().setProviderLayerSettingsSetup(providerId, setupRecords);
 
     for (const { algorithm, layers } of metadata.algorithms) {
         useProviderLayerStore.getState().setProviderLayers(providerId, algorithm.id, layers);
+    }
+
+    const envId = useEnvStore.getState().env?.id;
+    if (envId != null) {
+        await addMissingLayerSettingsForEnvironment(envId, setupRecords);
+        await loadLayerSettings(envId);
     }
 }
 

@@ -37,3 +37,35 @@ export async function saveAllLayerSettings(params: LayerSettingParameter[]): Pro
     await db.table<LayerSettingParameter>("layerSettings").bulkPut(params);
 }
 
+/**
+ * Seeds per-environment `layerSettings` rows from `setups` for any setup that does
+ * not yet have a row for this environment. Existing user-set values are preserved.
+ */
+export async function addMissingLayerSettingsForEnvironment(
+    environmentId: number,
+    setups: LayerSettingsSetup[],
+): Promise<void> {
+    if (setups.length === 0) return;
+    const compoundKeys = setups.map((s) => [s.id, s.layerId, s.algorithmId, s.providerId, environmentId]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const existing = await db.table<LayerSettingParameter>("layerSettings").bulkGet(compoundKeys as any[]);
+    const newRows: LayerSettingParameter[] = [];
+    for (let i = 0; i < setups.length; i++) {
+        if (existing[i] == null) {
+            const s = setups[i]!;
+            newRows.push({
+                id: s.id,
+                layerId: s.layerId,
+                algorithmId: s.algorithmId,
+                providerId: s.providerId,
+                environmentId,
+                key: s.key,
+                value: s.defaultValue ?? "",
+            });
+        }
+    }
+    if (newRows.length > 0) {
+        await db.table<LayerSettingParameter>("layerSettings").bulkPut(newRows);
+    }
+}
+
