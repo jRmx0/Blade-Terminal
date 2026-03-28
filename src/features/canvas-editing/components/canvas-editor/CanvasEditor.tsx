@@ -209,9 +209,10 @@ export default function CanvasEditor() {
     (ref: VertexRef, pos: Point) => {
       setDraggingVertexRef(null);
       handleVertexDragEnd(ref, pos);
+      selectVertex(null); // winding correction may reverse array; clear stale index
       endBatch();
     },
-    [handleVertexDragEnd],
+    [handleVertexDragEnd, selectVertex],
   );
 
   function resolveCursor() {

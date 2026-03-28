@@ -28,3 +28,21 @@ export function computeSignedPolygonArea(vertices: Point[]): number {
 export function computePolygonArea(vertices: Point[]): number {
     return Math.abs(computeSignedPolygonArea(vertices));
 }
+
+/**
+ * Returns vertices in the required winding order for the given category.
+ * In screen coordinates (Y↓): zones must be CW (signed area > 0),
+ * obstacles must be CCW (signed area < 0).
+ * Returns the same array reference when winding is already correct.
+ */
+export function ensureWinding(
+    vertices: Array<{ x: number; y: number }>,
+    category: "zone" | "obstacle",
+): Array<{ x: number; y: number }> {
+    if (vertices.length < 3) return vertices;
+    const signed = computeSignedPolygonArea(vertices);
+    const needsCW = category === "zone";
+    const isCW = signed > 0;
+    if (needsCW === isCW) return vertices;
+    return [...vertices].reverse();
+}

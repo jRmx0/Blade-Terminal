@@ -5,6 +5,7 @@ import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import { type ObjectCategory, type ObjectType } from "@/config/db-ops/enums";
 import { useEnvStore } from "@/stores/envStore";
 import { syncObject, markDirty, markDeleted } from "@/features/canvas-editing/utils/canvasObjectUtils";
+import { ensureWinding } from "@/utils/geometry";
 
 // ---------------------------------------------------------------------------
 // Store
@@ -63,7 +64,7 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
                 type,
                 vertexCount: 0,
                 area: 0,
-                vertices: points.map((p) => ({ x: p.x, y: p.y })),
+                vertices: ensureWinding(points.map((p) => ({ x: p.x, y: p.y })), category),
             };
             const newObjects = syncObject([...state.objects, newObj], objectId);
             const updatedObj = newObjects.find((o) => o.id === objectId)!;
@@ -96,7 +97,12 @@ export const useCanvasObjectStore = create<CanvasObjectState>()((set, get) => ({
 
     finalizeVertexMoveAt: (ref) =>
         set((state) => {
-            const newObjects = syncObject(state.objects, ref.objectId);
+            const pre = state.objects.map((o) => {
+                if (o.id !== ref.objectId) return o;
+                const fixed = ensureWinding(o.vertices, o.category as "zone" | "obstacle");
+                return fixed === o.vertices ? o : { ...o, vertices: fixed };
+            });
+            const newObjects = syncObject(pre, ref.objectId);
             const updatedObj = newObjects.find((o) => o.id === ref.objectId)!;
             let dObj = state.dirtyObjects, xObj = state.deletedObjects;
             ({ dirty: dObj, deleted: xObj } = markDirty(dObj, xObj, updatedObj));
