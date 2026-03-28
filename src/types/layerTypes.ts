@@ -16,7 +16,7 @@ export type LayerType = "Polygon" | "Point" | "Line" | "Grid" | "ObjectGroup";
  * Attribute keys managed internally by the terminal (not part of the provider metadata spec).
  * These are seeded as part of the system layer defaults.
  */
-export type InternalStyleAttributeKey = "Visible" | "Show Vertex IDs" | "Grid Line Color";
+export type InternalStyleAttributeKey = "Show Vertex IDs" | "Grid Line Color";
 
 export interface LayerDefinition {
     id: LayerId;

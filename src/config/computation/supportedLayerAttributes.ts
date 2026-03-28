@@ -7,6 +7,7 @@ export function isSupportedLayerType(value: string): value is MetadataLayerType 
 }
 
 const STYLE_ATTRIBUTE_KEY_LIST: StyleAttributeKey[] = [
+    "Visible",
     "Z-Index",
     // Point — Marker Shape
     "Point Shape",
@@ -75,6 +76,7 @@ export function isSupportedStyleAttributeKey(value: string): value is StyleAttri
 }
 
 const STYLE_TYPE_LIST: StyleType[] = [
+    "Boolean",
     "Integer",
     "Color",
     "Spacing",

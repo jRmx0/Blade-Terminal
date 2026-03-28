@@ -129,6 +129,7 @@ export interface MetadataParamResponse {
 export type MetadataLayerType = "Point" | "Line" | "Polygon";
 
 export type StyleAttributeKey =
+    | "Visible"
     | "Z-Index"
     // Point — Marker Shape
     | "Point Shape"
