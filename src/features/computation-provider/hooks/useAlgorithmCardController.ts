@@ -7,11 +7,17 @@ import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 import type {
     CardModalFastTabConfig,
     CardModalHeaderConfig,
+    CardModalListPartConfig,
+    CardModalListPartRowId,
     CardModalSavedState,
 } from "@/components/modals/card-modal/CardModal";
+import {
+    ALGORITHM_PARAMETER_COLUMNS,
+    buildParameterRows,
+} from "@/features/computation-provider/utils/algorithmSectionModel";
 import type { ComputationAlgorithmDetails } from "@/types/serviceTypes";
 
-const DEFAULT_FAST_TAB_OPEN_STATE: Record<string, boolean> = { general: true };
+const DEFAULT_FAST_TAB_OPEN_STATE: Record<string, boolean> = { general: true, parameters: true };
 
 export function useAlgorithmCardController() {
     const {
@@ -29,6 +35,8 @@ export function useAlgorithmCardController() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [fastTabOpen, setFastTabOpen] = useState<Record<string, boolean>>(DEFAULT_FAST_TAB_OPEN_STATE);
+    const [paramExpanded, setParamExpanded] = useState<Record<string, boolean>>({});
+    const [selectedParameterRowIds, setSelectedParameterRowIds] = useState<CardModalListPartRowId[]>([]);
 
     const algorithm = algorithmDetails?.algorithm ?? null;
     const parameters = algorithmDetails?.parameters ?? [];
@@ -41,6 +49,8 @@ export function useAlgorithmCardController() {
             setIsEditMode(false);
             setIsSaving(false);
             setFastTabOpen(DEFAULT_FAST_TAB_OPEN_STATE);
+            setParamExpanded({});
+            setSelectedParameterRowIds([]);
             return;
         }
 
@@ -56,6 +66,11 @@ export function useAlgorithmCardController() {
 
     const toggleFastTab = useCallback((key: string) => {
         setFastTabOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+    }, []);
+
+    const toggleParamSection = useCallback((rowId: string | number) => {
+        const key = String(rowId);
+        setParamExpanded((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
     }, []);
 
     const handleSave = useCallback(async () => {
@@ -134,6 +149,32 @@ export function useAlgorithmCardController() {
         canDelete: false,
     }), [algorithm, canSave, handleDelete, handleSave, isEditMode, name, savedState]);
 
+    const parametersListPartRows = useMemo(
+        () => {
+            if (!algorithm) return [];
+            return buildParameterRows(algorithm.id, parameters).map((row) => {
+                if (row.kind !== "group") return row;
+                const key = String(row.id);
+                return {
+                    ...row,
+                    expanded: paramExpanded[key] ?? true,
+                    onToggle: () => toggleParamSection(row.id),
+                };
+            });
+        },
+        [algorithm, paramExpanded, parameters, toggleParamSection],
+    );
+
+    const parametersListPart = useMemo<CardModalListPartConfig>(() => ({
+        columns: ALGORITHM_PARAMETER_COLUMNS,
+        rows: parametersListPartRows,
+        emptyMessage: "No parameters defined for this algorithm.",
+        maxHeightClassName: "max-h-96",
+        storageKey: "algorithm-parameters",
+        selectedRowIds: selectedParameterRowIds,
+        onSelectedRowIdsChange: setSelectedParameterRowIds,
+    }), [parametersListPartRows, selectedParameterRowIds]);
+
     const fastTabs = useMemo<CardModalFastTabConfig[]>(() => [
         {
             id: "general",
@@ -164,7 +205,14 @@ export function useAlgorithmCardController() {
                 },
             ],
         },
-    ], [fastTabOpen.general, isEditMode, layers.length, name, parameters.length, toggleFastTab]);
+        {
+            id: "parameters",
+            title: "Parameters",
+            expanded: !!fastTabOpen.parameters,
+            onToggle: () => toggleFastTab("parameters"),
+            listPart: parametersListPart,
+        },
+    ], [fastTabOpen.general, fastTabOpen.parameters, isEditMode, layers.length, name, parameters.length, parametersListPart, toggleFastTab]);
 
     return {
         isOpen,

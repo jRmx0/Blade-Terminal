@@ -19,7 +19,7 @@ import { useAlgorithmCardStore } from "@/features/computation-provider/stores/al
 import { useComputationProviderCardStore } from "@/features/computation-provider/stores/computationProviderCardStore";
 import { useComputationProvidersListModalStore } from "@/features/computation-provider/stores/computationProvidersListModalStore";
 import {
-    ALGORITHM_PARAMETER_COLUMNS,
+    ALGORITHM_LIST_COLUMNS,
     buildAlgorithmSectionRows,
     buildSavedAlgorithmDetails,
 } from "@/features/computation-provider/utils/algorithmSectionModel";
@@ -73,7 +73,6 @@ export function useComputationProviderCardController() {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [isEditMode, setIsEditMode] = useState(false);
     const [fastTabOpen, setFastTabOpen] = useState<Record<string, boolean>>(DEFAULT_FAST_TAB_OPEN_STATE);
-    const [algoExpanded, setAlgoExpanded] = useState<Record<string, boolean>>({});
     const [selectedAlgorithmRowIds, setSelectedAlgorithmRowIds] = useState<CardModalListPartRowId[]>([]);
     const [draftMetadata, setDraftMetadata] = useState<FetchedComputationMetadata | null>(null);
     const [testActionFeedback, setTestActionFeedback] = useState<ActionFeedback>(EMPTY_ACTION_FEEDBACK);
@@ -87,6 +86,7 @@ export function useComputationProviderCardController() {
 
     const allCatalogAlgorithms = useComputationCatalogStore((s) => s.algorithms);
     const allCatalogParameters = useComputationCatalogStore((s) => s.parameters);
+    const providerLayers = useProviderLayerStore((s) => s.layers);
     const algorithms = useMemo<ComputationAlgorithm[]>(
         () => (editingId !== null ? allCatalogAlgorithms.filter((a) => a.computationProviderId === editingId) : []),
         [allCatalogAlgorithms, editingId],
@@ -117,19 +117,21 @@ export function useComputationProviderCardController() {
         [algorithmParameters, algorithms],
     );
 
-    const toggleAlgo = useCallback((rowId: string, defaultExpanded = true) => {
-        setAlgoExpanded((previousValue) => ({
-            ...previousValue,
-            [rowId]: !(previousValue[rowId] ?? defaultExpanded),
-        }));
-    }, []);
+    const layerCountByAlgorithmId = useMemo<ReadonlyMap<number, number>>(() => {
+        const map = new Map<number, number>();
+        if (editingId === null) return map;
+        for (const layer of providerLayers) {
+            if (layer.providerId !== editingId) continue;
+            map.set(layer.algorithmId, (map.get(layer.algorithmId) ?? 0) + 1);
+        }
+        return map;
+    }, [editingId, providerLayers]);
 
     const algorithmListEmptyMessage = !visibleAlgorithms && !isSavedProvider
         ? "Fetch metadata to preview algorithms. Save provider to keep them."
         : "No algorithms. Fetch metadata first.";
 
     const resetTransientState = useCallback(() => {
-        setAlgoExpanded({});
         setSelectedAlgorithmRowIds([]);
         setDraftMetadata(null);
         setTestActionFeedback(EMPTY_ACTION_FEEDBACK);
@@ -308,12 +310,11 @@ export function useComputationProviderCardController() {
     const algorithmListPartRows = useMemo(
         () => buildAlgorithmSectionRows({
             algorithmDetails: visibleAlgorithms ?? savedAlgorithmDetails,
-            isExpanded: (rowId, defaultExpanded = true) => algoExpanded[rowId] ?? defaultExpanded,
             isDraft: visibleAlgorithms !== null,
-            onToggle: toggleAlgo,
+            layerCountByAlgorithmId,
             onAlgorithmClick,
         }),
-        [algoExpanded, onAlgorithmClick, savedAlgorithmDetails, toggleAlgo, visibleAlgorithms],
+        [layerCountByAlgorithmId, onAlgorithmClick, savedAlgorithmDetails, visibleAlgorithms],
     );
 
     const isAutoSavePending = useComputationProviderAutosave({
@@ -472,7 +473,7 @@ export function useComputationProviderCardController() {
     }), [canSave, editingId, form.name, handleDelete, handleSave, headerSavedState, isEditMode, startNewProviderDraft]);
 
     const algorithmsListPart = useMemo<CardModalListPartConfig>(() => ({
-        columns: ALGORITHM_PARAMETER_COLUMNS,
+        columns: ALGORITHM_LIST_COLUMNS,
         rows: algorithmListPartRows,
         emptyMessage: algorithmListEmptyMessage,
         maxHeightClassName: "max-h-96",

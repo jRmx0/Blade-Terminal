@@ -1,6 +1,12 @@
 import { createElement } from "react";
-import type { CardModalListPartColumn, CardModalListPartGroupRow, CardModalListPartRow } from "@/components/modals/card-modal/CardModalListPart.types";
+import type { CardModalListPartColumn, CardModalListPartGroupRow, CardModalListPartRecordRow, CardModalListPartRow } from "@/components/modals/card-modal/CardModalListPart.types";
 import type { AlgorithmParameter, ComputationAlgorithm, ComputationAlgorithmDetails, MetadataParamSection } from "@/types/serviceTypes";
+
+export const ALGORITHM_LIST_COLUMNS: CardModalListPartColumn[] = [
+    { id: "name", title: "Name", width: 220 },
+    { id: "parameterCount", title: "Number of Parameters", width: 180 },
+    { id: "layerCount", title: "Number of Layers", width: 160 },
+];
 
 export const ALGORITHM_PARAMETER_COLUMNS: CardModalListPartColumn[] = [
     { id: "name", title: "Name", width: 220 },
@@ -17,9 +23,8 @@ interface BuildSavedAlgorithmDetailsOptions {
 
 interface BuildAlgorithmSectionRowsOptions {
     algorithmDetails: ComputationAlgorithmDetails[];
-    isExpanded: (rowId: string, defaultExpanded?: boolean) => boolean;
     isDraft: boolean;
-    onToggle: (rowId: string, defaultExpanded?: boolean) => void;
+    layerCountByAlgorithmId?: ReadonlyMap<number, number>;
     onAlgorithmClick?: (details: ComputationAlgorithmDetails) => void;
 }
 
@@ -74,7 +79,7 @@ function buildParameterRecordRow(algorithmId: number, parameter: AlgorithmParame
     };
 }
 
-function buildParameterRows(algorithmId: number, parameters: AlgorithmParameter[]): CardModalListPartRow[] {
+export function buildParameterRows(algorithmId: number, parameters: AlgorithmParameter[]): CardModalListPartRow[] {
     const parametersBySection = new Map<MetadataParamSection, AlgorithmParameter[]>();
 
     for (const parameter of parameters) {
@@ -133,32 +138,17 @@ export function buildSavedAlgorithmDetails({
 
 export function buildAlgorithmSectionRows({
     algorithmDetails,
-    isExpanded,
     isDraft,
-    onToggle,
+    layerCountByAlgorithmId,
     onAlgorithmClick,
 }: BuildAlgorithmSectionRowsOptions): CardModalListPartRow[] {
-    return algorithmDetails.map((details) => {
-        const { algorithm, parameters } = details;
+    return algorithmDetails.map((details): CardModalListPartRecordRow => {
+        const { algorithm, parameters, layers } = details;
         const rowId = isDraft ? `draft-algorithm-${algorithm.id}-${algorithm.name}` : `algorithm-${algorithm.id}-${algorithm.computationProviderId}`;
 
-        const children = buildParameterRows(algorithm.id, parameters).map((row): CardModalListPartRow => {
-            if (row.kind !== "group") {
-                return row;
-            }
+        const layerCount = layerCountByAlgorithmId?.get(algorithm.id) ?? layers.length;
 
-            const groupRowId = `${rowId}-${row.id}`;
-            const nestedGroupRow: CardModalListPartGroupRow = {
-                ...row,
-                id: groupRowId,
-                expanded: isExpanded(groupRowId, true),
-                onToggle: () => onToggle(groupRowId, true),
-            };
-
-            return nestedGroupRow;
-        });
-
-        const label = onAlgorithmClick
+        const nameCell = onAlgorithmClick
             ? createElement(
                 "span",
                 {
@@ -172,13 +162,15 @@ export function buildAlgorithmSectionRows({
             )
             : algorithm.name;
 
-        const algorithmRow: CardModalListPartGroupRow = {
-            kind: "group",
+        const algorithmRow: CardModalListPartRecordRow = {
+            kind: "record",
             id: rowId,
-            label,
-            expanded: isExpanded(rowId, true),
-            onToggle: () => onToggle(rowId, true),
-            children,
+            recordId: algorithm.id,
+            cells: {
+                name: { value: nameCell, title: algorithm.name },
+                parameterCount: { value: String(parameters.length) },
+                layerCount: { value: String(layerCount) },
+            },
         };
 
         return algorithmRow;
