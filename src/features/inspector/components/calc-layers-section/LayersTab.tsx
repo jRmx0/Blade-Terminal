@@ -1,4 +1,5 @@
 import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
+import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import LayerRow from "@/features/inspector/components/calc-layers-section/LayerRow";
 import type { LayerPK } from "@/types/layerTypes";
 
@@ -22,8 +23,8 @@ export default function LayersTab() {
 
     // ── Sort all layers by Z-Index descending ────────────────────────────────
     const sorted = [...layers].sort((a, b) => {
-        const az = parseInt(a.settings.find((p) => p.key === "Z-Index")?.value ?? "0", 10);
-        const bz = parseInt(b.settings.find((p) => p.key === "Z-Index")?.value ?? "0", 10);
+        const az = parseInt(a.settings.find((p) => p.key === LAYER_PARAM_KEY.Z_INDEX)?.value ?? "0", 10);
+        const bz = parseInt(b.settings.find((p) => p.key === LAYER_PARAM_KEY.Z_INDEX)?.value ?? "0", 10);
         return bz - az;
     });
 

@@ -4,6 +4,7 @@ import {
     GLOBAL_TYPE_OPTIONS,
     defaultObjectTypeForGlobal,
     isGlobalTypeFixed,
+    OBJECT_TYPE,
     type GlobalType,
 } from "@/config/db-ops/enums";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
@@ -59,7 +60,7 @@ export default function GlobalTypeSelection({
             const mismatchCount = objects.filter((object) => object.type !== nextObjectType).length;
 
             if (mismatchCount > 0) {
-                const typeLabel = nextObjectType === "online" ? "On-Line" : "Off-Line";
+                const typeLabel = nextObjectType === OBJECT_TYPE.ONLINE ? "On-Line" : "Off-Line";
                 useConfirmationModalStore.getState().requestConfirmation({
                     title: "Update object types",
                     message: `${mismatchCount} object${mismatchCount !== 1 ? "s" : ""} will be updated to "${typeLabel}" to match the new global type. Continue?`,

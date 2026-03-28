@@ -2,7 +2,7 @@ import { Layer, Line, Circle } from "react-konva";
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
-import { LAYER_ID } from "@/config/layers/layerRegistry";
+import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 
 interface CanvasDrawingPreviewLayerProps {
     activeTool: ActiveTool | null;
@@ -24,10 +24,10 @@ export function CanvasDrawingPreviewLayer({
 
     const drawLayerId = activeTool === "addZone" ? LAYER_ID.ZONES : LAYER_ID.OBSTACLES;
     const drawColor = drawLayerId === LAYER_ID.ZONES
-        ? (getLayerParam(layers, LAYER_ID.ZONES, "Polygon Edge Color") ?? "#22c55e")
-        : (getLayerParam(layers, LAYER_ID.OBSTACLES, "Polygon Edge Color") ?? "#ef4444");
+        ? (getLayerParam(layers, LAYER_ID.ZONES, LAYER_PARAM_KEY.POLYGON_EDGE_COLOR) ?? "#22c55e")
+        : (getLayerParam(layers, LAYER_ID.OBSTACLES, LAYER_PARAM_KEY.POLYGON_EDGE_COLOR) ?? "#ef4444");
     const previewEdgeColor = drawColor;
-    const drawEdgeWidth = parseFloat(getLayerParam(layers, drawLayerId, "Polygon Edge Width") ?? "1.5");
+    const drawEdgeWidth = parseFloat(getLayerParam(layers, drawLayerId, LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH) ?? "1.5");
     const previewDotRadius = Math.max(4, drawEdgeWidth) / scale;
     const previewStrokeWidth = Math.max(2, drawEdgeWidth) / scale;
     const lastPoint = drawingPoints[drawingPoints.length - 1];

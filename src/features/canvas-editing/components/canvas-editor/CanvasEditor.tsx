@@ -14,7 +14,8 @@ import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import { useCanvasPanning } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasPanning";
 import { useCanvasZoom } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasZoom";
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
-import { LAYER_ID } from "@/config/layers/layerRegistry";
+import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
+import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
 import { useCanvasDrawing } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasDrawing";
 import { useCanvasMidpointDrag } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasMidpointDrag";
 import { useCanvasVertexDrag } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasVertexDrag";
@@ -140,11 +141,11 @@ export default function CanvasEditor() {
       : null;
 
   // Suppress vertex handles when the selected object's layer is hidden.
-  const zonesVisible = getLayerParam(layerSettings, LAYER_ID.ZONES, "Visible") !== "false";
-  const obstaclesVisible = getLayerParam(layerSettings, LAYER_ID.OBSTACLES, "Visible") !== "false";
-  const gridZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.GRID, "Z-Index") ?? "10", 10);
-  const zoneZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.ZONES, "Z-Index") ?? "20", 10);
-  const obstacleZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.OBSTACLES, "Z-Index") ?? "30", 10);
+  const zonesVisible = getLayerParam(layerSettings, LAYER_ID.ZONES, LAYER_PARAM_KEY.VISIBLE) !== "false";
+  const obstaclesVisible = getLayerParam(layerSettings, LAYER_ID.OBSTACLES, LAYER_PARAM_KEY.VISIBLE) !== "false";
+  const gridZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.GRID, LAYER_PARAM_KEY.Z_INDEX) ?? "10", 10);
+  const zoneZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.ZONES, LAYER_PARAM_KEY.Z_INDEX) ?? "20", 10);
+  const obstacleZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.OBSTACLES, LAYER_PARAM_KEY.Z_INDEX) ?? "30", 10);
 
   // Sort the three system layers by Z-Index ascending so lower Z renders beneath higher.
   const systemLayerOrder = ([
@@ -155,7 +156,7 @@ export default function CanvasEditor() {
 
   const selectedObjectForHandles =
     selectedObject === null ? null :
-      selectedObject.category === "zone" ? (zonesVisible ? selectedObject : null) :
+      selectedObject.category === OBJECT_CATEGORY.ZONE ? (zonesVisible ? selectedObject : null) :
         obstaclesVisible ? selectedObject : null;
 
   const selectedObjectVertices = useMemo(() => {
@@ -260,7 +261,7 @@ export default function CanvasEditor() {
             return (
               <CanvasPolygonObjectsLayer
                 key="zones"
-                category="zone"
+                category={OBJECT_CATEGORY.ZONE}
                 objects={objects}
                 selectedObject={selectedStoreObject}
                 movingObject={movingObject}
@@ -278,7 +279,7 @@ export default function CanvasEditor() {
           return (
             <CanvasPolygonObjectsLayer
               key="obstacles"
-              category="obstacle"
+              category={OBJECT_CATEGORY.OBSTACLE}
               objects={objects}
               selectedObject={selectedStoreObject}
               movingObject={movingObject}

@@ -10,6 +10,7 @@ import {
     GLOBAL_TYPE_OPTIONS,
     defaultObjectTypeForGlobal,
     isGlobalTypeFixed,
+    OBJECT_TYPE,
     type EnvFormat,
     type GlobalType,
 } from "@/config/db-ops/enums";
@@ -274,7 +275,7 @@ export default function CoveragePlanningControlsPanel() {
             const mismatchCount = objects.filter((obj) => obj.type !== nextObjectType).length;
 
             if (mismatchCount > 0) {
-                const typeLabel = nextObjectType === "online" ? "On-Line" : "Off-Line";
+                const typeLabel = nextObjectType === OBJECT_TYPE.ONLINE ? "On-Line" : "Off-Line";
                 useConfirmationModalStore.getState().requestConfirmation({
                     title: "Update object types",
                     message: `Switching algorithm requires changing the global type to "${typeLabel}". ${mismatchCount} object${mismatchCount !== 1 ? "s" : ""} will be updated to match. Continue?`,

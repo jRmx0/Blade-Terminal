@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import type Konva from "konva";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
-import type { ObjectType } from "@/config/db-ops/enums";
+import { OBJECT_CATEGORY, type ObjectCategory, type ObjectType } from "@/config/db-ops/enums";
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import { defaultObjectTypeForGlobal } from "@/config/db-ops/enums";
 import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
@@ -12,7 +12,7 @@ interface UseCanvasDrawingOptions {
     stageRef: React.RefObject<Konva.Stage | null>;
     clearSelection: () => void;
     addObject: (
-        category: "zone" | "obstacle",
+        category: ObjectCategory,
         points: Point[],
         type: ObjectType,
     ) => void;
@@ -104,7 +104,7 @@ export function useCanvasDrawing({
             ) {
                 const objectType = defaultObjectTypeForGlobal(useEnvStore.getState().env.type);
                 addObject(
-                    activeTool === "addZone" ? "zone" : "obstacle",
+                    activeTool === "addZone" ? OBJECT_CATEGORY.ZONE : OBJECT_CATEGORY.OBSTACLE,
                     drawingPoints,
                     objectType,
                 );

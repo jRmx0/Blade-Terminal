@@ -4,7 +4,7 @@ import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import type React from "react";
 import type { Object } from "@/types/schemaTypes";
 import { sameObject } from "@/features/canvas-editing/utils/canvasObjectUtils";
-import { OBJECT_TYPE } from "@/config/db-ops/enums";
+import { OBJECT_TYPE, type ObjectCategory } from "@/config/db-ops/enums";
 import { usePolygonLayerStyle } from "@/features/canvas-editing/hooks/canvas-editor/usePolygonLayerStyle";
 
 function createStripePatternCanvas(bgColor: string, stripeColor: string): HTMLCanvasElement {
@@ -23,7 +23,7 @@ function createStripePatternCanvas(bgColor: string, stripeColor: string): HTMLCa
 }
 
 interface CanvasPolygonObjectsLayerProps {
-    category: "zone" | "obstacle";
+    category: ObjectCategory;
     objects: Object[];
     selectedObject: Object | null;
     movingObject: Object | null;

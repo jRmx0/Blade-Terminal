@@ -12,6 +12,7 @@ import {
 } from "@/config/canvas-editing/canvasConfig";
 import { deriveActiveFill } from "@/utils/colorUtils";
 import { usePolygonLayerStyle } from "@/features/canvas-editing/hooks/canvas-editor/usePolygonLayerStyle";
+import { OBJECT_CATEGORY, type ObjectCategory } from "@/config/db-ops/enums";
 
 interface CanvasVertexHandlesLayerProps {
     selectedObject: Object | null;
@@ -42,7 +43,7 @@ export function _CanvasVertexHandlesLayer({
     onEdgeMidpointMouseDown,
     onHandleHoverChange,
 }: CanvasVertexHandlesLayerProps) {
-    const category = (selectedObject?.category ?? "zone") as "zone" | "obstacle";
+    const category = (selectedObject?.category ?? OBJECT_CATEGORY.ZONE) as ObjectCategory;
     const { stroke: accentColor, edgeWidth, showVertexIds } = usePolygonLayerStyle(category);
     const isLayerListening = activeTool === "select" && selectedObject !== null;
     const edgeMidpoints = selectedObject ? computeEdgeMidpoints(selectedObjectVertices) : [];

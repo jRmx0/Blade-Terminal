@@ -3,6 +3,7 @@ import { getLayerSettingsByEnvironment, saveAllLayerSettings } from "@server/db/
 import { getAllLayers } from "@server/db/layersSetup";
 import { getSaveMode } from "@/stores/saveModeStore";
 import type { LayerPK, LayerRecord, LayerSettingParameter, LayerWithSettings } from "@/types/layerTypes";
+import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 
 interface LayerSettingsState {
     layers: LayerWithSettings[];
@@ -62,8 +63,8 @@ export const useLayerSettingsStore = create<LayerSettingsState>()((set) => ({
     setVisible: (pk, visible) => {
         set((state) => {
             const item = state.layers.find((l) => layerPKMatches(l.layer, pk));
-            if (!item || paramValue(item.settings, "Visible") === String(visible)) return {};
-            const layers = updateParam(state.layers, pk, "Visible", String(visible));
+            if (!item || paramValue(item.settings, LAYER_PARAM_KEY.VISIBLE) === String(visible)) return {};
+            const layers = updateParam(state.layers, pk, LAYER_PARAM_KEY.VISIBLE, String(visible));
             autosave(layers);
             return { layers, isLayerSettingsDirty: true };
         });
@@ -87,10 +88,10 @@ export const useLayerSettingsStore = create<LayerSettingsState>()((set) => ({
             const a = state.layers.find((l) => layerPKMatches(l.layer, pkA));
             const b = state.layers.find((l) => layerPKMatches(l.layer, pkB));
             if (!a || !b) return {};
-            const zA = paramValue(a.settings, "Z-Index") ?? "0";
-            const zB = paramValue(b.settings, "Z-Index") ?? "0";
-            let layers = updateParam(state.layers, pkA, "Z-Index", zB);
-            layers = updateParam(layers, pkB, "Z-Index", zA);
+            const zA = paramValue(a.settings, LAYER_PARAM_KEY.Z_INDEX) ?? "0";
+            const zB = paramValue(b.settings, LAYER_PARAM_KEY.Z_INDEX) ?? "0";
+            let layers = updateParam(state.layers, pkA, LAYER_PARAM_KEY.Z_INDEX, zB);
+            layers = updateParam(layers, pkB, LAYER_PARAM_KEY.Z_INDEX, zA);
             autosave(layers);
             return { layers, isLayerSettingsDirty: true };
         });

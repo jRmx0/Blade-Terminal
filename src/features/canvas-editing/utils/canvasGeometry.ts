@@ -1,5 +1,5 @@
 import type { Object } from "@/types/schemaTypes";
-import type { ObjectCategory } from "@/config/db-ops/enums";
+import { OBJECT_CATEGORY, type ObjectCategory } from "@/config/db-ops/enums";
 import { computePolygonArea } from "@/utils/geometry";
 
 export interface Point {
@@ -95,13 +95,13 @@ export function computeNetArea(
     obj: Object,
     objects: Object[],
 ): number | null {
-    if ((obj.category as ObjectCategory) !== "zone") return null;
+    if (obj.category !== OBJECT_CATEGORY.ZONE) return null;
 
     const zonePoints: Point[] = obj.vertices;
 
     let overlapArea = 0;
     for (const o of objects) {
-        if ((o.category as ObjectCategory) !== "obstacle") continue;
+        if (o.category !== OBJECT_CATEGORY.OBSTACLE) continue;
         const obstPoints: Point[] = o.vertices;
         const clipped = clipPolygon(obstPoints, zonePoints);
         if (clipped.length >= 3) {

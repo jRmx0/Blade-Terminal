@@ -33,6 +33,21 @@ export const POLYGON_FILL_STYLE = {
 } as const;
 export type PolygonFillStyle = (typeof POLYGON_FILL_STYLE)[keyof typeof POLYGON_FILL_STYLE];
 
+/**
+ * Human-readable keys for layer settings parameters.
+ * Use these constants anywhere a layer param name is compared or looked up — never raw strings.
+ */
+export const LAYER_PARAM_KEY = {
+    VISIBLE: "Visible",
+    SHOW_VERTEX_IDS: "Show Vertex IDs",
+    Z_INDEX: "Z-Index",
+    GRID_LINE_COLOR: "Grid Line Color",
+    POLYGON_EDGE_COLOR: "Polygon Edge Color",
+    POLYGON_EDGE_WIDTH: "Polygon Edge Width",
+    POLYGON_FILL_COLOR: "Polygon Fill Color",
+} as const;
+export type LayerParamKey = (typeof LAYER_PARAM_KEY)[keyof typeof LAYER_PARAM_KEY];
+
 // ─── Layer Settings Setup Defaults ───────────────────────────────────────────
 //
 // `id` matches the API attribute ID from the blade-provider Debug Layer Styles spec.
@@ -59,26 +74,26 @@ export type PolygonFillStyle = (typeof POLYGON_FILL_STYLE)[keyof typeof POLYGON_
 
 export const LAYER_SETTINGS_SETUP_DEFAULTS: LayerSettingsSetup[] = [
     // ── Grid (internal Grid type) ────────────────────────────────────────────
-    { id: 1, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: "Visible", styleType: "Boolean", defaultValue: "true" },
-    { id: 5, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: "Z-Index", styleType: "Integer", defaultValue: "10" },
-    { id: 10, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: "Grid Line Color", styleType: "Color", defaultValue: "#e2e8f0" },
+    { id: 1, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", defaultValue: "true" },
+    { id: 5, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", defaultValue: "10" },
+    { id: 10, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.GRID_LINE_COLOR, styleType: "Color", defaultValue: "#e2e8f0" },
 
     // ── Zones (Polygon) ──────────────────────────────────────────────────────
-    { id: 1, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: "Visible", styleType: "Boolean", defaultValue: "true" },
-    { id: 2, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: "Show Vertex IDs", styleType: "Boolean", defaultValue: "false" },
-    { id: 5, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: "Z-Index", styleType: "Integer", defaultValue: "20" },
-    { id: 60, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: "Polygon Edge Color", styleType: "Color", defaultValue: "#22c55e" },
-    { id: 61, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: "Polygon Edge Width", styleType: "Spacing", defaultValue: "1.5" },
+    { id: 1, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", defaultValue: "true" },
+    { id: 2, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.SHOW_VERTEX_IDS, styleType: "Boolean", defaultValue: "false" },
+    { id: 5, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", defaultValue: "20" },
+    { id: 60, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_COLOR, styleType: "Color", defaultValue: "#22c55e" },
+    { id: 61, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH, styleType: "Spacing", defaultValue: "1.5" },
     // rgba(34,197,94,0.18) ≈ #22c55e2e
-    { id: 80, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: "Polygon Fill Color", styleType: "Color", defaultValue: "#22c55e2e" },
+    { id: 80, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_FILL_COLOR, styleType: "Color", defaultValue: "#22c55e2e" },
 
     // ── Obstacles (Polygon) ──────────────────────────────────────────────────
-    { id: 1, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: "Visible", styleType: "Boolean", defaultValue: "true" },
-    { id: 2, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: "Show Vertex IDs", styleType: "Boolean", defaultValue: "false" },
-    { id: 5, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: "Z-Index", styleType: "Integer", defaultValue: "30" },
-    { id: 60, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: "Polygon Edge Color", styleType: "Color", defaultValue: "#ef4444" },
-    { id: 61, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: "Polygon Edge Width", styleType: "Spacing", defaultValue: "1.5" },
+    { id: 1, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", defaultValue: "true" },
+    { id: 2, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.SHOW_VERTEX_IDS, styleType: "Boolean", defaultValue: "false" },
+    { id: 5, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", defaultValue: "30" },
+    { id: 60, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_COLOR, styleType: "Color", defaultValue: "#ef4444" },
+    { id: 61, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH, styleType: "Spacing", defaultValue: "1.5" },
     // rgba(239,68,68,0.23) ≈ #ef44443b
-    { id: 80, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: "Polygon Fill Color", styleType: "Color", defaultValue: "#ef44443b" },
+    { id: 80, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_FILL_COLOR, styleType: "Color", defaultValue: "#ef44443b" },
 ];
 

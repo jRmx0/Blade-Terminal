@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { LayerRecord, LayerSettingParameter } from "@/types/layerTypes";
+import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import LayerSettingsPanel from "@/features/inspector/components/calc-layers-section/LayerSettingsPanel";
 
 interface LayerRowProps {
@@ -25,7 +26,7 @@ export default function LayerRow({
 }: LayerRowProps) {
     const [expanded, setExpanded] = useState(false);
 
-    const visible = settings.find((p) => p.key === "Visible")?.value === "true";
+    const visible = settings.find((p) => p.key === LAYER_PARAM_KEY.VISIBLE)?.value === "true";
 
     return (
         <div>

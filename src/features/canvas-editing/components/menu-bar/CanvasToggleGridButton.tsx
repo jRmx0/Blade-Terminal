@@ -1,12 +1,12 @@
 import MenuBarItem from "@/components/menu-bar/MenuBarItem";
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
-import { LAYER_ID } from "@/config/layers/layerRegistry";
+import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 
 export default function CanvasToggleGridButton() {
   const layers = useLayerSettingsStore((s) => s.layers);
   const setVisible = useLayerSettingsStore((s) => s.setVisible);
 
-  const gridVisible = getLayerParam(layers, LAYER_ID.GRID, "Visible") !== "false";
+  const gridVisible = getLayerParam(layers, LAYER_ID.GRID, LAYER_PARAM_KEY.VISIBLE) !== "false";
 
   return (
     <MenuBarItem

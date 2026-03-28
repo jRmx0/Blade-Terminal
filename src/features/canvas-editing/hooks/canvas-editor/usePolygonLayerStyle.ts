@@ -1,6 +1,6 @@
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
-import { LAYER_ID } from "@/config/layers/layerRegistry";
-import type { ObjectCategory } from "@/config/db-ops/enums";
+import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
+import { OBJECT_CATEGORY, type ObjectCategory } from "@/config/db-ops/enums";
 
 interface PolygonLayerStyle {
     /** Whether the layer is currently set to visible. */
@@ -27,13 +27,13 @@ const DEFAULTS = {
  */
 export function usePolygonLayerStyle(category: ObjectCategory): PolygonLayerStyle {
     const layers = useLayerSettingsStore((s) => s.layers);
-    const layerId = category === "zone" ? LAYER_ID.ZONES : LAYER_ID.OBSTACLES;
+    const layerId = category === OBJECT_CATEGORY.ZONE ? LAYER_ID.ZONES : LAYER_ID.OBSTACLES;
     const def = DEFAULTS[category as keyof typeof DEFAULTS] ?? DEFAULTS.zone;
     return {
-        visible: getLayerParam(layers, layerId, "Visible") !== "false",
-        stroke: getLayerParam(layers, layerId, "Polygon Edge Color") ?? def.stroke,
-        fill: getLayerParam(layers, layerId, "Polygon Fill Color") ?? def.fill,
-        edgeWidth: parseFloat(getLayerParam(layers, layerId, "Polygon Edge Width") ?? "1.5"),
-        showVertexIds: getLayerParam(layers, layerId, "Show Vertex IDs") !== "false",
+        visible: getLayerParam(layers, layerId, LAYER_PARAM_KEY.VISIBLE) !== "false",
+        stroke: getLayerParam(layers, layerId, LAYER_PARAM_KEY.POLYGON_EDGE_COLOR) ?? def.stroke,
+        fill: getLayerParam(layers, layerId, LAYER_PARAM_KEY.POLYGON_FILL_COLOR) ?? def.fill,
+        edgeWidth: parseFloat(getLayerParam(layers, layerId, LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH) ?? "1.5"),
+        showVertexIds: getLayerParam(layers, layerId, LAYER_PARAM_KEY.SHOW_VERTEX_IDS) !== "false",
     };
 }

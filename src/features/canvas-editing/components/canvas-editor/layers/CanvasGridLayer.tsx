@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Layer, Line } from "react-konva";
 import { GRID_SPACING, GRID_LEVEL_STEPS, GRID_MIN_CELL_PX } from "@/config/canvas-editing/canvasConfig";
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
-import { LAYER_ID } from "@/config/layers/layerRegistry";
+import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 
 /**
@@ -34,8 +34,8 @@ interface CanvasGridLayerProps {
  */
 function _CanvasGridLayer({ width, height }: CanvasGridLayerProps) {
     const layers = useLayerSettingsStore((s) => s.layers);
-    const gridVisible = getLayerParam(layers, LAYER_ID.GRID, "Visible") !== "false";
-    const strokeColor = getLayerParam(layers, LAYER_ID.GRID, "Grid Line Color") ?? "#e2e8f0";
+    const gridVisible = getLayerParam(layers, LAYER_ID.GRID, LAYER_PARAM_KEY.VISIBLE) !== "false";
+    const strokeColor = getLayerParam(layers, LAYER_ID.GRID, LAYER_PARAM_KEY.GRID_LINE_COLOR) ?? "#e2e8f0";
     const position = useCanvasViewStore((s) => s.position);
     const scale = useCanvasViewStore((s) => s.scale);
 
