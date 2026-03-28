@@ -19,7 +19,9 @@ import type { LayerRecord, LayerSettingsSetup } from "@/types/layerTypes";
 const DEFAULT_FAST_TAB_OPEN_STATE: Record<string, boolean> = { general: true, parameters: true, layers: true };
 
 export function useAlgorithmCardController() {
-    const { isOpen, algorithmDetails, close } = useAlgorithmCardStore();
+    const { isOpen, algorithmDetails, isDraft, onDraftSave, close } = useAlgorithmCardStore();
+
+    const [isSaving, setIsSaving] = useState(false);
 
     const [fastTabOpen, setFastTabOpen] = useState<Record<string, boolean>>(DEFAULT_FAST_TAB_OPEN_STATE);
     const [paramExpanded, setParamExpanded] = useState<Record<string, boolean>>({});
@@ -39,12 +41,26 @@ export function useAlgorithmCardController() {
             setParamExpanded({});
             setLayerExpanded({});
             setSelectedParameterRowIds([]);
+            setIsSaving(false);
         }
     }, [isOpen]);
 
     const handleClose = useCallback(() => {
         close();
     }, [close]);
+
+    const handleSave = useCallback(async () => {
+        if (!onDraftSave || !algorithmDetails) return;
+        setIsSaving(true);
+        try {
+            const ok = await onDraftSave(algorithmDetails);
+            if (ok) {
+                useAlgorithmCardStore.getState().openSaved(algorithmDetails);
+            }
+        } finally {
+            setIsSaving(false);
+        }
+    }, [algorithmDetails, onDraftSave]);
 
     const toggleFastTab = useCallback((key: string) => {
         setFastTabOpen((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -60,12 +76,15 @@ export function useAlgorithmCardController() {
         setLayerExpanded((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
     }, []);
 
+    const canSave = isDraft && algorithmDetails !== null;
+    const savedState = isSaving ? "saving" : isDraft ? "unsaved" : algorithm !== null ? "saved" : "nothing_to_save";
+
     const headerConfig = useMemo<CardModalHeaderConfig>(() => ({
         recordId: algorithm?.id ?? null,
         recordName: algorithm?.name ?? "",
-        savedState: algorithm !== null ? "saved" : "nothing_to_save",
-        onSave: () => undefined,
-        canSave: false,
+        savedState,
+        onSave: handleSave,
+        canSave,
         isEditMode: false,
         onEdit: () => undefined,
         onNew: () => undefined,
@@ -73,7 +92,7 @@ export function useAlgorithmCardController() {
         canEdit: false,
         canNew: false,
         canDelete: false,
-    }), [algorithm]);
+    }), [algorithm, canSave, handleSave, isDraft, savedState]);
 
     const parametersListPartRows = useMemo(
         () => {
