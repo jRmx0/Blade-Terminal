@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import type { CardModalListPartColumn, CardModalListPartGroupRow, CardModalListPartRow } from "@/components/modals/card-modal/CardModalListPart.types";
 import type { AlgorithmParameter, ComputationAlgorithm, ComputationAlgorithmDetails, MetadataParamSection } from "@/types/serviceTypes";
 
@@ -19,6 +20,7 @@ interface BuildAlgorithmSectionRowsOptions {
     isExpanded: (rowId: string, defaultExpanded?: boolean) => boolean;
     isDraft: boolean;
     onToggle: (rowId: string, defaultExpanded?: boolean) => void;
+    onAlgorithmClick?: (details: ComputationAlgorithmDetails) => void;
 }
 
 function normalizeSection(section: MetadataParamSection | undefined): MetadataParamSection {
@@ -134,8 +136,10 @@ export function buildAlgorithmSectionRows({
     isExpanded,
     isDraft,
     onToggle,
+    onAlgorithmClick,
 }: BuildAlgorithmSectionRowsOptions): CardModalListPartRow[] {
-    return algorithmDetails.map(({ algorithm, parameters }) => {
+    return algorithmDetails.map((details) => {
+        const { algorithm, parameters } = details;
         const rowId = isDraft ? `draft-algorithm-${algorithm.id}-${algorithm.name}` : `algorithm-${algorithm.id}-${algorithm.computationProviderId}`;
 
         const children = buildParameterRows(algorithm.id, parameters).map((row): CardModalListPartRow => {
@@ -154,10 +158,24 @@ export function buildAlgorithmSectionRows({
             return nestedGroupRow;
         });
 
+        const label = onAlgorithmClick
+            ? createElement(
+                "span",
+                {
+                    className: "cursor-pointer hover:underline",
+                    onClick: (e: MouseEvent) => {
+                        e.stopPropagation();
+                        onAlgorithmClick(details);
+                    },
+                },
+                algorithm.name,
+            )
+            : algorithm.name;
+
         const algorithmRow: CardModalListPartGroupRow = {
             kind: "group",
             id: rowId,
-            label: algorithm.name,
+            label,
             expanded: isExpanded(rowId, true),
             onToggle: () => onToggle(rowId, true),
             children,

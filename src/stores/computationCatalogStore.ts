@@ -27,6 +27,10 @@ interface ComputationCatalogState {
     upsertProvider: (provider: ComputationProvider) => void;
 
     removeProvider: (providerId: number) => void;
+
+    upsertAlgorithm: (algorithm: ComputationAlgorithm) => void;
+
+    removeAlgorithm: (id: number, computationProviderId: number) => void;
 }
 
 export const useComputationCatalogStore = create<ComputationCatalogState>((set) => ({
@@ -68,6 +72,34 @@ export const useComputationCatalogStore = create<ComputationCatalogState>((set) 
             providers: state.providers.filter((p) => p.id !== providerId),
             algorithms: state.algorithms.filter((a) => a.computationProviderId !== providerId),
             parameters: state.parameters.filter((p) => p.computationProviderId !== providerId),
+        }));
+    },
+
+    upsertAlgorithm: (algorithm) => {
+        set((state) => {
+            const exists = state.algorithms.some(
+                (a) => a.id === algorithm.id && a.computationProviderId === algorithm.computationProviderId,
+            );
+            return {
+                algorithms: exists
+                    ? state.algorithms.map((a) =>
+                        a.id === algorithm.id && a.computationProviderId === algorithm.computationProviderId
+                            ? algorithm
+                            : a,
+                    )
+                    : [...state.algorithms, algorithm],
+            };
+        });
+    },
+
+    removeAlgorithm: (id, computationProviderId) => {
+        set((state) => ({
+            algorithms: state.algorithms.filter(
+                (a) => !(a.id === id && a.computationProviderId === computationProviderId),
+            ),
+            parameters: state.parameters.filter(
+                (p) => !(p.algorithmId === id && p.computationProviderId === computationProviderId),
+            ),
         }));
     },
 }));

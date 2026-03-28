@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { db } from "@server/db/db";
 import { saveComputationProvider, deleteComputationProvider } from "@server/db/computationProviders";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
+import { useProviderLayerStore } from "@/stores/providerLayerStore";
 import type { ModalActionBarItem } from "@/components/modal/modal-action-bar/ModalActionBar";
 import type {
     CardModalFastTabConfig,
@@ -14,6 +15,7 @@ import type {
 } from "@/components/modals/card-modal/CardModalListPart.types";
 import { testConnection, fetchMetadataPreview, persistFetchedMetadata } from "@/features/computation-provider/data/computationProviderService";
 import { useComputationProviderAutosave } from "@/features/computation-provider/hooks/useComputationProviderAutosave";
+import { useAlgorithmCardStore } from "@/features/computation-provider/stores/algorithmCardStore";
 import { useComputationProviderCardStore } from "@/features/computation-provider/stores/computationProviderCardStore";
 import { useComputationProvidersListModalStore } from "@/features/computation-provider/stores/computationProvidersListModalStore";
 import {
@@ -38,6 +40,7 @@ import { useSaveModeStore } from "@/stores/saveModeStore";
 import type {
     AlgorithmParameter,
     ComputationAlgorithm,
+    ComputationAlgorithmDetails,
     ComputationProvider,
     FetchedComputationMetadata,
 } from "@/types/serviceTypes";
@@ -80,6 +83,7 @@ export function useComputationProviderCardController() {
     const isDirtyRef = useRef(false);
     const canSaveRef = useRef(false);
     const skipNextProviderLoadRef = useRef<number | null>(null);
+    const draftMetadataRef = useRef<FetchedComputationMetadata | null>(null);
 
     const allCatalogAlgorithms = useComputationCatalogStore((s) => s.algorithms);
     const allCatalogParameters = useComputationCatalogStore((s) => s.parameters);
@@ -120,16 +124,6 @@ export function useComputationProviderCardController() {
         }));
     }, []);
 
-    const algorithmListPartRows = useMemo(
-        () => buildAlgorithmSectionRows({
-            algorithmDetails: visibleAlgorithms ?? savedAlgorithmDetails,
-            isExpanded: (rowId, defaultExpanded = true) => algoExpanded[rowId] ?? defaultExpanded,
-            isDraft: visibleAlgorithms !== null,
-            onToggle: toggleAlgo,
-        }),
-        [algoExpanded, savedAlgorithmDetails, toggleAlgo, visibleAlgorithms],
-    );
-
     const algorithmListEmptyMessage = !visibleAlgorithms && !isSavedProvider
         ? "Fetch metadata to preview algorithms. Save provider to keep them."
         : "No algorithms. Fetch metadata first.";
@@ -160,6 +154,7 @@ export function useComputationProviderCardController() {
             setForm(EMPTY_COMPUTATION_PROVIDER_FORM);
             setSavedForm(EMPTY_COMPUTATION_PROVIDER_FORM);
             setIsEditMode(false);
+            skipNextProviderLoadRef.current = null;
             resetTransientState();
             return;
         }
@@ -181,6 +176,17 @@ export function useComputationProviderCardController() {
             return;
         }
 
+        const catalogProvider = useComputationCatalogStore.getState().providers.find(
+            (p) => p.id === selectedProviderId,
+        );
+        if (catalogProvider) {
+            const nextForm = toComputationProviderFormState(catalogProvider);
+            setForm(nextForm);
+            setSavedForm(nextForm);
+            setDraftMetadata(null);
+            return;
+        }
+
         (db.table("computationProviders").get(selectedProviderId) as Promise<ComputationProvider | undefined>).then(
             (provider) => {
                 if (provider) {
@@ -196,9 +202,10 @@ export function useComputationProviderCardController() {
     useEffect(() => {
         isDirtyRef.current = isDirty;
         canSaveRef.current = canSave;
-    }, [canSave, isDirty]);
+        draftMetadataRef.current = draftMetadata;
+    }, [canSave, isDirty, draftMetadata]);
 
-    const saveProviderChanges = useCallback(async () => {
+    const saveProviderChanges = useCallback(async (draftMetadataOverride?: FetchedComputationMetadata | null) => {
         if (savePromiseRef.current) {
             return savePromiseRef.current;
         }
@@ -208,7 +215,7 @@ export function useComputationProviderCardController() {
             return false;
         }
 
-        const draftMetadataSnapshot = draftMetadata;
+        const draftMetadataSnapshot = draftMetadataOverride !== undefined ? draftMetadataOverride : draftMetadataRef.current;
         const savePromise = (async () => {
             setIsSaving(true);
 
@@ -229,13 +236,8 @@ export function useComputationProviderCardController() {
                 skipNextProviderLoadRef.current = savedId;
                 setSelectedProviderId(savedId);
                 setSavedForm(formSnapshot);
-                setForm((currentForm) => {
-                    const normalizedCurrentForm = normalizeComputationProviderForm(currentForm);
-
-                    return areComputationProviderFormsEqual(normalizedCurrentForm, formSnapshot)
-                        ? formSnapshot
-                        : currentForm;
-                });
+                setForm(formSnapshot);
+                setIsEditMode(false);
                 setDraftMetadata((currentDraftMetadata) => (
                     areFetchedComputationMetadataEqual(currentDraftMetadata, draftMetadataSnapshot)
                         ? null
@@ -251,7 +253,68 @@ export function useComputationProviderCardController() {
 
         savePromiseRef.current = savePromise;
         return savePromise;
-    }, [draftMetadata, editingId, form, setSelectedProviderId]);
+    }, [editingId, form, setSelectedProviderId]);
+
+    const onAlgorithmClick = useCallback((details: ComputationAlgorithmDetails) => {
+        if (visibleAlgorithms !== null) {
+            const onDraftNameChange = (newName: string) => {
+                setDraftMetadata((prev) => {
+                    if (!prev) return prev;
+                    return {
+                        ...prev,
+                        algorithms: prev.algorithms.map((d) =>
+                            d.algorithm.id === details.algorithm.id
+                                ? { ...d, algorithm: { ...d.algorithm, name: newName } }
+                                : d,
+                        ),
+                    };
+                });
+            };
+
+            const onDraftSave = async (updatedDetails: ComputationAlgorithmDetails): Promise<boolean> => {
+                const currentDraftMetadata = draftMetadataRef.current;
+                if (!currentDraftMetadata) return false;
+                const updatedDraftMetadata: FetchedComputationMetadata = {
+                    ...currentDraftMetadata,
+                    algorithms: currentDraftMetadata.algorithms.map((d) =>
+                        d.algorithm.id === updatedDetails.algorithm.id ? updatedDetails : d,
+                    ),
+                };
+                setDraftMetadata(updatedDraftMetadata);
+                return saveProviderChanges(updatedDraftMetadata);
+            };
+
+            const onDraftDelete = () => {
+                setDraftMetadata((prev) => {
+                    if (!prev) return prev;
+                    return {
+                        ...prev,
+                        algorithms: prev.algorithms.filter(
+                            (d) => d.algorithm.id !== details.algorithm.id,
+                        ),
+                    };
+                });
+            };
+
+            useAlgorithmCardStore.getState().openDraft(details, onDraftNameChange, onDraftSave, onDraftDelete);
+        } else {
+            const enrichedLayers = useProviderLayerStore.getState().layers.filter(
+                (l) => l.algorithmId === details.algorithm.id && l.providerId === details.algorithm.computationProviderId,
+            );
+            useAlgorithmCardStore.getState().openSaved({ ...details, layers: enrichedLayers });
+        }
+    }, [saveProviderChanges, visibleAlgorithms]);
+
+    const algorithmListPartRows = useMemo(
+        () => buildAlgorithmSectionRows({
+            algorithmDetails: visibleAlgorithms ?? savedAlgorithmDetails,
+            isExpanded: (rowId, defaultExpanded = true) => algoExpanded[rowId] ?? defaultExpanded,
+            isDraft: visibleAlgorithms !== null,
+            onToggle: toggleAlgo,
+            onAlgorithmClick,
+        }),
+        [algoExpanded, onAlgorithmClick, savedAlgorithmDetails, toggleAlgo, visibleAlgorithms],
+    );
 
     const isAutoSavePending = useComputationProviderAutosave({
         isOpen,
@@ -310,6 +373,10 @@ export function useComputationProviderCardController() {
 
     const handleDelete = useCallback(() => {
         if (editingId === null) {
+            useDeleteModalStore.getState().requestDelete(form.name || "this provider", async () => {
+                close();
+                openList();
+            });
             return;
         }
 
@@ -401,7 +468,7 @@ export function useComputationProviderCardController() {
         onEdit: () => setIsEditMode((value) => !value),
         onNew: startNewProviderDraft,
         onDelete: handleDelete,
-        canDelete: editingId !== null,
+        canDelete: true,
     }), [canSave, editingId, form.name, handleDelete, handleSave, headerSavedState, isEditMode, startNewProviderDraft]);
 
     const algorithmsListPart = useMemo<CardModalListPartConfig>(() => ({

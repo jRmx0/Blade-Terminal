@@ -9,6 +9,26 @@ export async function getAllComputationAlgorithms(): Promise<ComputationAlgorith
     return db.table("computationProviderAlgorithms").toArray();
 }
 
+export async function updateAlgorithmName(id: number, computationProviderId: number, name: string): Promise<void> {
+    await db.table("computationProviderAlgorithms").update([id, computationProviderId], { name });
+}
+
+export async function deleteAlgorithmWithParameters(id: number, computationProviderId: number): Promise<void> {
+    await db.transaction("rw", [
+        db.table("computationProviderAlgorithms"),
+        db.table("computationAlgorithmParametersSetup"),
+    ], async () => {
+        await db.table("computationAlgorithmParametersSetup")
+            .where("[algorithmId+computationProviderId]")
+            .equals([id, computationProviderId])
+            .delete();
+        await db.table("computationProviderAlgorithms")
+            .where("[id+computationProviderId]")
+            .equals([id, computationProviderId])
+            .delete();
+    });
+}
+
 export async function replaceAlgorithmsForProvider(
     computationProviderId: number,
     algorithms: Omit<ComputationAlgorithm, "id">[],

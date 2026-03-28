@@ -3,6 +3,7 @@ interface InternalCardModalHeaderActionsProps {
     onEdit: () => void;
     onNew: () => void;
     onDelete: () => void;
+    canNew?: boolean;
     canDelete?: boolean;
 }
 
@@ -48,6 +49,7 @@ export default function InternalCardModalHeaderActions({
     onEdit,
     onNew,
     onDelete,
+    canNew = true,
     canDelete = true,
 }: InternalCardModalHeaderActionsProps) {
     return (
@@ -58,7 +60,7 @@ export default function InternalCardModalHeaderActions({
                 onClick={onEdit}
                 active={isEditMode}
             />
-            <ActionButton icon="add" title="New" onClick={onNew} />
+            <ActionButton icon="add" title="New" onClick={onNew} disabled={!canNew} />
             <ActionButton
                 icon="delete"
                 title="Delete"
