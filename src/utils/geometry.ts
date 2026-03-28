@@ -1,4 +1,5 @@
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
+import type { ObjectCategory } from "@/config/db-ops/enums";
 
 /**
  * Computes the signed area of a closed polygon using the Shoelace (Gauss) formula.
@@ -38,7 +39,7 @@ export function computePolygonArea(vertices: Point[]): number {
  */
 export function ensureWinding(
     vertices: Array<{ x: number; y: number }>,
-    category: string,
+    category: ObjectCategory,
 ): Array<{ x: number; y: number }> {
     if (vertices.length < 3) return vertices;
     const signed = computeSignedPolygonArea(vertices);

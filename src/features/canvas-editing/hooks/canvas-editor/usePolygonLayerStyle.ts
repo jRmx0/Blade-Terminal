@@ -1,5 +1,6 @@
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
 import { LAYER_ID } from "@/config/layers/layerRegistry";
+import type { ObjectCategory } from "@/config/db-ops/enums";
 
 interface PolygonLayerStyle {
     /** Whether the layer is currently set to visible. */
@@ -24,10 +25,10 @@ const DEFAULTS = {
  * Centralises the repeated getLayerParam calls that previously appeared in every
  * canvas layer component.
  */
-export function usePolygonLayerStyle(category: "zone" | "obstacle"): PolygonLayerStyle {
+export function usePolygonLayerStyle(category: ObjectCategory): PolygonLayerStyle {
     const layers = useLayerSettingsStore((s) => s.layers);
     const layerId = category === "zone" ? LAYER_ID.ZONES : LAYER_ID.OBSTACLES;
-    const def = DEFAULTS[category];
+    const def = DEFAULTS[category as keyof typeof DEFAULTS] ?? DEFAULTS.zone;
     return {
         visible: getLayerParam(layers, layerId, "Visible") !== "false",
         stroke: getLayerParam(layers, layerId, "Polygon Edge Color") ?? def.stroke,
