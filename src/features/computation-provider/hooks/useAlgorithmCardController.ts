@@ -14,6 +14,7 @@ import {
 } from "@/features/computation-provider/utils/algorithmSectionModel";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
+import type { LayerRecord, LayerSettingsSetup } from "@/types/layerTypes";
 
 const DEFAULT_FAST_TAB_OPEN_STATE: Record<string, boolean> = { general: true, parameters: true, layers: true };
 
@@ -100,21 +101,49 @@ export function useAlgorithmCardController() {
         onSelectedRowIdsChange: setSelectedParameterRowIds,
     }), [parametersListPartRows, selectedParameterRowIds]);
 
-    const algorithmLayers = useMemo(
-        () => algorithm
-            ? allLayerSettings
-                .map((l) => l.layer)
-                .filter((l) => l.algorithmId === algorithm.id && l.providerId === algorithm.computationProviderId)
-            : [],
-        [algorithm, allLayerSettings],
-    );
+    const algorithmLayers = useMemo((): LayerRecord[] => {
+        if (!algorithm) return [];
+        const fromStore = allLayerSettings
+            .map((l) => l.layer)
+            .filter((l) => l.algorithmId === algorithm.id && l.providerId === algorithm.computationProviderId);
+        if (fromStore.length > 0) return fromStore;
+        // Draft/unsaved mode: derive LayerRecord stubs directly from algorithmDetails.layers
+        return layers.map((l) => ({
+            id: l.id,
+            algorithmId: l.algorithmId,
+            providerId: l.providerId,
+            key: l.id,
+            label: l.name,
+            type: l.layerType,
+        }));
+    }, [algorithm, allLayerSettings, layers]);
 
     const layersListPartRows = useMemo(
         () => {
             if (!algorithm) return [];
-            const filteredSetups = layerSettingsSetup.filter(
+            let filteredSetups: LayerSettingsSetup[] = layerSettingsSetup.filter(
                 (s) => s.algorithmId === algorithm.id && s.providerId === algorithm.computationProviderId,
             );
+            // Draft/unsaved mode: derive LayerSettingsSetup stubs from style attributes
+            if (filteredSetups.length === 0 && layers.length > 0) {
+                let idx = 0;
+                filteredSetups = layers.flatMap((l) =>
+                    [
+                        ...l.universalStyleAttributes,
+                        ...l.pointStyleAttributes,
+                        ...l.lineStyleAttributes,
+                        ...l.polygonStyleAttributes,
+                    ].map((attr): LayerSettingsSetup => ({
+                        id: idx++,
+                        layerId: l.id,
+                        algorithmId: l.algorithmId,
+                        providerId: l.providerId,
+                        key: attr.key,
+                        styleType: attr.styleType,
+                        defaultValue: attr.defaultValue,
+                    })),
+                );
+            }
             return buildLayerRows(
                 algorithm.id,
                 algorithm.computationProviderId,
@@ -124,7 +153,7 @@ export function useAlgorithmCardController() {
                 toggleLayerSection,
             );
         },
-        [algorithm, algorithmLayers, layerExpanded, layerSettingsSetup, toggleLayerSection],
+        [algorithm, algorithmLayers, layerExpanded, layerSettingsSetup, layers, toggleLayerSection],
     );
 
     const layersListPart = useMemo<CardModalListPartConfig>(() => ({
