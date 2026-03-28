@@ -42,6 +42,7 @@ export interface CardModalHeaderConfig {
     onEdit: () => void;
     onNew: () => void;
     onDelete: () => void;
+    canEdit?: boolean;
     canNew?: boolean;
     canDelete?: boolean;
 }

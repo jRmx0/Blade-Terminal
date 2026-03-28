@@ -12,6 +12,7 @@ interface InternalCardModalHeaderProps {
     onEdit: () => void;
     onNew: () => void;
     onDelete: () => void;
+    canEdit?: boolean;
     canNew?: boolean;
     canDelete?: boolean;
 }
@@ -74,6 +75,7 @@ export default function InternalCardModalHeader({
     onEdit,
     onNew,
     onDelete,
+    canEdit = true,
     canNew = true,
     canDelete = true,
 }: InternalCardModalHeaderProps) {
@@ -97,6 +99,7 @@ export default function InternalCardModalHeader({
                     onEdit={onEdit}
                     onNew={onNew}
                     onDelete={onDelete}
+                    canEdit={canEdit}
                     canNew={canNew}
                     canDelete={canDelete}
                 />
