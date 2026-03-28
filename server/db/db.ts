@@ -13,7 +13,6 @@ db.version(1).stores({
     appEnumSetup: "[enumGroup+value], enumGroup",
     environments: "id, name",
     objects: "[id+environmentId], environmentId",
-    vertices: "[id+objectId+environmentId], objectId, environmentId",
     computationSelection: "environmentId",
     computationProviders: "++id, name",
     computationProviderAlgorithms: "[id+computationProviderId], computationProviderId",

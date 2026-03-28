@@ -1,10 +1,10 @@
 import { memo } from "react";
 import { Layer, Circle } from "react-konva";
 import { CanvasVertexIdLabel } from "@/features/canvas-editing/components/canvas-editor/shapes/CanvasVertexIdLabel";
-import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
-import type { Object, Vertex } from "@/types/schemaTypes";
+import type { ActiveTool, VertexRef } from "@/features/canvas-editing/types/canvas";
+import type { Object } from "@/types/schemaTypes";
 import { computeEdgeMidpoints, type Point } from "@/features/canvas-editing/utils/canvasGeometry";
-import { sameVertex } from "@/features/canvas-editing/utils/canvasObjectUtils";
+import { sameVertexRef } from "@/features/canvas-editing/utils/canvasObjectUtils";
 import {
     COLOR_VERTEX_FILL,
     COLOR_EDGE_MIDPOINT_FILL,
@@ -16,16 +16,16 @@ import { LAYER_ID } from "@/config/layers/layerRegistry";
 
 interface CanvasVertexHandlesLayerProps {
     selectedObject: Object | null;
-    selectedObjectVertices: Vertex[];
+    selectedObjectVertices: Array<{ x: number; y: number }>;
     activeTool: ActiveTool | null;
     scale: number;
-    selectedVertices: Vertex[];
-    draggingVertex: Vertex | null;
-    onVertexClick: (vertex: Vertex, ctrl: boolean) => void;
-    onVertexDragStart: (vertex: Vertex) => void;
-    onVertexDragMove: (vertex: Vertex, pos: Point) => void;
-    onVertexDragEnd: (vertex: Vertex, pos: Point) => void;
-    onEdgeMidpointMouseDown: (afterVertex: Vertex, mid: Point) => void;
+    selectedVertexRefs: VertexRef[];
+    draggingVertexRef: VertexRef | null;
+    onVertexClick: (ref: VertexRef, ctrl: boolean) => void;
+    onVertexDragStart: (ref: VertexRef) => void;
+    onVertexDragMove: (ref: VertexRef, pos: Point) => void;
+    onVertexDragEnd: (ref: VertexRef, pos: Point) => void;
+    onEdgeMidpointMouseDown: (objectId: number, afterIndex: number, mid: Point) => void;
     onHandleHoverChange: (hovered: boolean) => void;
 }
 
@@ -34,8 +34,8 @@ export function _CanvasVertexHandlesLayer({
     selectedObjectVertices,
     activeTool,
     scale,
-    selectedVertices,
-    draggingVertex,
+    selectedVertexRefs,
+    draggingVertexRef,
     onVertexClick,
     onVertexDragStart,
     onVertexDragMove,
@@ -65,14 +65,17 @@ export function _CanvasVertexHandlesLayer({
     return (
         <Layer listening={isLayerListening}>
             {selectedObjectVertices.map((v, i) => {
+                const ref: VertexRef = { objectId: selectedObject.id, index: i };
                 const mid = edgeMidpoints[i];
                 if (!mid) return null;
 
-                const isActiveVertex = selectedVertices.some((sv) => sameVertex(sv, v)) || (draggingVertex !== null && sameVertex(draggingVertex, v));
+                const isActiveVertex =
+                    selectedVertexRefs.some((sv) => sameVertexRef(sv, ref)) ||
+                    (draggingVertexRef !== null && sameVertexRef(draggingVertexRef, ref));
 
                 return [
                     <Circle
-                        key={`vertex-handle-${v.id}`}
+                        key={`vertex-handle-${i}`}
                         x={v.x}
                         y={v.y}
                         radius={vertexRadius}
@@ -82,18 +85,18 @@ export function _CanvasVertexHandlesLayer({
                         draggable
                         onClick={(e) => {
                             e.cancelBubble = true;
-                            onVertexClick(v, e.evt.ctrlKey || e.evt.metaKey);
+                            onVertexClick(ref, e.evt.ctrlKey || e.evt.metaKey);
                         }}
-                        onDragStart={() => onVertexDragStart(v)}
-                        onDragMove={(e) => onVertexDragMove(v, { x: e.target.x(), y: e.target.y() })}
-                        onDragEnd={(e) => onVertexDragEnd(v, { x: e.target.x(), y: e.target.y() })}
+                        onDragStart={() => onVertexDragStart(ref)}
+                        onDragMove={(e) => onVertexDragMove(ref, { x: e.target.x(), y: e.target.y() })}
+                        onDragEnd={(e) => onVertexDragEnd(ref, { x: e.target.x(), y: e.target.y() })}
                         onMouseEnter={() => onHandleHoverChange(true)}
                         onMouseLeave={() => onHandleHoverChange(false)}
                     />,
                     showVertexIds && (
                         <CanvasVertexIdLabel
-                            key={`vertex-id-label-${v.id}`}
-                            id={v.id}
+                            key={`vertex-id-label-${i}`}
+                            index={i}
                             x={v.x}
                             y={v.y}
                             scale={scale}
@@ -102,7 +105,7 @@ export function _CanvasVertexHandlesLayer({
                         />
                     ),
                     <Circle
-                        key={`edge-midpoint-handle-${v.id}`}
+                        key={`edge-midpoint-handle-${i}`}
                         x={mid.x}
                         y={mid.y}
                         radius={midpointRadius}
@@ -111,7 +114,7 @@ export function _CanvasVertexHandlesLayer({
                         strokeWidth={midpointStroke}
                         onMouseDown={(e) => {
                             e.cancelBubble = true;
-                            onEdgeMidpointMouseDown(v, mid);
+                            onEdgeMidpointMouseDown(selectedObject.id, i, mid);
                         }}
                         onMouseEnter={() => onHandleHoverChange(true)}
                         onMouseLeave={() => onHandleHoverChange(false)}

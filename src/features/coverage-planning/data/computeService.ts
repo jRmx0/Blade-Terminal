@@ -1,6 +1,5 @@
 import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
-import { objectVertices } from "@/features/canvas-editing/utils/canvasGeometry";
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useEnvStore } from "@/stores/envStore";
@@ -89,7 +88,7 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
         parameters[param.name] = coerceParamValue(pv.value, param.paramType);
     }
 
-    const { objects, vertices } = useCanvasObjectStore.getState();
+    const { objects } = useCanvasObjectStore.getState();
 
     const zoneObjects = objects.filter((o) => o.category === OBJECT_CATEGORY.ZONE);
     const obstacleObjects = objects.filter((o) => o.category === OBJECT_CATEGORY.OBSTACLE);
@@ -99,10 +98,10 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
     }
 
     const zones = zoneObjects.map((o) => ({
-        vertices: objectVertices(vertices, o.id).map(({ x, y }) => ({ x, y })),
+        vertices: o.vertices.map(({ x, y }) => ({ x, y })),
     }));
     const obstacles = obstacleObjects.map((o) => ({
-        vertices: objectVertices(vertices, o.id).map(({ x, y }) => ({ x, y })),
+        vertices: o.vertices.map(({ x, y }) => ({ x, y })),
     }));
 
     const requestBody = {

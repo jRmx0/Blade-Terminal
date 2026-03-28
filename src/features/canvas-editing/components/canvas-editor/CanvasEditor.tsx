@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Stage } from "react-konva";
 import type Konva from "konva";
-import type { Object, Vertex } from "@/types/schemaTypes";
+import type { Object } from "@/types/schemaTypes";
+import type { VertexRef } from "@/features/canvas-editing/types/canvas";
 import { sameObject } from "@/features/canvas-editing/utils/canvasObjectUtils";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
@@ -9,7 +10,6 @@ import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObj
 import { beginBatch, endBatch } from "@/features/canvas-editing/stores/canvasHistoryStore";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useCanvasSize } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasSize";
-import { objectVertices } from "@/features/canvas-editing/utils/canvasGeometry";
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import { useCanvasPanning } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasPanning";
 import { useCanvasZoom } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasZoom";
@@ -27,7 +27,7 @@ import { CanvasDrawingPreviewLayer } from "@/features/canvas-editing/components/
 
 export default function CanvasEditor() {
   const stageRef = useRef<Konva.Stage>(null);
-  const [draggingVertex, setDraggingVertex] = useState<Vertex | null>(null);
+  const [draggingVertexRef, setDraggingVertexRef] = useState<VertexRef | null>(null);
   const [movingObject, setMovingObject] = useState<Object | null>(null);
   const [isHoveringHandle, setIsHoveringHandle] = useState(false);
   const [isHoveringObject, setIsHoveringObject] = useState<Object | null>(null);
@@ -39,11 +39,10 @@ export default function CanvasEditor() {
   const layerSettings = useLayerSettingsStore((s) => s.layers);
   const {
     objects,
-    vertices,
     addObject,
     deleteObject,
-    moveVertexXY,
-    finalizeVertexMove,
+    moveVertexAt,
+    finalizeVertexMoveAt,
     moveObject,
     deleteVertex,
     deleteVertices,
@@ -52,7 +51,7 @@ export default function CanvasEditor() {
 
   const {
     selectedObject: selectedStoreObject,
-    selectedVertices,
+    selectedVertexRefs,
     selectObject,
     clearSelection,
     selectVertex,
@@ -86,9 +85,9 @@ export default function CanvasEditor() {
     handleMidpointMouseDown,
     handleMidpointDragMouseMove,
     handleMidpointDragEnd,
-  } = useCanvasMidpointDrag({ stageRef, insertVertex, moveVertexXY, finalizeVertexMove, selectVertex });
+  } = useCanvasMidpointDrag({ stageRef, insertVertex, moveVertexAt, finalizeVertexMoveAt, selectVertex });
 
-  const { handleVertexDragMove, handleVertexDragEnd } = useCanvasVertexDrag(moveVertexXY, finalizeVertexMove);
+  const { handleVertexDragMove, handleVertexDragEnd } = useCanvasVertexDrag(moveVertexAt, finalizeVertexMoveAt);
 
   useCanvasAutosave();
 
@@ -96,7 +95,7 @@ export default function CanvasEditor() {
     activeTool,
     drawingPointsCount: drawingPoints.length,
     selectedObject: selectedStoreObject,
-    selectedVertices,
+    selectedVertexRefs,
     setActiveTool,
     clearSelection,
     selectVertex,
@@ -159,10 +158,11 @@ export default function CanvasEditor() {
       selectedObject.category === "zone" ? (zonesVisible ? selectedObject : null) :
         obstaclesVisible ? selectedObject : null;
 
-  const selectedObjectVertices = useMemo(
-    () => (selectedObjectForHandles ? objectVertices(vertices, selectedObjectForHandles.id) : []),
-    [selectedObjectForHandles, vertices],
-  );
+  const selectedObjectVertices = useMemo(() => {
+    if (!selectedObjectForHandles) return [];
+    const live = objects.find((o) => o.id === selectedObjectForHandles.id);
+    return live?.vertices ?? [];
+  }, [selectedObjectForHandles, objects]);
 
   const isDrawing = activeTool === "addZone" || activeTool === "addObstacle";
 
@@ -196,19 +196,19 @@ export default function CanvasEditor() {
   );
 
   const handleVertexClick = useCallback(
-    (v: Vertex, ctrl: boolean) => toggleVertexSelection(v, ctrl),
+    (ref: VertexRef, ctrl: boolean) => toggleVertexSelection(ref, ctrl),
     [toggleVertexSelection],
   );
 
-  const handleVertexDragStart = useCallback((v: Vertex) => {
-    setDraggingVertex(v);
+  const handleVertexDragStart = useCallback((ref: VertexRef) => {
+    setDraggingVertexRef(ref);
     beginBatch();
   }, []);
 
   const handleVertexDragEndCb = useCallback(
-    (vertex: Vertex, pos: Point) => {
-      setDraggingVertex(null);
-      handleVertexDragEnd(vertex, pos);
+    (ref: VertexRef, pos: Point) => {
+      setDraggingVertexRef(null);
+      handleVertexDragEnd(ref, pos);
       endBatch();
     },
     [handleVertexDragEnd],
@@ -217,7 +217,7 @@ export default function CanvasEditor() {
   function resolveCursor() {
     if (isPanning) return "grabbing";
     if (movingObject !== null) return "grabbing";
-    if (isMidpointDragging || isHoveringHandle || draggingVertex !== null || isDrawing) return "crosshair";
+    if (isMidpointDragging || isHoveringHandle || draggingVertexRef !== null || isDrawing) return "crosshair";
     if (isHoveringObject !== null && activeTool === "select") return "move";
     if (isHoveringObject && activeTool === "delete") return "crosshair";
     return "default";
@@ -261,7 +261,6 @@ export default function CanvasEditor() {
                 key="zones"
                 category="zone"
                 objects={objects}
-                vertices={vertices}
                 selectedObject={selectedStoreObject}
                 movingObject={movingObject}
                 activeTool={activeTool}
@@ -280,7 +279,6 @@ export default function CanvasEditor() {
               key="obstacles"
               category="obstacle"
               objects={objects}
-              vertices={vertices}
               selectedObject={selectedStoreObject}
               movingObject={movingObject}
               activeTool={activeTool}
@@ -300,8 +298,8 @@ export default function CanvasEditor() {
           selectedObjectVertices={selectedObjectVertices}
           activeTool={activeTool}
           scale={scale}
-          selectedVertices={selectedVertices}
-          draggingVertex={draggingVertex}
+          selectedVertexRefs={selectedVertexRefs}
+          draggingVertexRef={draggingVertexRef}
           onVertexClick={handleVertexClick}
           onVertexDragStart={handleVertexDragStart}
           onVertexDragMove={handleVertexDragMove}

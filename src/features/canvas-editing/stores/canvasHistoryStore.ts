@@ -1,15 +1,13 @@
 import { create } from "zustand";
-import type { Object, Vertex } from "@/types/schemaTypes";
+import type { Object } from "@/types/schemaTypes";
 import { useCanvasObjectStore } from "./canvasObjectStore";
-import { vertexKey } from "@/features/canvas-editing/utils/canvasObjectUtils";
 
 // ---------------------------------------------------------------------------
-// Snapshot — captures the full relational state of the canvas
+// Snapshot — captures the full canvas state
 // ---------------------------------------------------------------------------
 
 interface CanvasSnapshot {
     objects: Object[];
-    vertices: Vertex[];
 }
 
 // ---------------------------------------------------------------------------
@@ -22,28 +20,21 @@ function diffSnapshots(
     to: CanvasSnapshot,
 ): {
     dirtyObjects: Object[];
-    dirtyVertices: Vertex[];
     deletedObjects: Object[];
-    deletedVertices: Vertex[];
 } {
     const fromObjectMap = new Map(from.objects.map((o) => [o.id, o]));
-    const fromVertexMap = new Map(from.vertices.map((v) => [vertexKey(v.objectId, v.environmentId, v.id), v]));
     const toObjectIds = new Set(to.objects.map((o) => o.id));
-    const toVertexKeys = new Set(to.vertices.map((v) => vertexKey(v.objectId, v.environmentId, v.id)));
 
     const dirtyObjects = to.objects.filter((o) => fromObjectMap.get(o.id) !== o);
     const deletedObjects = from.objects.filter((o) => !toObjectIds.has(o.id));
-    const dirtyVertices = to.vertices.filter((v) => fromVertexMap.get(vertexKey(v.objectId, v.environmentId, v.id)) !== v);
-    const deletedVertices = from.vertices.filter((v) => !toVertexKeys.has(vertexKey(v.objectId, v.environmentId, v.id)));
 
-    return { dirtyObjects, dirtyVertices, deletedObjects, deletedVertices };
+    return { dirtyObjects, deletedObjects };
 }
 
 function restoreSnapshot(current: CanvasSnapshot, target: CanvasSnapshot) {
     const dirty = diffSnapshots(current, target);
     useCanvasObjectStore.setState({
         objects: target.objects,
-        vertices: target.vertices,
         ...dirty,
     });
 }
@@ -92,7 +83,6 @@ export const useCanvasHistoryStore = create<CanvasHistoryState>()((set, get) => 
         const snapshot = past[past.length - 1]!;
         const current: CanvasSnapshot = {
             objects: useCanvasObjectStore.getState().objects,
-            vertices: useCanvasObjectStore.getState().vertices,
         };
 
         set({ _isTimeTraveling: true });
@@ -113,7 +103,6 @@ export const useCanvasHistoryStore = create<CanvasHistoryState>()((set, get) => 
         const snapshot = future[0]!;
         const current: CanvasSnapshot = {
             objects: useCanvasObjectStore.getState().objects,
-            vertices: useCanvasObjectStore.getState().vertices,
         };
 
         set({ _isTimeTraveling: true });
@@ -130,16 +119,16 @@ export const useCanvasHistoryStore = create<CanvasHistoryState>()((set, get) => 
     beginBatch: () => {
         const { _isBatching } = get();
         if (_isBatching) return;
-        const { objects, vertices } = useCanvasObjectStore.getState();
-        set({ _isBatching: true, _batchSnapshot: { objects, vertices } });
+        const { objects } = useCanvasObjectStore.getState();
+        set({ _isBatching: true, _batchSnapshot: { objects } });
     },
 
     endBatch: () => {
         const { _isBatching, _batchSnapshot } = get();
         if (!_isBatching || !_batchSnapshot) return;
 
-        const { objects, vertices } = useCanvasObjectStore.getState();
-        const hasChanged = objects !== _batchSnapshot.objects || vertices !== _batchSnapshot.vertices;
+        const { objects } = useCanvasObjectStore.getState();
+        const hasChanged = objects !== _batchSnapshot.objects;
 
         if (!hasChanged) {
             set({ _isBatching: false, _batchSnapshot: null });
@@ -164,11 +153,11 @@ export const useCanvasHistoryStore = create<CanvasHistoryState>()((set, get) => 
 
 // Subscribe to the object store — push a snapshot to past before every change
 useCanvasObjectStore.subscribe((next, prev) => {
-    if (next.objects === prev.objects && next.vertices === prev.vertices) return;
+    if (next.objects === prev.objects) return;
     const { _isTimeTraveling, _isBatching } = useCanvasHistoryStore.getState();
     if (_isTimeTraveling || _isBatching) return;
 
-    const prevSnapshot: CanvasSnapshot = { objects: prev.objects, vertices: prev.vertices };
+    const prevSnapshot: CanvasSnapshot = { objects: prev.objects };
     useCanvasHistoryStore.setState((s) => {
         const nextPast = [...s.past, prevSnapshot];
         return { past: nextPast, future: [], canUndo: nextPast.length > 0, canRedo: false };

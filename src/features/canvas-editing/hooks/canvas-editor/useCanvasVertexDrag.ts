@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import type { Vertex } from "@/types/schemaTypes";
+import type { VertexRef } from "@/features/canvas-editing/types/canvas";
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 
 /**
@@ -8,15 +8,15 @@ import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
  *
  * How it works:
  *   - onDragMove stores the latest x/y in a ref and schedules a single RAF.
- *   - The RAF callback calls `moveVertexXY` once with the latest position (no sync, no dirty).
+ *   - The RAF callback calls `moveVertexAt` once with the latest position (no sync, no dirty).
  *   - onDragEnd cancels any pending RAF, commits the final x/y, then calls
- *     `finalizeVertexMove` once to run syncObject + mark dirty.
+ *     `finalizeVertexMoveAt` once to run syncObject + mark dirty.
  */
 export function useCanvasVertexDrag(
-    moveVertexXY: (vertex: Vertex, pos: Point) => void,
-    finalizeVertexMove: (vertex: Vertex) => void,
+    moveVertexAt: (ref: VertexRef, pos: Point) => void,
+    finalizeVertexMoveAt: (ref: VertexRef) => void,
 ) {
-    const pendingRef = useRef<{ vertex: Vertex; pos: Point } | null>(null);
+    const pendingRef = useRef<{ ref: VertexRef; pos: Point } | null>(null);
     const rafIdRef = useRef<number | null>(null);
 
     useEffect(() => {
@@ -27,17 +27,17 @@ export function useCanvasVertexDrag(
 
     const flush = useCallback(() => {
         if (pendingRef.current) {
-            const { vertex, pos } = pendingRef.current;
-            moveVertexXY(vertex, pos);
+            const { ref, pos } = pendingRef.current;
+            moveVertexAt(ref, pos);
             pendingRef.current = null;
         }
         rafIdRef.current = null;
-    }, [moveVertexXY]);
+    }, [moveVertexAt]);
 
     /** Called on every Konva onDragMove — accumulates, schedules at most one RAF/frame. */
     const handleVertexDragMove = useCallback(
-        (vertex: Vertex, pos: Point) => {
-            pendingRef.current = { vertex, pos };
+        (ref: VertexRef, pos: Point) => {
+            pendingRef.current = { ref, pos };
             if (rafIdRef.current === null) {
                 rafIdRef.current = requestAnimationFrame(flush);
             }
@@ -47,16 +47,16 @@ export function useCanvasVertexDrag(
 
     /** Called on Konva onDragEnd — commits final position then syncs once. */
     const handleVertexDragEnd = useCallback(
-        (vertex: Vertex, pos: Point) => {
+        (ref: VertexRef, pos: Point) => {
             if (rafIdRef.current !== null) {
                 cancelAnimationFrame(rafIdRef.current);
                 rafIdRef.current = null;
             }
             pendingRef.current = null;
-            moveVertexXY(vertex, pos);
-            finalizeVertexMove(vertex);
+            moveVertexAt(ref, pos);
+            finalizeVertexMoveAt(ref);
         },
-        [moveVertexXY, finalizeVertexMove],
+        [moveVertexAt, finalizeVertexMoveAt],
     );
 
     return { handleVertexDragMove, handleVertexDragEnd };

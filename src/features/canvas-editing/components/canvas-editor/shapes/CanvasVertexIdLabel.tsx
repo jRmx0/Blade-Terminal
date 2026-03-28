@@ -16,7 +16,7 @@ function contrastColor(hex: string): string {
 }
 
 interface CanvasVertexIdLabelProps {
-    id: number;
+    index: number;
     x: number;
     y: number;
     scale: number;
@@ -27,7 +27,7 @@ interface CanvasVertexIdLabelProps {
 // Pre-render the label to an offscreen HTMLCanvasElement so every Konva frame
 // is a single ctx.drawImage() blit instead of running the text pipeline.
 // The offscreen canvas is only redrawn when id, colors, or size actually change.
-export function CanvasVertexIdLabel({ id, x, y, scale, edgeWidth, accentColor }: CanvasVertexIdLabelProps) {
+export function CanvasVertexIdLabel({ index, x, y, scale, edgeWidth, accentColor }: CanvasVertexIdLabelProps) {
     const labelFill = contrastColor(accentColor);
     const labelStroke = labelFill === "#000000" ? "#ffffff" : "#000000";
     const imageRef = useRef<Konva.Image>(null);
@@ -62,13 +62,13 @@ export function CanvasVertexIdLabel({ id, x, y, scale, edgeWidth, accentColor }:
         const textY = canvasH / 2 + fontSize * 0.08;
         ctx.strokeStyle = labelStroke;
         ctx.lineWidth = 2 * screenFactor;
-        ctx.strokeText(String(id), canvasW / 2, textY);
+        ctx.strokeText(String(index), canvasW / 2, textY);
         ctx.fillStyle = labelFill;
-        ctx.fillText(String(id), canvasW / 2, textY);
+        ctx.fillText(String(index), canvasW / 2, textY);
         ctx.restore();
         // Signal the layer to pick up the new canvas content on next draw
         imageRef.current?.getLayer()?.batchDraw();
-    }, [id, labelFill, labelStroke, offscreen, fontSize, canvasW, canvasH]);
+    }, [index, labelFill, labelStroke, offscreen, fontSize, canvasW, canvasH]);
 
     return (
         <Image

@@ -2,7 +2,7 @@ import { memo, useMemo, useRef } from "react";
 import { Layer, Line } from "react-konva";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
 import type React from "react";
-import type { Object, Vertex } from "@/types/schemaTypes";
+import type { Object } from "@/types/schemaTypes";
 import { sameObject } from "@/features/canvas-editing/utils/canvasObjectUtils";
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
 import { LAYER_ID } from "@/config/layers/layerRegistry";
@@ -26,7 +26,6 @@ function createStripePatternCanvas(bgColor: string, stripeColor: string): HTMLCa
 interface CanvasPolygonObjectsLayerProps {
     category: "zone" | "obstacle";
     objects: Object[];
-    vertices: Vertex[];
     selectedObject: Object | null;
     movingObject: Object | null;
     activeTool: ActiveTool | null;
@@ -42,7 +41,6 @@ interface CanvasPolygonObjectsLayerProps {
 export function _CanvasPolygonObjectsLayer({
     category,
     objects,
-    vertices,
     selectedObject,
     movingObject,
     activeTool,
@@ -72,14 +70,6 @@ export function _CanvasPolygonObjectsLayer({
         [fill],
     );
 
-    // Build lookup once per render — O(n) instead of O(n*m)
-    const verticesByObjectId = new Map<number, Vertex[]>();
-    for (const v of vertices) {
-        const list = verticesByObjectId.get(v.objectId) ?? [];
-        list.push(v);
-        verticesByObjectId.set(v.objectId, list);
-    }
-
     const visibleObjects = visible
         ? objects.filter((obj) => obj.category === category)
         : [];
@@ -90,13 +80,12 @@ export function _CanvasPolygonObjectsLayer({
                 const isOnline = obj.type === OBJECT_TYPE.ONLINE;
                 const isSelected = selectedObject !== null && sameObject(obj, selectedObject) && activeTool === "select";
                 const isMoving = movingObject !== null && sameObject(obj, movingObject);
-                const objVerts = verticesByObjectId.get(obj.id) ?? [];
                 const fillPattern = isOnline ? onlinePattern : undefined;
 
                 return (
                     <Line
                         key={obj.id}
-                        points={objVerts.flatMap((v) => [v.x, v.y])}
+                        points={obj.vertices.flatMap((v) => [v.x, v.y])}
                         closed
                         fill={fillPattern ? undefined : fill}
                         fillPatternImage={fillPattern as unknown as HTMLImageElement}

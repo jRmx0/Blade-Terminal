@@ -37,14 +37,6 @@ export interface Object {
     vertexCount: number;
     /** Cached: precomputed polygon area (shoelace formula). */
     area: number;
-}
-
-export interface Vertex {
-    id: number;
-    objectId: number;
-    environmentId: number;
-    /** Pointer to the next vertex in linked-list order. */
-    nextVertexId: number | null;
-    x: number;
-    y: number;
+    /** Polygon vertices in draw order. */
+    vertices: Array<{ x: number; y: number }>;
 }

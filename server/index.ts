@@ -21,7 +21,6 @@ console.log(`🚀 Server running at ${server.url}`);
 // ─── Data-access API ─────────────────────────────────────────────────────────
 export { getEnvironment, getAllEnvironments, saveEnvironment, deleteEnvironment } from "./db/environments";
 export { getObject, getObjectsByEnvironment, saveObject, saveObjects, deleteObject, deleteObjectsByEnvironment } from "./db/objects";
-export { getVertex, getVerticesByObject, getVerticesByObjects, saveVertex, saveVertices, updateVertex, deleteVertex, deleteVertices, deleteVerticesByObject, deleteVerticesByObjects, deleteVerticesByEnvironment } from "./db/vertices";
 export { getLayerSettingsByEnvironment, initLayerSettingsForEnvironment, deleteLayerSettingsForEnvironment, saveAllLayerSettings } from "./db/layerSettings";
 export { getAllLayerSettingsSetup, replaceLayerSettingsSetupForAlgorithm } from "./db/layerSettingsSetup";
 export { getAllLayers, getLayerByKey } from "./db/layersSetup";

@@ -2,7 +2,6 @@ import { getEnvironment, saveEnvironment } from "@server/db/environments";
 import { getComputationSelection, saveComputationSelection } from "@server/db/computationSelection";
 import { getAlgorithmParametersByEnvironment, saveAlgorithmParameters } from "@server/db/computationAlgorithmParameters";
 import { deleteObjectsByEnvironment, saveObjects } from "@server/db/objects";
-import { saveVertices } from "@server/db/vertices";
 import { ENV_FORMAT, GLOBAL_TYPE, OBJECT_CATEGORY } from "@/config/db-ops/enums";
 import type { Environment } from "@/types/schemaTypes";
 import { useEnvStore } from "@/stores/envStore";
@@ -53,7 +52,7 @@ export async function resetWorkspace(): Promise<void> {
     useEnvStore.getState().clearDirty();
     useParameterValuesStore.getState().setParameterValues([]);
     useSaveModeStore.getState().setMode("session");
-    useCanvasObjectStore.getState().setObjects([], []);
+    useCanvasObjectStore.getState().setObjects([]);
     useCanvasHistoryStore.getState().resetHistory();
     await initLayerSettingsForEnvironment(nextId);
     await loadLayerSettings(nextId);
@@ -84,14 +83,13 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
 /** Saves the current canvas as a new environment or overwrites an existing one, then loads it. */
 export async function saveAsWorkspace(name: string, selectedEnvId: number | null): Promise<void> {
     const { env, computation } = useEnvStore.getState();
-    const { objects, vertices } = useCanvasObjectStore.getState();
+    const { objects } = useCanvasObjectStore.getState();
     const targetId = selectedEnvId ?? (await resolveNextEnvironmentId());
     const targetEnv: Environment = { ...env, id: targetId, name };
     if (selectedEnvId !== null) {
         await deleteObjectsByEnvironment(targetEnv);
     }
     const targetObjects = objects.map((o) => ({ ...o, environmentId: targetId }));
-    const targetVertices = vertices.map((v) => ({ ...v, environmentId: targetId }));
     const { parameterValues } = useParameterValuesStore.getState();
     const targetParamValues = parameterValues.map((pv) => ({ ...pv, environmentId: targetId }));
     await Promise.all([
@@ -99,7 +97,6 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
         saveComputationSelection({ ...computation, environmentId: targetId }),
         targetParamValues.length > 0 ? saveAlgorithmParameters(targetParamValues) : Promise.resolve(),
         targetObjects.length > 0 ? saveObjects(targetObjects) : Promise.resolve(),
-        targetVertices.length > 0 ? saveVertices(targetVertices) : Promise.resolve(),
         selectedEnvId === null ? initLayerSettingsForEnvironment(targetId) : Promise.resolve(),
     ]);
     await loadWorkspace(targetId);

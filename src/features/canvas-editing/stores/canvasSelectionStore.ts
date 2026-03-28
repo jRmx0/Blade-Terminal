@@ -1,42 +1,43 @@
 import { create } from "zustand";
-import type { Object, Vertex } from "@/types/schemaTypes";
-import { sameVertex } from "@/features/canvas-editing/utils/canvasObjectUtils";
+import type { Object } from "@/types/schemaTypes";
+import type { VertexRef } from "@/features/canvas-editing/types/canvas";
+import { sameVertexRef } from "@/features/canvas-editing/utils/canvasObjectUtils";
 
 interface CanvasSelectionState {
     selectedObject: Object | null;
-    selectedVertices: Vertex[];
+    selectedVertexRefs: VertexRef[];
 
     selectObject: (obj: Object) => void;
     clearSelection: () => void;
-    selectVertex: (vertex: Vertex | null) => void;
-    toggleVertexSelection: (vertex: Vertex, ctrl: boolean) => void;
+    selectVertex: (ref: VertexRef | null) => void;
+    toggleVertexSelection: (ref: VertexRef, ctrl: boolean) => void;
 }
 
 export const useCanvasSelectionStore = create<CanvasSelectionState>((set) => ({
     selectedObject: null,
-    selectedVertices: [],
+    selectedVertexRefs: [],
 
     selectObject: (obj) =>
-        set({ selectedObject: obj, selectedVertices: [] }),
+        set({ selectedObject: obj, selectedVertexRefs: [] }),
 
     clearSelection: () =>
-        set({ selectedObject: null, selectedVertices: [] }),
+        set({ selectedObject: null, selectedVertexRefs: [] }),
 
-    selectVertex: (vertex) =>
-        set({ selectedVertices: vertex !== null ? [vertex] : [] }),
+    selectVertex: (ref) =>
+        set({ selectedVertexRefs: ref !== null ? [ref] : [] }),
 
-    toggleVertexSelection: (vertex, ctrl) =>
+    toggleVertexSelection: (ref, ctrl) =>
         set((state) => {
             if (!ctrl) {
                 const alreadySoleSelected =
-                    state.selectedVertices.length === 1 && sameVertex(state.selectedVertices[0]!, vertex);
-                return { selectedVertices: alreadySoleSelected ? [] : [vertex] };
+                    state.selectedVertexRefs.length === 1 && sameVertexRef(state.selectedVertexRefs[0]!, ref);
+                return { selectedVertexRefs: alreadySoleSelected ? [] : [ref] };
             }
-            const alreadySelected = state.selectedVertices.some((sv) => sameVertex(sv, vertex));
+            const alreadySelected = state.selectedVertexRefs.some((sv) => sameVertexRef(sv, ref));
             return {
-                selectedVertices: alreadySelected
-                    ? state.selectedVertices.filter((sv) => !sameVertex(sv, vertex))
-                    : [...state.selectedVertices, vertex],
+                selectedVertexRefs: alreadySelected
+                    ? state.selectedVertexRefs.filter((sv) => !sameVertexRef(sv, ref))
+                    : [...state.selectedVertexRefs, ref],
             };
         }),
 }));

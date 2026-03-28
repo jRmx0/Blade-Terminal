@@ -6,11 +6,10 @@ import { computeNetArea } from "@/features/canvas-editing/utils/canvasGeometry";
 export default function NetAreaField() {
   const selectedObject = useCanvasSelectionStore((s) => s.selectedObject);
   const objects = useCanvasObjectStore((s) => s.objects);
-  const vertices = useCanvasObjectStore((s) => s.vertices);
 
   if (selectedObject === null) return null;
 
-  const netArea = computeNetArea(selectedObject, objects, vertices);
+  const netArea = computeNetArea(selectedObject, objects);
 
   // For obstacles the field is not applicable
   if (netArea === null) return null;
