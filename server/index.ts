@@ -24,4 +24,4 @@ export { getObject, getObjectsByEnvironment, saveObject, saveObjects, deleteObje
 export { getVertex, getVerticesByObject, getVerticesByObjects, saveVertex, saveVertices, updateVertex, deleteVertex, deleteVertices, deleteVerticesByObject, deleteVerticesByObjects, deleteVerticesByEnvironment } from "./db/vertices";
 export { getLayerSettingsByEnvironment, initLayerSettingsForEnvironment, deleteLayerSettingsForEnvironment, saveAllLayerSettings } from "./db/layerSettings";
 export { getAllLayerSettingsSetup, replaceLayerSettingsSetupForAlgorithm } from "./db/layerSettingsSetup";
-export { getAllLayers, getLayerByKey } from "./db/layers";
+export { getAllLayers, getLayerByKey } from "./db/layersSetup";

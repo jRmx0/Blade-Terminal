@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { getAllComputationProviders } from "@server/db/computationProviders";
-import { getAllComputationAlgorithms } from "@server/db/computationAlgorithms";
-import { getAllAlgorithmParameters } from "@server/db/algorithmParameters";
-import { getAllAppEnums } from "@server/db/appEnums";
+import { getAllComputationAlgorithms } from "@server/db/computationProviderAlgorithms";
+import { getAllAlgorithmParameters } from "@server/db/computationAlgorithmParametersSetup";
+import { getAllAppEnums } from "@server/db/appEnumSetup";
 import type { AlgorithmParameter, AppEnumValue, ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
 
 interface ComputationCatalogState {

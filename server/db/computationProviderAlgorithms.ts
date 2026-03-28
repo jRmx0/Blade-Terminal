@@ -2,11 +2,11 @@ import { db } from "./db";
 import type { ComputationAlgorithm } from "@/types/serviceTypes";
 
 export async function getAlgorithmsByProvider(computationProviderId: number): Promise<ComputationAlgorithm[]> {
-    return db.table("computationAlgorithms").where("computationProviderId").equals(computationProviderId).toArray();
+    return db.table("computationProviderAlgorithms").where("computationProviderId").equals(computationProviderId).toArray();
 }
 
 export async function getAllComputationAlgorithms(): Promise<ComputationAlgorithm[]> {
-    return db.table("computationAlgorithms").toArray();
+    return db.table("computationProviderAlgorithms").toArray();
 }
 
 export async function replaceAlgorithmsForProvider(
@@ -14,16 +14,16 @@ export async function replaceAlgorithmsForProvider(
     algorithms: Omit<ComputationAlgorithm, "id">[],
 ): Promise<ComputationAlgorithm[]> {
     return db.transaction("rw", [
-        db.table("computationAlgorithms"),
+        db.table("computationProviderAlgorithms"),
         db.table("computationAlgorithmParametersSetup"),
     ], async () => {
         await db.table("computationAlgorithmParametersSetup").where("computationProviderId").equals(computationProviderId).delete();
-        await db.table("computationAlgorithms").where("computationProviderId").equals(computationProviderId).delete();
+        await db.table("computationProviderAlgorithms").where("computationProviderId").equals(computationProviderId).delete();
 
         const saved: ComputationAlgorithm[] = [];
         for (let i = 0; i < algorithms.length; i++) {
             const record: ComputationAlgorithm = { ...algorithms[i]!, id: i + 1, computationProviderId };
-            await db.table("computationAlgorithms").put(record);
+            await db.table("computationProviderAlgorithms").put(record);
             saved.push(record);
         }
         return saved;

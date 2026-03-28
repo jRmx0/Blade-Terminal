@@ -16,7 +16,7 @@ db.version(1).stores({
     vertices: "[id+objectId+environmentId], objectId, environmentId",
     computationSelection: "environmentId",
     computationProviders: "++id, name",
-    computationAlgorithms: "[id+computationProviderId], computationProviderId",
+    computationProviderAlgorithms: "[id+computationProviderId], computationProviderId",
     computationAlgorithmParametersSetup: "[id+algorithmId+computationProviderId], algorithmId, computationProviderId, [algorithmId+computationProviderId]",
     computationAlgorithmParameters: "[id+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId",
     layersSetup: "[id+algorithmId+providerId], algorithmId, providerId, key, [algorithmId+providerId]",
