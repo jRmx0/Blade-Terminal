@@ -4,7 +4,7 @@ import type { Environment } from "@/types/schemaTypes";
 import { WORKSPACE_NAME_MAX_LENGTH } from "@/config/db-ops/databaseConstraintsConfig";
 import { deleteObjectsByEnvironment } from "./objects";
 import { deleteAlgorithmParametersByEnvironment } from "./computationAlgorithmParameters";
-import { deleteEnvironmentComputation } from "./environmentComputation";
+import { deleteComputationSelection } from "./computationSelection";
 import { deleteLayerSettingsForEnvironment } from "./layerSettings";
 
 const environmentsTable: Table<Environment, number> = db.table("environments");
@@ -28,7 +28,7 @@ export async function saveEnvironment(env: Environment): Promise<void> {
 export async function deleteEnvironment(env: Environment): Promise<void> {
     await deleteObjectsByEnvironment(env);
     await deleteAlgorithmParametersByEnvironment(env.id);
-    await deleteEnvironmentComputation(env.id);
+    await deleteComputationSelection(env.id);
     await deleteLayerSettingsForEnvironment(env.id);
     await environmentsTable.delete(env.id);
 }

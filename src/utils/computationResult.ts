@@ -1,6 +1,6 @@
-import type { Environment, EnvironmentComputation } from "@/types/schemaTypes";
+import type { Environment, ComputationSelection } from "@/types/schemaTypes";
 
-export function createEmptyEnvironmentComputation(environmentId: number): EnvironmentComputation {
+export function createEmptyComputationSelection(environmentId: number): ComputationSelection {
     return {
         environmentId,
         selectedProviderId: null,
@@ -8,9 +8,9 @@ export function createEmptyEnvironmentComputation(environmentId: number): Enviro
     };
 }
 
-export function normalizeEnvironmentComputation(
-    computation: Partial<EnvironmentComputation> & { environmentId: number },
-): EnvironmentComputation {
+export function normalizeComputationSelection(
+    computation: Partial<ComputationSelection> & { environmentId: number },
+): ComputationSelection {
     return {
         environmentId: computation.environmentId,
         selectedProviderId: typeof computation.selectedProviderId === "number" ? computation.selectedProviderId : null,

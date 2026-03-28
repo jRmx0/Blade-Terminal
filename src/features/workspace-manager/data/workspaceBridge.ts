@@ -1,5 +1,5 @@
 import { getEnvironment, saveEnvironment } from "@server/db/environments";
-import { getEnvironmentComputation, saveEnvironmentComputation } from "@server/db/environmentComputation";
+import { getComputationSelection, saveComputationSelection } from "@server/db/computationSelection";
 import { getAlgorithmParametersByEnvironment, saveAlgorithmParameters } from "@server/db/computationAlgorithmParameters";
 import { deleteObjectsByEnvironment, saveObjects } from "@server/db/objects";
 import { saveVertices } from "@server/db/vertices";
@@ -14,7 +14,7 @@ import { loadComputationCatalog } from "@/stores/computationCatalogStore";
 import { loadLayerSettings } from "@/stores/layerSettingsStore";
 import { initLayerSettingsForEnvironment } from "@server/db/layerSettings";
 import { resolveNextEnvironmentId, loadCanvasForEnvironment, saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
-import { createEmptyEnvironmentComputation } from "@/utils/environmentComputation";
+import { createEmptyComputationSelection } from "@/utils/computationSelection";
 
 const BLANK_ENV: Omit<Environment, "id"> = {
     name: "Untitled Environment",
@@ -37,7 +37,7 @@ export async function initializeWorkspace(): Promise<void> {
     const nextId = await resolveNextEnvironmentId();
     const env = { ...BLANK_ENV, id: nextId };
     useEnvStore.getState().setEnv(env);
-    useEnvStore.getState().setComputation(createEmptyEnvironmentComputation(nextId));
+    useEnvStore.getState().setComputation(createEmptyComputationSelection(nextId));
     useParameterValuesStore.getState().setParameterValues([]);
     await loadComputationCatalog();
     await initLayerSettingsForEnvironment(nextId);
@@ -49,7 +49,7 @@ export async function resetWorkspace(): Promise<void> {
     const nextId = await resolveNextEnvironmentId();
     const env = { ...BLANK_ENV, id: nextId };
     useEnvStore.getState().setEnv(env);
-    useEnvStore.getState().setComputation(createEmptyEnvironmentComputation(nextId));
+    useEnvStore.getState().setComputation(createEmptyComputationSelection(nextId));
     useEnvStore.getState().clearDirty();
     useParameterValuesStore.getState().setParameterValues([]);
     useSaveModeStore.getState().setMode("session");
@@ -70,7 +70,7 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     const obstacleObjectCount = countByCategory(objects, OBJECT_CATEGORY.OBSTACLE);
     useEnvStore.getState().setEnv({ ...env, zoneCount: zoneObjectCount, obstacleCount: obstacleObjectCount });
     const [computation, parameterValues] = await Promise.all([
-        getEnvironmentComputation(environmentId),
+        getComputationSelection(environmentId),
         getAlgorithmParametersByEnvironment(environmentId),
     ]);
     // Set parameter values before computation so the panel's init effect sees loaded values
@@ -96,7 +96,7 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
     const targetParamValues = parameterValues.map((pv) => ({ ...pv, environmentId: targetId }));
     await Promise.all([
         saveEnvironment(targetEnv),
-        saveEnvironmentComputation({ ...computation, environmentId: targetId }),
+        saveComputationSelection({ ...computation, environmentId: targetId }),
         targetParamValues.length > 0 ? saveAlgorithmParameters(targetParamValues) : Promise.resolve(),
         targetObjects.length > 0 ? saveObjects(targetObjects) : Promise.resolve(),
         targetVertices.length > 0 ? saveVertices(targetVertices) : Promise.resolve(),
