@@ -10,6 +10,17 @@ export const GRID_LEVEL_STEPS = [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000] as co
 /** Minimum grid cell size in pixels before stepping up to the next level. */
 export const GRID_MIN_CELL_PX = 40;
 
+/**
+ * Picks the smallest grid level multiplier such that the resulting cell size
+ * in pixels is at least GRID_MIN_CELL_PX. Shared by the grid layer and scale bar.
+ */
+export function pickGridLevel(scale: number): number {
+    for (const step of GRID_LEVEL_STEPS) {
+        if (GRID_SPACING * step * scale >= GRID_MIN_CELL_PX) return step;
+    }
+    return GRID_LEVEL_STEPS[GRID_LEVEL_STEPS.length - 1] ?? 1000;
+}
+
 export const ZOOM_MIN = 0.1;
 export const ZOOM_MAX = 8;
 export const ZOOM_STEP = 0.1;

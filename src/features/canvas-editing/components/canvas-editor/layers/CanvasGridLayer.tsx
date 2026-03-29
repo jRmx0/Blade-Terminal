@@ -1,20 +1,9 @@
 import { memo } from "react";
 import { Layer, Line } from "react-konva";
-import { GRID_SPACING, GRID_LEVEL_STEPS, GRID_MIN_CELL_PX } from "@/config/canvas-editing/canvasConfig";
+import { GRID_SPACING, pickGridLevel } from "@/config/canvas-editing/canvasConfig";
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
 import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
-
-/**
- * Picks the smallest grid level multiplier such that the resulting cell size
- * in pixels is at least GRID_MIN_CELL_PX. This keeps the grid readable at any zoom.
- */
-function pickGridLevel(scale: number): number {
-    for (const step of GRID_LEVEL_STEPS) {
-        if (GRID_SPACING * step * scale >= GRID_MIN_CELL_PX) return step;
-    }
-    return GRID_LEVEL_STEPS[GRID_LEVEL_STEPS.length - 1] ?? 1000;
-}
 
 interface CanvasGridLayerProps {
     width: number;
