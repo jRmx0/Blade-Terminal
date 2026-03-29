@@ -1,4 +1,4 @@
-import type { StyleAttributeKey, StyleType } from "@/types/serviceTypes";
+import type { PointLabelColorEntry, StyleAttributeKey, StyleType } from "@/types/serviceTypes";
 
 export type LayerId = number;
 
@@ -16,7 +16,7 @@ export type LayerType = "Polygon" | "Point" | "Line" | "Grid" | "ObjectGroup";
  * Attribute keys managed internally by the terminal (not part of the provider metadata spec).
  * These are seeded as part of the system layer defaults.
  */
-export type InternalStyleAttributeKey = "Show Vertex IDs" | "Grid Line Color";
+export type InternalStyleAttributeKey = "Show Vertex IDs" | "Grid Line Color" | "Point Label Enum Values";
 
 export interface LayerDefinition {
     id: LayerId;
@@ -42,6 +42,10 @@ export interface LayerSettingsSetup {
     /** Attribute value type from the provider spec. */
     styleType: StyleType;
     defaultValue: string | null;
+    /** Allowed enum values — populated for "PointLabelEnum" rows. */
+    enumValues?: string[];
+    /** Per-value color overrides — populated for "PointLabelEnum" rows. */
+    mapping?: PointLabelColorEntry[];
 }
 
 /** Compound primary key for the `layersSetup` table. System layers use `algorithmId: 0, providerId: 0`. */

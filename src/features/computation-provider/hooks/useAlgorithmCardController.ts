@@ -15,6 +15,7 @@ import {
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
 import type { LayerRecord, LayerSettingsSetup } from "@/types/layerTypes";
+import { POINT_LABEL_ENUM_VALUES_SETUP_ID } from "@/config/computation/supportedLayerAttributes";
 
 const DEFAULT_FAST_TAB_OPEN_STATE: Record<string, boolean> = { general: true, parameters: true, layers: true };
 
@@ -26,6 +27,7 @@ export function useAlgorithmCardController() {
     const [fastTabOpen, setFastTabOpen] = useState<Record<string, boolean>>(DEFAULT_FAST_TAB_OPEN_STATE);
     const [paramExpanded, setParamExpanded] = useState<Record<string, boolean>>({});
     const [layerExpanded, setLayerExpanded] = useState<Record<string, boolean>>({});
+    const [pointLabelEnumExpanded, setPointLabelEnumExpanded] = useState<Record<string, boolean>>({});
     const [selectedParameterRowIds, setSelectedParameterRowIds] = useState<CardModalListPartRowId[]>([]);
     const [selectedLayerRowIds, setSelectedLayerRowIds] = useState<CardModalListPartRowId[]>([]);
 
@@ -41,6 +43,7 @@ export function useAlgorithmCardController() {
             setFastTabOpen(DEFAULT_FAST_TAB_OPEN_STATE);
             setParamExpanded({});
             setLayerExpanded({});
+            setPointLabelEnumExpanded({});
             setSelectedParameterRowIds([]);
             setSelectedLayerRowIds([]);
             setIsSaving(false);
@@ -76,6 +79,11 @@ export function useAlgorithmCardController() {
     const toggleLayerSection = useCallback((rowId: string | number) => {
         const key = String(rowId);
         setLayerExpanded((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
+    }, []);
+
+    const togglePointLabelEnumSection = useCallback((rowId: string | number) => {
+        const key = String(rowId);
+        setPointLabelEnumExpanded((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
     }, []);
 
     const canSave = isDraft && algorithmDetails !== null;
@@ -148,8 +156,8 @@ export function useAlgorithmCardController() {
             // Draft/unsaved mode: derive LayerSettingsSetup stubs from style attributes
             if (filteredSetups.length === 0 && layers.length > 0) {
                 let idx = 0;
-                filteredSetups = layers.flatMap((l) =>
-                    [
+                filteredSetups = layers.flatMap((l) => {
+                    const styleRows: LayerSettingsSetup[] = [
                         ...l.universalStyleAttributes,
                         ...l.pointStyleAttributes,
                         ...l.lineStyleAttributes,
@@ -162,8 +170,22 @@ export function useAlgorithmCardController() {
                         key: attr.key,
                         styleType: attr.styleType,
                         defaultValue: attr.defaultValue,
-                    })),
-                );
+                    }));
+                    if (l.pointLabelEnumValues.length > 0) {
+                        styleRows.unshift({
+                            id: POINT_LABEL_ENUM_VALUES_SETUP_ID,
+                            layerId: l.id,
+                            algorithmId: l.algorithmId,
+                            providerId: l.providerId,
+                            key: "Point Label Enum Values",
+                            styleType: "PointLabelEnum",
+                            defaultValue: l.pointLabelEnumValues.join(", "),
+                            enumValues: l.pointLabelEnumValues,
+                            mapping: l.pointLabelColorMapping,
+                        });
+                    }
+                    return styleRows;
+                });
             }
             return buildLayerRows(
                 algorithm.id,
@@ -172,9 +194,11 @@ export function useAlgorithmCardController() {
                 filteredSetups,
                 layerExpanded,
                 toggleLayerSection,
+                pointLabelEnumExpanded,
+                togglePointLabelEnumSection,
             );
         },
-        [algorithm, algorithmLayers, layerExpanded, layerSettingsSetup, layers, toggleLayerSection],
+        [algorithm, algorithmLayers, layerExpanded, layerSettingsSetup, layers, pointLabelEnumExpanded, toggleLayerSection, togglePointLabelEnumSection],
     );
 
     const layersListPart = useMemo<CardModalListPartConfig>(() => ({

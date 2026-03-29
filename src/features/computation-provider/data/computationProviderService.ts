@@ -9,7 +9,7 @@ import type {
     ProviderLayerRecord,
 } from "@/types/serviceTypes";
 import type { LayerRecord, LayerSettingsSetup } from "@/types/layerTypes";
-import { STYLE_ATTRIBUTE_KEY_ID } from "@/config/computation/supportedLayerAttributes";
+import { POINT_LABEL_ENUM_VALUES_SETUP_ID, STYLE_ATTRIBUTE_KEY_ID } from "@/config/computation/supportedLayerAttributes";
 import { db } from "@server/db/db";
 import { deleteComputationProvider, updateMetadataTimestamp } from "@server/db/computationProviders";
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
@@ -131,20 +131,38 @@ export async function persistFetchedMetadata(
     metadata: FetchedComputationMetadata,
 ): Promise<void> {
     const setupRecords: LayerSettingsSetup[] = metadata.algorithms.flatMap(({ algorithm, layers }) =>
-        layers.flatMap((l: ProviderLayerRecord) => [
-            ...l.universalStyleAttributes,
-            ...l.pointStyleAttributes,
-            ...l.lineStyleAttributes,
-            ...l.polygonStyleAttributes,
-        ].map((attr) => ({
-            id: STYLE_ATTRIBUTE_KEY_ID.get(attr.key) ?? 0,
-            layerId: l.id,
-            algorithmId: algorithm.id,
-            providerId,
-            key: attr.key,
-            styleType: attr.styleType,
-            defaultValue: attr.defaultValue,
-        }))),
+        layers.flatMap((l: ProviderLayerRecord) => {
+            const styleRows: LayerSettingsSetup[] = [
+                ...l.universalStyleAttributes,
+                ...l.pointStyleAttributes,
+                ...l.lineStyleAttributes,
+                ...l.polygonStyleAttributes,
+            ].map((attr) => ({
+                id: STYLE_ATTRIBUTE_KEY_ID.get(attr.key) ?? 0,
+                layerId: l.id,
+                algorithmId: algorithm.id,
+                providerId,
+                key: attr.key,
+                styleType: attr.styleType,
+                defaultValue: attr.defaultValue,
+            }));
+
+            if (l.pointLabelEnumValues.length > 0) {
+                styleRows.unshift({
+                    id: POINT_LABEL_ENUM_VALUES_SETUP_ID,
+                    layerId: l.id,
+                    algorithmId: algorithm.id,
+                    providerId,
+                    key: "Point Label Enum Values",
+                    styleType: "PointLabelEnum",
+                    defaultValue: l.pointLabelEnumValues.join(", "),
+                    enumValues: l.pointLabelEnumValues,
+                    mapping: l.pointLabelColorMapping,
+                });
+            }
+
+            return styleRows;
+        }),
     );
 
     await db.transaction("rw", [

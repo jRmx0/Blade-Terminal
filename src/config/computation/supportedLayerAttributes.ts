@@ -98,3 +98,10 @@ export const SUPPORTED_STYLE_TYPES = new Set<StyleType>(STYLE_TYPE_LIST);
 export function isSupportedStyleType(value: string): value is StyleType {
     return SUPPORTED_STYLE_TYPES.has(value as StyleType);
 }
+
+/**
+ * Stable numeric ID for the synthesized "Point Label Enum Values" `layerSettingsSetup` row.
+ * Lives outside the 1-based STYLE_ATTRIBUTE_KEY_ID range (max=57) so it never collides.
+ * Do NOT add "PointLabelEnum" to STYLE_TYPE_LIST — providers must not emit this type.
+ */
+export const POINT_LABEL_ENUM_VALUES_SETUP_ID = 1000;

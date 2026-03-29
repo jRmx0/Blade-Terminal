@@ -199,10 +199,50 @@ function buildLayerSettingRows(
     providerId: number,
     layerSetupId: number,
     setups: LayerSettingsSetup[],
+    pointLabelEnumExpanded: Record<string, boolean>,
+    togglePointLabelEnumSection: (rowId: string | number) => void,
 ): CardModalListPartRow[] {
-    return setups
-        .filter((s) => s.layerId === layerSetupId && s.algorithmId === algorithmId && s.providerId === providerId)
-        .map((setup): CardModalListPartRow => ({
+    const layerSetups = setups.filter(
+        (s) => s.layerId === layerSetupId && s.algorithmId === algorithmId && s.providerId === providerId,
+    );
+
+    const pointLabelEnumSetup = layerSetups.find((s) => s.styleType === "PointLabelEnum");
+    const regularSetups = layerSetups.filter((s) => s.styleType !== "PointLabelEnum");
+
+    const rows: CardModalListPartRow[] = [];
+
+    if (pointLabelEnumSetup != null) {
+        const groupRowId = `layer-${layerSetupId}-${algorithmId}-${providerId}-point-label-enum`;
+        const colorMappingChildren: CardModalListPartRow[] = (pointLabelEnumSetup.mapping ?? []).map(
+            (entry): CardModalListPartRecordRow => ({
+                kind: "record",
+                id: `${groupRowId}-color-mapping-${entry.value}`,
+                cells: {
+                    name: { value: entry.value, title: entry.value },
+                    type: { value: "Color", mono: true },
+                    defaultValue: entry.color != null
+                        ? { value: entry.color, title: entry.color, mono: true }
+                        : { value: "—", tone: "subtle" },
+                },
+            }),
+        );
+        const pointLabelGroupRow: CardModalListPartGroupRow = {
+            kind: "group",
+            id: groupRowId,
+            label: "Point Label Enum Values",
+            cells: {
+                type: { value: "Enum", mono: true },
+                defaultValue: undefined,
+            },
+            expanded: pointLabelEnumExpanded[groupRowId] ?? true,
+            onToggle: () => togglePointLabelEnumSection(groupRowId),
+            children: colorMappingChildren,
+        };
+        rows.push(pointLabelGroupRow);
+    }
+
+    for (const setup of regularSetups) {
+        rows.push({
             kind: "record",
             id: `layer-${layerSetupId}-setup-${setup.id}`,
             cells: {
@@ -212,7 +252,10 @@ function buildLayerSettingRows(
                     ? { value: setup.defaultValue }
                     : { value: "—", tone: "subtle" },
             },
-        }));
+        });
+    }
+
+    return rows;
 }
 
 export function buildLayerRows(
@@ -222,6 +265,8 @@ export function buildLayerRows(
     setups: LayerSettingsSetup[],
     layerExpanded: Record<string, boolean>,
     toggleLayerSection: (rowId: string | number) => void,
+    pointLabelEnumExpanded: Record<string, boolean>,
+    togglePointLabelEnumSection: (rowId: string | number) => void,
 ): CardModalListPartRow[] {
     return layers.map((layer): CardModalListPartGroupRow => {
         const rowId = `layer-${layer.id}-${algorithmId}-${providerId}`;
@@ -237,7 +282,7 @@ export function buildLayerRows(
             },
             expanded: layerExpanded[rowId] ?? true,
             onToggle: () => toggleLayerSection(rowId),
-            children: buildLayerSettingRows(algorithmId, providerId, layer.id, setups),
+            children: buildLayerSettingRows(algorithmId, providerId, layer.id, setups, pointLabelEnumExpanded, togglePointLabelEnumSection),
         };
     });
 }

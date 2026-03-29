@@ -200,7 +200,8 @@ export type StyleType =
     | "FontWeightEnum"
     | "LineArrowStartEnum"
     | "LineArrowEndEnum"
-    | "LineArrowMidEnum";
+    | "LineArrowMidEnum"
+    | "PointLabelEnum";
 
 export interface PointLabelColorEntry {
     value: string;
