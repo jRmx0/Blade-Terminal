@@ -32,10 +32,13 @@ export default function CanvasEditor() {
   const [movingObject, setMovingObject] = useState<Object | null>(null);
   const [isHoveringHandle, setIsHoveringHandle] = useState(false);
   const [isHoveringObject, setIsHoveringObject] = useState<Object | null>(null);
+  const centeredRef = useRef(false);
 
   const scale = useCanvasViewStore((s) => s.scale);
+  const position = useCanvasViewStore((s) => s.position);
   const setPosition = useCanvasViewStore((s) => s.setPosition);
   const setScale = useCanvasViewStore((s) => s.setScale);
+  const setCanvasSize = useCanvasViewStore((s) => s.setCanvasSize);
   const { activeTool, setActiveTool } = useCanvasToolStore();
   const layerSettings = useLayerSettingsStore((s) => s.layers);
   const {
@@ -60,6 +63,16 @@ export default function CanvasEditor() {
   } = useCanvasSelectionStore();
 
   const { containerRef, size } = useCanvasSize();
+
+  useEffect(() => {
+    if (size.width > 0 && size.height > 0) {
+      setCanvasSize(size.width, size.height);
+      if (!centeredRef.current) {
+        centeredRef.current = true;
+        setPosition({ x: size.width / 2, y: size.height / 2 });
+      }
+    }
+  }, [size.width, size.height]);
 
   const {
     isPanning,
@@ -238,8 +251,8 @@ export default function CanvasEditor() {
         ref={stageRef}
         width={size.width}
         height={size.height}
-        x={useCanvasViewStore.getState().position.x}
-        y={useCanvasViewStore.getState().position.y}
+        x={position.x}
+        y={position.y}
         scaleX={scale}
         scaleY={scale}
         draggable={false}
