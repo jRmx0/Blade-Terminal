@@ -205,7 +205,7 @@ export function useAlgorithmCardController() {
                 {
                     id: "layer-count",
                     label: "Number of Layers",
-                    value: String(layers.length),
+                    value: String(algorithmLayers.length),
                     disabled: true,
                 },
             ],
@@ -224,7 +224,7 @@ export function useAlgorithmCardController() {
             onToggle: () => toggleFastTab("layers"),
             listPart: layersListPart,
         },
-    ], [algorithm, fastTabOpen.general, fastTabOpen.layers, fastTabOpen.parameters, layers.length, layersListPart, parameters.length, parametersListPart, toggleFastTab]);
+    ], [algorithm, algorithmLayers, fastTabOpen.general, fastTabOpen.layers, fastTabOpen.parameters, layersListPart, parameters.length, parametersListPart, toggleFastTab]);
 
     return {
         isOpen,

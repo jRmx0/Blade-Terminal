@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { db } from "@server/db/db";
 import { saveComputationProvider } from "@server/db/computationProviders";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
+import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
 import { useProviderLayerStore } from "@/stores/providerLayerStore";
 import type { ModalActionBarItem } from "@/components/modal/modal-action-bar/ModalActionBar";
 import type {
@@ -86,7 +87,7 @@ export function useComputationProviderCardController() {
 
     const allCatalogAlgorithms = useComputationCatalogStore((s) => s.algorithms);
     const allCatalogParameters = useComputationCatalogStore((s) => s.parameters);
-    const providerLayers = useProviderLayerStore((s) => s.layers);
+    const allLayerSettings = useLayerSettingsStore((s) => s.layers);
     const algorithms = useMemo<ComputationAlgorithm[]>(
         () => (editingId !== null ? allCatalogAlgorithms.filter((a) => a.computationProviderId === editingId) : []),
         [allCatalogAlgorithms, editingId],
@@ -120,12 +121,12 @@ export function useComputationProviderCardController() {
     const layerCountByAlgorithmId = useMemo<ReadonlyMap<number, number>>(() => {
         const map = new Map<number, number>();
         if (editingId === null) return map;
-        for (const layer of providerLayers) {
-            if (layer.providerId !== editingId) continue;
+        for (const { layer } of allLayerSettings) {
+            if (layer.providerId !== editingId || layer.algorithmId === 0) continue;
             map.set(layer.algorithmId, (map.get(layer.algorithmId) ?? 0) + 1);
         }
         return map;
-    }, [editingId, providerLayers]);
+    }, [editingId, allLayerSettings]);
 
     const algorithmListEmptyMessage = !visibleAlgorithms && !isSavedProvider
         ? "Fetch metadata to preview algorithms. Save provider to keep them."
