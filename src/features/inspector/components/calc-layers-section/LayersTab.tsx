@@ -1,4 +1,5 @@
 import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
+import { useEnvStore } from "@/stores/envStore";
 import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import LayerRow from "@/features/inspector/components/calc-layers-section/LayerRow";
 import type { LayerPK } from "@/types/layerTypes";
@@ -12,6 +13,8 @@ export default function LayersTab() {
     const setVisible = useLayerSettingsStore((s) => s.setVisible);
     const setParam = useLayerSettingsStore((s) => s.setParam);
     const reorderLayers = useLayerSettingsStore((s) => s.reorderLayers);
+    const selectedProviderId = useEnvStore((s) => s.computation.selectedProviderId);
+    const selectedAlgorithmId = useEnvStore((s) => s.computation.selectedAlgorithmId);
 
     if (layers.length === 0) {
         return (
@@ -21,8 +24,21 @@ export default function LayersTab() {
         );
     }
 
+    // ── Filter: system layers always shown; algorithm layers only when both
+    //    provider and algorithm are selected and match.
+    const visible = layers.filter((item) => {
+        const { algorithmId, providerId } = item.layer;
+        if (algorithmId === 0 && providerId === 0) return true;
+        return (
+            selectedProviderId !== null &&
+            selectedAlgorithmId !== null &&
+            providerId === selectedProviderId &&
+            algorithmId === selectedAlgorithmId
+        );
+    });
+
     // ── Sort all layers by Z-Index descending ────────────────────────────────
-    const sorted = [...layers].sort((a, b) => {
+    const sorted = [...visible].sort((a, b) => {
         const az = parseInt(a.settings.find((p) => p.key === LAYER_PARAM_KEY.Z_INDEX)?.value ?? "0", 10);
         const bz = parseInt(b.settings.find((p) => p.key === LAYER_PARAM_KEY.Z_INDEX)?.value ?? "0", 10);
         return bz - az;
