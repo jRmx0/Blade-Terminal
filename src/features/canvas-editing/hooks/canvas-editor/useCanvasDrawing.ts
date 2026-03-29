@@ -29,11 +29,13 @@ export function useCanvasDrawing({
         mousePos,
         appendDrawingPoint,
         setMousePos,
+        setPointerPos,
         cancelDrawing,
     } = useCanvasDrawingStore();
 
-    // RAF throttle — only write mousePos to Zustand once per display frame
+    // RAF throttle — only write positions to Zustand once per display frame
     const pendingMousePosRef = useRef<Point | null>(null);
+    const pendingPointerPosRef = useRef<Point | null>(null);
     const rafIdRef = useRef<number | null>(null);
 
     useEffect(() => {
@@ -43,21 +45,27 @@ export function useCanvasDrawing({
     }, []);
 
     const flushMousePos = useCallback(() => {
+        if (pendingPointerPosRef.current) {
+            setPointerPos(pendingPointerPosRef.current);
+            pendingPointerPosRef.current = null;
+        }
         if (pendingMousePosRef.current) {
             setMousePos(pendingMousePosRef.current);
             pendingMousePosRef.current = null;
         }
         rafIdRef.current = null;
-    }, [setMousePos]);
+    }, [setMousePos, setPointerPos]);
 
     const updateDrawingMousePosition = useCallback(
         (e: Konva.KonvaEventObject<MouseEvent>) => {
-            if (activeTool !== "addZone" && activeTool !== "addObstacle") return;
             const stage = stageRef.current;
             if (!stage) return;
             const ptr = stage.getRelativePointerPosition();
             if (!ptr) return;
-            pendingMousePosRef.current = { x: ptr.x, y: ptr.y };
+            pendingPointerPosRef.current = { x: ptr.x, y: ptr.y };
+            if (activeTool === "addZone" || activeTool === "addObstacle") {
+                pendingMousePosRef.current = { x: ptr.x, y: ptr.y };
+            }
             if (rafIdRef.current === null) {
                 rafIdRef.current = requestAnimationFrame(flushMousePos);
             }
@@ -71,8 +79,10 @@ export function useCanvasDrawing({
             rafIdRef.current = null;
         }
         pendingMousePosRef.current = null;
+        pendingPointerPosRef.current = null;
         setMousePos(null);
-    }, [setMousePos]);
+        setPointerPos(null);
+    }, [setMousePos, setPointerPos]);
 
     const handleStageClick = useCallback(
         (e: Konva.KonvaEventObject<MouseEvent>) => {
