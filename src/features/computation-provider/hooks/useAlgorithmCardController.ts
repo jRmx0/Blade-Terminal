@@ -27,6 +27,7 @@ export function useAlgorithmCardController() {
     const [paramExpanded, setParamExpanded] = useState<Record<string, boolean>>({});
     const [layerExpanded, setLayerExpanded] = useState<Record<string, boolean>>({});
     const [selectedParameterRowIds, setSelectedParameterRowIds] = useState<CardModalListPartRowId[]>([]);
+    const [selectedLayerRowIds, setSelectedLayerRowIds] = useState<CardModalListPartRowId[]>([]);
 
     const algorithm = algorithmDetails?.algorithm ?? null;
     const parameters = algorithmDetails?.parameters ?? [];
@@ -41,6 +42,7 @@ export function useAlgorithmCardController() {
             setParamExpanded({});
             setLayerExpanded({});
             setSelectedParameterRowIds([]);
+            setSelectedLayerRowIds([]);
             setIsSaving(false);
         }
     }, [isOpen]);
@@ -181,7 +183,9 @@ export function useAlgorithmCardController() {
         emptyMessage: "No layers defined for this algorithm.",
         maxHeightClassName: "max-h-96",
         storageKey: "algorithm-layers",
-    }), [layersListPartRows]);
+        selectedRowIds: selectedLayerRowIds,
+        onSelectedRowIdsChange: setSelectedLayerRowIds,
+    }), [layersListPartRows, selectedLayerRowIds]);
 
     const fastTabs = useMemo<CardModalFastTabConfig[]>(() => [
         {
