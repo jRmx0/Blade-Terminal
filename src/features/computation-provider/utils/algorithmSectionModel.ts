@@ -221,7 +221,7 @@ function buildLayerSettingRows(
                     name: { value: entry.value, title: entry.value },
                     type: { value: "Color", mono: true },
                     defaultValue: entry.color != null
-                        ? { value: entry.color, title: entry.color, mono: true }
+                        ? { value: entry.color, title: entry.color }
                         : { value: "—", tone: "subtle" },
                 },
             }),
