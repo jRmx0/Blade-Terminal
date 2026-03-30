@@ -5,18 +5,11 @@ import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import SettingsPanelRowInput from "@/components/settings-panel/SettingsPanelRowInput";
 import SettingsPanelRowColorInput from "@/components/settings-panel/SettingsPanelRowColorInput";
 import SettingsPanelRowToggle from "@/components/settings-panel/SettingsPanelRowToggle";
-import SettingsPanelSeparator from "@/components/settings-panel/SettingsPanelSeparator";
 
-// ─── Param type classification ──────────────────────────────────────────────
-const TOGGLE_PARAMS: Set<string> = new Set([LAYER_PARAM_KEY.SHOW_VERTEX_IDS]);
-const PARAM_TOOLTIPS: Record<string, string> = {
+// ─── Param tooltips ───────────────────────────────────────────────────────────
+const PARAM_TOOLTIPS: Partial<Record<string, string>> = {
     [LAYER_PARAM_KEY.SHOW_VERTEX_IDS]: "Vertex IDs are visible only when the Select tool is active",
 };
-const NUMBER_PARAMS: Set<string> = new Set([LAYER_PARAM_KEY.Z_INDEX, LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH]);
-const COLOR_PARAMS: Set<string> = new Set([LAYER_PARAM_KEY.POLYGON_EDGE_COLOR, LAYER_PARAM_KEY.POLYGON_FILL_COLOR, LAYER_PARAM_KEY.GRID_LINE_COLOR]);
-
-/** Params intentionally hidden from the flat settings list (rendered via dedicated UI instead). */
-const HIDDEN_PARAMS: Set<string> = new Set(["Point Label Enum Values"]);
 
 // ─── Enum color helpers ───────────────────────────────────────────────────────
 function parseEnumMapping(value: string): PointLabelColorEntry[] {
@@ -92,51 +85,108 @@ interface SettingFieldProps {
 }
 
 function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
-    const { key, value } = param;
+    const { key, value, styleType } = param;
 
-    if (TOGGLE_PARAMS.has(key)) {
-        return (
-            <SettingsPanelRowToggle
-                label={key}
-                value={value === "true"}
-                disabled={disabled}
-                tooltip={PARAM_TOOLTIPS[key]}
-                onChange={(v) => onParamChange(key, String(v))}
-            />
-        );
+    switch (styleType) {
+        case "Boolean":
+            return (
+                <SettingsPanelRowToggle
+                    label={key}
+                    value={value === "true"}
+                    disabled={disabled}
+                    tooltip={PARAM_TOOLTIPS[key]}
+                    onChange={(v) => onParamChange(key, String(v))}
+                />
+            );
+        case "Integer":
+        case "Spacing":
+            return (
+                <SettingsPanelRowInput
+                    label={key}
+                    value={value}
+                    type="number"
+                    disabled={disabled}
+                    onChange={(v) => onParamChange(key, v)}
+                />
+            );
+        case "Color":
+            return (
+                <SettingsPanelRowColorInput
+                    label={key}
+                    value={value}
+                    disabled={disabled}
+                    onChange={(v) => onParamChange(key, v)}
+                />
+            );
+        case "PointLabelEnum":
+            // Rendered by PointLabelEnumColorsGroup — skip inline
+            return null;
+        default:
+            // All enum style types (PointShapeEnum, StrokeStyleEnum, etc.) fall back to text input
+            return (
+                <SettingsPanelRowInput
+                    label={key}
+                    value={value}
+                    disabled={disabled}
+                    onChange={(v) => onParamChange(key, v)}
+                />
+            );
     }
+}
 
-    if (NUMBER_PARAMS.has(key)) {
-        return (
-            <SettingsPanelRowInput
-                label={key}
-                value={value}
-                type="number"
-                disabled={disabled}
-                onChange={(v) => onParamChange(key, v)}
-            />
-        );
-    }
+// ─── Collapsible style subgroup section ───────────────────────────────────────
+interface StyleSubgroupSectionProps {
+    section: SettingsSectionData;
+    disabled: boolean;
+}
 
-    if (COLOR_PARAMS.has(key)) {
-        return (
-            <SettingsPanelRowColorInput
-                label={key}
-                value={value}
-                disabled={disabled}
-                onChange={(v) => onParamChange(key, v)}
-            />
-        );
-    }
+function StyleSubgroupSection({ section, disabled }: StyleSubgroupSectionProps) {
+    const [expanded, setExpanded] = useState(true);
 
-    // Text fallback
+    const visibleParams = section.settings.filter((p) => p.key !== LAYER_PARAM_KEY.VISIBLE && p.styleType !== "PointLabelEnum");
+    const enumParam = section.settings.find((p) => p.styleType === "PointLabelEnum");
+
+    const hasContent = visibleParams.length > 0 || enumParam != null;
+    if (!hasContent) return null;
+
     return (
-        <SettingsPanelRowInput
-            label={key}
-            value={value}
-            disabled={disabled}
-            onChange={(v) => onParamChange(key, v)}
-        />
+        <div>
+            <button
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-1 mt-0.5 text-left hover:bg-gray-100 transition-colors"
+                onClick={() => setExpanded((prev) => !prev)}
+            >
+                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider select-none whitespace-nowrap">
+                    {section.label}
+                </span>
+                <div className="flex-1 h-px bg-gray-200" />
+                <span
+                    className="material-symbols-outlined text-gray-400 shrink-0 transition-transform duration-150"
+                    style={{ fontSize: 14, transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
+                >
+                    expand_more
+                </span>
+            </button>
+            {expanded && (
+                <>
+                    {visibleParams.map((param) => (
+                        <SettingField
+                            key={param.key}
+                            param={param}
+                            disabled={disabled}
+                            onParamChange={section.onParamChange}
+                        />
+                    ))}
+                    {enumParam != null && (
+                        <PointLabelEnumColorsGroup
+                            param={enumParam}
+                            disabled={disabled}
+                            onParamChange={section.onParamChange}
+                        />
+                    )}
+                </>
+            )}
+        </div>
     );
 }
 
@@ -154,41 +204,17 @@ interface LayerSettingsPanelProps {
 }
 
 export default function LayerSettingsPanel({ sections, disabled = false }: LayerSettingsPanelProps) {
-    const showSectionLabels = sections.length > 1;
-    const nonEmpty = sections.filter((s) => s.settings.some((p) => p.key !== LAYER_PARAM_KEY.VISIBLE));
-
-    if (nonEmpty.length === 0) return null;
+    if (sections.length === 0) return null;
 
     return (
         <div className="border-t border-gray-100 bg-gray-50 py-1">
-            {nonEmpty.map((section, idx) => {
-                const visibleParams = section.settings.filter(
-                    (p) => p.key !== LAYER_PARAM_KEY.VISIBLE && !HIDDEN_PARAMS.has(p.key),
-                );
-                const enumParam = section.settings.find((p) => p.key === "Point Label Enum Values");
-                return (
-                    <div key={section.label} className={idx > 0 ? "mt-2" : ""}>
-                        {showSectionLabels && (
-                            <SettingsPanelSeparator label={section.label} />
-                        )}
-                        {visibleParams.map((param) => (
-                            <SettingField
-                                key={param.key}
-                                param={param}
-                                disabled={disabled}
-                                onParamChange={section.onParamChange}
-                            />
-                        ))}
-                        {enumParam != null && (
-                            <PointLabelEnumColorsGroup
-                                param={enumParam}
-                                disabled={disabled}
-                                onParamChange={section.onParamChange}
-                            />
-                        )}
-                    </div>
-                );
-            })}
+            {sections.map((section) => (
+                <StyleSubgroupSection
+                    key={section.label}
+                    section={section}
+                    disabled={disabled}
+                />
+            ))}
         </div>
     );
 }

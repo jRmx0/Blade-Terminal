@@ -1,4 +1,4 @@
-import type { PointLabelColorEntry, StyleAttributeKey, StyleType } from "@/types/serviceTypes";
+import type { PointLabelColorEntry, StyleAttributeGroup, StyleAttributeKey, StyleType } from "@/types/serviceTypes";
 
 export type LayerId = number;
 
@@ -41,6 +41,8 @@ export interface LayerSettingsSetup {
     key: StyleAttributeKey | InternalStyleAttributeKey;
     /** Attribute value type from the provider spec. */
     styleType: StyleType;
+    /** Which API style subgroup this attribute belongs to. */
+    styleGroup: StyleAttributeGroup;
     defaultValue: string | null;
     /** Allowed enum values — populated for "PointLabelEnum" rows. */
     enumValues?: string[];
@@ -87,6 +89,10 @@ export interface LayerSettingParameter {
     environmentId: number;
     /** Attribute key de-normalized from setup — used as the display label. */
     key: StyleAttributeKey | InternalStyleAttributeKey;
+    /** Attribute value type — de-normalized from setup, drives input widget selection. */
+    styleType: StyleType;
+    /** Style subgroup — de-normalized from setup, drives section grouping in the panel. */
+    styleGroup: StyleAttributeGroup;
     value: string;
 }
 

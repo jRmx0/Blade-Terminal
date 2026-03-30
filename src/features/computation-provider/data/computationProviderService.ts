@@ -133,10 +133,10 @@ export async function persistFetchedMetadata(
     const setupRecords: LayerSettingsSetup[] = metadata.algorithms.flatMap(({ algorithm, layers }) =>
         layers.flatMap((l: ProviderLayerRecord) => {
             const styleRows: LayerSettingsSetup[] = [
-                ...l.universalStyleAttributes,
-                ...l.pointStyleAttributes,
-                ...l.lineStyleAttributes,
-                ...l.polygonStyleAttributes,
+                ...l.universalStyleAttributes.map((attr) => ({ ...attr, styleGroup: "universal" as const })),
+                ...l.pointStyleAttributes.map((attr) => ({ ...attr, styleGroup: "point" as const })),
+                ...l.lineStyleAttributes.map((attr) => ({ ...attr, styleGroup: "line" as const })),
+                ...l.polygonStyleAttributes.map((attr) => ({ ...attr, styleGroup: "polygon" as const })),
             ].map((attr) => ({
                 id: STYLE_ATTRIBUTE_KEY_ID.get(attr.key) ?? 0,
                 layerId: l.id,
@@ -144,6 +144,7 @@ export async function persistFetchedMetadata(
                 providerId,
                 key: attr.key,
                 styleType: attr.styleType,
+                styleGroup: attr.styleGroup,
                 defaultValue: attr.defaultValue,
             }));
 
@@ -155,6 +156,7 @@ export async function persistFetchedMetadata(
                     providerId,
                     key: "Point Label Enum Values",
                     styleType: "PointLabelEnum",
+                    styleGroup: "point",
                     defaultValue: l.pointLabelEnumValues.join(", "),
                     enumValues: l.pointLabelEnumValues,
                     mapping: l.pointLabelColorMapping,

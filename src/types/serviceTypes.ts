@@ -203,6 +203,9 @@ export type StyleType =
     | "LineArrowMidEnum"
     | "PointLabelEnum";
 
+/** Which style attribute family a parameter belongs to, mirroring the API's style subgroup fields. */
+export type StyleAttributeGroup = "universal" | "point" | "line" | "polygon";
+
 export interface PointLabelColorEntry {
     value: string;
     color: string | null;

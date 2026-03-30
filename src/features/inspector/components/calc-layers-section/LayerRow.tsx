@@ -1,7 +1,17 @@
 import { useState } from "react";
+import type { StyleAttributeGroup } from "@/types/serviceTypes";
 import type { LayerRecord, LayerSettingParameter } from "@/types/layerTypes";
 import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
-import LayerSettingsPanel from "@/features/inspector/components/calc-layers-section/LayerSettingsPanel";
+import LayerSettingsPanel, { type SettingsSectionData } from "@/features/inspector/components/calc-layers-section/LayerSettingsPanel";
+
+const GROUP_ORDER: StyleAttributeGroup[] = ["universal", "point", "line", "polygon"];
+
+const GROUP_LABELS: Record<StyleAttributeGroup, string> = {
+    universal: "Universal",
+    point: "Point Styles",
+    line: "Line Styles",
+    polygon: "Polygon Styles",
+};
 
 interface LayerRowProps {
     layer: LayerRecord;
@@ -85,9 +95,22 @@ export default function LayerRow({
             {/* Settings panel */}
             {expanded && (
                 <LayerSettingsPanel
-                    sections={[{ label: layer.label, settings, onParamChange }]}
+                    sections={buildSections(settings, onParamChange)}
                 />
             )}
         </div>
     );
+}
+
+function buildSections(
+    settings: LayerSettingParameter[],
+    onParamChange: (name: string, value: string) => void,
+): SettingsSectionData[] {
+    return GROUP_ORDER
+        .map((group) => ({
+            label: GROUP_LABELS[group],
+            settings: settings.filter((p) => p.styleGroup === group),
+            onParamChange,
+        }))
+        .filter((s) => s.settings.length > 0);
 }

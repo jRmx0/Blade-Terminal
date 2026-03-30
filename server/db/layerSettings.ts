@@ -35,6 +35,8 @@ export async function initLayerSettingsForEnvironment(environmentId: number): Pr
         providerId: s.providerId,
         environmentId,
         key: s.key,
+        styleType: s.styleType,
+        styleGroup: s.styleGroup,
         value: buildInitialValue(s),
     }));
     if (settings.length > 0) {
@@ -77,6 +79,8 @@ export async function addMissingLayerSettingsForEnvironment(
                 providerId: s.providerId,
                 environmentId,
                 key: s.key,
+                styleType: s.styleType,
+                styleGroup: s.styleGroup,
                 value: buildInitialValue(s),
             });
         }

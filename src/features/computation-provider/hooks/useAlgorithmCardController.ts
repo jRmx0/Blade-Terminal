@@ -158,10 +158,10 @@ export function useAlgorithmCardController() {
                 let idx = 0;
                 filteredSetups = layers.flatMap((l) => {
                     const styleRows: LayerSettingsSetup[] = [
-                        ...l.universalStyleAttributes,
-                        ...l.pointStyleAttributes,
-                        ...l.lineStyleAttributes,
-                        ...l.polygonStyleAttributes,
+                        ...l.universalStyleAttributes.map((attr) => ({ ...attr, styleGroup: "universal" as const })),
+                        ...l.pointStyleAttributes.map((attr) => ({ ...attr, styleGroup: "point" as const })),
+                        ...l.lineStyleAttributes.map((attr) => ({ ...attr, styleGroup: "line" as const })),
+                        ...l.polygonStyleAttributes.map((attr) => ({ ...attr, styleGroup: "polygon" as const })),
                     ].map((attr): LayerSettingsSetup => ({
                         id: idx++,
                         layerId: l.id,
@@ -169,6 +169,7 @@ export function useAlgorithmCardController() {
                         providerId: l.providerId,
                         key: attr.key,
                         styleType: attr.styleType,
+                        styleGroup: attr.styleGroup,
                         defaultValue: attr.defaultValue,
                     }));
                     if (l.pointLabelEnumValues.length > 0) {
@@ -179,6 +180,7 @@ export function useAlgorithmCardController() {
                             providerId: l.providerId,
                             key: "Point Label Enum Values",
                             styleType: "PointLabelEnum",
+                            styleGroup: "point",
                             defaultValue: l.pointLabelEnumValues.join(", "),
                             enumValues: l.pointLabelEnumValues,
                             mapping: l.pointLabelColorMapping,
