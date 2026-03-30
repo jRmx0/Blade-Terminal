@@ -145,6 +145,19 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
     }
 }
 
+// ─── Utilities ─────────────────────────────────────────────────────────────────
+
+const MIN_PHASE_MS = 500;
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitMinDisplay(since: number): Promise<void> {
+    const remaining = MIN_PHASE_MS - (Date.now() - since);
+    if (remaining > 0) await sleep(remaining);
+}
+
 // ─── Polling ──────────────────────────────────────────────────────────────────
 
 const POLL_INTERVAL_MS = 600;
@@ -167,14 +180,18 @@ async function pollComputeJob(pollUrl: string, apiKey: string): Promise<ComputeJ
 
 export async function executeComputeRequest(): Promise<ComputeExecuteResult> {
     const resultStore = useComputeResultStore.getState();
+    let phaseStart = Date.now();
     resultStore.setStatus("submitting");
 
     const submitResult = await submitComputeRequest();
+    await waitMinDisplay(phaseStart);
     if (!submitResult.ok) {
-        resultStore.setStatus("idle");
+        resultStore.setError(submitResult.error);
+        resultStore.setStatus("failed");
         return { ok: false, error: submitResult.error };
     }
 
+    phaseStart = Date.now();
     resultStore.setStatus("polling");
 
     const { computation } = useEnvStore.getState();
@@ -186,14 +203,19 @@ export async function executeComputeRequest(): Promise<ComputeExecuteResult> {
     try {
         jobState = await pollComputeJob(submitResult.pollUrl, apiKey);
     } catch (err) {
-        resultStore.setStatus("failed");
         const message = err instanceof Error ? err.message : String(err);
+        await waitMinDisplay(phaseStart);
+        resultStore.setError(message);
+        resultStore.setStatus("failed");
         return { ok: false, error: message };
     }
+    await waitMinDisplay(phaseStart);
 
     if (jobState.status === "failed") {
+        const message = jobState.error?.message ?? "Compute job failed.";
+        resultStore.setError(message);
         resultStore.setStatus("failed");
-        return { ok: false, error: jobState.error?.message ?? "Compute job failed." };
+        return { ok: false, error: message };
     }
 
     const completed = jobState as ComputeJobStateCompleted;

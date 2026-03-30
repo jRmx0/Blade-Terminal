@@ -11,6 +11,7 @@ import SaveAsModal from "@/features/workspace-manager/components/save-as-modal/S
 import ComputationProvidersListModal from "@/features/computation-provider/components/ComputationProvidersListModal";
 import ComputationProviderCardModal from "@/features/computation-provider/components/ComputationProviderCardModal";
 import AlgorithmCardModal from "@/features/computation-provider/components/AlgorithmCardModal";
+import ComputeExecuteModal from "@/components/modals/compute-execute-modal/ComputeExecuteModal";
 
 export default function WorkbenchWindow() {
   useWorkbenchShortcuts();
@@ -34,6 +35,7 @@ export default function WorkbenchWindow() {
       <ComputationProvidersListModal />
       <ComputationProviderCardModal />
       <AlgorithmCardModal />
+      <ComputeExecuteModal />
     </div>
   );
 }
