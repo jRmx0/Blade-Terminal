@@ -133,7 +133,7 @@ export async function persistFetchedMetadata(
     const setupRecords: LayerSettingsSetup[] = metadata.algorithms.flatMap(({ algorithm, layers }) =>
         layers.flatMap((l: ProviderLayerRecord) => {
             const styleRows: LayerSettingsSetup[] = [
-                ...l.universalStyleAttributes.map((attr) => ({ ...attr, styleGroup: "universal" as const })),
+                ...l.generalStyleAttributes.map((attr) => ({ ...attr, styleGroup: "general" as const })),
                 ...l.pointStyleAttributes.map((attr) => ({ ...attr, styleGroup: "point" as const })),
                 ...l.lineStyleAttributes.map((attr) => ({ ...attr, styleGroup: "line" as const })),
                 ...l.polygonStyleAttributes.map((attr) => ({ ...attr, styleGroup: "polygon" as const })),

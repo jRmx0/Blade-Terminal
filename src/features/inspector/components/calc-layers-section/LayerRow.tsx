@@ -4,10 +4,10 @@ import type { LayerRecord, LayerSettingParameter } from "@/types/layerTypes";
 import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import LayerSettingsPanel, { type SettingsSectionData } from "@/features/inspector/components/calc-layers-section/LayerSettingsPanel";
 
-const GROUP_ORDER: StyleAttributeGroup[] = ["universal", "point", "line", "polygon"];
+const GROUP_ORDER: StyleAttributeGroup[] = ["general", "point", "line", "polygon"];
 
 const GROUP_LABELS: Record<StyleAttributeGroup, string> = {
-    universal: "Universal",
+    general: "General",
     point: "Point Styles",
     line: "Line Styles",
     polygon: "Polygon Styles",

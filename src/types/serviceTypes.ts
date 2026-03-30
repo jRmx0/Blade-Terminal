@@ -204,7 +204,7 @@ export type StyleType =
     | "PointLabelEnum";
 
 /** Which style attribute family a parameter belongs to, mirroring the API's style subgroup fields. */
-export type StyleAttributeGroup = "universal" | "point" | "line" | "polygon";
+export type StyleAttributeGroup = "general" | "point" | "line" | "polygon";
 
 export interface PointLabelColorEntry {
     value: string;
@@ -218,7 +218,7 @@ export interface ProviderLayerStyleAttr {
 }
 
 export interface LayerStyle {
-    universalStyleAttributes: ProviderLayerStyleAttr[];
+    generalStyleAttributes: ProviderLayerStyleAttr[];
     pointStyleAttributes?: ProviderLayerStyleAttr[];
     lineStyleAttributes?: ProviderLayerStyleAttr[];
     polygonStyleAttributes?: ProviderLayerStyleAttr[];
@@ -241,7 +241,7 @@ export interface ProviderLayerRecord {
     computeLayer: string;
     name: string;
     layerType: MetadataLayerType;
-    universalStyleAttributes: ProviderLayerStyleAttr[];
+    generalStyleAttributes: ProviderLayerStyleAttr[];
     pointStyleAttributes: ProviderLayerStyleAttr[];
     lineStyleAttributes: ProviderLayerStyleAttr[];
     polygonStyleAttributes: ProviderLayerStyleAttr[];

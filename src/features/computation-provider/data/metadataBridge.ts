@@ -33,7 +33,7 @@ export function validateProviderMetadata(response: MetadataResponse): { ok: true
             }
 
             const allAttrs = [
-                ...layer.style.universalStyleAttributes,
+                ...layer.style.generalStyleAttributes,
                 ...(layer.style.pointStyleAttributes ?? []),
                 ...(layer.style.lineStyleAttributes ?? []),
                 ...(layer.style.polygonStyleAttributes ?? []),
@@ -85,7 +85,7 @@ export function buildProviderLayers(
         computeLayer: layer.computeLayer,
         name: layer.name,
         layerType: layer.layerType,
-        universalStyleAttributes: layer.style.universalStyleAttributes,
+        generalStyleAttributes: layer.style.generalStyleAttributes,
         pointStyleAttributes: layer.style.pointStyleAttributes ?? [],
         lineStyleAttributes: layer.style.lineStyleAttributes ?? [],
         polygonStyleAttributes: layer.style.polygonStyleAttributes ?? [],

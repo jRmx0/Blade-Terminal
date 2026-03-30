@@ -74,23 +74,23 @@ export type LayerParamKey = (typeof LAYER_PARAM_KEY)[keyof typeof LAYER_PARAM_KE
 
 export const LAYER_SETTINGS_SETUP_DEFAULTS: LayerSettingsSetup[] = [
     // ── Grid (internal Grid type) ────────────────────────────────────────────
-    { id: 1, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "universal", defaultValue: "true" },
-    { id: 5, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "universal", defaultValue: "10" },
-    { id: 10, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.GRID_LINE_COLOR, styleType: "Color", styleGroup: "universal", defaultValue: "#e2e8f0" },
+    { id: 1, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "true" },
+    { id: 5, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "general", defaultValue: "10" },
+    { id: 10, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.GRID_LINE_COLOR, styleType: "Color", styleGroup: "general", defaultValue: "#e2e8f0" },
 
     // ── Zones (Polygon) ──────────────────────────────────────────────────────
-    { id: 1, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "universal", defaultValue: "true" },
+    { id: 1, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "true" },
     { id: 2, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.SHOW_VERTEX_IDS, styleType: "Boolean", defaultValue: "false" },
-    { id: 5, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "universal", defaultValue: "20" },
+    { id: 5, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "general", defaultValue: "20" },
     { id: 60, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_COLOR, styleType: "Color", styleGroup: "polygon", defaultValue: "#22c55e" },
     { id: 61, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH, styleType: "Spacing", styleGroup: "polygon", defaultValue: "1.5" },
     // rgba(34,197,94,0.18) ≈ #22c55e2e
     { id: 80, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_FILL_COLOR, styleType: "Color", styleGroup: "polygon", defaultValue: "#22c55e2e" },
 
     // ── Obstacles (Polygon) ──────────────────────────────────────────────────
-    { id: 1, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "universal", defaultValue: "true" },
+    { id: 1, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "true" },
     { id: 2, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.SHOW_VERTEX_IDS, styleType: "Boolean", defaultValue: "false" },
-    { id: 5, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "universal", defaultValue: "30" },
+    { id: 5, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "general", defaultValue: "30" },
     { id: 60, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_COLOR, styleType: "Color", styleGroup: "polygon", defaultValue: "#ef4444" },
     { id: 61, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH, styleType: "Spacing", styleGroup: "polygon", defaultValue: "1.5" },
     // rgba(239,68,68,0.23) ≈ #ef44443b

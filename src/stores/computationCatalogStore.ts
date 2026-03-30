@@ -147,7 +147,7 @@ export async function loadComputationCatalog(): Promise<void> {
             computeLayer: layer.label,
             name: layer.label,
             layerType: (layer.type as ProviderLayerRecord["layerType"]) ?? "polygon",
-            universalStyleAttributes: [],
+            generalStyleAttributes: [],
             pointStyleAttributes: [],
             lineStyleAttributes: [],
             polygonStyleAttributes: [],
