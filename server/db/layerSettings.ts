@@ -1,6 +1,23 @@
 import { db } from "./db";
 import type { LayerSettingParameter, LayerSettingsSetup } from "@/types/layerTypes";
 
+/**
+ * Builds the initial string value for a `layerSettings` row from its setup record.
+ * For `PointLabelEnum` rows the provider colour mapping is encoded as JSON so that
+ * the inspector panel can display the correct per-value colours immediately.
+ * All other rows fall back to the plain `defaultValue` string.
+ */
+function buildInitialValue(setup: LayerSettingsSetup): string {
+    if (setup.styleType === "PointLabelEnum" && Array.isArray(setup.enumValues) && setup.enumValues.length > 0) {
+        const entries = setup.enumValues.map((v) => ({
+            value: v,
+            color: setup.mapping?.find((m) => m.value === v)?.color ?? null,
+        }));
+        return JSON.stringify(entries);
+    }
+    return setup.defaultValue ?? "";
+}
+
 export async function getLayerSettingsByEnvironment(environmentId: number): Promise<LayerSettingParameter[]> {
     return db
         .table<LayerSettingParameter>("layerSettings")
@@ -18,7 +35,7 @@ export async function initLayerSettingsForEnvironment(environmentId: number): Pr
         providerId: s.providerId,
         environmentId,
         key: s.key,
-        value: s.defaultValue ?? "",
+        value: buildInitialValue(s),
     }));
     if (settings.length > 0) {
         await db.table<LayerSettingParameter>("layerSettings").bulkPut(settings);
@@ -60,7 +77,7 @@ export async function addMissingLayerSettingsForEnvironment(
                 providerId: s.providerId,
                 environmentId,
                 key: s.key,
-                value: s.defaultValue ?? "",
+                value: buildInitialValue(s),
             });
         }
     }
