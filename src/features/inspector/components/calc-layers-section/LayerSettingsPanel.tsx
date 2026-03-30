@@ -5,6 +5,8 @@ import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import SettingsPanelRowInput from "@/components/settings-panel/SettingsPanelRowInput";
 import SettingsPanelRowColorInput from "@/components/settings-panel/SettingsPanelRowColorInput";
 import SettingsPanelRowToggle from "@/components/settings-panel/SettingsPanelRowToggle";
+import SettingsPanelRowSelect from "@/components/settings-panel/SettingsPanelRowSelect";
+import { STYLE_TYPE_ENUM_OPTIONS } from "@/config/layers/styleTypeEnumValues";
 
 // ─── Param tooltips ───────────────────────────────────────────────────────────
 const PARAM_TOOLTIPS: Partial<Record<string, string>> = {
@@ -121,8 +123,20 @@ function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
         case "PointLabelEnum":
             // Rendered by PointLabelEnumColorsGroup — skip inline
             return null;
-        default:
-            // All enum style types (PointShapeEnum, StrokeStyleEnum, etc.) fall back to text input
+        default: {
+            const enumOptions = STYLE_TYPE_ENUM_OPTIONS[styleType];
+            if (enumOptions != null) {
+                return (
+                    <SettingsPanelRowSelect
+                        label={key}
+                        value={value}
+                        options={enumOptions}
+                        disabled={disabled}
+                        onChange={(v) => onParamChange(key, v)}
+                    />
+                );
+            }
+            // String and any future unknown styleTypes fall back to text input
             return (
                 <SettingsPanelRowInput
                     label={key}
@@ -131,6 +145,7 @@ function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
                     onChange={(v) => onParamChange(key, v)}
                 />
             );
+        }
     }
 }
 
