@@ -1,4 +1,5 @@
 import type { EnvFormat, GlobalType as EnvType, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
+import type { ComputeResult } from "@/types/serviceTypes";
 
 export interface ComputationSelection {
     environmentId: number;
@@ -39,4 +40,16 @@ export interface Object {
     area: number;
     /** Polygon vertices in draw order. */
     vertices: Array<{ x: number; y: number }>;
+}
+
+/** Per-environment working compute result. One row per environment; replaced on every successful compute. */
+export interface ComputeResultRecord {
+    /** PK — FK → environments.id */
+    environmentId: number;
+    jobId: string;
+    algorithmId: number;
+    providerId: number;
+    algorithmName: string;
+    completedAt: string;
+    result: ComputeResult;
 }

@@ -4,12 +4,19 @@ import { buildComputationProviderEndpointUrl } from "@/features/computation-prov
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
-import type { AlgoParamType } from "@/types/serviceTypes";
+import { useComputeResultStore } from "@/stores/useComputeResultStore";
+import { saveComputeResult } from "@server/db/computeResults";
+import type { AlgoParamType, ComputeJobState, ComputeJobStateCompleted } from "@/types/serviceTypes";
+import type { ComputeResultRecord } from "@/types/schemaTypes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ComputeSubmitResult =
     | { ok: true; jobId: string; pollUrl: string }
+    | { ok: false; error: string };
+
+export type ComputeExecuteResult =
+    | { ok: true; record: ComputeResultRecord }
     | { ok: false; error: string };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -136,4 +143,73 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
         const message = err instanceof Error ? err.message : String(err);
         return { ok: false, error: `Request failed: ${message}` };
     }
+}
+
+// ─── Polling ──────────────────────────────────────────────────────────────────
+
+const POLL_INTERVAL_MS = 600;
+const POLL_MAX_ATTEMPTS = 100; // 60 s
+
+async function pollComputeJob(pollUrl: string, apiKey: string): Promise<ComputeJobState> {
+    const headers: HeadersInit = apiKey.trim() !== "" ? { "Authorization": `Bearer ${apiKey}` } : {};
+    for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
+        await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+        const response = await fetch(pollUrl, { headers });
+        const data = await response.json() as ComputeJobState;
+        if (data.status === "completed" || data.status === "failed") {
+            return data;
+        }
+    }
+    throw new Error("Compute job timed out after 60 seconds.");
+}
+
+// ─── Execute (submit + poll + persist) ───────────────────────────────────────
+
+export async function executeComputeRequest(): Promise<ComputeExecuteResult> {
+    const resultStore = useComputeResultStore.getState();
+    resultStore.setStatus("submitting");
+
+    const submitResult = await submitComputeRequest();
+    if (!submitResult.ok) {
+        resultStore.setStatus("idle");
+        return { ok: false, error: submitResult.error };
+    }
+
+    resultStore.setStatus("polling");
+
+    const { computation } = useEnvStore.getState();
+    const { providers } = useComputationCatalogStore.getState();
+    const provider = providers.find((p) => p.id === computation.selectedProviderId);
+    const apiKey = provider?.apiKey ?? "";
+
+    let jobState: ComputeJobState;
+    try {
+        jobState = await pollComputeJob(submitResult.pollUrl, apiKey);
+    } catch (err) {
+        resultStore.setStatus("failed");
+        const message = err instanceof Error ? err.message : String(err);
+        return { ok: false, error: message };
+    }
+
+    if (jobState.status === "failed") {
+        resultStore.setStatus("failed");
+        return { ok: false, error: jobState.error?.message ?? "Compute job failed." };
+    }
+
+    const completed = jobState as ComputeJobStateCompleted;
+    const { env } = useEnvStore.getState();
+    const record: ComputeResultRecord = {
+        environmentId: env.id,
+        jobId: completed.jobId,
+        algorithmId: computation.selectedAlgorithmId!,
+        providerId: computation.selectedProviderId!,
+        algorithmName: completed.algorithmName,
+        completedAt: completed.completedAt ?? new Date().toISOString(),
+        result: completed.result,
+    };
+
+    await saveComputeResult(record);
+    resultStore.setResult(record);
+
+    return { ok: true, record };
 }

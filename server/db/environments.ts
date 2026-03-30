@@ -6,6 +6,7 @@ import { deleteObjectsByEnvironment } from "./objects";
 import { deleteAlgorithmParametersByEnvironment } from "./computationAlgorithmParameters";
 import { deleteComputationSelection } from "./computationSelection";
 import { deleteLayerSettingsForEnvironment } from "./layerSettings";
+import { deleteComputeResult } from "./computeResults";
 
 const environmentsTable: Table<Environment, number> = db.table("environments");
 
@@ -30,6 +31,7 @@ export async function deleteEnvironment(env: Environment): Promise<void> {
     await deleteAlgorithmParametersByEnvironment(env.id);
     await deleteComputationSelection(env.id);
     await deleteLayerSettingsForEnvironment(env.id);
+    await deleteComputeResult(env.id);
     await environmentsTable.delete(env.id);
 }
 
