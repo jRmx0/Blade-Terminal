@@ -158,11 +158,36 @@ interface StyleSubgroupSectionProps {
 function StyleSubgroupSection({ section, disabled }: StyleSubgroupSectionProps) {
     const [expanded, setExpanded] = useState(true);
 
+    const showHeader = section.showHeader !== false;
     const visibleParams = section.settings.filter((p) => p.key !== LAYER_PARAM_KEY.VISIBLE && p.styleType !== "PointLabelEnum");
     const enumParam = section.settings.find((p) => p.styleType === "PointLabelEnum");
 
     const hasContent = visibleParams.length > 0 || enumParam != null;
     if (!hasContent) return null;
+
+    const fields = (
+        <>
+            {visibleParams.map((param) => (
+                <SettingField
+                    key={param.key}
+                    param={param}
+                    disabled={disabled}
+                    onParamChange={section.onParamChange}
+                />
+            ))}
+            {enumParam != null && (
+                <PointLabelEnumColorsGroup
+                    param={enumParam}
+                    disabled={disabled}
+                    onParamChange={section.onParamChange}
+                />
+            )}
+        </>
+    );
+
+    if (!showHeader) {
+        return <div>{fields}</div>;
+    }
 
     return (
         <div>
@@ -182,25 +207,7 @@ function StyleSubgroupSection({ section, disabled }: StyleSubgroupSectionProps) 
                     expand_more
                 </span>
             </button>
-            {expanded && (
-                <>
-                    {visibleParams.map((param) => (
-                        <SettingField
-                            key={param.key}
-                            param={param}
-                            disabled={disabled}
-                            onParamChange={section.onParamChange}
-                        />
-                    ))}
-                    {enumParam != null && (
-                        <PointLabelEnumColorsGroup
-                            param={enumParam}
-                            disabled={disabled}
-                            onParamChange={section.onParamChange}
-                        />
-                    )}
-                </>
-            )}
+            {expanded && fields}
         </div>
     );
 }
@@ -210,6 +217,8 @@ export interface SettingsSectionData {
     label: string;
     settings: LayerSettingParameter[];
     onParamChange: (name: string, value: string) => void;
+    /** When false, renders the section flat without a collapsible header. Defaults to true. */
+    showHeader?: boolean;
 }
 
 // ─── Panel ────────────────────────────────────────────────────────────────────

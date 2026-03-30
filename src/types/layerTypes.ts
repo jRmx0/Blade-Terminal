@@ -41,8 +41,8 @@ export interface LayerSettingsSetup {
     key: StyleAttributeKey | InternalStyleAttributeKey;
     /** Attribute value type from the provider spec. */
     styleType: StyleType;
-    /** Which API style subgroup this attribute belongs to. */
-    styleGroup: StyleAttributeGroup;
+    /** Which API style subgroup this attribute belongs to. Absent for internal attributes (e.g. Show Vertex IDs). */
+    styleGroup?: StyleAttributeGroup;
     defaultValue: string | null;
     /** Allowed enum values — populated for "PointLabelEnum" rows. */
     enumValues?: string[];
@@ -91,8 +91,8 @@ export interface LayerSettingParameter {
     key: StyleAttributeKey | InternalStyleAttributeKey;
     /** Attribute value type — de-normalized from setup, drives input widget selection. */
     styleType: StyleType;
-    /** Style subgroup — de-normalized from setup, drives section grouping in the panel. */
-    styleGroup: StyleAttributeGroup;
+    /** Style subgroup — de-normalized from setup, drives section grouping in the panel. Absent for internal attributes. */
+    styleGroup?: StyleAttributeGroup;
     value: string;
 }
 

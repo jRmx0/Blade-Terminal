@@ -106,11 +106,21 @@ function buildSections(
     settings: LayerSettingParameter[],
     onParamChange: (name: string, value: string) => void,
 ): SettingsSectionData[] {
-    return GROUP_ORDER
-        .map((group) => ({
-            label: GROUP_LABELS[group],
-            settings: settings.filter((p) => p.styleGroup === group),
-            onParamChange,
-        }))
-        .filter((s) => s.settings.length > 0);
+    const sections: SettingsSectionData[] = [];
+
+    // Internal params with no style group render flat (no collapsible header)
+    const ungrouped = settings.filter((p) => p.styleGroup == null && p.key !== LAYER_PARAM_KEY.VISIBLE);
+    if (ungrouped.length > 0) {
+        sections.push({ label: "", settings: ungrouped, onParamChange, showHeader: false });
+    }
+
+    // API style subgroups render as collapsible sections
+    for (const group of GROUP_ORDER) {
+        const grouped = settings.filter((p) => p.styleGroup === group);
+        if (grouped.length > 0) {
+            sections.push({ label: GROUP_LABELS[group], settings: grouped, onParamChange });
+        }
+    }
+
+    return sections;
 }

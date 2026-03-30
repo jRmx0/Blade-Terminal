@@ -80,7 +80,7 @@ export const LAYER_SETTINGS_SETUP_DEFAULTS: LayerSettingsSetup[] = [
 
     // ── Zones (Polygon) ──────────────────────────────────────────────────────
     { id: 1, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "universal", defaultValue: "true" },
-    { id: 2, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.SHOW_VERTEX_IDS, styleType: "Boolean", styleGroup: "universal", defaultValue: "false" },
+    { id: 2, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.SHOW_VERTEX_IDS, styleType: "Boolean", defaultValue: "false" },
     { id: 5, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "universal", defaultValue: "20" },
     { id: 60, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_COLOR, styleType: "Color", styleGroup: "polygon", defaultValue: "#22c55e" },
     { id: 61, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH, styleType: "Spacing", styleGroup: "polygon", defaultValue: "1.5" },
@@ -89,7 +89,7 @@ export const LAYER_SETTINGS_SETUP_DEFAULTS: LayerSettingsSetup[] = [
 
     // ── Obstacles (Polygon) ──────────────────────────────────────────────────
     { id: 1, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "universal", defaultValue: "true" },
-    { id: 2, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.SHOW_VERTEX_IDS, styleType: "Boolean", styleGroup: "universal", defaultValue: "false" },
+    { id: 2, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.SHOW_VERTEX_IDS, styleType: "Boolean", defaultValue: "false" },
     { id: 5, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "universal", defaultValue: "30" },
     { id: 60, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_COLOR, styleType: "Color", styleGroup: "polygon", defaultValue: "#ef4444" },
     { id: 61, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH, styleType: "Spacing", styleGroup: "polygon", defaultValue: "1.5" },
