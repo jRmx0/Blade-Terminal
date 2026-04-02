@@ -25,6 +25,10 @@ import { CanvasGridLayer } from "@/features/canvas-editing/components/canvas-edi
 import { CanvasPolygonObjectsLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasPolygonObjectsLayer";
 import { CanvasVertexHandlesLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasVertexHandlesLayer";
 import { CanvasDrawingPreviewLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasDrawingPreviewLayer";
+import { CanvasDynamicLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasDynamicLayer";
+import { useComputeResultStore } from "@/stores/useComputeResultStore";
+import { useProviderLayerStore } from "@/stores/providerLayerStore";
+import { extractLayerData, getProviderLayersForResult } from "@/features/canvas-editing/utils/layerDataUtils";
 
 export default function CanvasEditor() {
   const stageRef = useRef<Konva.Stage>(null);
@@ -41,6 +45,8 @@ export default function CanvasEditor() {
   const setCanvasSize = useCanvasViewStore((s) => s.setCanvasSize);
   const { activeTool, setActiveTool } = useCanvasToolStore();
   const layerSettings = useLayerSettingsStore((s) => s.layers);
+  const result = useComputeResultStore((s) => s.result);
+  const providerLayers = useProviderLayerStore((s) => s.layers);
   const {
     objects,
     addObject,
@@ -160,12 +166,39 @@ export default function CanvasEditor() {
   const zoneZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.ZONES, LAYER_PARAM_KEY.Z_INDEX) ?? "20", 10);
   const obstacleZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.OBSTACLES, LAYER_PARAM_KEY.Z_INDEX) ?? "30", 10);
 
-  // Sort the three system layers by Z-Index ascending so lower Z renders beneath higher.
-  const systemLayerOrder = ([
-    { id: "grid" as const, zIndex: gridZIndex },
-    { id: "zones" as const, zIndex: zoneZIndex },
-    { id: "obstacles" as const, zIndex: obstacleZIndex },
-  ] as const).slice().sort((a, b) => a.zIndex - b.zIndex);
+  // Memoize provider layers active for the current compute result.
+  const activeProviderLayers = useMemo(
+    () => (result ? getProviderLayersForResult(result, providerLayers) : []),
+    [result, providerLayers],
+  );
+
+  // Build per-layer entries for each active provider layer: settings + extracted items.
+  const dynamicEntries = useMemo(() => {
+    if (!result) return [];
+    return activeProviderLayers.map((pl) => {
+      const lws = layerSettings.find(
+        (l) => l.layer.id === pl.id && l.layer.algorithmId === pl.algorithmId && l.layer.providerId === pl.providerId,
+      );
+      const zIndex = lws
+        ? parseInt(lws.settings.find((s) => s.key === "Z-Index")?.value ?? "50", 10)
+        : 50;
+      return {
+        kind: "dynamic" as const,
+        providerLayer: pl,
+        settings: lws?.settings ?? [],
+        items: extractLayerData(result.result, pl.computeLayer),
+        zIndex,
+      };
+    });
+  }, [result, activeProviderLayers, layerSettings]);
+
+  // Unified layer order — system and dynamic layers interleaved by Z-Index ascending.
+  const allLayerOrder = [
+    { kind: "system" as const, id: "grid" as const, zIndex: gridZIndex },
+    { kind: "system" as const, id: "zones" as const, zIndex: zoneZIndex },
+    { kind: "system" as const, id: "obstacles" as const, zIndex: obstacleZIndex },
+    ...dynamicEntries,
+  ].sort((a, b) => a.zIndex - b.zIndex);
 
   const selectedObjectForHandles =
     selectedObject === null ? null :
@@ -266,11 +299,21 @@ export default function CanvasEditor() {
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       >
-        {systemLayerOrder.map(({ id }) => {
-          if (id === "grid") {
+        {allLayerOrder.map((entry) => {
+          if (entry.kind === "dynamic") {
+            return (
+              <CanvasDynamicLayer
+                key={`dyn-${entry.providerLayer.algorithmId}-${entry.providerLayer.providerId}-${entry.providerLayer.id}`}
+                layerMeta={entry.providerLayer}
+                settings={entry.settings}
+                items={entry.items}
+              />
+            );
+          }
+          if (entry.id === "grid") {
             return <CanvasGridLayer key="grid" width={size.width} height={size.height} />;
           }
-          if (id === "zones") {
+          if (entry.id === "zones") {
             return (
               <CanvasPolygonObjectsLayer
                 key="zones"

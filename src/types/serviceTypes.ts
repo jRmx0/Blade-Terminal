@@ -290,11 +290,59 @@ export interface CoveragePathPlan {
     segments: CoveragePathPlanSegment[];
 }
 
-export type AlgorithmDebug = Record<string, object[]>;
+export interface DebugResultLayer {
+    id: number;
+    source: string;
+    list: unknown[];
+}
+
+export interface AlgorithmDebug {
+    layers: DebugResultLayer[];
+}
 
 export interface ComputeResult {
     coveragePathPlan: CoveragePathPlan;
     debug?: AlgorithmDebug;
+}
+
+// ─── Generic Canvas Item Contracts ───────────────────────────────────────────
+//
+// These interfaces define the minimum structural contracts that layer renderers
+// rely on. Any algorithm's output items for a given layerType must conform to
+// the corresponding interface — the contract is enforced at the API boundary,
+// not at runtime inside the terminal.
+
+/** Item contract for Line layers using connect-the-dots rendering.
+ * Items are connected in array order to form a single polyline. */
+export interface CanvasLineItem {
+    id: number;
+    point: { x: number; y: number };
+    pointLabel?: string | number;
+}
+
+/** Item contract for Line layers using explicit waypoint paths.
+ * Each item renders as an independent polyline. */
+export interface CanvasPathItem {
+    id: number;
+    path: { x: number; y: number }[];
+    type?: string;
+}
+
+/** Item contract for layers with layerType: "Point". Each item renders as a point marker. */
+export interface CanvasPointItem {
+    id: number;
+    point: { x: number; y: number };
+    /** Optional label rendered as a text annotation near the marker. */
+    pointLabel?: string;
+}
+
+/** Item contract for layers with layerType: "Polygon". Each item renders as a filled polygon. */
+export interface CanvasPolygonItem {
+    id: number;
+    /** Polygon vertices in draw order. */
+    vertices: { x: number; y: number }[];
+    /** Optional centroid used for ID label placement. Falls back to the first vertex if absent. */
+    centroidPoint?: { x: number; y: number };
 }
 
 export interface ComputeJobStatePending {
