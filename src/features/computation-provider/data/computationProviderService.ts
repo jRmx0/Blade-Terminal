@@ -215,6 +215,7 @@ export async function persistFetchedMetadata(
                 providerId,
                 key: l.id,
                 label: l.name,
+                computeLayer: l.computeLayer,
                 type: l.layerType,
             })),
         );

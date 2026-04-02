@@ -62,6 +62,8 @@ export interface LayerPK {
  * `id` is a natural key from the layer definition or provider metadata.
  * System layers use `algorithmId: 0, providerId: 0` as sentinels.
  * `type` is optional for backward compatibility with DB records that pre-date the type field.
+ * `computeLayer` is the algorithm-specific channel key used to extract result data (e.g. "coveragePathPlan").
+ * Optional for backward compatibility — pre-existing DB records without this field fall back to `label`.
  */
 export interface LayerRecord {
     id: number;
@@ -69,6 +71,7 @@ export interface LayerRecord {
     providerId: number;
     key: LayerId;
     label: string;
+    computeLayer?: string;
     type?: LayerType;
     placeholder?: boolean;
 }
