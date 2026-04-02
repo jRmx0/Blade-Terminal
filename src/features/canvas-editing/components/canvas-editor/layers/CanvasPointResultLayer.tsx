@@ -40,12 +40,58 @@ function labelOffset(
     }
 }
 
+/**
+ * When multiple items share the same point (same pointLabel / centroid),
+ * spreads them in a grid pattern so they don't overlap.
+ * Returns per-item {dx, dy} offsets relative to the shared point.
+ */
+function computeOverlapOffsets(
+    items: CanvasPointItem[],
+    spacing: number,
+    layout: string,
+): Map<number, { dx: number; dy: number }> {
+    const offsets = new Map<number, { dx: number; dy: number }>();
+    if (!spacing || layout !== "grid") {
+        items.forEach((item) => offsets.set(item.id, { dx: 0, dy: 0 }));
+        return offsets;
+    }
+
+    // Group items by position key
+    const groups = new Map<string, CanvasPointItem[]>();
+    for (const item of items) {
+        if (!item.point) continue;
+        const key = `${item.point.x},${item.point.y}`;
+        const group = groups.get(key);
+        if (group) group.push(item);
+        else groups.set(key, [item]);
+    }
+
+    for (const group of groups.values()) {
+        const n = group.length;
+        const cols = Math.ceil(Math.sqrt(n));
+        group.forEach((item, i) => {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const totalCols = Math.min(cols, n - row * cols);
+            const dx = (col - (totalCols - 1) / 2) * spacing;
+            const dy = (row - (Math.ceil(n / cols) - 1) / 2) * spacing;
+            offsets.set(item.id, { dx, dy });
+        });
+    }
+    return offsets;
+}
+
 function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPointResultLayerProps) {
+    const overlapOffsets = computeOverlapOffsets(items, style.overlapSpacing, style.overlapLayout);
+    const showId = style.idPlacement !== "";
+
     return (
         <Layer>
             {items.map((item) => {
                 if (!item.point) return null;
-                const { x, y } = item.point;
+                const { dx: odx, dy: ody } = overlapOffsets.get(item.id) ?? { dx: 0, dy: 0 };
+                const x = item.point.x + odx;
+                const y = item.point.y + ody;
                 const fill = resolveFillColor(item.pointLabel, labelColorMapping, style.fillColor);
 
                 const markerProps = {
@@ -87,7 +133,22 @@ function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPoin
                     }
                 })();
 
-                const { dx, dy } = labelOffset(
+                // ID label — uses idPlacement/idOffset
+                const idOffset = (() => {
+                    if (!showId) return null;
+                    const gap = style.radius + style.borderWidth + style.idOffset;
+                    switch (style.idPlacement) {
+                        case "inside": return { dx: 0, dy: 0 };
+                        case "outside-left": return { dx: -gap, dy: 0 };
+                        case "outside-right": return { dx: gap, dy: 0 };
+                        case "outside-bottom": return { dx: 0, dy: gap };
+                        case "outside-top":
+                        default: return { dx: 0, dy: -gap };
+                    }
+                })();
+
+                // Text label — uses labelPlacement/labelOffset
+                const { dx: ldx, dy: ldy } = labelOffset(
                     style.labelPlacement,
                     style.labelOffset,
                     style.radius,
@@ -97,10 +158,24 @@ function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPoin
                 return (
                     <Group key={item.id} x={x} y={y}>
                         {marker}
-                        {item.pointLabel !== undefined && (
+                        {showId && idOffset !== null && (
                             <Text
-                                x={dx}
-                                y={dy}
+                                x={idOffset.dx}
+                                y={idOffset.dy}
+                                text={String(item.id)}
+                                fill={style.idColor}
+                                fontSize={style.idFontSize}
+                                fontStyle={style.idFontWeight}
+                                align="center"
+                                verticalAlign="middle"
+                                listening={false}
+                                perfectDrawEnabled={false}
+                            />
+                        )}
+                        {style.labelPlacement !== "" && item.pointLabel !== undefined && (
+                            <Text
+                                x={ldx}
+                                y={ldy}
                                 text={String(item.pointLabel)}
                                 fill={style.labelColor}
                                 fontSize={style.labelFontSize}

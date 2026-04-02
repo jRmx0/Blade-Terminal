@@ -1,22 +1,119 @@
 import { memo } from "react";
-import { Layer, Line, Group, Circle, Text } from "react-konva";
+import { Layer, Line, Group, Circle, Text, Shape } from "react-konva";
+import type { Context } from "konva/lib/Context";
 import type { ResolvedLineLayerStyle } from "@/features/canvas-editing/types/layerStyles";
 import type { CanvasLineItem } from "@/types/serviceTypes";
+import {
+    arrowHeadPoints,
+    interpolatePolyline,
+    isNotchArrow,
+    isStartArrow,
+    midArrowPositions,
+    polylineLength,
+} from "@/features/canvas-editing/utils/arrowUtils";
 
 interface CanvasLineResultLayerProps {
     items: CanvasLineItem[];
     style: ResolvedLineLayerStyle;
 }
 
+/**
+ * When multiple items share the same canvas position, spreads them in a grid
+ * so they don't overlap. Returns per-item {dx, dy} offsets.
+ */
+function computeOverlapOffsets(
+    items: CanvasLineItem[],
+    spacing: number,
+    layout: string,
+): Map<number, { dx: number; dy: number }> {
+    const offsets = new Map<number, { dx: number; dy: number }>();
+    if (!spacing || layout !== "grid") {
+        items.forEach((item) => offsets.set(item.id, { dx: 0, dy: 0 }));
+        return offsets;
+    }
+    const groups = new Map<string, CanvasLineItem[]>();
+    for (const item of items) {
+        const key = `${item.point.x},${item.point.y}`;
+        const group = groups.get(key);
+        if (group) group.push(item);
+        else groups.set(key, [item]);
+    }
+    for (const group of groups.values()) {
+        const n = group.length;
+        const cols = Math.ceil(Math.sqrt(n));
+        group.forEach((item, i) => {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const totalCols = Math.min(cols, n - row * cols);
+            const dx = (col - (totalCols - 1) / 2) * spacing;
+            const dy = (row - (Math.ceil(n / cols) - 1) / 2) * spacing;
+            offsets.set(item.id, { dx, dy });
+        });
+    }
+    return offsets;
+}
+
 function _CanvasLineResultLayer({ items, style }: CanvasLineResultLayerProps) {
-    // Connect-the-dots: collect all item points in array order and render as a single polyline.
-    const points = items.flatMap((item) => [item.point.x, item.point.y]);
+    const overlapOffsets = computeOverlapOffsets(
+        items,
+        style.pointOverlapSpacing,
+        style.pointOverlapLayout,
+    );
+
+    // Apply overlap offsets to each item's point position
+    const resolvedPoints = items.map((item) => {
+        const off = overlapOffsets.get(item.id) ?? { dx: 0, dy: 0 };
+        return { ...item, point: { x: item.point.x + off.dx, y: item.point.y + off.dy } };
+    });
+
+    const flatPoints = resolvedPoints.flatMap((item) => [item.point.x, item.point.y]);
     const showMarkers = style.pointShape !== "";
+
+    // Arrow rendering helpers
+    const totalLen = polylineLength(flatPoints);
+    const arrowSize = style.arrowSize;
+
+    const startArrowPoints =
+        style.arrowStart && flatPoints.length >= 4
+            ? (() => {
+                const { point, angle } = interpolatePolyline(flatPoints, 0);
+                const dir = isStartArrow(style.arrowStart) ? angle + Math.PI : angle;
+                return arrowHeadPoints(point.x, point.y, dir, arrowSize, isNotchArrow(style.arrowStart));
+            })()
+            : null;
+
+    const endArrowPoints =
+        style.arrowEnd && flatPoints.length >= 4
+            ? (() => {
+                const { point, angle } = interpolatePolyline(flatPoints, 1);
+                const dir = isStartArrow(style.arrowEnd) ? angle + Math.PI : angle;
+                return arrowHeadPoints(point.x, point.y, dir, arrowSize, isNotchArrow(style.arrowEnd));
+            })()
+            : null;
+
+    const midArrows =
+        style.arrowMid && style.arrowMidSpacing > 0 && flatPoints.length >= 4
+            ? midArrowPositions(totalLen, style.arrowMidSpacing).map((t) => {
+                const { point, angle } = interpolatePolyline(flatPoints, t);
+                const dir = isStartArrow(style.arrowMid) ? angle + Math.PI : angle;
+                return arrowHeadPoints(point.x, point.y, dir, arrowSize, isNotchArrow(style.arrowMid));
+            })
+            : [];
+
+    const arrowStrokeProps = {
+        stroke: style.stroke,
+        strokeWidth: style.strokeWidth,
+        lineCap: "round" as const,
+        lineJoin: "round" as const,
+        listening: false as const,
+        perfectDrawEnabled: false as const,
+    };
 
     return (
         <Layer>
+            {/* Main polyline */}
             <Line
-                points={points}
+                points={flatPoints}
                 stroke={style.stroke}
                 strokeWidth={style.strokeWidth}
                 dash={style.dash}
@@ -25,7 +122,20 @@ function _CanvasLineResultLayer({ items, style }: CanvasLineResultLayerProps) {
                 listening={false}
                 perfectDrawEnabled={false}
             />
-            {showMarkers && items.map((item) => (
+            {/* Start arrow */}
+            {startArrowPoints && (
+                <Line points={startArrowPoints} closed={!isNotchArrow(style.arrowStart)} fill={style.stroke} {...arrowStrokeProps} />
+            )}
+            {/* End arrow */}
+            {endArrowPoints && (
+                <Line points={endArrowPoints} closed={!isNotchArrow(style.arrowEnd)} fill={style.stroke} {...arrowStrokeProps} />
+            )}
+            {/* Mid arrows */}
+            {midArrows.map((pts, i) => (
+                <Line key={i} points={pts} closed={!isNotchArrow(style.arrowMid)} fill={style.stroke} {...arrowStrokeProps} />
+            ))}
+            {/* Point markers */}
+            {showMarkers && resolvedPoints.map((item) => (
                 <Group key={item.id} x={item.point.x} y={item.point.y} listening={false}>
                     <Circle
                         radius={style.pointRadius}
