@@ -278,12 +278,18 @@ export interface MetadataResponse {
 
 // ─── Compute Result ───────────────────────────────────────────────────────────
 
+/** A waypoint with a sequential 1-based ID and its coordinates. Mirrors the blade-provider API shape. */
+export interface IndexedPoint {
+    id: number;
+    point: { x: number; y: number };
+}
+
 export type CoveragePathPlanSegmentType = "coverage" | "transit" | (string & {});
 
 export interface CoveragePathPlanSegment {
     id: number;
     type: CoveragePathPlanSegmentType;
-    path: { x: number; y: number }[];
+    path: IndexedPoint[];
 }
 
 export interface CoveragePathPlan {
@@ -324,7 +330,7 @@ export interface CanvasLineItem {
  * Each item renders as an independent polyline. */
 export interface CanvasPathItem {
     id: number;
-    path: { x: number; y: number }[];
+    path: IndexedPoint[];
     type?: string;
 }
 

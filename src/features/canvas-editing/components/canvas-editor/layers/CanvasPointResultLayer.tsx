@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Layer, Circle, Rect, RegularPolygon, Group, Text } from "react-konva";
+import { Layer, Circle, Rect, RegularPolygon, Group, Text, Shape } from "react-konva";
 import type { ResolvedPointLayerStyle } from "@/features/canvas-editing/types/layerStyles";
 import type { CanvasPointItem, PointLabelColorEntry } from "@/types/serviceTypes";
 
@@ -123,12 +123,37 @@ function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPoin
                                     {...markerProps}
                                     sides={4}
                                     radius={style.radius}
-                                    rotation={45}
                                 />
                             );
+                        case "cross": {
+                            const aw = style.radius * 0.2;
+                            const al = style.radius;
+                            return (
+                                <Shape
+                                    {...markerProps}
+                                    rotation={45}
+                                    sceneFunc={(ctx, shape) => {
+                                        ctx.beginPath();
+                                        ctx.moveTo(-aw, -al);
+                                        ctx.lineTo(aw, -al);
+                                        ctx.lineTo(aw, -aw);
+                                        ctx.lineTo(al, -aw);
+                                        ctx.lineTo(al, aw);
+                                        ctx.lineTo(aw, aw);
+                                        ctx.lineTo(aw, al);
+                                        ctx.lineTo(-aw, al);
+                                        ctx.lineTo(-aw, aw);
+                                        ctx.lineTo(-al, aw);
+                                        ctx.lineTo(-al, -aw);
+                                        ctx.lineTo(-aw, -aw);
+                                        ctx.closePath();
+                                        ctx.fillStrokeShape(shape);
+                                    }}
+                                />
+                            );
+                        }
                         case "circle":
                         default:
-                            // "cross" falls back to circle — cross requires custom path rendering
                             return <Circle {...markerProps} radius={style.radius} />;
                     }
                 })();

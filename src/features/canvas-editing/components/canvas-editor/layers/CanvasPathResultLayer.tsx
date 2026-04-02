@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Layer, Line } from "react-konva";
+import { Layer, Line, Group, Circle, Rect, RegularPolygon, Shape, Text } from "react-konva";
 import type { ResolvedLineLayerStyle } from "@/features/canvas-editing/types/layerStyles";
 import type { CanvasPathItem } from "@/types/serviceTypes";
 import {
@@ -22,11 +22,13 @@ const TRANSIT_DASH = [6, 4];
 
 function _CanvasPathResultLayer({ items, style }: CanvasPathResultLayerProps) {
     const arrowSize = style.arrowSize;
+    const showMarkers = style.pointShape !== "";
+    const showId = style.pointIdPlacement !== "";
 
     return (
         <Layer>
             {items.map((item) => {
-                const flatPoints = item.path.flatMap((p) => [p.x, p.y]);
+                const flatPoints = item.path.flatMap((p) => [p.point.x, p.point.y]);
                 const dash = item.type === "transit" ? TRANSIT_DASH : style.dash;
                 const hasArrows = flatPoints.length >= 4 && arrowSize > 0;
                 const totalLen = hasArrows ? polylineLength(flatPoints) : 0;
@@ -89,6 +91,101 @@ function _CanvasPathResultLayer({ items, style }: CanvasPathResultLayerProps) {
                         {midArrows.map((pts, mi) => (
                             <Line key={`${item.id}-am${mi}`} points={pts} closed={!isNotchArrow(style.arrowMid)} fill={style.stroke} {...arrowStrokeProps} />
                         ))}
+                        {showMarkers && item.path.map((wp) => {
+                            const gap = style.pointRadius + style.pointBorderWidth + style.pointIdOffset;
+                            const idOffset = (() => {
+                                switch (style.pointIdPlacement) {
+                                    case "inside": return { dx: 0, dy: 0 };
+                                    case "outside-left": return { dx: -gap, dy: 0 };
+                                    case "outside-right": return { dx: gap, dy: 0 };
+                                    case "outside-bottom": return { dx: 0, dy: gap };
+                                    case "outside-top":
+                                    default: return { dx: 0, dy: -gap };
+                                }
+                            })();
+
+                            const markerProps = {
+                                fill: style.pointFillColor,
+                                stroke: style.pointBorderColor || undefined,
+                                strokeWidth: style.pointBorderWidth,
+                                dash: style.pointBorderDash,
+                                listening: false as const,
+                                perfectDrawEnabled: false as const,
+                            };
+                            const marker = (() => {
+                                switch (style.pointShape) {
+                                    case "square":
+                                        return <Rect {...markerProps} x={-style.pointRadius} y={-style.pointRadius} width={style.pointRadius * 2} height={style.pointRadius * 2} />;
+                                    case "triangle":
+                                        return <RegularPolygon {...markerProps} sides={3} radius={style.pointRadius} />;
+                                    case "diamond":
+                                        return <RegularPolygon {...markerProps} sides={4} radius={style.pointRadius} />;
+                                    case "cross": {
+                                        const aw = style.pointRadius * 0.2;
+                                        const al = style.pointRadius;
+                                        return (
+                                            <Shape
+                                                {...markerProps}
+                                                rotation={45}
+                                                sceneFunc={(ctx, shape) => {
+                                                    ctx.beginPath();
+                                                    ctx.moveTo(-aw, -al);
+                                                    ctx.lineTo(aw, -al);
+                                                    ctx.lineTo(aw, -aw);
+                                                    ctx.lineTo(al, -aw);
+                                                    ctx.lineTo(al, aw);
+                                                    ctx.lineTo(aw, aw);
+                                                    ctx.lineTo(aw, al);
+                                                    ctx.lineTo(-aw, al);
+                                                    ctx.lineTo(-aw, aw);
+                                                    ctx.lineTo(-al, aw);
+                                                    ctx.lineTo(-al, -aw);
+                                                    ctx.lineTo(-aw, -aw);
+                                                    ctx.closePath();
+                                                    ctx.fillStrokeShape(shape);
+                                                }}
+                                            />
+                                        );
+                                    }
+                                    case "circle":
+                                    default:
+                                        return <Circle {...markerProps} radius={style.pointRadius} />;
+                                }
+                            })();
+
+                            return (
+                                <Group key={`${item.id}-wp-${wp.id}`} x={wp.point.x} y={wp.point.y} listening={false}>
+                                    {marker}
+                                    {showId && style.pointIdPlacement === "inside" && (
+                                        <Text
+                                            text={String(wp.id)}
+                                            fill={style.pointIdColor}
+                                            fontSize={style.pointIdFontSize}
+                                            fontStyle={style.pointIdFontWeight}
+                                            width={style.pointRadius * 2}
+                                            height={style.pointRadius * 2}
+                                            offsetX={style.pointRadius}
+                                            offsetY={style.pointRadius}
+                                            align="center"
+                                            verticalAlign="middle"
+                                            listening={false}
+                                        />
+                                    )}
+                                    {showId && style.pointIdPlacement !== "inside" && (
+                                        <Text
+                                            text={String(wp.id)}
+                                            fill={style.pointIdColor}
+                                            fontSize={style.pointIdFontSize}
+                                            fontStyle={style.pointIdFontWeight}
+                                            x={idOffset.dx}
+                                            y={idOffset.dy}
+                                            offsetY={style.pointIdFontSize / 2}
+                                            listening={false}
+                                        />
+                                    )}
+                                </Group>
+                            );
+                        })}
                     </>
                 );
             })}
