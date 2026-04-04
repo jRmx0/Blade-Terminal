@@ -8,7 +8,7 @@ export default function ApplicationHeader() {
       <div className="shrink-0">
         <AppHeaderLogoBox />
       </div>
-      <div className="flex flex-col min-w-0">
+      <div className="flex flex-col flex-1 min-w-0">
         <TitleBar />
         <MenuBar />
       </div>
