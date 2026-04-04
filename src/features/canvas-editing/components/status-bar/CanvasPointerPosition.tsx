@@ -9,7 +9,7 @@ export default function CanvasPointerPosition() {
                 near_me
             </span>
             <span>
-                {pointerPos && `${Math.round(pointerPos.x)}, ${Math.round(pointerPos.y)}px`}
+                {pointerPos && `${Math.round(pointerPos.x)}, ${Math.round(pointerPos.y)} px`}
             </span>
         </div>
     );
