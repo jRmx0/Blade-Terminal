@@ -54,7 +54,7 @@ export default function MenuBarItem({
         type="button"
         onClick={handleClick}
         onKeyDown={handleKeyDown}
-        className="flex items-center gap-2 px-3 w-full text-left text-base text-gray-700 hover:bg-gray-200 rounded cursor-pointer select-none"
+        className="flex items-center gap-2 px-3 w-full max-w-72 text-left text-base text-gray-700 hover:bg-gray-200 rounded cursor-pointer select-none"
       >
         {/* Left: Checkmark space */}
         <div className="w-5 shrink-0">
@@ -66,7 +66,7 @@ export default function MenuBarItem({
         </div>
 
         {/* Center: Label */}
-        <span className="flex-1">{label}</span>
+        <span className="flex-1 pr-8 truncate min-w-0">{label}</span>
 
         {/* Right: Shortcut or Arrow */}
         {(shortcutText || hasSubmenu) && (

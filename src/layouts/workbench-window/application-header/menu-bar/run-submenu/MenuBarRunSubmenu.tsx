@@ -3,7 +3,7 @@ import MenuBarSubmenu from "@/components/menu-bar/MenuBarSubmenu";
 
 export default function MenuBarRunSubmenu() {
     return (
-        <MenuBarSubmenu width="w-64">
+        <MenuBarSubmenu>
             <ManageProvidersButton />
         </MenuBarSubmenu>
     );
