@@ -50,6 +50,8 @@ export interface AlgorithmParameter {
     enumValues: string[];
     /** Serialized string default value. Empty string when not set. */
     defaultValue: string;
+    /** Minimum allowed numeric value. Only meaningful for Integer and Decimal params. */
+    minValue?: number;
     section?: MetadataParamSection;
     /** Optional application-level behavior handler for enum params. */
     appHandler: SupportedAppParameterHandler | null;
@@ -122,6 +124,7 @@ export interface MetadataParamResponse {
     paramType: AlgoParamType;
     enumValues: string[];
     defaultValue?: string;
+    minValue?: number;
     section?: MetadataParamSection;
     appHandler: SupportedAppParameterHandler | null;
 }

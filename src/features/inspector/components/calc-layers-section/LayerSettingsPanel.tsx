@@ -107,6 +107,7 @@ function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
                     label={key}
                     value={value}
                     type="number"
+                    min={0}
                     disabled={disabled}
                     onChange={(v) => onParamChange(key, v)}
                 />

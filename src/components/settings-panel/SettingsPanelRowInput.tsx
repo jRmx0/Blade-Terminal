@@ -7,6 +7,7 @@ interface SettingsPanelInputProps {
     onChange: (value: string) => void;
     disabled?: boolean;
     type?: "text" | "number";
+    min?: number;
 }
 
 export default function SettingsPanelInput({
@@ -15,6 +16,7 @@ export default function SettingsPanelInput({
     onChange,
     disabled = false,
     type = "text",
+    min,
 }: SettingsPanelInputProps) {
     const [isFocused, setIsFocused] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
@@ -31,8 +33,17 @@ export default function SettingsPanelInput({
                     type={type}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
+                    min={min}
                     onFocus={() => setIsFocused(true)}
-                    onBlur={() => setIsFocused(false)}
+                    onBlur={() => {
+                        setIsFocused(false);
+                        if (type === "number" && min !== undefined && value !== "") {
+                            const numeric = Number(value);
+                            if (!isNaN(numeric) && numeric < min) {
+                                onChange(String(min));
+                            }
+                        }
+                    }}
                     disabled={disabled}
                     className={`w-full border rounded bg-white text-xs px-2 h-6 focus:outline-none transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${type === "number" ? "pr-5" : ""
                         } ${isFocused ? "border-teal-700" : "border-gray-300"
@@ -60,7 +71,7 @@ export default function SettingsPanelInput({
                             disabled={disabled}
                             onMouseDown={(e) => {
                                 e.preventDefault();
-                                onChange(String(Number(value) - 1));
+                                onChange(String(Math.max(min ?? -Infinity, Number(value) - 1)));
                             }}
                             className="flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer active:text-teal-700"
                             style={{ height: 10 }}

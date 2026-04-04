@@ -129,6 +129,7 @@ function DynamicParameterField({
                     value={value}
                     onChange={(nextValue) => onChange(parameter.id, nextValue)}
                     type="number"
+                    min={parameter.minValue}
                 />
             );
 
@@ -139,6 +140,7 @@ function DynamicParameterField({
                     value={value}
                     onChange={(nextValue) => onChange(parameter.id, nextValue)}
                     type="number"
+                    min={parameter.minValue}
                 />
             );
 

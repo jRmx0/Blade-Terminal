@@ -33,6 +33,7 @@ export interface ControlsPanelSectionInputProps {
   disabled?: boolean;
   placeholder?: string;
   type?: string;
+  min?: number;
 }
 
 export interface ControlsPanelSectionSelectProps {

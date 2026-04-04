@@ -7,10 +7,11 @@ export default function ControlsPanelSectionInput({
   onChange,
   disabled = false,
   type = "text",
+  min,
 }: ControlsPanelSectionInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const isEmpty = value === "" || value === "0";
+  const isEmpty = value === "";
   const isFloated = !isEmpty || isFocused;
   const displayValue = isEmpty && !isFocused ? "" : value;
   const showSpinners = type === "number" && (isFocused || (isHovered && !isEmpty)) && !disabled;
@@ -33,8 +34,17 @@ export default function ControlsPanelSectionInput({
         type={type}
         value={displayValue}
         onChange={(e) => onChange(e.target.value)}
+        min={min}
         onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onBlur={() => {
+          setIsFocused(false);
+          if (type === "number" && min !== undefined && value !== "") {
+            const numeric = Number(value);
+            if (!isNaN(numeric) && numeric < min) {
+              onChange(String(min));
+            }
+          }
+        }}
         disabled={disabled}
         className={`w-full border rounded bg-white text-sm px-3 focus:outline-none transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${isFloated ? "pt-5 pb-1" : "py-1.5"
           } ${type === "number" ? "pr-5" : ""
@@ -63,7 +73,7 @@ export default function ControlsPanelSectionInput({
             disabled={disabled}
             onMouseDown={(e) => {
               e.preventDefault();
-              onChange(String(Number(value) - 1));
+              onChange(String(Math.max(min ?? -Infinity, Number(value) - 1)));
             }}
             className="flex-1 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors rounded-b cursor-pointer active:text-teal-700"
           >

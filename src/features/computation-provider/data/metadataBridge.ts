@@ -119,6 +119,7 @@ export function ingestProviderMetadata(
                 paramType: p.paramType,
                 enumValues: p.enumValues ?? [],
                 defaultValue: p.defaultValue ?? "",
+                minValue: p.minValue,
                 section: p.section,
                 appHandler: p.appHandler,
             })),
