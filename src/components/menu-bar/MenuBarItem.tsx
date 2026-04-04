@@ -70,15 +70,17 @@ export default function MenuBarItem({
 
         {/* Right: Shortcut or Arrow */}
         {(shortcutText || hasSubmenu) && (
-          <div className="text-base text-gray-500 shrink-0">
-            {hasSubmenu ? "▶" : shortcutText}
+          <div className="flex items-center text-gray-500 shrink-0">
+            {hasSubmenu ? (
+              <span className="material-symbols-outlined block leading-none" style={{ fontSize: 18 }}>chevron_right</span>
+            ) : <span className="text-base">{shortcutText}</span>}
           </div>
         )}
       </button>
 
       {/* Submenu */}
       {hasSubmenu && isHovered && (
-        <div className="absolute left-full top-0 ml-1 min-w-max bg-white border border-gray-300 rounded shadow-lg z-10">
+        <div className="absolute left-full -top-1.25 min-w-max bg-white border border-gray-300 rounded shadow-lg z-10">
           {submenu}
         </div>
       )}

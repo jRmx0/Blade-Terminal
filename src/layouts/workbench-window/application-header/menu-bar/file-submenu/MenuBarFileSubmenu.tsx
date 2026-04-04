@@ -9,10 +9,11 @@ import WorkspaceExportButton from "@/features/workspace-manager/components/menu-
 import MenuSeparator from "@/components/menu-bar/MenuBarSeparator";
 import WorkspaceOpenButton from "@/features/workspace-manager/components/menu-bar/WorkspaceOpenButton";
 import WorkspaceAutoSaveButton from "@/features/workspace-manager/components/menu-bar/WorkspaceAutoSaveButton";
+import MenuBarSubmenu from "@/components/menu-bar/MenuBarSubmenu";
 
 export default function MenuBarFileSubmenu() {
   return (
-    <div className="w-80 py-1 bg-gray-100">
+    <MenuBarSubmenu>
       <WorkspaceNewButton />
       <WorkspaceOpenButton />
 
@@ -39,6 +40,6 @@ export default function MenuBarFileSubmenu() {
       {/* <MenuSeparator />
 
       <WorkspaceCloseButton /> */}
-    </div>
+    </MenuBarSubmenu>
   );
 }
