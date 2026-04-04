@@ -37,7 +37,7 @@ const INITIAL_ENV: Environment = {
     id: 0,
     name: "Untitled Environment",
     format: ENV_FORMAT.POLYGON,
-    type: GLOBAL_TYPE.OFFLINE,
+    type: GLOBAL_TYPE.ANY_OFFLINE,
     zoneCount: 0,
     obstacleCount: 0,
 };
