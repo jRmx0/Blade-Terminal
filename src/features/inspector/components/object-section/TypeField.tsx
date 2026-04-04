@@ -1,7 +1,7 @@
 import InspectorPanelSectionSelectField from "@/components/inspector-panel/InspectorPanelSectionSelectField";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
-import { OBJECT_TYPE, OBJECT_TYPE_OPTIONS, isGlobalTypeFixed, type ObjectType } from "@/config/db-ops/enums";
+import { OBJECT_TYPE, OBJECT_TYPE_OPTIONS, isEnvTypeFixed, type ObjectType } from "@/config/db-ops/enums";
 import { useEnvStore } from "@/stores/envStore";
 
 const TYPE_OPTIONS = OBJECT_TYPE_OPTIONS.filter((o) => o.value !== OBJECT_TYPE.EMPTY);
@@ -12,7 +12,7 @@ export default function TypeField() {
     (s) => s.objects.find((o) => o.id === selectedObject?.id)?.type,
   );
   const updateObjectType = useCanvasObjectStore((s) => s.updateObjectType);
-  const globalType = useEnvStore((s) => s.env.type);
+  const envType = useEnvStore((s) => s.env.type);
 
   if (!selectedObject || type === undefined) return null;
 
@@ -21,7 +21,7 @@ export default function TypeField() {
       label="Type"
       value={type}
       options={TYPE_OPTIONS}
-      disabled={isGlobalTypeFixed(globalType)}
+      disabled={isEnvTypeFixed(envType)}
       onChange={(v) => updateObjectType(selectedObject, v as ObjectType)}
     />
   );

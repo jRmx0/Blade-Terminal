@@ -1,4 +1,4 @@
-import type { CoordSystemType, EnvFormat, GlobalType as EnvType, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
+import type { CoordSystemType, EnvFormat, EnvType, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
 import type { ComputeResult } from "@/types/serviceTypes";
 
 export interface ComputationSelection {

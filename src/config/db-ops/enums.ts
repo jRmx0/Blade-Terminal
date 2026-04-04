@@ -1,19 +1,19 @@
-// ─── Global Type ──────────────────────────────────────────────────────────────
+// ─── Environment Type ───────────────────────────────────────────────────────
 
-export const GLOBAL_TYPE = {
+export const ENV_TYPE = {
     OFFLINE: "offline",
     ONLINE: "online",
     ANY_OFFLINE: "any_offline",
     ANY_ONLINE: "any_online",
 } as const;
 
-export type GlobalType = (typeof GLOBAL_TYPE)[keyof typeof GLOBAL_TYPE];
+export type EnvType = (typeof ENV_TYPE)[keyof typeof ENV_TYPE];
 
-export const GLOBAL_TYPE_OPTIONS: { value: GlobalType; label: string }[] = [
-    { value: GLOBAL_TYPE.OFFLINE, label: "Off-Line" },
-    { value: GLOBAL_TYPE.ONLINE, label: "On-Line" },
-    { value: GLOBAL_TYPE.ANY_OFFLINE, label: "Any (default: Off-Line)" },
-    { value: GLOBAL_TYPE.ANY_ONLINE, label: "Any (default: On-Line)" },
+export const ENV_TYPE_OPTIONS: { value: EnvType; label: string }[] = [
+    { value: ENV_TYPE.OFFLINE, label: "Off-Line" },
+    { value: ENV_TYPE.ONLINE, label: "On-Line" },
+    { value: ENV_TYPE.ANY_OFFLINE, label: "Any (default: Off-Line)" },
+    { value: ENV_TYPE.ANY_ONLINE, label: "Any (default: On-Line)" },
 ];
 
 // ─── Environment Format ────────────────────────────────────────────────────────
@@ -74,22 +74,22 @@ export const OBJECT_TYPE_OPTIONS: { value: ObjectType; label: string }[] = [
     { value: OBJECT_TYPE.ONLINE, label: "On-Line" },
 ];
 
-// ─── Global Type Helpers ───────────────────────────────────────────────────────
+// ─── Environment Type Helpers ────────────────────────────────────────────────
 
 /**
- * Returns true when the global type is a fixed single type (offline or online),
+ * Returns true when the env type is a fixed single type (offline or online),
  * meaning all objects are forced to that type and per-object selection is disabled.
  */
-export function isGlobalTypeFixed(type: GlobalType): boolean {
-    return type === GLOBAL_TYPE.OFFLINE || type === GLOBAL_TYPE.ONLINE;
+export function isEnvTypeFixed(type: EnvType): boolean {
+    return type === ENV_TYPE.OFFLINE || type === ENV_TYPE.ONLINE;
 }
 
 /**
  * Returns the ObjectType that new (or bulk-updated) objects should receive
- * based on the active global type.
+ * based on the active environment type.
  */
-export function defaultObjectTypeForGlobal(type: GlobalType): ObjectType {
-    return type === GLOBAL_TYPE.ONLINE || type === GLOBAL_TYPE.ANY_ONLINE
+export function defaultObjectTypeForEnv(type: EnvType): ObjectType {
+    return type === ENV_TYPE.ONLINE || type === ENV_TYPE.ANY_ONLINE
         ? OBJECT_TYPE.ONLINE
         : OBJECT_TYPE.OFFLINE;
 }

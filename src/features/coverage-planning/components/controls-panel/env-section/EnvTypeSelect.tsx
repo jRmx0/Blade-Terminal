@@ -1,23 +1,23 @@
 import { useEffect } from "react";
 import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
 import {
-    GLOBAL_TYPE_OPTIONS,
-    defaultObjectTypeForGlobal,
-    isGlobalTypeFixed,
+    ENV_TYPE_OPTIONS,
+    defaultObjectTypeForEnv,
+    isEnvTypeFixed,
     OBJECT_TYPE,
-    type GlobalType,
+    type EnvType,
 } from "@/config/db-ops/enums";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 
-function globalTypeToMetadataValue(type: GlobalType): string {
-    const matchingOption = GLOBAL_TYPE_OPTIONS.find((option) => option.value === type);
+function envTypeToMetadataValue(type: EnvType): string {
+    const matchingOption = ENV_TYPE_OPTIONS.find((option) => option.value === type);
     return matchingOption?.label ?? type;
 }
 
-interface GlobalTypeSelectionProps {
+interface EnvTypeSelectionProps {
     providerId?: number;
     algorithmId?: number;
     parameterId?: number;
@@ -25,13 +25,13 @@ interface GlobalTypeSelectionProps {
     enumValues?: string[];
 }
 
-export default function GlobalTypeSelection({
+export default function EnvTypeSelection({
     providerId,
     algorithmId,
     parameterId,
     parameterName,
     enumValues,
-}: GlobalTypeSelectionProps) {
+}: EnvTypeSelectionProps) {
     const envId = useEnvStore((state) => state.env.id);
     const type = useEnvStore((state) => state.env.type);
     const setType = useEnvStore((state) => state.setType);
@@ -41,29 +41,29 @@ export default function GlobalTypeSelection({
 
     useEffect(() => {
         if (providerId === undefined || algorithmId === undefined || parameterId === undefined) return;
-        setParameterValue(parameterId, algorithmId, providerId, envId, globalTypeToMetadataValue(type));
+        setParameterValue(parameterId, algorithmId, providerId, envId, envTypeToMetadataValue(type));
     }, [algorithmId, envId, parameterId, providerId, setParameterValue, type]);
 
-    function applyType(nextType: GlobalType) {
+    function applyType(nextType: EnvType) {
         setType(nextType);
 
         if (providerId !== undefined && algorithmId !== undefined && parameterId !== undefined) {
-            setParameterValue(parameterId, algorithmId, providerId, envId, globalTypeToMetadataValue(nextType));
+            setParameterValue(parameterId, algorithmId, providerId, envId, envTypeToMetadataValue(nextType));
         }
     }
 
     function handleChange(newValue: string) {
-        const nextType = newValue as GlobalType;
+        const nextType = newValue as EnvType;
 
-        if (isGlobalTypeFixed(nextType)) {
-            const nextObjectType = defaultObjectTypeForGlobal(nextType);
+        if (isEnvTypeFixed(nextType)) {
+            const nextObjectType = defaultObjectTypeForEnv(nextType);
             const mismatchCount = objects.filter((object) => object.type !== nextObjectType).length;
 
             if (mismatchCount > 0) {
                 const typeLabel = nextObjectType === OBJECT_TYPE.ONLINE ? "On-Line" : "Off-Line";
                 useConfirmationModalStore.getState().requestConfirmation({
                     title: "Update object types",
-                    message: `${mismatchCount} object${mismatchCount !== 1 ? "s" : ""} will be updated to "${typeLabel}" to match the new global type. Continue?`,
+                    message: `${mismatchCount} object${mismatchCount !== 1 ? "s" : ""} will be updated to "${typeLabel}" to match the new environment type. Continue?`,
                     tone: "warning",
                     confirmLabel: "Confirm",
                     cancelLabel: "Cancel",
@@ -82,12 +82,12 @@ export default function GlobalTypeSelection({
     }
 
     const options = enumValues === undefined
-        ? GLOBAL_TYPE_OPTIONS
-        : GLOBAL_TYPE_OPTIONS.filter((opt) => enumValues.includes(opt.label));
+        ? ENV_TYPE_OPTIONS
+        : ENV_TYPE_OPTIONS.filter((opt) => enumValues.includes(opt.label));
 
     return (
         <ControlsPanelSectionSelect
-            label={parameterName ?? "Global Type"}
+            label={parameterName ?? "Type"}
             value={type}
             onChange={handleChange}
             options={options}

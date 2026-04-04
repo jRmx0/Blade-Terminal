@@ -8,17 +8,17 @@ import { APP_PARAMETER_HANDLER } from "@/config/computation/appParameterHandlers
 import {
     COORD_SYSTEM_OPTIONS,
     ENV_FORMAT_OPTIONS,
-    GLOBAL_TYPE_OPTIONS,
-    defaultObjectTypeForGlobal,
-    isGlobalTypeFixed,
+    ENV_TYPE_OPTIONS,
+    defaultObjectTypeForEnv,
+    isEnvTypeFixed,
     OBJECT_TYPE,
     type CoordSystemType,
     type EnvFormat,
-    type GlobalType,
+    type EnvType,
 } from "@/config/db-ops/enums";
 import CoordinateSystemSelect from "@/features/coverage-planning/components/controls-panel/env-section/CoordinateSystemSelect";
 import FormatSelection from "@/features/coverage-planning/components/controls-panel/env-section/FormatSelect";
-import GlobalTypeSelection from "@/features/coverage-planning/components/controls-panel/env-section/GlobalTypeSelect";
+import EnvTypeSelection from "@/features/coverage-planning/components/controls-panel/env-section/EnvTypeSelect";
 import { useEnvStore } from "@/stores/envStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
@@ -236,14 +236,14 @@ export default function CoveragePlanningControlsPanel() {
         }
 
         const typeParam = newParams.find((p) => p.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_TYPE);
-        let newType: GlobalType | undefined;
+        let newType: EnvType | undefined;
         if (typeParam !== undefined && typeParam.enumValues.length > 0) {
-            const currentLabel = GLOBAL_TYPE_OPTIONS.find((opt) => opt.value === env.type)?.label;
+            const currentLabel = ENV_TYPE_OPTIONS.find((opt) => opt.value === env.type)?.label;
             if (currentLabel === undefined || !typeParam.enumValues.includes(currentLabel)) {
                 const resolved =
-                    GLOBAL_TYPE_OPTIONS.find((opt) => opt.label === typeParam.defaultValue) ??
-                    GLOBAL_TYPE_OPTIONS.find((opt) => typeParam.enumValues.includes(opt.label));
-                if (resolved !== undefined) newType = resolved.value as GlobalType;
+                    ENV_TYPE_OPTIONS.find((opt) => opt.label === typeParam.defaultValue) ??
+                    ENV_TYPE_OPTIONS.find((opt) => typeParam.enumValues.includes(opt.label));
+                if (resolved !== undefined) newType = resolved.value as EnvType;
             }
         }
 
@@ -258,8 +258,8 @@ export default function CoveragePlanningControlsPanel() {
 
         // Bulk-update objects only when type becomes fixed and objects mismatch.
         const nextObjectType =
-            newType !== undefined && isGlobalTypeFixed(newType)
-                ? defaultObjectTypeForGlobal(newType)
+            newType !== undefined && isEnvTypeFixed(newType)
+                ? defaultObjectTypeForEnv(newType)
                 : undefined;
         const mismatchCount =
             nextObjectType !== undefined
@@ -281,7 +281,7 @@ export default function CoveragePlanningControlsPanel() {
             changeLines.push(`Format → "${label}"`);
         }
         if (newType !== undefined) {
-            const label = GLOBAL_TYPE_OPTIONS.find((opt) => opt.value === newType)?.label ?? newType;
+            const label = ENV_TYPE_OPTIONS.find((opt) => opt.value === newType)?.label ?? newType;
             changeLines.push(`Type → "${label}"`);
         }
         if (newCoordSystem !== undefined) {
@@ -429,7 +429,7 @@ export default function CoveragePlanningControlsPanel() {
                     parameterName={envFormatParam?.name}
                     enumValues={envFormatParam?.enumValues}
                 />
-                <GlobalTypeSelection
+                <EnvTypeSelection
                     providerId={envTypeParam !== undefined ? algoProviderId : undefined}
                     algorithmId={envTypeParam !== undefined ? algoAlgorithmId : undefined}
                     parameterId={envTypeParam?.id}
