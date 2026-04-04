@@ -114,6 +114,28 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
 }
 
 /**
+ * Copies the current in-memory workspace to a new environment in IndexedDB without switching the
+ * active workspace. Returns the newly created environment ID so the caller can offer to load it.
+ */
+export async function copyWorkspace(name: string): Promise<number> {
+    const { env, computation } = useEnvStore.getState();
+    const { objects } = useCanvasObjectStore.getState();
+    const { parameterValues } = useParameterValuesStore.getState();
+    const targetId = await resolveNextEnvironmentId();
+    const targetEnv: Environment = { ...env, id: targetId, name };
+    const targetObjects = objects.map((o) => ({ ...o, environmentId: targetId }));
+    const targetParamValues = parameterValues.map((pv) => ({ ...pv, environmentId: targetId }));
+    await Promise.all([
+        saveEnvironment(targetEnv),
+        saveComputationSelection({ ...computation, environmentId: targetId }),
+        targetParamValues.length > 0 ? saveAlgorithmParameters(targetParamValues) : Promise.resolve(),
+        targetObjects.length > 0 ? saveObjects(targetObjects) : Promise.resolve(),
+        initLayerSettingsForEnvironment(targetId),
+    ]);
+    return targetId;
+}
+
+/**
  * Applies an autosave toggle to the current save mode:
  * - Enabling while mode is "manual" → switches to "autosave" and immediately saves any dirty state.
  * - Enabling while mode is "session" → no mode change; autosave activates on the next manual save.

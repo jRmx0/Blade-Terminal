@@ -8,6 +8,7 @@ import ConfirmationModal from "@/components/modals/confirmation-modal/Confirmati
 import { useWorkbenchShortcuts } from "@/hooks/shortcut-manager/useWorkbenchShortcuts";
 import WorkspacePickerModal from "@/features/workspace-manager/components/workspace-picker-modal/WorkspacePickerModal";
 import SaveAsModal from "@/features/workspace-manager/components/save-as-modal/SaveAsModal";
+import CopyWorkspaceModal from "@/features/workspace-manager/components/copy-workspace-modal/CopyWorkspaceModal";
 import ComputationProvidersListModal from "@/features/computation-provider/components/ComputationProvidersListModal";
 import ComputationProviderCardModal from "@/features/computation-provider/components/ComputationProviderCardModal";
 import AlgorithmCardModal from "@/features/computation-provider/components/AlgorithmCardModal";
@@ -32,6 +33,7 @@ export default function WorkbenchWindow() {
       <WorkspacePickerModal />
       <ConfirmationModal />
       <SaveAsModal />
+      <CopyWorkspaceModal />
       <ComputationProvidersListModal />
       <ComputationProviderCardModal />
       <AlgorithmCardModal />
