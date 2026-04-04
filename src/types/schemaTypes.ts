@@ -1,4 +1,4 @@
-import type { EnvFormat, GlobalType as EnvType, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
+import type { CoordSystemType, EnvFormat, GlobalType as EnvType, ObjectCategory, ObjectType } from "@/config/db-ops/enums";
 import type { ComputeResult } from "@/types/serviceTypes";
 
 export interface ComputationSelection {
@@ -20,6 +20,7 @@ export interface Environment {
     name: string;
     format: EnvFormat;
     type: EnvType;
+    coordSystem: CoordSystemType;
     zoneCount: number;
     obstacleCount: number;
 }

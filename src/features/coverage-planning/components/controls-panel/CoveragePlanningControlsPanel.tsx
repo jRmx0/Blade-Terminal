@@ -6,11 +6,13 @@ import ControlsPanelSectionInput from "@/components/controls-panel/ControlsPanel
 import ControlsPanelSectionSelect from "@/components/controls-panel/ControlsPanelSectionSelect";
 import { APP_PARAMETER_HANDLER } from "@/config/computation/appParameterHandlers";
 import {
+    COORD_SYSTEM_OPTIONS,
     ENV_FORMAT_OPTIONS,
     GLOBAL_TYPE_OPTIONS,
     defaultObjectTypeForGlobal,
     isGlobalTypeFixed,
     OBJECT_TYPE,
+    type CoordSystemType,
     type EnvFormat,
     type GlobalType,
 } from "@/config/db-ops/enums";
@@ -94,33 +96,10 @@ function DynamicParameterField({
 
     switch (parameter.appHandler) {
         case APP_PARAMETER_HANDLER.ENVIRONMENT_COORDSYSTEM:
-            return (
-                <CoordinateSystemSelect
-                    parameter={parameter} currentValue={value} appEnums={appEnums}
-                />
-            );
-
         case APP_PARAMETER_HANDLER.ENVIRONMENT_FORMAT:
-            return (
-                <FormatSelection
-                    providerId={selectedProviderId}
-                    algorithmId={selectedAlgorithmId}
-                    parameterId={parameter.id}
-                    parameterName={parameter.name}
-                    enumValues={parameter.enumValues}
-                />
-            );
-
         case APP_PARAMETER_HANDLER.ENVIRONMENT_TYPE:
-            return (
-                <GlobalTypeSelection
-                    providerId={selectedProviderId}
-                    algorithmId={selectedAlgorithmId}
-                    parameterId={parameter.id}
-                    parameterName={parameter.name}
-                    enumValues={parameter.enumValues}
-                />
-            );
+            // These are handled by the always-visible Environment section — never rendered here.
+            return null;
     }
 
     switch (parameter.paramType) {
@@ -225,7 +204,7 @@ export default function CoveragePlanningControlsPanel() {
             return;
         }
 
-        const { env, computation, setFormat, setType } = useEnvStore.getState();
+        const { env, computation, setFormat, setType, setCoordSystem } = useEnvStore.getState();
         const providerId = computation.selectedProviderId;
 
         if (providerId === null) {
@@ -238,66 +217,93 @@ export default function CoveragePlanningControlsPanel() {
         );
         const { objects, updateObjectsType } = useCanvasObjectStore.getState();
 
-        // ── Format (silent reset) ─────────────────────────────────────────────
+        // ── Collect required env-field changes ────────────────────────────────
+        // Nothing is applied until the user confirms. All three fields are checked
+        // atomically — if any needs to change a single prompt covers all of them.
+
         const formatParam = newParams.find((p) => p.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_FORMAT);
         let newFormat: EnvFormat | undefined;
-
         if (formatParam !== undefined && formatParam.enumValues.length > 0) {
-            const currentFormatLabel = ENV_FORMAT_OPTIONS.find((opt) => opt.value === env.format)?.label;
-            const isValid = currentFormatLabel !== undefined && formatParam.enumValues.includes(currentFormatLabel);
-
-            if (!isValid) {
+            const currentLabel = ENV_FORMAT_OPTIONS.find((opt) => opt.value === env.format)?.label;
+            if (currentLabel === undefined || !formatParam.enumValues.includes(currentLabel)) {
                 const resolved =
-                    ENV_FORMAT_OPTIONS.find((opt) => opt.label !== "" && opt.label === formatParam.defaultValue) ??
-                    ENV_FORMAT_OPTIONS.find((opt) => opt.label !== "" && formatParam.enumValues.includes(opt.label));
+                    ENV_FORMAT_OPTIONS.find((opt) => opt.label === formatParam.defaultValue) ??
+                    ENV_FORMAT_OPTIONS.find((opt) => formatParam.enumValues.includes(opt.label));
                 if (resolved !== undefined) newFormat = resolved.value as EnvFormat;
             }
         }
 
-        // ── Type (confirm if objects would be affected) ───────────────────────
         const typeParam = newParams.find((p) => p.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_TYPE);
         let newType: GlobalType | undefined;
-
         if (typeParam !== undefined && typeParam.enumValues.length > 0) {
-            const currentTypeLabel = GLOBAL_TYPE_OPTIONS.find((opt) => opt.value === env.type)?.label;
-            const isValid = currentTypeLabel !== undefined && typeParam.enumValues.includes(currentTypeLabel);
-
-            if (!isValid) {
+            const currentLabel = GLOBAL_TYPE_OPTIONS.find((opt) => opt.value === env.type)?.label;
+            if (currentLabel === undefined || !typeParam.enumValues.includes(currentLabel)) {
                 const resolved =
-                    GLOBAL_TYPE_OPTIONS.find((opt) => opt.label !== "" && opt.label === typeParam.defaultValue) ??
-                    GLOBAL_TYPE_OPTIONS.find((opt) => opt.label !== "" && typeParam.enumValues.includes(opt.label));
+                    GLOBAL_TYPE_OPTIONS.find((opt) => opt.label === typeParam.defaultValue) ??
+                    GLOBAL_TYPE_OPTIONS.find((opt) => typeParam.enumValues.includes(opt.label));
                 if (resolved !== undefined) newType = resolved.value as GlobalType;
             }
         }
 
-        if (newType !== undefined && isGlobalTypeFixed(newType)) {
-            const nextObjectType = defaultObjectTypeForGlobal(newType);
-            const mismatchCount = objects.filter((obj) => obj.type !== nextObjectType).length;
-
-            if (mismatchCount > 0) {
-                const typeLabel = nextObjectType === OBJECT_TYPE.ONLINE ? "On-Line" : "Off-Line";
-                useConfirmationModalStore.getState().requestConfirmation({
-                    title: "Update object types",
-                    message: `Switching algorithm requires changing the global type to "${typeLabel}". ${mismatchCount} object${mismatchCount !== 1 ? "s" : ""} will be updated to match. Continue?`,
-                    tone: "warning",
-                    confirmLabel: "Confirm",
-                    cancelLabel: "Cancel",
-                    confirmAction: async () => {
-                        if (newFormat !== undefined) setFormat(newFormat);
-                        updateObjectsType(nextObjectType);
-                        setType(newType!);
-                        setComputationAlgorithmId(newAlgorithmId);
-                    },
-                });
-                return;
+        const coordParam = newParams.find((p) => p.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_COORDSYSTEM);
+        let newCoordSystem: CoordSystemType | undefined;
+        if (coordParam !== undefined && coordParam.enumValues.length > 0) {
+            if (!coordParam.enumValues.includes(env.coordSystem)) {
+                const resolved = coordParam.enumValues[0] as CoordSystemType | undefined;
+                if (resolved !== undefined) newCoordSystem = resolved;
             }
-
-            updateObjectsType(nextObjectType);
         }
 
-        if (newFormat !== undefined) setFormat(newFormat);
-        if (newType !== undefined) setType(newType);
-        setComputationAlgorithmId(newAlgorithmId);
+        // Bulk-update objects only when type becomes fixed and objects mismatch.
+        const nextObjectType =
+            newType !== undefined && isGlobalTypeFixed(newType)
+                ? defaultObjectTypeForGlobal(newType)
+                : undefined;
+        const mismatchCount =
+            nextObjectType !== undefined
+                ? objects.filter((obj) => obj.type !== nextObjectType).length
+                : 0;
+
+        // ── Apply or prompt ────────────────────────────────────────────────────
+        const hasEnvChanges = newFormat !== undefined || newType !== undefined || newCoordSystem !== undefined;
+        const requiresObjectUpdate = nextObjectType !== undefined && mismatchCount > 0;
+
+        if (!hasEnvChanges && !requiresObjectUpdate) {
+            setComputationAlgorithmId(newAlgorithmId);
+            return;
+        }
+
+        const changeLines: string[] = [];
+        if (newFormat !== undefined) {
+            const label = ENV_FORMAT_OPTIONS.find((opt) => opt.value === newFormat)?.label ?? newFormat;
+            changeLines.push(`Format → "${label}"`);
+        }
+        if (newType !== undefined) {
+            const label = GLOBAL_TYPE_OPTIONS.find((opt) => opt.value === newType)?.label ?? newType;
+            changeLines.push(`Type → "${label}"`);
+        }
+        if (newCoordSystem !== undefined) {
+            changeLines.push(`Coordinate System → "${newCoordSystem}"`);
+        }
+        if (requiresObjectUpdate) {
+            const typeLabel = nextObjectType === OBJECT_TYPE.ONLINE ? "On-Line" : "Off-Line";
+            changeLines.push(`${mismatchCount} object${mismatchCount !== 1 ? "s" : ""} will be updated to "${typeLabel}"`);
+        }
+
+        useConfirmationModalStore.getState().requestConfirmation({
+            title: "Algorithm requires environment changes",
+            message: `Switching to this algorithm requires the following changes:\n\n${changeLines.map((l) => `• ${l}`).join("\n")}\n\nContinue?`,
+            tone: "warning",
+            confirmLabel: "Confirm",
+            cancelLabel: "Cancel",
+            confirmAction: async () => {
+                if (newFormat !== undefined) setFormat(newFormat);
+                if (newType !== undefined) setType(newType);
+                if (newCoordSystem !== undefined) setCoordSystem(newCoordSystem);
+                if (nextObjectType !== undefined) updateObjectsType(nextObjectType);
+                setComputationAlgorithmId(newAlgorithmId);
+            },
+        });
     }
 
     const providerOptions = useMemo(
@@ -324,11 +330,33 @@ export default function CoveragePlanningControlsPanel() {
         [algorithms],
     );
 
-    const parameterSections = useMemo(() => groupParametersBySection(parameters), [parameters]);
+    const envFormatParam = useMemo(
+        () => parameters.find((p) => p.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_FORMAT),
+        [parameters],
+    );
+    const envTypeParam = useMemo(
+        () => parameters.find((p) => p.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_TYPE),
+        [parameters],
+    );
+    const envCoordParam = useMemo(
+        () => parameters.find((p) => p.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_COORDSYSTEM),
+        [parameters],
+    );
+
+    const nonEnvParameters = useMemo(
+        () => parameters.filter(
+            (p) =>
+                p.appHandler !== APP_PARAMETER_HANDLER.ENVIRONMENT_FORMAT &&
+                p.appHandler !== APP_PARAMETER_HANDLER.ENVIRONMENT_TYPE &&
+                p.appHandler !== APP_PARAMETER_HANDLER.ENVIRONMENT_COORDSYSTEM,
+        ),
+        [parameters],
+    );
+    const parameterSections = useMemo(() => groupParametersBySection(nonEnvParameters), [nonEnvParameters]);
 
     // Seed defaults for any parameter not yet written to the store.
-    // ENVIRONMENT_FORMAT and ENVIRONMENT_TYPE are skipped — FormatSelect and GlobalTypeSelect
-    // already self-initialize from env state via their own useEffect hooks.
+    // ENVIRONMENT_FORMAT, ENVIRONMENT_TYPE, and ENVIRONMENT_COORDSYSTEM are skipped —
+    // the always-visible Environment section handles those fields directly.
     useEffect(() => {
         if (computation.selectedAlgorithmId === null || computation.selectedProviderId === null) return;
 
@@ -337,7 +365,8 @@ export default function CoveragePlanningControlsPanel() {
         for (const parameter of parameters) {
             if (
                 parameter.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_FORMAT ||
-                parameter.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_TYPE
+                parameter.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_TYPE ||
+                parameter.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_COORDSYSTEM
             ) {
                 continue;
             }
@@ -362,6 +391,8 @@ export default function CoveragePlanningControlsPanel() {
         }
     }, [parameters, envId, computation.selectedAlgorithmId, computation.selectedProviderId]);
 
+    const algoProviderId = computation.selectedProviderId ?? undefined;
+    const algoAlgorithmId = computation.selectedAlgorithmId ?? undefined;
     const selectedProviderValue = computation.selectedProviderId === null ? "" : String(computation.selectedProviderId);
     const selectedAlgorithmValue = computation.selectedAlgorithmId === null ? "" : String(computation.selectedAlgorithmId);
     const resolvedAppEnums = appEnums;
@@ -388,33 +419,62 @@ export default function CoveragePlanningControlsPanel() {
 
             <ControlsPanelSeparator />
 
-            {computation.selectedProviderId !== null && computation.selectedAlgorithmId !== null && parameterSections.map((section) => (
-                <ControlsPanelSection
-                    key={section.title}
-                    sectionId={`parameter-section:${section.title}`}
-                    title={section.title}
-                >
-                    {section.parameters.map((parameter) => (
-                        <DynamicParameterField
-                            key={`${parameter.algorithmId}:${parameter.id}:${parameter.name}`}
-                            parameter={parameter}
-                            selectedProviderId={computation.selectedProviderId!}
-                            selectedAlgorithmId={computation.selectedAlgorithmId!}
-                            parameterValues={parameterValues}
-                            appEnums={resolvedAppEnums}
-                            onChange={(parameterId, value) => {
-                                setParameterValueInStore(
-                                    parameterId,
-                                    computation.selectedAlgorithmId!,
-                                    computation.selectedProviderId!,
-                                    envId,
-                                    value,
-                                );
-                            }}
-                        />
+            <ControlsPanelSection sectionId="environment" title="Environment">
+                <FormatSelection
+                    providerId={envFormatParam !== undefined ? algoProviderId : undefined}
+                    algorithmId={envFormatParam !== undefined ? algoAlgorithmId : undefined}
+                    parameterId={envFormatParam?.id}
+                    parameterName={envFormatParam?.name}
+                    enumValues={envFormatParam?.enumValues}
+                />
+                <GlobalTypeSelection
+                    providerId={envTypeParam !== undefined ? algoProviderId : undefined}
+                    algorithmId={envTypeParam !== undefined ? algoAlgorithmId : undefined}
+                    parameterId={envTypeParam?.id}
+                    parameterName={envTypeParam?.name}
+                    enumValues={envTypeParam?.enumValues}
+                />
+                <CoordinateSystemSelect
+                    providerId={envCoordParam !== undefined ? algoProviderId : undefined}
+                    algorithmId={envCoordParam !== undefined ? algoAlgorithmId : undefined}
+                    parameterId={envCoordParam?.id}
+                    parameterName={envCoordParam?.name}
+                    enumValues={envCoordParam?.enumValues}
+                />
+            </ControlsPanelSection>
+
+            {parameterSections.length > 0 && (
+                <>
+                    <ControlsPanelSeparator />
+                    {parameterSections.map((section) => (
+                        <ControlsPanelSection
+                            key={section.title}
+                            sectionId={`parameter-section:${section.title}`}
+                            title={section.title}
+                        >
+                            {section.parameters.map((parameter) => (
+                                <DynamicParameterField
+                                    key={`${parameter.algorithmId}:${parameter.id}:${parameter.name}`}
+                                    parameter={parameter}
+                                    selectedProviderId={computation.selectedProviderId!}
+                                    selectedAlgorithmId={computation.selectedAlgorithmId!}
+                                    parameterValues={parameterValues}
+                                    appEnums={resolvedAppEnums}
+                                    onChange={(parameterId, value) => {
+                                        setParameterValueInStore(
+                                            parameterId,
+                                            computation.selectedAlgorithmId!,
+                                            computation.selectedProviderId!,
+                                            envId,
+                                            value,
+                                        );
+                                    }}
+                                />
+                            ))}
+                        </ControlsPanelSection>
                     ))}
-                </ControlsPanelSection>
-            ))}
+                </>
+            )}
         </div>
     );
 }

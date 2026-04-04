@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ENV_FORMAT, GLOBAL_TYPE, type EnvFormat, type GlobalType } from "@/config/db-ops/enums";
+import { COORD_SYSTEM, ENV_FORMAT, GLOBAL_TYPE, type CoordSystemType, type EnvFormat, type GlobalType } from "@/config/db-ops/enums";
 import type { Environment, ComputationSelection } from "@/types/schemaTypes";
 import { getSaveMode } from "@/stores/saveModeStore";
 import { saveEnvironment } from "@server/db/environments";
@@ -25,6 +25,8 @@ interface EnvState {
     setFormat: (format: EnvFormat) => void;
     /** Updates the environment global type and marks the record as dirty. Triggers autosave when mode is "autosave". */
     setType: (type: GlobalType) => void;
+    /** Updates the environment coordinate system and marks the record as dirty. Triggers autosave when mode is "autosave". */
+    setCoordSystem: (coordSystem: CoordSystemType) => void;
     /** Updates the active computation provider and clears the active algorithm selection. */
     setComputationProviderId: (providerId: number | null) => void;
     /** Updates the active computation algorithm within the selected provider. */
@@ -38,6 +40,7 @@ const INITIAL_ENV: Environment = {
     name: "Untitled Environment",
     format: ENV_FORMAT.POLYGON,
     type: GLOBAL_TYPE.ANY_OFFLINE,
+    coordSystem: COORD_SYSTEM.DECIMAL,
     zoneCount: 0,
     obstacleCount: 0,
 };
@@ -73,6 +76,8 @@ export const useEnvStore = create<EnvState>()((set) => ({
     setFormat: (format) => markEnvDirty(set, (env) => ({ ...env, format })),
 
     setType: (type) => markEnvDirty(set, (env) => ({ ...env, type })),
+
+    setCoordSystem: (coordSystem) => markEnvDirty(set, (env) => ({ ...env, coordSystem })),
 
     setComputationProviderId: (providerId) => {
         set((state) => {

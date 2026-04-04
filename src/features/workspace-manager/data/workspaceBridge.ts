@@ -2,7 +2,7 @@ import { getEnvironment, saveEnvironment } from "@server/db/environments";
 import { getComputationSelection, saveComputationSelection } from "@server/db/computationSelection";
 import { getAlgorithmParametersByEnvironment, saveAlgorithmParameters } from "@server/db/computationAlgorithmParameters";
 import { deleteObjectsByEnvironment, saveObjects } from "@server/db/objects";
-import { ENV_FORMAT, GLOBAL_TYPE, OBJECT_CATEGORY } from "@/config/db-ops/enums";
+import { COORD_SYSTEM, ENV_FORMAT, GLOBAL_TYPE, OBJECT_CATEGORY } from "@/config/db-ops/enums";
 import type { Environment } from "@/types/schemaTypes";
 import { useEnvStore } from "@/stores/envStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
@@ -21,6 +21,7 @@ const BLANK_ENV: Omit<Environment, "id"> = {
     name: "Untitled Environment",
     format: ENV_FORMAT.POLYGON,
     type: GLOBAL_TYPE.ANY_OFFLINE,
+    coordSystem: COORD_SYSTEM.DECIMAL,
     zoneCount: 0,
     obstacleCount: 0,
 };

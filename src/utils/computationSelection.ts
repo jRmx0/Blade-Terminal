@@ -1,3 +1,4 @@
+import { COORD_SYSTEM } from "@/config/db-ops/enums";
 import type { Environment, ComputationSelection } from "@/types/schemaTypes";
 
 export function createEmptyComputationSelection(environmentId: number): ComputationSelection {
@@ -19,5 +20,8 @@ export function normalizeComputationSelection(
 }
 
 export function normalizeEnvironment(env: Environment): Environment {
-    return { ...env };
+    return {
+        ...env,
+        coordSystem: (env as Environment & { coordSystem?: string }).coordSystem ?? COORD_SYSTEM.DECIMAL,
+    };
 }
