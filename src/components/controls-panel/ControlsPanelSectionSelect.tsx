@@ -72,28 +72,30 @@ export default function ControlsPanelSectionSelect({
 
       {/* Dropdown list */}
       {isOpen && !disabled && (
-        <ul
-          role="listbox"
-          className="absolute left-0 right-0 top-full mt-0.5 border border-gray-300 bg-white rounded shadow-md z-50 max-h-40 overflow-y-auto"
-        >
-          {options.map((option) => (
-            <li key={option.value} role="option" aria-selected={option.value === value}>
-              <button
-                type="button"
-                className={`w-full text-left px-3 py-1.5 text-sm cursor-pointer transition-colors hover:bg-teal-600 hover:text-white ${option.value === value
-                  ? "bg-teal-600 text-white font-medium"
-                  : "text-gray-700"
-                  }`}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleSelect(option.value);
-                }}
-              >
-                {option.label || "\u00A0"}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="absolute left-0 right-0 top-full mt-0.5 border border-gray-300 rounded shadow-md z-50 overflow-hidden">
+          <ul
+            role="listbox"
+            className="bg-white max-h-40 overflow-y-auto"
+          >
+            {options.map((option) => (
+              <li key={option.value} role="option" aria-selected={option.value === value} className="border-b-2 border-white last:border-b-0">
+                <button
+                  type="button"
+                  className={`w-full text-left px-3 py-1.5 text-sm cursor-pointer transition-colors hover:bg-teal-600 hover:text-white ${option.value === value
+                    ? "bg-teal-600 text-white font-medium"
+                    : "text-gray-700"
+                    }`}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelect(option.value);
+                  }}
+                >
+                  {option.label || "\u00A0"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );

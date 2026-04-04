@@ -55,27 +55,29 @@ export default function InspectorPanelSectionSelectField({
                 </button>
 
                 {isOpen && !disabled && (
-                    <ul
-                        role="listbox"
-                        className="absolute right-0 top-full mt-0.5 z-50 min-w-full border border-gray-300 bg-white rounded shadow-md max-h-40 overflow-y-auto"
-                    >
-                        {options.map((opt) => (
-                            <li key={opt.value} role="option" aria-selected={opt.value === value}>
-                                <button
-                                    type="button"
-                                    className={`w-full text-left px-3 py-1.5 text-sm cursor-pointer transition-colors hover:bg-teal-600 hover:text-white ${opt.value === value ? "bg-teal-600 text-white font-medium" : "text-gray-700"
-                                        }`}
-                                    onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        onChange(opt.value);
-                                        setIsOpen(false);
-                                    }}
-                                >
-                                    {opt.label}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
+                    <div className="absolute right-0 top-full mt-0.5 z-50 min-w-full border border-gray-300 rounded shadow-md overflow-hidden">
+                        <ul
+                            role="listbox"
+                            className="bg-white max-h-40 overflow-y-auto"
+                        >
+                            {options.map((opt) => (
+                                <li key={opt.value} role="option" aria-selected={opt.value === value} className="border-b-2 border-white last:border-b-0">
+                                    <button
+                                        type="button"
+                                        className={`w-full text-left px-3 py-1.5 text-sm cursor-pointer transition-colors hover:bg-teal-600 hover:text-white ${opt.value === value ? "bg-teal-600 text-white font-medium" : "text-gray-700"
+                                            }`}
+                                        onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            onChange(opt.value);
+                                            setIsOpen(false);
+                                        }}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                 )}
             </div>
         </div>
