@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useClickOutside } from "../../hooks/useClickOutside";
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
 import SettingsPanelRow from "./SettingsPanelRow";
 
 export interface SettingsPanelSelectOption {
@@ -22,62 +21,37 @@ export default function SettingsPanelSelect({
     options,
     disabled = false,
 }: SettingsPanelSelectProps) {
-    const [isOpen, setIsOpen] = useState(false);
-    const containerRef = useClickOutside<HTMLDivElement>(isOpen, () => setIsOpen(false));
-
     const selectedOption = options.find((o) => o.value === value);
 
     return (
-        <SettingsPanelRow ref={containerRef} label={label}>
-            <div className="relative flex-1 min-w-0">
-                <button
-                    type="button"
-                    aria-haspopup="listbox"
-                    aria-expanded={isOpen}
-                    onClick={() => !disabled && setIsOpen((prev) => !prev)}
-                    disabled={disabled}
-                    className={`w-full flex items-center gap-1 border rounded bg-white text-left select-none focus:outline-none transition-colors px-2 h-6 ${isOpen ? "border-teal-700" : "border-gray-300"
-                        } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-                        }`}
-                >
-                    <span className={`text-xs flex-1 truncate ${disabled ? "text-gray-400" : "text-gray-900"}`}>
-                        {selectedOption?.label ?? "\u00A0"}
-                    </span>
-                    <span
-                        className={`material-symbols-outlined shrink-0 transition-transform duration-150 ${disabled ? "text-gray-300" : isOpen ? "rotate-180 text-teal-700" : "text-gray-400"
-                            }`}
-                        style={{ fontSize: 14 }}
-                    >
-                        expand_more
-                    </span>
-                </button>
-
-                {isOpen && !disabled && (
-                    <div className="absolute left-0 right-0 top-full mt-0.5 border border-gray-300 rounded shadow-md z-50 overflow-hidden">
-                        <ul
-                            role="listbox"
-                            className="bg-white max-h-40 overflow-y-auto"
+        <SettingsPanelRow label={label}>
+            <Listbox value={value} onChange={onChange} disabled={disabled}>
+                <div className="relative flex-1 min-w-0">
+                    <ListboxButton className="group w-full flex items-center gap-1 border border-gray-300 rounded bg-white text-left select-none focus:outline-none transition-colors px-2 h-6 cursor-pointer data-open:border-teal-700 data-disabled:cursor-not-allowed data-disabled:opacity-50">
+                        <span className="text-xs flex-1 truncate text-gray-900 group-data-disabled:text-gray-400">
+                            {selectedOption?.label ?? "\u00A0"}
+                        </span>
+                        <span
+                            className="material-symbols-outlined shrink-0 transition-transform duration-150 text-gray-400 group-data-open:rotate-180 group-data-open:text-teal-700 group-data-disabled:text-gray-300"
+                            style={{ fontSize: 14 }}
                         >
-                            {options.map((option) => (
-                                <li key={option.value} role="option" aria-selected={option.value === value} className="border-b border-white last:border-b-0">
-                                    <button
-                                        type="button"
-                                        className={`w-full text-left px-3 py-1 text-xs cursor-pointer transition-colors hover:bg-teal-600 hover:text-white ${option.value === value ? "bg-teal-600 text-white font-medium" : "text-gray-700"
-                                            }`}
-                                        onMouseDown={(e) => {
-                                            e.preventDefault();
-                                            onChange(option.value);
-                                            setIsOpen(false);
-                                        }}
-                                    >
-                                        {option.label || "\u00A0"}
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-            </div>
+                            expand_more
+                        </span>
+                    </ListboxButton>
+
+                    <ListboxOptions className="absolute left-0 right-0 top-full mt-0.5 border border-gray-300 rounded shadow-md bg-white max-h-40 overflow-y-auto outline-none z-50">
+                        {options.map((option) => (
+                            <ListboxOption
+                                key={option.value}
+                                value={option.value}
+                                className="px-3 py-1 text-xs cursor-pointer transition-colors text-gray-700 border-b border-white last:border-b-0 data-focus:bg-teal-600 data-focus:text-white data-selected:bg-teal-600 data-selected:text-white data-selected:font-medium"
+                            >
+                                {option.label || "\u00A0"}
+                            </ListboxOption>
+                        ))}
+                    </ListboxOptions>
+                </div>
+            </Listbox>
         </SettingsPanelRow>
     );
 }

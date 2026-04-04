@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@eslint/js": "^10.0.1",
+    "@headlessui/react": "^2.2.9",
     "@uiw/react-color": "^2.9.6",
     "bun-plugin-tailwind": "^0.1.2",
     "dexie": "^4.3.0",
