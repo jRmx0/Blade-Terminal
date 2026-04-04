@@ -1,1 +1,1 @@
-export const WORKSPACE_NAME_MAX_LENGTH = 20;
+export const WORKSPACE_NAME_MAX_LENGTH = 100;

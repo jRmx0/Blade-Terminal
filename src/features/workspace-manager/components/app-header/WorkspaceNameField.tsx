@@ -38,13 +38,14 @@ export default function WorkspaceNameField() {
     if (e.key === "Escape") setIsEditing(false);
   }
 
-  const sharedClass = "px-2 py-1 mb-1 text-xl text-gray-700 bg-gray-100 rounded";
+  const sharedClass = "px-2 py-1 mb-1 text-xl text-gray-700 bg-gray-100 rounded w-full max-w-[40ch]";
 
   if (isEditing) {
     return (
       <input
         ref={inputRef}
         type="text"
+        size={40}
         value={draft}
         maxLength={WORKSPACE_NAME_MAX_LENGTH}
         onChange={(e) => setDraft(e.target.value)}
