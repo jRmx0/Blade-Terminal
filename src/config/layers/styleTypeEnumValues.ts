@@ -54,15 +54,15 @@ export const STYLE_TYPE_ENUM_OPTIONS: Partial<Record<StyleType, SettingsPanelSel
 
     FontWeightEnum: [
         NONE,
-        { value: "font-thin", label: "Thin" },
-        { value: "font-extralight", label: "Extra Light" },
-        { value: "font-light", label: "Light" },
-        { value: "font-normal", label: "Normal" },
-        { value: "font-medium", label: "Medium" },
-        { value: "font-semibold", label: "Semibold" },
-        { value: "font-bold", label: "Bold" },
-        { value: "font-extrabold", label: "Extra Bold" },
-        { value: "font-black", label: "Black" },
+        { value: "100", label: "100" },
+        { value: "200", label: "200" },
+        { value: "300", label: "300" },
+        { value: "400", label: "400" },
+        { value: "500", label: "500" },
+        { value: "600", label: "600" },
+        { value: "700", label: "700" },
+        { value: "800", label: "800" },
+        { value: "900", label: "900" },
     ],
 
     LineArrowStartEnum: [

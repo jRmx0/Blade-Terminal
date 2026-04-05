@@ -6,8 +6,7 @@
 //
 // Enum string values are preserved as-is from the provider spec (e.g. "solid",
 // "dashed", "circle"). Numeric pixel values are parsed from their serialised
-// string form. Tailwind class identifiers (FontWeightEnum) are
-// converted to Konva-compatible standard CSS values.
+// string form. Font weight values are CSS numeric strings (e.g. "400", "700").
 
 // ─── Line ─────────────────────────────────────────────────────────────────────
 

@@ -30,26 +30,6 @@ function parseDash(style: string): number[] {
     return [];
 }
 
-/**
- * Converts a FontWeightEnum Tailwind class (e.g. "font-bold") to a string
- * compatible with Konva's `fontStyle` prop.
- */
-const FONT_WEIGHT_MAP: Record<string, string> = {
-    "font-thin": "100",
-    "font-extralight": "200",
-    "font-light": "300",
-    "font-normal": "normal",
-    "font-medium": "500",
-    "font-semibold": "600",
-    "font-bold": "bold",
-    "font-extrabold": "800",
-    "font-black": "900",
-};
-
-function parseFontWeight(key: string): string {
-    return FONT_WEIGHT_MAP[key] ?? "normal";
-}
-
 // ─── Resolvers ─────────────────────────────────────────────────────────────────
 //
 // Pure functions — no React, no store access. Each takes the raw
@@ -78,12 +58,12 @@ export function resolveLineLayerStyle(settings: LayerSettingParameter[]): Resolv
         pointBorderDash: parseDash(param(settings, "Point Border Style")),
         pointIdColor: param(settings, "Point ID Color"),
         pointIdFontSize: paramNum(settings, "Point ID Font Size"),
-        pointIdFontWeight: parseFontWeight(param(settings, "Point ID Font Weight")),
+        pointIdFontWeight: param(settings, "Point ID Font Weight"),
         pointIdPlacement: param(settings, "Point ID Placement"),
         pointIdOffset: paramNum(settings, "Point ID Offset"),
         pointLabelColor: param(settings, "Point Label Color"),
         pointLabelFontSize: paramNum(settings, "Point Label Font Size"),
-        pointLabelFontWeight: parseFontWeight(param(settings, "Point Label Font Weight")),
+        pointLabelFontWeight: param(settings, "Point Label Font Weight"),
         pointLabelPlacement: param(settings, "Point Label Placement"),
         pointLabelOffset: paramNum(settings, "Point Label Offset"),
     };
@@ -103,12 +83,12 @@ export function resolvePointLayerStyle(settings: LayerSettingParameter[]): Resol
         borderDash: parseDash(param(settings, "Point Border Style")),
         idColor: param(settings, "Point ID Color"),
         idFontSize: paramNum(settings, "Point ID Font Size"),
-        idFontWeight: parseFontWeight(param(settings, "Point ID Font Weight")),
+        idFontWeight: param(settings, "Point ID Font Weight"),
         idPlacement: param(settings, "Point ID Placement"),
         idOffset: paramNum(settings, "Point ID Offset"),
         labelColor: param(settings, "Point Label Color"),
         labelFontSize: paramNum(settings, "Point Label Font Size"),
-        labelFontWeight: parseFontWeight(param(settings, "Point Label Font Weight")),
+        labelFontWeight: param(settings, "Point Label Font Weight"),
         labelPlacement: param(settings, "Point Label Placement"),
         labelOffset: paramNum(settings, "Point Label Offset"),
     };
@@ -128,7 +108,7 @@ export function resolvePolygonResultLayerStyle(
         vertexBorderDash: parseDash(param(settings, "Point Border Style")),
         vertexIdColor: param(settings, "Point ID Color"),
         vertexIdFontSize: paramNum(settings, "Point ID Font Size"),
-        vertexIdFontWeight: parseFontWeight(param(settings, "Point ID Font Weight")),
+        vertexIdFontWeight: param(settings, "Point ID Font Weight"),
         vertexIdPlacement: param(settings, "Point ID Placement"),
         vertexIdOffset: paramNum(settings, "Point ID Offset"),
         stroke: param(settings, "Polygon Edge Color"),
@@ -138,7 +118,7 @@ export function resolvePolygonResultLayerStyle(
         fillStyle: param(settings, "Polygon Fill Style"),
         idColor: param(settings, "Polygon ID Color"),
         idFontSize: paramNum(settings, "Polygon ID Font Size"),
-        idFontWeight: parseFontWeight(param(settings, "Polygon ID Font Weight")),
+        idFontWeight: param(settings, "Polygon ID Font Weight"),
         idShape: param(settings, "Polygon ID Shape"),
         idRadius: paramNum(settings, "Polygon ID Radius"),
         idBorderColor: param(settings, "Polygon ID Border Color"),
