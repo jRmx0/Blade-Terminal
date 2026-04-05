@@ -6,8 +6,8 @@
 //
 // Enum string values are preserved as-is from the provider spec (e.g. "solid",
 // "dashed", "circle"). Numeric pixel values are parsed from their serialised
-// string form. Tailwind class identifiers (FontSizeEnum, FontWeightEnum) are
-// converted to Konva-compatible numeric or standard CSS values.
+// string form. Tailwind class identifiers (FontWeightEnum) are
+// converted to Konva-compatible standard CSS values.
 
 // ─── Line ─────────────────────────────────────────────────────────────────────
 
@@ -108,7 +108,7 @@ export interface ResolvedPointLayerStyle {
     // ── Text Label ──
     /** Text label fill color (hex). */
     labelColor: string;
-    /** Text label font size in pixels (converted from Tailwind FontSizeEnum class). */
+    /** Text label font size in pixels. */
     labelFontSize: number;
     /** Konva-compatible font weight string (e.g. "normal" | "bold" | "600"). */
     labelFontWeight: string;

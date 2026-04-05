@@ -31,30 +31,6 @@ function parseDash(style: string): number[] {
 }
 
 /**
- * Converts a FontSizeEnum Tailwind class (e.g. "text-sm") to a pixel number
- * for use with Konva's `fontSize` prop.
- */
-const FONT_SIZE_PX: Record<string, number> = {
-    "text-xs": 12,
-    "text-sm": 14,
-    "text-base": 16,
-    "text-lg": 18,
-    "text-xl": 20,
-    "text-2xl": 24,
-    "text-3xl": 30,
-    "text-4xl": 36,
-    "text-5xl": 48,
-    "text-6xl": 60,
-    "text-7xl": 72,
-    "text-8xl": 96,
-    "text-9xl": 128,
-};
-
-function parseFontSize(key: string): number {
-    return FONT_SIZE_PX[key] ?? 0;
-}
-
-/**
  * Converts a FontWeightEnum Tailwind class (e.g. "font-bold") to a string
  * compatible with Konva's `fontStyle` prop.
  */
@@ -101,12 +77,12 @@ export function resolveLineLayerStyle(settings: LayerSettingParameter[]): Resolv
         pointBorderWidth: paramNum(settings, "Point Border Width"),
         pointBorderDash: parseDash(param(settings, "Point Border Style")),
         pointIdColor: param(settings, "Point ID Color"),
-        pointIdFontSize: parseFontSize(param(settings, "Point ID Font Size")),
+        pointIdFontSize: paramNum(settings, "Point ID Font Size"),
         pointIdFontWeight: parseFontWeight(param(settings, "Point ID Font Weight")),
         pointIdPlacement: param(settings, "Point ID Placement"),
         pointIdOffset: paramNum(settings, "Point ID Offset"),
         pointLabelColor: param(settings, "Point Label Color"),
-        pointLabelFontSize: parseFontSize(param(settings, "Point Label Font Size")),
+        pointLabelFontSize: paramNum(settings, "Point Label Font Size"),
         pointLabelFontWeight: parseFontWeight(param(settings, "Point Label Font Weight")),
         pointLabelPlacement: param(settings, "Point Label Placement"),
         pointLabelOffset: paramNum(settings, "Point Label Offset"),
@@ -126,12 +102,12 @@ export function resolvePointLayerStyle(settings: LayerSettingParameter[]): Resol
         borderWidth: paramNum(settings, "Point Border Width"),
         borderDash: parseDash(param(settings, "Point Border Style")),
         idColor: param(settings, "Point ID Color"),
-        idFontSize: parseFontSize(param(settings, "Point ID Font Size")),
+        idFontSize: paramNum(settings, "Point ID Font Size"),
         idFontWeight: parseFontWeight(param(settings, "Point ID Font Weight")),
         idPlacement: param(settings, "Point ID Placement"),
         idOffset: paramNum(settings, "Point ID Offset"),
         labelColor: param(settings, "Point Label Color"),
-        labelFontSize: parseFontSize(param(settings, "Point Label Font Size")),
+        labelFontSize: paramNum(settings, "Point Label Font Size"),
         labelFontWeight: parseFontWeight(param(settings, "Point Label Font Weight")),
         labelPlacement: param(settings, "Point Label Placement"),
         labelOffset: paramNum(settings, "Point Label Offset"),
@@ -151,7 +127,7 @@ export function resolvePolygonResultLayerStyle(
         vertexBorderWidth: paramNum(settings, "Point Border Width"),
         vertexBorderDash: parseDash(param(settings, "Point Border Style")),
         vertexIdColor: param(settings, "Point ID Color"),
-        vertexIdFontSize: parseFontSize(param(settings, "Point ID Font Size")),
+        vertexIdFontSize: paramNum(settings, "Point ID Font Size"),
         vertexIdFontWeight: parseFontWeight(param(settings, "Point ID Font Weight")),
         vertexIdPlacement: param(settings, "Point ID Placement"),
         vertexIdOffset: paramNum(settings, "Point ID Offset"),
@@ -161,7 +137,7 @@ export function resolvePolygonResultLayerStyle(
         fill: param(settings, "Polygon Fill Color"),
         fillStyle: param(settings, "Polygon Fill Style"),
         idColor: param(settings, "Polygon ID Color"),
-        idFontSize: parseFontSize(param(settings, "Polygon ID Font Size")),
+        idFontSize: paramNum(settings, "Polygon ID Font Size"),
         idFontWeight: parseFontWeight(param(settings, "Polygon ID Font Weight")),
         idShape: param(settings, "Polygon ID Shape"),
         idRadius: paramNum(settings, "Polygon ID Radius"),

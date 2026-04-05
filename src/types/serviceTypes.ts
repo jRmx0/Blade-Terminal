@@ -199,7 +199,6 @@ export type StyleType =
     | "FillStyleEnum"
     | "OverlapLayoutEnum"
     | "PlacementEnum"
-    | "FontSizeEnum"
     | "FontWeightEnum"
     | "LineArrowStartEnum"
     | "LineArrowEndEnum"

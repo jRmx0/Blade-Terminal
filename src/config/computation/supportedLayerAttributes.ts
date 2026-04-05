@@ -86,7 +86,6 @@ const STYLE_TYPE_LIST: StyleType[] = [
     "FillStyleEnum",
     "OverlapLayoutEnum",
     "PlacementEnum",
-    "FontSizeEnum",
     "FontWeightEnum",
     "LineArrowStartEnum",
     "LineArrowEndEnum",

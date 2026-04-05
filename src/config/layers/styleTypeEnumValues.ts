@@ -52,23 +52,6 @@ export const STYLE_TYPE_ENUM_OPTIONS: Partial<Record<StyleType, SettingsPanelSel
         { value: "outside-bottom", label: "Outside Bottom" },
     ],
 
-    FontSizeEnum: [
-        NONE,
-        { value: "text-xs", label: "XS" },
-        { value: "text-sm", label: "SM" },
-        { value: "text-base", label: "Base" },
-        { value: "text-lg", label: "LG" },
-        { value: "text-xl", label: "XL" },
-        { value: "text-2xl", label: "2XL" },
-        { value: "text-3xl", label: "3XL" },
-        { value: "text-4xl", label: "4XL" },
-        { value: "text-5xl", label: "5XL" },
-        { value: "text-6xl", label: "6XL" },
-        { value: "text-7xl", label: "7XL" },
-        { value: "text-8xl", label: "8XL" },
-        { value: "text-9xl", label: "9XL" },
-    ],
-
     FontWeightEnum: [
         NONE,
         { value: "font-thin", label: "Thin" },
