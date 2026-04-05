@@ -245,7 +245,11 @@ export async function persistFetchedMetadata(
     useComputationCatalogStore.getState().setProviderLayerSettingsSetup(providerId, setupRecords);
 
     for (const { algorithm, layers } of metadata.algorithms) {
-        useProviderLayerStore.getState().setProviderLayers(providerId, algorithm.id, layers);
+        useProviderLayerStore.getState().setProviderLayers(
+            providerId,
+            algorithm.id,
+            layers.map((l) => ({ ...l, providerId })),
+        );
     }
 
     const envId = useEnvStore.getState().env?.id;
