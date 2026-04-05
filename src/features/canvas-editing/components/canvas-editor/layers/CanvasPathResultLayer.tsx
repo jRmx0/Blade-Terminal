@@ -1,6 +1,7 @@
 import { memo, Fragment } from "react";
 import { Layer, Line, Group, Text } from "react-konva";
 import { MarkerShape } from "@/features/canvas-editing/utils/markerShape";
+import { textPlacementCenter, TEXT_W } from "@/features/canvas-editing/utils/textPlacement";
 import type { ResolvedLineLayerStyle } from "@/features/canvas-editing/types/layerStyles";
 import type { CanvasPathItem } from "@/types/serviceTypes";
 import {
@@ -20,20 +21,6 @@ interface CanvasPathResultLayerProps {
 // Transit segments always render dashed regardless of the configured edge style,
 // since "transit" means the tool is not engaged.
 const TRANSIT_DASH = [6, 4];
-
-function waypointIdOffset(
-    placement: string,
-    gap: number,
-): { dx: number; dy: number } {
-    switch (placement) {
-        case "inside": return { dx: 0, dy: 0 };
-        case "outside-left": return { dx: -gap, dy: 0 };
-        case "outside-right": return { dx: gap, dy: 0 };
-        case "outside-bottom": return { dx: 0, dy: gap };
-        case "outside-top":
-        default: return { dx: 0, dy: -gap };
-    }
-}
 
 function _CanvasPathResultLayer({ items, style }: CanvasPathResultLayerProps) {
     const arrowSize = style.arrowSize;
@@ -127,36 +114,24 @@ function _CanvasPathResultLayer({ items, style }: CanvasPathResultLayerProps) {
             {showMarkers && showId && items.map((item) => (
                 <Fragment key={`t-${item.id}`}>
                     {item.path.map((wp) => {
-                        const gap = style.pointRadius + style.pointBorderWidth + style.pointIdOffset;
-                        const off = waypointIdOffset(style.pointIdPlacement, gap);
+                        const { dx, dy, align, offsetX } = textPlacementCenter(style.pointIdPlacement, style.pointIdOffset);
                         return (
                             <Group key={`${item.id}-wpt-${wp.id}`} x={wp.point.x} y={wp.point.y} listening={false}>
-                                {style.pointIdPlacement === "inside" ? (
-                                    <Text
-                                        text={String(wp.id)}
-                                        fill={style.pointIdColor}
-                                        fontSize={style.pointIdFontSize}
-                                        fontStyle={style.pointIdFontWeight}
-                                        width={style.pointIdFontSize * 4}
-                                        height={style.pointIdFontSize * 1.5}
-                                        offsetX={style.pointIdFontSize * 2}
-                                        offsetY={style.pointIdFontSize * 0.75}
-                                        align="center"
-                                        verticalAlign="middle"
-                                        listening={false}
-                                    />
-                                ) : (
-                                    <Text
-                                        text={String(wp.id)}
-                                        fill={style.pointIdColor}
-                                        fontSize={style.pointIdFontSize}
-                                        fontStyle={style.pointIdFontWeight}
-                                        x={off.dx}
-                                        y={off.dy}
-                                        offsetY={style.pointIdFontSize / 2}
-                                        listening={false}
-                                    />
-                                )}
+                                <Text
+                                    x={dx}
+                                    y={dy}
+                                    text={String(wp.id)}
+                                    fill={style.pointIdColor}
+                                    fontSize={style.pointIdFontSize}
+                                    fontStyle={style.pointIdFontWeight}
+                                    width={TEXT_W}
+                                    height={style.pointIdFontSize * 1.5}
+                                    offsetX={offsetX}
+                                    offsetY={style.pointIdFontSize * 0.75}
+                                    align={align}
+                                    verticalAlign="middle"
+                                    listening={false}
+                                />
                             </Group>
                         );
                     })}

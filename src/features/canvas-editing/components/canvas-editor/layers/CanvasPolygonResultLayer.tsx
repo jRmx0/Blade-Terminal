@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Layer, Line, Group, Text } from "react-konva";
 import { MarkerShape } from "@/features/canvas-editing/utils/markerShape";
+import { textPlacementCenter, TEXT_W, TEXT_OX } from "@/features/canvas-editing/utils/textPlacement";
 import type { KonvaEventObject } from "konva/lib/Node";
 import type { ResolvedPolygonResultLayerStyle } from "@/features/canvas-editing/types/layerStyles";
 import type { CanvasPolygonItem } from "@/types/serviceTypes";
@@ -56,9 +57,9 @@ function IdBadgeText({
                 fill={style.idColor}
                 fontSize={style.idFontSize}
                 fontStyle={style.idFontWeight}
-                width={style.idFontSize * 4}
+                width={TEXT_W}
                 height={style.idFontSize * 1.5}
-                offsetX={style.idFontSize * 2}
+                offsetX={TEXT_OX}
                 offsetY={style.idFontSize * 0.75}
                 align="center"
                 verticalAlign="middle"
@@ -107,31 +108,21 @@ function VertexMarkerLabel({
     index: number;
     style: ResolvedPolygonResultLayerStyle;
 }) {
-    const gap = style.vertexRadius + style.vertexBorderWidth + style.vertexIdOffset;
-    const off = (() => {
-        switch (style.vertexIdPlacement) {
-            case "inside": return { dx: 0, dy: 0 };
-            case "outside-left": return { dx: -gap, dy: 0 };
-            case "outside-right": return { dx: gap, dy: 0 };
-            case "outside-bottom": return { dx: 0, dy: gap };
-            case "outside-top":
-            default: return { dx: 0, dy: -gap };
-        }
-    })();
+    const { dx: off_dx, dy: off_dy, align: off_align, offsetX: off_ox } = textPlacementCenter(style.vertexIdPlacement, style.vertexIdOffset);
     return (
         <Group x={x} y={y}>
             <Text
-                x={off.dx}
-                y={off.dy}
+                x={off_dx}
+                y={off_dy}
                 text={String(index)}
                 fill={style.vertexIdColor}
                 fontSize={style.vertexIdFontSize}
                 fontStyle={style.vertexIdFontWeight}
-                width={style.vertexIdFontSize * 4}
+                width={TEXT_W}
                 height={style.vertexIdFontSize * 1.5}
-                offsetX={style.vertexIdFontSize * 2}
+                offsetX={off_ox}
                 offsetY={style.vertexIdFontSize * 0.75}
-                align="center"
+                align={off_align}
                 verticalAlign="middle"
                 listening={false}
                 perfectDrawEnabled={false}

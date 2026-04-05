@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Layer, Group, Text } from "react-konva";
 import { MarkerShape } from "@/features/canvas-editing/utils/markerShape";
+import { textPlacementCenter, TEXT_W } from "@/features/canvas-editing/utils/textPlacement";
 import type { ResolvedPointLayerStyle } from "@/features/canvas-editing/types/layerStyles";
 import type { CanvasPointItem, PointLabelColorEntry } from "@/types/serviceTypes";
 
@@ -18,27 +19,6 @@ function resolveFillColor(
 ): string {
     if (!pointLabel) return fallback;
     return mapping.find((e) => e.value === pointLabel)?.color ?? fallback;
-}
-
-/**
- * Computes the label (x, y) offset from (item.x, item.y) based on placement.
- * Positive Y is downward in canvas/screen space.
- */
-function labelOffset(
-    placement: string,
-    offsetPx: number,
-    radius: number,
-    borderWidth: number,
-): { dx: number; dy: number } {
-    const gap = radius + borderWidth + offsetPx;
-    switch (placement) {
-        case "inside": return { dx: 0, dy: 0 };
-        case "outside-left": return { dx: -gap, dy: 0 };
-        case "outside-right": return { dx: gap, dy: 0 };
-        case "outside-bottom": return { dx: 0, dy: gap };
-        case "outside-top":
-        default: return { dx: 0, dy: -gap };
-    }
 }
 
 /**
@@ -114,23 +94,8 @@ function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPoin
             {(showId || showLabel) && items.map((item) => {
                 if (!item.point) return null;
                 const { dx: odx, dy: ody } = overlapOffsets.get(item.id) ?? { dx: 0, dy: 0 };
-                const idOff = showId ? (() => {
-                    const gap = style.radius + style.borderWidth + style.idOffset;
-                    switch (style.idPlacement) {
-                        case "inside": return { dx: 0, dy: 0 };
-                        case "outside-left": return { dx: -gap, dy: 0 };
-                        case "outside-right": return { dx: gap, dy: 0 };
-                        case "outside-bottom": return { dx: 0, dy: gap };
-                        case "outside-top":
-                        default: return { dx: 0, dy: -gap };
-                    }
-                })() : null;
-                const { dx: ldx, dy: ldy } = labelOffset(
-                    style.labelPlacement,
-                    style.labelOffset,
-                    style.radius,
-                    style.borderWidth,
-                );
+                const idOff = showId ? textPlacementCenter(style.idPlacement, style.idOffset) : null;
+                const labelPos = textPlacementCenter(style.labelPlacement, style.labelOffset);
                 return (
                     <Group key={`t-${item.id}`} x={item.point.x + odx} y={item.point.y + ody}>
                         {showId && idOff !== null && (
@@ -141,11 +106,11 @@ function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPoin
                                 fill={style.idColor}
                                 fontSize={style.idFontSize}
                                 fontStyle={style.idFontWeight}
-                                width={style.idFontSize * 4}
+                                width={TEXT_W}
                                 height={style.idFontSize * 1.5}
-                                offsetX={style.idFontSize * 2}
+                                offsetX={idOff.offsetX}
                                 offsetY={style.idFontSize * 0.75}
-                                align="center"
+                                align={idOff.align}
                                 verticalAlign="middle"
                                 listening={false}
                                 perfectDrawEnabled={false}
@@ -153,13 +118,17 @@ function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPoin
                         )}
                         {showLabel && item.pointLabel !== undefined && (
                             <Text
-                                x={ldx}
-                                y={ldy}
+                                x={labelPos.dx}
+                                y={labelPos.dy}
                                 text={String(item.pointLabel)}
                                 fill={resolveFillColor(item.pointLabel, labelColorMapping, style.labelColor)}
                                 fontSize={style.labelFontSize}
                                 fontStyle={style.labelFontWeight}
-                                align="center"
+                                width={TEXT_W}
+                                height={style.labelFontSize * 1.5}
+                                offsetX={labelPos.offsetX}
+                                offsetY={style.labelFontSize * 0.75}
+                                align={labelPos.align}
                                 verticalAlign="middle"
                                 listening={false}
                                 perfectDrawEnabled={false}

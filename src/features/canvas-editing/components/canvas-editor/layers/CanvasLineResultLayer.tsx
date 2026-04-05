@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Layer, Line, Group, Text } from "react-konva";
 import { MarkerShape } from "@/features/canvas-editing/utils/markerShape";
+import { textPlacementCenter, TEXT_W } from "@/features/canvas-editing/utils/textPlacement";
 import type { ResolvedLineLayerStyle } from "@/features/canvas-editing/types/layerStyles";
 import type { CanvasLineItem } from "@/types/serviceTypes";
 import {
@@ -152,32 +153,46 @@ function _CanvasLineResultLayer({ items, style }: CanvasLineResultLayerProps) {
             {/* ── Text pass: point ID and label texts rendered above all markers ── */}
             {showMarkers && resolvedPoints.map((item) => (
                 <Group key={`t-${item.id}`} x={item.point.x} y={item.point.y} listening={false}>
-                    {style.pointIdPlacement === "inside" && (
-                        <Text
-                            text={String(item.id)}
-                            fill={style.pointIdColor}
-                            fontSize={style.pointIdFontSize}
-                            fontStyle={style.pointIdFontWeight}
-                            width={style.pointIdFontSize * 4}
-                            height={style.pointIdFontSize * 1.5}
-                            offsetX={style.pointIdFontSize * 2}
-                            offsetY={style.pointIdFontSize * 0.75}
-                            align="center"
-                            verticalAlign="middle"
-                            listening={false}
-                        />
-                    )}
-                    {style.pointLabelPlacement !== "" && item.pointLabel !== undefined && (
-                        <Text
-                            text={String(item.pointLabel)}
-                            fill={style.pointLabelColor}
-                            fontSize={style.pointLabelFontSize}
-                            fontStyle={style.pointLabelFontWeight}
-                            offsetX={style.pointRadius + style.pointLabelOffset}
-                            offsetY={style.pointLabelFontSize / 2}
-                            listening={false}
-                        />
-                    )}
+                    {style.pointIdPlacement !== "" && (() => {
+                        const { dx, dy, align, offsetX } = textPlacementCenter(style.pointIdPlacement, style.pointIdOffset);
+                        return (
+                            <Text
+                                x={dx}
+                                y={dy}
+                                text={String(item.id)}
+                                fill={style.pointIdColor}
+                                fontSize={style.pointIdFontSize}
+                                fontStyle={style.pointIdFontWeight}
+                                width={TEXT_W}
+                                height={style.pointIdFontSize * 1.5}
+                                offsetX={offsetX}
+                                offsetY={style.pointIdFontSize * 0.75}
+                                align={align}
+                                verticalAlign="middle"
+                                listening={false}
+                            />
+                        );
+                    })()}
+                    {style.pointLabelPlacement !== "" && item.pointLabel !== undefined && (() => {
+                        const { dx, dy, align, offsetX } = textPlacementCenter(style.pointLabelPlacement, style.pointLabelOffset);
+                        return (
+                            <Text
+                                x={dx}
+                                y={dy}
+                                text={String(item.pointLabel)}
+                                fill={style.pointLabelColor}
+                                fontSize={style.pointLabelFontSize}
+                                fontStyle={style.pointLabelFontWeight}
+                                width={TEXT_W}
+                                height={style.pointLabelFontSize * 1.5}
+                                offsetX={offsetX}
+                                offsetY={style.pointLabelFontSize * 0.75}
+                                align={align}
+                                verticalAlign="middle"
+                                listening={false}
+                            />
+                        );
+                    })()}
                 </Group>
             ))}
         </Layer>
