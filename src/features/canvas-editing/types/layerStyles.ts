@@ -161,7 +161,7 @@ export interface ResolvedPolygonResultLayerStyle {
     idFontSize: number;
     /** Konva-compatible font weight string. */
     idFontWeight: string;
-    /** ID badge background shape (PolygonIDShapeEnum): "circle" | "square" | "". */
+    /** ID badge background shape (PolygonIDShapeEnum): "circle" | "square" | "diamond" | "cross" | "triangle" | "". */
     idShape: string;
     /** ID badge background shape radius in world pixels. */
     idRadius: number;

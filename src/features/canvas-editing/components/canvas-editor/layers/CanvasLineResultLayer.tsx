@@ -1,6 +1,6 @@
 import { memo } from "react";
-import { Layer, Line, Group, Circle, Text, Shape } from "react-konva";
-import type { Context } from "konva/lib/Context";
+import { Layer, Line, Group, Text } from "react-konva";
+import { MarkerShape } from "@/features/canvas-editing/utils/markerShape";
 import type { ResolvedLineLayerStyle } from "@/features/canvas-editing/types/layerStyles";
 import type { CanvasLineItem } from "@/types/serviceTypes";
 import {
@@ -137,12 +137,14 @@ function _CanvasLineResultLayer({ items, style }: CanvasLineResultLayerProps) {
             {/* ── Shape pass: point markers ── */}
             {showMarkers && resolvedPoints.map((item) => (
                 <Group key={`s-${item.id}`} x={item.point.x} y={item.point.y} listening={false}>
-                    <Circle
+                    <MarkerShape
+                        shape={style.pointShape}
                         radius={style.pointRadius}
                         fill={style.pointFillColor}
                         stroke={style.pointBorderColor || undefined}
                         strokeWidth={style.pointBorderWidth}
                         dash={style.pointBorderDash}
+                        listening={false}
                         perfectDrawEnabled={false}
                     />
                 </Group>

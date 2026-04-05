@@ -1,5 +1,6 @@
 import { memo } from "react";
-import { Layer, Circle, Rect, RegularPolygon, Group, Text, Shape } from "react-konva";
+import { Layer, Group, Text } from "react-konva";
+import { MarkerShape } from "@/features/canvas-editing/utils/markerShape";
 import type { ResolvedPointLayerStyle } from "@/features/canvas-editing/types/layerStyles";
 import type { CanvasPointItem, PointLabelColorEntry } from "@/types/serviceTypes";
 
@@ -93,71 +94,18 @@ function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPoin
                 if (!item.point) return null;
                 const { dx: odx, dy: ody } = overlapOffsets.get(item.id) ?? { dx: 0, dy: 0 };
                 const fill = resolveFillColor(item.pointLabel, labelColorMapping, style.fillColor);
-                const markerProps = {
-                    fill,
-                    stroke: style.borderColor,
-                    strokeWidth: style.borderWidth,
-                    dash: style.borderDash,
-                    listening: false as const,
-                    perfectDrawEnabled: false as const,
-                };
-                const marker = (() => {
-                    switch (style.shape) {
-                        case "square":
-                            return (
-                                <Rect
-                                    {...markerProps}
-                                    x={-style.radius}
-                                    y={-style.radius}
-                                    width={style.radius * 2}
-                                    height={style.radius * 2}
-                                />
-                            );
-                        case "triangle":
-                            return <RegularPolygon {...markerProps} sides={3} radius={style.radius} />;
-                        case "diamond":
-                            return (
-                                <RegularPolygon
-                                    {...markerProps}
-                                    sides={4}
-                                    radius={style.radius}
-                                />
-                            );
-                        case "cross": {
-                            const aw = style.radius * 0.2;
-                            const al = style.radius;
-                            return (
-                                <Shape
-                                    {...markerProps}
-                                    rotation={45}
-                                    sceneFunc={(ctx, shape) => {
-                                        ctx.beginPath();
-                                        ctx.moveTo(-aw, -al);
-                                        ctx.lineTo(aw, -al);
-                                        ctx.lineTo(aw, -aw);
-                                        ctx.lineTo(al, -aw);
-                                        ctx.lineTo(al, aw);
-                                        ctx.lineTo(aw, aw);
-                                        ctx.lineTo(aw, al);
-                                        ctx.lineTo(-aw, al);
-                                        ctx.lineTo(-aw, aw);
-                                        ctx.lineTo(-al, aw);
-                                        ctx.lineTo(-al, -aw);
-                                        ctx.lineTo(-aw, -aw);
-                                        ctx.closePath();
-                                        ctx.fillStrokeShape(shape);
-                                    }}
-                                />
-                            );
-                        }
-                        case "circle":
-                        default:
-                            return <Circle {...markerProps} radius={style.radius} />;
-                    }
-                })();
                 return (
                     <Group key={`s-${item.id}`} x={item.point.x + odx} y={item.point.y + ody}>
-                        {marker}
+                        <MarkerShape
+                            shape={style.shape}
+                            radius={style.radius}
+                            fill={fill}
+                            stroke={style.borderColor}
+                            strokeWidth={style.borderWidth}
+                            dash={style.borderDash}
+                            listening={false}
+                            perfectDrawEnabled={false}
+                        />
                     </Group>
                 );
             })}

@@ -23,6 +23,9 @@ export const STYLE_TYPE_ENUM_OPTIONS: Partial<Record<StyleType, SettingsPanelSel
         NONE,
         { value: "circle", label: "Circle" },
         { value: "square", label: "Square" },
+        { value: "diamond", label: "Diamond" },
+        { value: "cross", label: "Cross" },
+        { value: "triangle", label: "Triangle" },
     ],
 
     StrokeStyleEnum: [

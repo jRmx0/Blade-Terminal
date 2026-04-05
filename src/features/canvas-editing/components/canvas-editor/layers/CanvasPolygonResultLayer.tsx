@@ -1,5 +1,6 @@
 import { memo } from "react";
-import { Layer, Line, Circle, Rect, Group, Text } from "react-konva";
+import { Layer, Line, Group, Text } from "react-konva";
+import { MarkerShape } from "@/features/canvas-editing/utils/markerShape";
 import type { KonvaEventObject } from "konva/lib/Node";
 import type { ResolvedPolygonResultLayerStyle } from "@/features/canvas-editing/types/layerStyles";
 import type { CanvasPolygonItem } from "@/types/serviceTypes";
@@ -20,22 +21,20 @@ function IdBadgeShape({
     style: ResolvedPolygonResultLayerStyle;
 }) {
     if (!style.idShape) return null;
-    const bgProps = {
-        fill: style.idFillColor,
-        stroke: style.idBorderColor,
-        strokeWidth: style.idBorderWidth,
-        dash: style.idBorderDash,
-        listening: false as const,
-        perfectDrawEnabled: false as const,
-    };
-    const shape = (() => {
-        if (style.idShape === "square") {
-            const half = style.idRadius;
-            return <Rect {...bgProps} x={-half} y={-half} width={half * 2} height={half * 2} />;
-        }
-        return <Circle {...bgProps} radius={style.idRadius} />;
-    })();
-    return <Group x={x} y={y}>{shape}</Group>;
+    return (
+        <Group x={x} y={y}>
+            <MarkerShape
+                shape={style.idShape}
+                radius={style.idRadius}
+                fill={style.idFillColor}
+                stroke={style.idBorderColor}
+                strokeWidth={style.idBorderWidth}
+                dash={style.idBorderDash}
+                listening={false}
+                perfectDrawEnabled={false}
+            />
+        </Group>
+    );
 }
 
 /** Renders the ID badge text at the anchor point. */
@@ -80,26 +79,20 @@ function VertexMarkerShape({
     y: number;
     style: ResolvedPolygonResultLayerStyle;
 }) {
-    const markerProps = {
-        fill: style.vertexFillColor,
-        stroke: style.vertexBorderColor,
-        strokeWidth: style.vertexBorderWidth,
-        dash: style.vertexBorderDash,
-        listening: false as const,
-        perfectDrawEnabled: false as const,
-    };
-    const shape = (() => {
-        switch (style.vertexShape) {
-            case "square": {
-                const half = style.vertexRadius;
-                return <Rect {...markerProps} x={-half} y={-half} width={half * 2} height={half * 2} />;
-            }
-            case "circle":
-            default:
-                return <Circle {...markerProps} radius={style.vertexRadius} />;
-        }
-    })();
-    return <Group x={x} y={y}>{shape}</Group>;
+    return (
+        <Group x={x} y={y}>
+            <MarkerShape
+                shape={style.vertexShape}
+                radius={style.vertexRadius}
+                fill={style.vertexFillColor}
+                stroke={style.vertexBorderColor}
+                strokeWidth={style.vertexBorderWidth}
+                dash={style.vertexBorderDash}
+                listening={false}
+                perfectDrawEnabled={false}
+            />
+        </Group>
+    );
 }
 
 /** Renders the ID label text for a single corner-vertex marker. */

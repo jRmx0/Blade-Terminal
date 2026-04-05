@@ -1,5 +1,6 @@
 import { memo, Fragment } from "react";
-import { Layer, Line, Group, Circle, Rect, RegularPolygon, Shape, Text } from "react-konva";
+import { Layer, Line, Group, Text } from "react-konva";
+import { MarkerShape } from "@/features/canvas-editing/utils/markerShape";
 import type { ResolvedLineLayerStyle } from "@/features/canvas-editing/types/layerStyles";
 import type { CanvasPathItem } from "@/types/serviceTypes";
 import {
@@ -105,61 +106,20 @@ function _CanvasPathResultLayer({ items, style }: CanvasPathResultLayerProps) {
                         {midArrows.map((pts, mi) => (
                             <Line key={mi} points={pts} closed={!isNotchArrow(style.arrowMid)} fill={style.stroke} {...arrowStrokeProps} />
                         ))}
-                        {showMarkers && item.path.map((wp) => {
-                            const markerProps = {
-                                fill: style.pointFillColor,
-                                stroke: style.pointBorderColor || undefined,
-                                strokeWidth: style.pointBorderWidth,
-                                dash: style.pointBorderDash,
-                                listening: false as const,
-                                perfectDrawEnabled: false as const,
-                            };
-                            const marker = (() => {
-                                switch (style.pointShape) {
-                                    case "square":
-                                        return <Rect {...markerProps} x={-style.pointRadius} y={-style.pointRadius} width={style.pointRadius * 2} height={style.pointRadius * 2} />;
-                                    case "triangle":
-                                        return <RegularPolygon {...markerProps} sides={3} radius={style.pointRadius} />;
-                                    case "diamond":
-                                        return <RegularPolygon {...markerProps} sides={4} radius={style.pointRadius} />;
-                                    case "cross": {
-                                        const aw = style.pointRadius * 0.2;
-                                        const al = style.pointRadius;
-                                        return (
-                                            <Shape
-                                                {...markerProps}
-                                                rotation={45}
-                                                sceneFunc={(ctx, shape) => {
-                                                    ctx.beginPath();
-                                                    ctx.moveTo(-aw, -al);
-                                                    ctx.lineTo(aw, -al);
-                                                    ctx.lineTo(aw, -aw);
-                                                    ctx.lineTo(al, -aw);
-                                                    ctx.lineTo(al, aw);
-                                                    ctx.lineTo(aw, aw);
-                                                    ctx.lineTo(aw, al);
-                                                    ctx.lineTo(-aw, al);
-                                                    ctx.lineTo(-aw, aw);
-                                                    ctx.lineTo(-al, aw);
-                                                    ctx.lineTo(-al, -aw);
-                                                    ctx.lineTo(-aw, -aw);
-                                                    ctx.closePath();
-                                                    ctx.fillStrokeShape(shape);
-                                                }}
-                                            />
-                                        );
-                                    }
-                                    case "circle":
-                                    default:
-                                        return <Circle {...markerProps} radius={style.pointRadius} />;
-                                }
-                            })();
-                            return (
-                                <Group key={`${item.id}-wp-${wp.id}`} x={wp.point.x} y={wp.point.y} listening={false}>
-                                    {marker}
-                                </Group>
-                            );
-                        })}
+                        {showMarkers && item.path.map((wp) => (
+                            <Group key={`${item.id}-wp-${wp.id}`} x={wp.point.x} y={wp.point.y} listening={false}>
+                                <MarkerShape
+                                    shape={style.pointShape}
+                                    radius={style.pointRadius}
+                                    fill={style.pointFillColor}
+                                    stroke={style.pointBorderColor || undefined}
+                                    strokeWidth={style.pointBorderWidth}
+                                    dash={style.pointBorderDash}
+                                    listening={false}
+                                    perfectDrawEnabled={false}
+                                />
+                            </Group>
+                        ))}
                     </Fragment>
                 );
             })}
