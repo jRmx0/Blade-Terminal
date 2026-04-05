@@ -94,13 +94,14 @@ function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPoin
                 if (!item.point) return null;
                 const { dx: odx, dy: ody } = overlapOffsets.get(item.id) ?? { dx: 0, dy: 0 };
                 const fill = resolveFillColor(item.pointLabel, labelColorMapping, style.fillColor);
+                const border = resolveFillColor(item.pointLabel, labelColorMapping, style.borderColor);
                 return (
                     <Group key={`s-${item.id}`} x={item.point.x + odx} y={item.point.y + ody}>
                         <MarkerShape
                             shape={style.shape}
                             radius={style.radius}
                             fill={fill}
-                            stroke={style.borderColor}
+                            stroke={border}
                             strokeWidth={style.borderWidth}
                             dash={style.borderDash}
                             listening={false}
@@ -155,7 +156,7 @@ function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPoin
                                 x={ldx}
                                 y={ldy}
                                 text={String(item.pointLabel)}
-                                fill={style.labelColor}
+                                fill={resolveFillColor(item.pointLabel, labelColorMapping, style.labelColor)}
                                 fontSize={style.labelFontSize}
                                 fontStyle={style.labelFontWeight}
                                 align="center"

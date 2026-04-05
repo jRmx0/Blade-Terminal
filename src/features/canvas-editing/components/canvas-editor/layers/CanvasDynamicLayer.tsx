@@ -6,6 +6,7 @@ import type {
     CanvasPathItem,
     CanvasPointItem,
     CanvasPolygonItem,
+    PointLabelColorEntry,
 } from "@/types/serviceTypes";
 import {
     resolveLineLayerStyle,
@@ -16,6 +17,21 @@ import { CanvasLineResultLayer } from "@/features/canvas-editing/components/canv
 import { CanvasPathResultLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasPathResultLayer";
 import { CanvasPointResultLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasPointResultLayer";
 import { CanvasPolygonResultLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasPolygonResultLayer";
+
+/**
+ * Reads the JSON-encoded PointLabelColorEntry[] stored on the PointLabelEnum
+ * settings row. This is the persisted source of truth — always available from
+ * IndexedDB even after a page refresh without reconnecting to the provider.
+ */
+function extractLabelColorMapping(settings: LayerSettingParameter[]): PointLabelColorEntry[] {
+    const row = settings.find((s) => s.styleType === "PointLabelEnum");
+    if (!row?.value) return [];
+    try {
+        return JSON.parse(row.value) as PointLabelColorEntry[];
+    } catch {
+        return [];
+    }
+}
 
 interface CanvasDynamicLayerProps {
     /** Provider layer metadata describing geometry type, computeLayer binding, and style defaults. */
@@ -74,7 +90,7 @@ function _CanvasDynamicLayer({ layerMeta, settings, items }: CanvasDynamicLayerP
                 <CanvasPointResultLayer
                     items={items as CanvasPointItem[]}
                     style={pointStyle}
-                    labelColorMapping={layerMeta.pointLabelColorMapping}
+                    labelColorMapping={extractLabelColorMapping(settings)}
                 />
             );
 
