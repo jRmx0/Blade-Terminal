@@ -5,7 +5,6 @@ import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
-import { saveComputeResult } from "@server/db/computeResults";
 import type { AlgoParamType, ComputeJobState, ComputeJobStateCompleted } from "@/types/serviceTypes";
 import type { ComputeResultRecord } from "@/types/schemaTypes";
 
@@ -230,7 +229,6 @@ export async function executeComputeRequest(): Promise<ComputeExecuteResult> {
         result: completed.result,
     };
 
-    await saveComputeResult(record);
     resultStore.setResult(record);
 
     return { ok: true, record };

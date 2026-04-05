@@ -87,9 +87,9 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     await loadLayerSettings(environmentId);
     const existingResult = await getComputeResult(environmentId);
     if (existingResult) {
-        useComputeResultStore.getState().setResult(existingResult);
+        useComputeResultStore.getState().loadResult(existingResult);
     } else {
-        useComputeResultStore.getState().clearResult();
+        useComputeResultStore.getState().resetResult();
     }
 }
 

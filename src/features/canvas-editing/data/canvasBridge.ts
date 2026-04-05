@@ -3,12 +3,14 @@ import { saveComputationSelection } from "@server/db/computationSelection";
 import { saveAlgorithmParameters } from "@server/db/computationAlgorithmParameters";
 import { saveAllLayerSettings } from "@server/db/layerSettings";
 import { getObjectsByEnvironment, saveObjects, deleteObject } from "@server/db/objects";
+import { saveComputeResult, deleteComputeResult } from "@server/db/computeResults";
 import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
 import type { Object, Environment } from "@/types/schemaTypes";
 import { useCanvasObjectStore } from "../stores/canvasObjectStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
+import { useComputeResultStore } from "@/stores/useComputeResultStore";
 
 // ── Count synchronization ──────────────────────────────────────────────────
 // Reactively keeps envStore zone/obstacle counts derived from the canvas object
@@ -60,8 +62,9 @@ export async function saveCanvas(): Promise<boolean> {
     const { env, isEnvDirty, computation, clearDirty: clearEnvDirty } = useEnvStore.getState();
     const { parameterValues, isParameterValuesDirty, clearDirty: clearParamsDirty } = useParameterValuesStore.getState();
     const { layers, isLayerSettingsDirty, clearDirty: clearLayersDirty } = useLayerSettingsStore.getState();
+    const { result, isComputeResultDirty, clearDirty: clearResultDirty } = useComputeResultStore.getState();
 
-    if (!isEnvDirty && !isParameterValuesDirty && !isLayerSettingsDirty && !dirtyObjects.length && !deletedObjects.length) return false;
+    if (!isEnvDirty && !isParameterValuesDirty && !isLayerSettingsDirty && !dirtyObjects.length && !deletedObjects.length && !isComputeResultDirty) return false;
 
     _isSaving = true;
     try {
@@ -71,11 +74,15 @@ export async function saveCanvas(): Promise<boolean> {
             isParameterValuesDirty ? saveAlgorithmParameters(parameterValues) : Promise.resolve(),
             isLayerSettingsDirty ? saveAllLayerSettings(layers.flatMap((l) => l.settings)) : Promise.resolve(),
             persistDirtyObjects(dirtyObjects, deletedObjects),
+            isComputeResultDirty
+                ? (result !== null ? saveComputeResult(result) : deleteComputeResult(env.id))
+                : Promise.resolve(),
         ]);
         clearDirty();
         clearEnvDirty();
         clearParamsDirty();
         clearLayersDirty();
+        clearResultDirty();
         return true;
     } finally {
         _isSaving = false;

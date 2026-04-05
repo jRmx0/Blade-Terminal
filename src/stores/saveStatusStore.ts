@@ -4,6 +4,7 @@ import { useSaveModeStore } from "@/stores/saveModeStore";
 import { useCanvasObjectStore, selectIsDirty } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
+import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
 
 // ---------------------------------------------------------------------------
@@ -28,7 +29,9 @@ function computeStatus(): SaveStatus {
     const { isLayerSettingsDirty } = useLayerSettingsStore.getState();
     const { mode } = useSaveModeStore.getState();
 
-    const isDirty = isEnvDirty || isCanvasDirty || isParameterValuesDirty || isLayerSettingsDirty;
+    const { isComputeResultDirty } = useComputeResultStore.getState();
+
+    const isDirty = isEnvDirty || isCanvasDirty || isParameterValuesDirty || isLayerSettingsDirty || isComputeResultDirty;
 
     if (isDirty && mode !== "autosave") return "unsaved";
     if (mode === "autosave" || (mode === "manual" && !isDirty)) return "saved";
@@ -65,3 +68,4 @@ useCanvasObjectStore.subscribe(syncStatus);
 useSaveModeStore.subscribe(syncStatus);
 useParameterValuesStore.subscribe(syncStatus);
 useLayerSettingsStore.subscribe(syncStatus);
+useComputeResultStore.subscribe(syncStatus);
