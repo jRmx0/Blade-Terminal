@@ -134,9 +134,9 @@ function _CanvasLineResultLayer({ items, style }: CanvasLineResultLayerProps) {
             {midArrows.map((pts, i) => (
                 <Line key={i} points={pts} closed={!isNotchArrow(style.arrowMid)} fill={style.stroke} {...arrowStrokeProps} />
             ))}
-            {/* Point markers */}
+            {/* ── Shape pass: point markers ── */}
             {showMarkers && resolvedPoints.map((item) => (
-                <Group key={item.id} x={item.point.x} y={item.point.y} listening={false}>
+                <Group key={`s-${item.id}`} x={item.point.x} y={item.point.y} listening={false}>
                     <Circle
                         radius={style.pointRadius}
                         fill={style.pointFillColor}
@@ -145,16 +145,21 @@ function _CanvasLineResultLayer({ items, style }: CanvasLineResultLayerProps) {
                         dash={style.pointBorderDash}
                         perfectDrawEnabled={false}
                     />
+                </Group>
+            ))}
+            {/* ── Text pass: point ID and label texts rendered above all markers ── */}
+            {showMarkers && resolvedPoints.map((item) => (
+                <Group key={`t-${item.id}`} x={item.point.x} y={item.point.y} listening={false}>
                     {style.pointIdPlacement === "inside" && (
                         <Text
                             text={String(item.id)}
                             fill={style.pointIdColor}
                             fontSize={style.pointIdFontSize}
                             fontStyle={style.pointIdFontWeight}
-                            width={style.pointRadius * 2}
-                            height={style.pointRadius * 2}
-                            offsetX={style.pointRadius}
-                            offsetY={style.pointRadius}
+                            width={style.pointIdFontSize * 4}
+                            height={style.pointIdFontSize * 1.5}
+                            offsetX={style.pointIdFontSize * 2}
+                            offsetY={style.pointIdFontSize * 0.75}
                             align="center"
                             verticalAlign="middle"
                             listening={false}

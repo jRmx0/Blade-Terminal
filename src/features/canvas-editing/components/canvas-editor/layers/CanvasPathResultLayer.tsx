@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, Fragment } from "react";
 import { Layer, Line, Group, Circle, Rect, RegularPolygon, Shape, Text } from "react-konva";
 import type { ResolvedLineLayerStyle } from "@/features/canvas-editing/types/layerStyles";
 import type { CanvasPathItem } from "@/types/serviceTypes";
@@ -20,6 +20,20 @@ interface CanvasPathResultLayerProps {
 // since "transit" means the tool is not engaged.
 const TRANSIT_DASH = [6, 4];
 
+function waypointIdOffset(
+    placement: string,
+    gap: number,
+): { dx: number; dy: number } {
+    switch (placement) {
+        case "inside": return { dx: 0, dy: 0 };
+        case "outside-left": return { dx: -gap, dy: 0 };
+        case "outside-right": return { dx: gap, dy: 0 };
+        case "outside-bottom": return { dx: 0, dy: gap };
+        case "outside-top":
+        default: return { dx: 0, dy: -gap };
+    }
+}
+
 function _CanvasPathResultLayer({ items, style }: CanvasPathResultLayerProps) {
     const arrowSize = style.arrowSize;
     const showMarkers = style.pointShape !== "";
@@ -27,6 +41,7 @@ function _CanvasPathResultLayer({ items, style }: CanvasPathResultLayerProps) {
 
     return (
         <Layer>
+            {/* ── Shape pass: polylines, arrows, and waypoint markers ── */}
             {items.map((item) => {
                 const flatPoints = item.path.flatMap((p) => [p.point.x, p.point.y]);
                 const dash = item.type === "transit" ? TRANSIT_DASH : style.dash;
@@ -70,9 +85,8 @@ function _CanvasPathResultLayer({ items, style }: CanvasPathResultLayerProps) {
                 };
 
                 return (
-                    <>
+                    <Fragment key={`s-${item.id}`}>
                         <Line
-                            key={item.id}
                             points={flatPoints}
                             stroke={style.stroke}
                             strokeWidth={style.strokeWidth}
@@ -83,27 +97,15 @@ function _CanvasPathResultLayer({ items, style }: CanvasPathResultLayerProps) {
                             perfectDrawEnabled={false}
                         />
                         {startArrowPts && (
-                            <Line key={`${item.id}-as`} points={startArrowPts} closed={!isNotchArrow(style.arrowStart)} fill={style.stroke} {...arrowStrokeProps} />
+                            <Line points={startArrowPts} closed={!isNotchArrow(style.arrowStart)} fill={style.stroke} {...arrowStrokeProps} />
                         )}
                         {endArrowPts && (
-                            <Line key={`${item.id}-ae`} points={endArrowPts} closed={!isNotchArrow(style.arrowEnd)} fill={style.stroke} {...arrowStrokeProps} />
+                            <Line points={endArrowPts} closed={!isNotchArrow(style.arrowEnd)} fill={style.stroke} {...arrowStrokeProps} />
                         )}
                         {midArrows.map((pts, mi) => (
-                            <Line key={`${item.id}-am${mi}`} points={pts} closed={!isNotchArrow(style.arrowMid)} fill={style.stroke} {...arrowStrokeProps} />
+                            <Line key={mi} points={pts} closed={!isNotchArrow(style.arrowMid)} fill={style.stroke} {...arrowStrokeProps} />
                         ))}
                         {showMarkers && item.path.map((wp) => {
-                            const gap = style.pointRadius + style.pointBorderWidth + style.pointIdOffset;
-                            const idOffset = (() => {
-                                switch (style.pointIdPlacement) {
-                                    case "inside": return { dx: 0, dy: 0 };
-                                    case "outside-left": return { dx: -gap, dy: 0 };
-                                    case "outside-right": return { dx: gap, dy: 0 };
-                                    case "outside-bottom": return { dx: 0, dy: gap };
-                                    case "outside-top":
-                                    default: return { dx: 0, dy: -gap };
-                                }
-                            })();
-
                             const markerProps = {
                                 fill: style.pointFillColor,
                                 stroke: style.pointBorderColor || undefined,
@@ -152,43 +154,54 @@ function _CanvasPathResultLayer({ items, style }: CanvasPathResultLayerProps) {
                                         return <Circle {...markerProps} radius={style.pointRadius} />;
                                 }
                             })();
-
                             return (
                                 <Group key={`${item.id}-wp-${wp.id}`} x={wp.point.x} y={wp.point.y} listening={false}>
                                     {marker}
-                                    {showId && style.pointIdPlacement === "inside" && (
-                                        <Text
-                                            text={String(wp.id)}
-                                            fill={style.pointIdColor}
-                                            fontSize={style.pointIdFontSize}
-                                            fontStyle={style.pointIdFontWeight}
-                                            width={style.pointRadius * 2}
-                                            height={style.pointRadius * 2}
-                                            offsetX={style.pointRadius}
-                                            offsetY={style.pointRadius}
-                                            align="center"
-                                            verticalAlign="middle"
-                                            listening={false}
-                                        />
-                                    )}
-                                    {showId && style.pointIdPlacement !== "inside" && (
-                                        <Text
-                                            text={String(wp.id)}
-                                            fill={style.pointIdColor}
-                                            fontSize={style.pointIdFontSize}
-                                            fontStyle={style.pointIdFontWeight}
-                                            x={idOffset.dx}
-                                            y={idOffset.dy}
-                                            offsetY={style.pointIdFontSize / 2}
-                                            listening={false}
-                                        />
-                                    )}
                                 </Group>
                             );
                         })}
-                    </>
+                    </Fragment>
                 );
             })}
+            {/* ── Text pass: waypoint ID texts rendered above all markers ── */}
+            {showMarkers && showId && items.map((item) => (
+                <Fragment key={`t-${item.id}`}>
+                    {item.path.map((wp) => {
+                        const gap = style.pointRadius + style.pointBorderWidth + style.pointIdOffset;
+                        const off = waypointIdOffset(style.pointIdPlacement, gap);
+                        return (
+                            <Group key={`${item.id}-wpt-${wp.id}`} x={wp.point.x} y={wp.point.y} listening={false}>
+                                {style.pointIdPlacement === "inside" ? (
+                                    <Text
+                                        text={String(wp.id)}
+                                        fill={style.pointIdColor}
+                                        fontSize={style.pointIdFontSize}
+                                        fontStyle={style.pointIdFontWeight}
+                                        width={style.pointIdFontSize * 4}
+                                        height={style.pointIdFontSize * 1.5}
+                                        offsetX={style.pointIdFontSize * 2}
+                                        offsetY={style.pointIdFontSize * 0.75}
+                                        align="center"
+                                        verticalAlign="middle"
+                                        listening={false}
+                                    />
+                                ) : (
+                                    <Text
+                                        text={String(wp.id)}
+                                        fill={style.pointIdColor}
+                                        fontSize={style.pointIdFontSize}
+                                        fontStyle={style.pointIdFontWeight}
+                                        x={off.dx}
+                                        y={off.dy}
+                                        offsetY={style.pointIdFontSize / 2}
+                                        listening={false}
+                                    />
+                                )}
+                            </Group>
+                        );
+                    })}
+                </Fragment>
+            ))}
         </Layer>
     );
 }

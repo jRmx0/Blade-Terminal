@@ -9,8 +9,37 @@ interface CanvasPolygonResultLayerProps {
     style: ResolvedPolygonResultLayerStyle;
 }
 
-/** Renders the ID badge at the anchor point for a given item. */
-function IdBadge({
+/** Renders the ID badge background shape at the anchor point. */
+function IdBadgeShape({
+    x,
+    y,
+    style,
+}: {
+    x: number;
+    y: number;
+    style: ResolvedPolygonResultLayerStyle;
+}) {
+    if (!style.idShape) return null;
+    const bgProps = {
+        fill: style.idFillColor,
+        stroke: style.idBorderColor,
+        strokeWidth: style.idBorderWidth,
+        dash: style.idBorderDash,
+        listening: false as const,
+        perfectDrawEnabled: false as const,
+    };
+    const shape = (() => {
+        if (style.idShape === "square") {
+            const half = style.idRadius;
+            return <Rect {...bgProps} x={-half} y={-half} width={half * 2} height={half * 2} />;
+        }
+        return <Circle {...bgProps} radius={style.idRadius} />;
+    })();
+    return <Group x={x} y={y}>{shape}</Group>;
+}
+
+/** Renders the ID badge text at the anchor point. */
+function IdBadgeText({
     x,
     y,
     id,
@@ -21,32 +50,17 @@ function IdBadge({
     id: number;
     style: ResolvedPolygonResultLayerStyle;
 }) {
-    const text = String(id);
-    const background = (() => {
-        if (!style.idShape) return null;
-        const bgProps = {
-            fill: style.idFillColor,
-            stroke: style.idBorderColor,
-            strokeWidth: style.idBorderWidth,
-            dash: style.idBorderDash,
-            listening: false as const,
-            perfectDrawEnabled: false as const,
-        };
-        if (style.idShape === "square") {
-            const half = style.idRadius;
-            return <Rect {...bgProps} x={-half} y={-half} width={half * 2} height={half * 2} />;
-        }
-        return <Circle {...bgProps} radius={style.idRadius} />;
-    })();
-
     return (
         <Group x={x} y={y}>
-            {background}
             <Text
-                text={text}
+                text={String(id)}
                 fill={style.idColor}
                 fontSize={style.idFontSize}
                 fontStyle={style.idFontWeight}
+                width={style.idFontSize * 4}
+                height={style.idFontSize * 1.5}
+                offsetX={style.idFontSize * 2}
+                offsetY={style.idFontSize * 0.75}
                 align="center"
                 verticalAlign="middle"
                 listening={false}
@@ -56,8 +70,8 @@ function IdBadge({
     );
 }
 
-/** Renders a single corner-vertex marker. */
-function VertexMarker({
+/** Renders the shape (circle or square) of a single corner-vertex marker. */
+function VertexMarkerShape({
     x,
     y,
     style,
@@ -74,7 +88,6 @@ function VertexMarker({
         listening: false as const,
         perfectDrawEnabled: false as const,
     };
-
     const shape = (() => {
         switch (style.vertexShape) {
             case "square": {
@@ -86,11 +99,23 @@ function VertexMarker({
                 return <Circle {...markerProps} radius={style.vertexRadius} />;
         }
     })();
+    return <Group x={x} y={y}>{shape}</Group>;
+}
 
-    const showVertexId = style.vertexIdPlacement !== "";
-    const idOffset = (() => {
-        if (!showVertexId) return null;
-        const gap = style.vertexRadius + style.vertexBorderWidth + style.vertexIdOffset;
+/** Renders the ID label text for a single corner-vertex marker. */
+function VertexMarkerLabel({
+    x,
+    y,
+    index,
+    style,
+}: {
+    x: number;
+    y: number;
+    index: number;
+    style: ResolvedPolygonResultLayerStyle;
+}) {
+    const gap = style.vertexRadius + style.vertexBorderWidth + style.vertexIdOffset;
+    const off = (() => {
         switch (style.vertexIdPlacement) {
             case "inside": return { dx: 0, dy: 0 };
             case "outside-left": return { dx: -gap, dy: 0 };
@@ -100,24 +125,24 @@ function VertexMarker({
             default: return { dx: 0, dy: -gap };
         }
     })();
-
     return (
         <Group x={x} y={y}>
-            {shape}
-            {showVertexId && idOffset !== null && (
-                <Text
-                    x={idOffset.dx}
-                    y={idOffset.dy}
-                    text=""
-                    fill={style.vertexIdColor}
-                    fontSize={style.vertexIdFontSize}
-                    fontStyle={style.vertexIdFontWeight}
-                    align="center"
-                    verticalAlign="middle"
-                    listening={false}
-                    perfectDrawEnabled={false}
-                />
-            )}
+            <Text
+                x={off.dx}
+                y={off.dy}
+                text={String(index)}
+                fill={style.vertexIdColor}
+                fontSize={style.vertexIdFontSize}
+                fontStyle={style.vertexIdFontWeight}
+                width={style.vertexIdFontSize * 4}
+                height={style.vertexIdFontSize * 1.5}
+                offsetX={style.vertexIdFontSize * 2}
+                offsetY={style.vertexIdFontSize * 0.75}
+                align="center"
+                verticalAlign="middle"
+                listening={false}
+                perfectDrawEnabled={false}
+            />
         </Group>
     );
 }
@@ -125,17 +150,19 @@ function VertexMarker({
 function _CanvasPolygonResultLayer({ items, style }: CanvasPolygonResultLayerProps) {
     const showId = style.idPlacement !== "";
     const showVertices = style.vertexShape !== "";
+    const showVertexLabels = style.vertexIdPlacement !== "";
     // fillStyle "hatched" renders diagonal stripes using two overlapping fills
     const isHatched = style.fillStyle === "hatched";
 
     return (
         <Layer>
+            {/* ── Shape pass: polygon edges, fills, vertex markers, badge backgrounds ── */}
             {items.map((item) => {
                 if (!item.vertices) return null;
                 const points = item.vertices.flatMap((v) => [v.x, v.y]);
                 const anchor = item.centroidPoint ?? item.vertices[0];
                 return (
-                    <Group key={item.id}>
+                    <Group key={`s-${item.id}`}>
                         {/* Base polygon fill */}
                         <Line
                             points={points}
@@ -149,7 +176,7 @@ function _CanvasPolygonResultLayer({ items, style }: CanvasPolygonResultLayerPro
                             listening={false}
                             perfectDrawEnabled={false}
                         />
-                        {/* Hatched overlay — 45° diagonal stripe using fillPatternImage approx via repeated lines */}
+                        {/* Hatched overlay */}
                         {isHatched && (
                             <Line
                                 points={points}
@@ -168,13 +195,32 @@ function _CanvasPolygonResultLayer({ items, style }: CanvasPolygonResultLayerPro
                                 perfectDrawEnabled={false}
                             />
                         )}
-                        {/* Corner vertex markers */}
+                        {/* Corner vertex marker shapes */}
                         {showVertices && item.vertices.map((v, vi) => (
-                            <VertexMarker key={vi} x={v.x} y={v.y} style={style} />
+                            <VertexMarkerShape key={vi} x={v.x} y={v.y} style={style} />
                         ))}
-                        {/* Polygon ID badge */}
+                        {/* Polygon ID badge background */}
                         {showId && anchor !== undefined && (
-                            <IdBadge
+                            <IdBadgeShape
+                                x={anchor.x + style.idOffset}
+                                y={anchor.y + style.idOffset}
+                                style={style}
+                            />
+                        )}
+                    </Group>
+                );
+            })}
+            {/* ── Text pass: vertex labels and polygon ID texts rendered above all shapes ── */}
+            {items.map((item) => {
+                if (!item.vertices) return null;
+                const anchor = item.centroidPoint ?? item.vertices[0];
+                return (
+                    <Group key={`t-${item.id}`}>
+                        {showVertexLabels && item.vertices.map((v, vi) => (
+                            <VertexMarkerLabel key={vi} x={v.x} y={v.y} index={vi} style={style} />
+                        ))}
+                        {showId && anchor !== undefined && (
+                            <IdBadgeText
                                 x={anchor.x + style.idOffset}
                                 y={anchor.y + style.idOffset}
                                 id={item.id}

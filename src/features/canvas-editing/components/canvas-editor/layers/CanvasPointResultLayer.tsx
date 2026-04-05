@@ -84,16 +84,15 @@ function computeOverlapOffsets(
 function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPointResultLayerProps) {
     const overlapOffsets = computeOverlapOffsets(items, style.overlapSpacing, style.overlapLayout);
     const showId = style.idPlacement !== "";
+    const showLabel = style.labelPlacement !== "";
 
     return (
         <Layer>
+            {/* ── Shape pass: all markers rendered before any text ── */}
             {items.map((item) => {
                 if (!item.point) return null;
                 const { dx: odx, dy: ody } = overlapOffsets.get(item.id) ?? { dx: 0, dy: 0 };
-                const x = item.point.x + odx;
-                const y = item.point.y + ody;
                 const fill = resolveFillColor(item.pointLabel, labelColorMapping, style.fillColor);
-
                 const markerProps = {
                     fill,
                     stroke: style.borderColor,
@@ -102,7 +101,6 @@ function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPoin
                     listening: false as const,
                     perfectDrawEnabled: false as const,
                 };
-
                 const marker = (() => {
                     switch (style.shape) {
                         case "square":
@@ -157,10 +155,17 @@ function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPoin
                             return <Circle {...markerProps} radius={style.radius} />;
                     }
                 })();
-
-                // ID label — uses idPlacement/idOffset
-                const idOffset = (() => {
-                    if (!showId) return null;
+                return (
+                    <Group key={`s-${item.id}`} x={item.point.x + odx} y={item.point.y + ody}>
+                        {marker}
+                    </Group>
+                );
+            })}
+            {/* ── Text pass: all ID and label text rendered above all markers ── */}
+            {(showId || showLabel) && items.map((item) => {
+                if (!item.point) return null;
+                const { dx: odx, dy: ody } = overlapOffsets.get(item.id) ?? { dx: 0, dy: 0 };
+                const idOff = showId ? (() => {
                     const gap = style.radius + style.borderWidth + style.idOffset;
                     switch (style.idPlacement) {
                         case "inside": return { dx: 0, dy: 0 };
@@ -170,34 +175,34 @@ function _CanvasPointResultLayer({ items, style, labelColorMapping }: CanvasPoin
                         case "outside-top":
                         default: return { dx: 0, dy: -gap };
                     }
-                })();
-
-                // Text label — uses labelPlacement/labelOffset
+                })() : null;
                 const { dx: ldx, dy: ldy } = labelOffset(
                     style.labelPlacement,
                     style.labelOffset,
                     style.radius,
                     style.borderWidth,
                 );
-
                 return (
-                    <Group key={item.id} x={x} y={y}>
-                        {marker}
-                        {showId && idOffset !== null && (
+                    <Group key={`t-${item.id}`} x={item.point.x + odx} y={item.point.y + ody}>
+                        {showId && idOff !== null && (
                             <Text
-                                x={idOffset.dx}
-                                y={idOffset.dy}
+                                x={idOff.dx}
+                                y={idOff.dy}
                                 text={String(item.id)}
                                 fill={style.idColor}
                                 fontSize={style.idFontSize}
                                 fontStyle={style.idFontWeight}
+                                width={style.idFontSize * 4}
+                                height={style.idFontSize * 1.5}
+                                offsetX={style.idFontSize * 2}
+                                offsetY={style.idFontSize * 0.75}
                                 align="center"
                                 verticalAlign="middle"
                                 listening={false}
                                 perfectDrawEnabled={false}
                             />
                         )}
-                        {style.labelPlacement !== "" && item.pointLabel !== undefined && (
+                        {showLabel && item.pointLabel !== undefined && (
                             <Text
                                 x={ldx}
                                 y={ldy}
