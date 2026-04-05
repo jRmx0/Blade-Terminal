@@ -79,7 +79,7 @@ const STYLE_TYPE_LIST: StyleType[] = [
     "Boolean",
     "Integer",
     "Color",
-    "Spacing",
+    "Pixels",
     "PointShapeEnum",
     "PolygonIDShapeEnum",
     "StrokeStyleEnum",

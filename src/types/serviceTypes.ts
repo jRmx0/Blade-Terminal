@@ -192,7 +192,7 @@ export type StyleType =
     | "Boolean"
     | "Integer"
     | "Color"
-    | "Spacing"
+    | "Pixels"
     | "PointShapeEnum"
     | "PolygonIDShapeEnum"
     | "StrokeStyleEnum"

@@ -101,7 +101,7 @@ function SettingField({ param, disabled, onParamChange }: SettingFieldProps) {
                 />
             );
         case "Integer":
-        case "Spacing":
+        case "Pixels":
             return (
                 <SettingsPanelRowInput
                     label={key}
