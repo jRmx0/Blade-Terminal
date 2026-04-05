@@ -13,6 +13,7 @@ import ComputationProvidersListModal from "@/features/computation-provider/compo
 import ComputationProviderCardModal from "@/features/computation-provider/components/ComputationProviderCardModal";
 import AlgorithmCardModal from "@/features/computation-provider/components/AlgorithmCardModal";
 import ComputeExecuteModal from "@/components/modals/compute-execute-modal/ComputeExecuteModal";
+import ImportModal from "@/features/workspace-manager/components/import-modal/ImportModal";
 
 export default function WorkbenchWindow() {
   useWorkbenchShortcuts();
@@ -38,6 +39,7 @@ export default function WorkbenchWindow() {
       <ComputationProviderCardModal />
       <AlgorithmCardModal />
       <ComputeExecuteModal />
+      <ImportModal />
     </div>
   );
 }

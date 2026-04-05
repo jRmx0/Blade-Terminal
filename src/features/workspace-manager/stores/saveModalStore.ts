@@ -2,8 +2,6 @@ import { create } from "zustand";
 import { useSaveStatusStore } from "@/stores/saveStatusStore";
 import { saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
 import { useSaveModeStore } from "@/stores/saveModeStore";
-import { useEnvStore } from "@/stores/envStore";
-import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 
 // ---------------------------------------------------------------------------
@@ -46,8 +44,6 @@ export const useSaveModalStore = create<SaveModalState>()(() => ({
                 await action();
             },
             secondaryAction: async () => {
-                useEnvStore.getState().clearDirty();
-                useCanvasObjectStore.getState().clearDirty();
                 await action();
             },
         });

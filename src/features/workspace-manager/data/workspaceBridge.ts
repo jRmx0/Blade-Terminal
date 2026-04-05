@@ -4,6 +4,7 @@ import { getAlgorithmParametersByEnvironment, saveAlgorithmParameters } from "@s
 import { deleteObjectsByEnvironment, saveObjects } from "@server/db/objects";
 import { COORD_SYSTEM, ENV_FORMAT, ENV_TYPE, OBJECT_CATEGORY } from "@/config/db-ops/enums";
 import type { Environment } from "@/types/schemaTypes";
+import type { ImportedWorkspaceData } from "@/features/workspace-manager/utils/importWorkspace";
 import { useEnvStore } from "@/stores/envStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useCanvasHistoryStore } from "@/features/canvas-editing/stores/canvasHistoryStore";
@@ -73,6 +74,7 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     const zoneObjectCount = countByCategory(objects, OBJECT_CATEGORY.ZONE);
     const obstacleObjectCount = countByCategory(objects, OBJECT_CATEGORY.OBSTACLE);
     useEnvStore.getState().setEnv({ ...env, zoneCount: zoneObjectCount, obstacleCount: obstacleObjectCount });
+    useEnvStore.getState().clearDirty();
     const [computation, parameterValues] = await Promise.all([
         getComputationSelection(environmentId),
         getAlgorithmParametersByEnvironment(environmentId),
@@ -133,6 +135,46 @@ export async function copyWorkspace(name: string): Promise<number> {
         initLayerSettingsForEnvironment(targetId),
     ]);
     return targetId;
+}
+
+/**
+ * Imports a parsed workspace from an XML file into a new environment in IndexedDB, then loads it.
+ * Parameter values and computation selection are reset to empty (they are not part of the export format).
+ */
+export async function importWorkspace(data: ImportedWorkspaceData): Promise<void> {
+    const targetId = await resolveNextEnvironmentId();
+
+    const zoneCount = countByCategory(data.objects, OBJECT_CATEGORY.ZONE);
+    const obstacleCount = countByCategory(data.objects, OBJECT_CATEGORY.OBSTACLE);
+
+    const targetEnv: Environment = {
+        id: targetId,
+        name: data.name,
+        format: data.format,
+        type: data.type,
+        coordSystem: data.coordSystem,
+        zoneCount,
+        obstacleCount,
+    };
+
+    const targetObjects = data.objects.map((o, i) => ({
+        id: o.id > 0 ? o.id : i + 1,
+        environmentId: targetId,
+        category: o.category,
+        type: o.type,
+        vertexCount: o.vertices.length,
+        area: 0,
+        vertices: o.vertices,
+    }));
+
+    await Promise.all([
+        saveEnvironment(targetEnv),
+        saveComputationSelection(createEmptyComputationSelection(targetId)),
+        targetObjects.length > 0 ? saveObjects(targetObjects) : Promise.resolve(),
+        initLayerSettingsForEnvironment(targetId),
+    ]);
+
+    await loadWorkspace(targetId);
 }
 
 /**
