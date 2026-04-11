@@ -41,7 +41,7 @@ export const useComputeResultStore = create<ComputeResultState>((set) => ({
 
     setResult: (record) => set({ result: record, status: "completed", isComputeResultDirty: true }),
 
-    loadResult: (record) => set({ result: record, status: "completed" }),
+    loadResult: (record) => set({ result: record, status: "completed", isComputeResultDirty: false }),
 
     setStatus: (status) => {
         if (status === "submitting") {

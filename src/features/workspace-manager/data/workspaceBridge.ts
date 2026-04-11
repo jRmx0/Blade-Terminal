@@ -45,7 +45,7 @@ export async function initializeWorkspace(): Promise<void> {
     await loadComputationCatalog();
     await initLayerSettingsForEnvironment(nextId);
     await loadLayerSettings(nextId);
-    useComputeResultStore.getState().clearResult();
+    useComputeResultStore.getState().resetResult();
 }
 
 /** Discards the current environment and starts a blank one without saving. */
@@ -61,7 +61,7 @@ export async function resetWorkspace(): Promise<void> {
     useCanvasHistoryStore.getState().resetHistory();
     await initLayerSettingsForEnvironment(nextId);
     await loadLayerSettings(nextId);
-    useComputeResultStore.getState().clearResult();
+    useComputeResultStore.getState().resetResult();
 }
 
 /** Loads an existing environment and its canvas objects from IndexedDB. */
