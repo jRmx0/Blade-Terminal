@@ -1,0 +1,165 @@
+import { useEffect, useMemo, useState } from "react";
+import { usePerformanceMonitorModalStore } from "@/features/performance-monitor/stores/performanceMonitorModalStore";
+import { useComputeResultStore } from "@/stores/useComputeResultStore";
+import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
+import ModalTitle from "@/components/modal/modal-title/ModalTitle";
+import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
+import SingleValueMetricCard from "./internal/SingleValueMetricCard";
+import TimeSeriesMetricCard from "./internal/TimeSeriesMetricCard";
+
+export default function PerformanceMonitorModal() {
+    const { isOpen, close } = usePerformanceMonitorModalStore();
+    const result = useComputeResultStore((s) => s.result);
+    const allMetrics = useComputationCatalogStore((s) => s.metrics);
+
+    // Derive grouped metrics from result + metadata
+    const { groups, metricsByGroup } = useMemo(() => {
+        if (!result) return { groups: [], metricsByGroup: new Map() };
+
+        const { algorithmId, providerId } = result;
+        const performanceValues = result.result.performance?.metrics ?? [];
+
+        // Filter metadata for this algorithm, sorted by id ascending
+        const metaMapped = allMetrics
+            .filter((m) => m.algorithmId === algorithmId && m.computationProviderId === providerId)
+            .sort((a, b) => a.id - b.id);
+
+        // Build a lookup from id → value
+        const valueById = new Map<number, number | number[]>();
+        for (const pv of performanceValues) {
+            valueById.set(pv.id, pv.value);
+        }
+
+        // Group — preserving first-appearance order
+        const groupOrder: string[] = [];
+        const byGroup = new Map<string, { id: number; name: string; type: string; value: number | number[] | undefined }[]>();
+
+        for (const meta of metaMapped) {
+            const group = meta.group ?? "General";
+            if (!byGroup.has(group)) {
+                groupOrder.push(group);
+                byGroup.set(group, []);
+            }
+            byGroup.get(group)!.push({
+                id: meta.id,
+                name: meta.name,
+                type: meta.type,
+                value: valueById.get(meta.id),
+            });
+        }
+
+        return { groups: groupOrder, metricsByGroup: byGroup };
+    }, [result, allMetrics]);
+
+    const [activeGroup, setActiveGroup] = useState<string | null>(null);
+
+    // Reset active group when modal opens / groups change
+    useEffect(() => {
+        if (isOpen) {
+            setActiveGroup(groups[0] ?? null);
+        }
+    }, [isOpen, groups]);
+
+    // Close on Escape
+    useEffect(() => {
+        if (!isOpen) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") close();
+        };
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, [isOpen, close]);
+
+    if (!isOpen) return null;
+
+    const activeMetrics = activeGroup ? (metricsByGroup.get(activeGroup) ?? []) : [];
+
+    const renderContent = () => {
+        if (!result) {
+            return (
+                <div className="flex items-center justify-center flex-1 text-sm text-gray-400 select-none">
+                    No computation results available.
+                </div>
+            );
+        }
+        if (groups.length === 0) {
+            return (
+                <div className="flex items-center justify-center flex-1 text-sm text-gray-400 select-none">
+                    No performance metrics for this result.
+                </div>
+            );
+        }
+        return (
+            <>
+                {/* Tab bar */}
+                <div className="flex shrink-0 border-b border-gray-300 bg-gray-100">
+                    {groups.map((group) => {
+                        const isActive = group === activeGroup;
+                        return (
+                            <button
+                                key={group}
+                                type="button"
+                                onClick={() => setActiveGroup(group)}
+                                className={`px-4 py-2 text-sm font-medium transition-colors focus:outline-none border-b-2 -mb-px
+                                    ${isActive
+                                        ? "border-teal-600 text-teal-700"
+                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                    }`}
+                            >
+                                {group}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Metrics list */}
+                <div className="flex-1 overflow-y-auto">
+                    {activeMetrics.map((metric: { id: number; name: string; type: string; value: number | number[] | undefined }) => {
+                        if (metric.type === "Time-series") {
+                            const data = Array.isArray(metric.value) ? metric.value : [];
+                            return (
+                                <TimeSeriesMetricCard
+                                    key={metric.id}
+                                    name={metric.name}
+                                    data={data}
+                                />
+                            );
+                        }
+                        const value = typeof metric.value === "number" ? metric.value : null;
+                        return (
+                            <SingleValueMetricCard
+                                key={metric.id}
+                                name={metric.name}
+                                value={value}
+                            />
+                        );
+                    })}
+                </div>
+            </>
+        );
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 select-none"
+            onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}
+        >
+            <div className="w-175 max-w-[90vw] max-h-[80vh] flex flex-col bg-white rounded-lg shadow-xl overflow-hidden">
+                {/* Header */}
+                <div className="border-b border-gray-200 shrink-0">
+                    <ModalTitle title="Performance Monitor" onClose={close} />
+                </div>
+
+                {/* Body */}
+                <div className="flex flex-col flex-1 min-h-0">
+                    {renderContent()}
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200 shrink-0">
+                    <ModalFooterButton onClick={close}>Close</ModalFooterButton>
+                </div>
+            </div>
+        </div>
+    );
+}
