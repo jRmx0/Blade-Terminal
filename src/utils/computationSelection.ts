@@ -22,6 +22,6 @@ export function normalizeComputationSelection(
 export function normalizeEnvironment(env: Environment): Environment {
     return {
         ...env,
-        coordSystem: (env as Environment & { coordSystem?: string }).coordSystem ?? COORD_SYSTEM.DECIMAL,
+        coordSystem: (env as Environment & { coordSystem?: string }).coordSystem ?? COORD_SYSTEM.CARTESIAN,
     };
 }

@@ -22,7 +22,7 @@ const BLANK_ENV: Omit<Environment, "id"> = {
     name: "Untitled Environment",
     format: ENV_FORMAT.POLYGON,
     type: ENV_TYPE.ANY_OFFLINE,
-    coordSystem: COORD_SYSTEM.DECIMAL,
+    coordSystem: COORD_SYSTEM.CARTESIAN,
     zoneCount: 0,
     obstacleCount: 0,
 };

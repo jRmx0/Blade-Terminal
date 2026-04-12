@@ -40,8 +40,8 @@ async function seedAppEnums(): Promise<void> {
         { enumGroup: "format", value: "grid", label: "Grid" },
         { enumGroup: "type", value: "offline", label: "Off-Line" },
         { enumGroup: "type", value: "online", label: "On-Line" },
-        { enumGroup: "coordsystem", value: "decimal", label: "Decimal" },
-        { enumGroup: "coordsystem", value: "latlong", label: "Lat/Long" },
+        { enumGroup: "coordsystem", value: "decimal", label: "Cartesian" },
+        { enumGroup: "coordsystem", value: "latlong", label: "Geographic" },
     ];
     await db.table("appEnumSetup").bulkPut(rows);
 }

@@ -33,15 +33,15 @@ export const ENV_FORMAT_OPTIONS: { value: EnvFormat; label: string }[] = [
 // ─── Coordinate System ────────────────────────────────────────────────────────
 
 export const COORD_SYSTEM = {
-    DECIMAL: "Decimal",
-    LAT_LONG: "Lat/Long",
+    CARTESIAN: "Cartesian",
+    GEOGRAPHIC: "Geographic",
 } as const;
 
 export type CoordSystemType = (typeof COORD_SYSTEM)[keyof typeof COORD_SYSTEM];
 
 export const COORD_SYSTEM_OPTIONS: { value: CoordSystemType; label: string }[] = [
-    { value: COORD_SYSTEM.DECIMAL, label: "Decimal" },
-    // { value: COORD_SYSTEM.LAT_LONG, label: "Lat/Long" }, // not yet implemented
+    { value: COORD_SYSTEM.CARTESIAN, label: "Cartesian" },
+    // { value: COORD_SYSTEM.GEOGRAPHIC, label: "Geographic" }, // not yet implemented
 ];
 
 // ─── Object Category ──────────────────────────────────────────────────────────
