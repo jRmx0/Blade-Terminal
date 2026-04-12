@@ -19,6 +19,7 @@ import { useEnvStore } from "@/stores/envStore";
 import { loadLayerSettings } from "@/stores/layerSettingsStore";
 import { addMissingLayerSettingsForEnvironment } from "@server/db/layerSettings";
 import { ingestProviderMetadata } from "@/features/computation-provider/data/metadataBridge";
+import { deleteAlgorithmMetricsByProvider, bulkPutMetrics } from "@server/db/computationAlgorithmMetricsSetup";
 
 // ─── Request builder ──────────────────────────────────────────────────────────
 
@@ -170,11 +171,13 @@ export async function persistFetchedMetadata(
     await db.transaction("rw", [
         db.table("computationProviderAlgorithms"),
         db.table("computationAlgorithmParametersSetup"),
+        db.table("algorithmMetricsSetup"),
         db.table("layersSetup"),
         db.table("layerSettingsSetup"),
     ], async () => {
         await db.table("computationAlgorithmParametersSetup").where("computationProviderId").equals(providerId).delete();
         await db.table("computationProviderAlgorithms").where("computationProviderId").equals(providerId).delete();
+        await deleteAlgorithmMetricsByProvider(providerId);
 
         const algorithms = metadata.algorithms.map(({ algorithm }) => ({
             ...algorithm,
@@ -193,6 +196,13 @@ export async function persistFetchedMetadata(
 
         if (parameters.length > 0) {
             await db.table("computationAlgorithmParametersSetup").bulkPut(parameters);
+        }
+
+        const metrics = metadata.algorithms.flatMap(({ metrics: algoMetrics }) =>
+            algoMetrics.map((m) => ({ ...m, computationProviderId: providerId })),
+        );
+        if (metrics.length > 0) {
+            await bulkPutMetrics(metrics);
         }
 
         for (const { algorithm } of metadata.algorithms) {
@@ -241,7 +251,10 @@ export async function persistFetchedMetadata(
             computationProviderId: providerId,
         })),
     );
-    useComputationCatalogStore.getState().setProviderAlgorithms(providerId, savedAlgorithms, savedParameters);
+    const savedMetrics = metadata.algorithms.flatMap(({ metrics: algoMetrics }) =>
+        algoMetrics.map((m) => ({ ...m, computationProviderId: providerId })),
+    );
+    useComputationCatalogStore.getState().setProviderAlgorithms(providerId, savedAlgorithms, savedParameters, savedMetrics);
     useComputationCatalogStore.getState().setProviderLayerSettingsSetup(providerId, setupRecords);
 
     for (const { algorithm, layers } of metadata.algorithms) {

@@ -64,6 +64,14 @@ Providers must implement this endpoint so that blade-terminal can discover and v
           }
         },
         "..."
+      ],
+      "metrics": [
+        {
+          "id": 1,
+          "name": "<metric name>",
+          "type": "Single-value"
+        },
+        "..."
       ]
     }
   ]
@@ -86,6 +94,24 @@ Providers must implement this endpoint so that blade-terminal can discover and v
 | `name` | `string` | Human-readable display name |
 | `parameters` | `ParameterMetadata[]` | Parameter schema declarations; used to build input forms |
 | `layers` | `LayerMetadata[]` | All renderable output layers declared by this algorithm |
+| `metrics` | `MetricMetadata[]?` | Performance metric declarations — see [`MetricMetadata`](#metricmetadata). Omitted when the algorithm exposes no metrics |
+
+### `MetricMetadata`
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `number` | Unique numeric identifier for this metric — blade-terminal matches this to `performance.metrics[].id` in the compute result |
+| `name` | `string` | Human-readable display name |
+| `type` | `MetricType` | Describes the shape of emitted values — see [`MetricType`](#metrictype) |
+
+### `MetricType`
+
+Extensible string enum. blade-terminal accepts unknown values without error.
+
+| Value | Description |
+|---|---|
+| `"Single-value"` | A single scalar reading per run |
+| `"Time-series"` | An ordered series of scalar readings sampled during the run |
 
 ### `ParameterMetadata`
 

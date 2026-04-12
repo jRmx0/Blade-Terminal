@@ -2,17 +2,19 @@ import { create } from "zustand";
 import { getAllComputationProviders } from "@server/db/computationProviders";
 import { getAllComputationAlgorithms } from "@server/db/computationProviderAlgorithms";
 import { getAllAlgorithmParameters } from "@server/db/computationAlgorithmParametersSetup";
+import { getAllAlgorithmMetrics } from "@server/db/computationAlgorithmMetricsSetup";
 import { getAllAppEnums } from "@server/db/appEnumSetup";
 import { getAllLayers } from "@server/db/layersSetup";
 import { getAllLayerSettingsSetup } from "@server/db/layerSettingsSetup";
 import { useProviderLayerStore } from "@/stores/providerLayerStore";
-import type { AlgorithmParameter, AppEnumValue, ComputationAlgorithm, ComputationProvider, ProviderLayerRecord } from "@/types/serviceTypes";
+import type { AlgorithmMetric, AlgorithmParameter, AppEnumValue, ComputationAlgorithm, ComputationProvider, ProviderLayerRecord } from "@/types/serviceTypes";
 import type { LayerSettingsSetup } from "@/types/layerTypes";
 
 interface ComputationCatalogState {
     providers: ComputationProvider[];
     algorithms: ComputationAlgorithm[];
     parameters: AlgorithmParameter[];
+    metrics: AlgorithmMetric[];
     appEnums: AppEnumValue[];
     layerSettingsSetup: LayerSettingsSetup[];
 
@@ -22,12 +24,14 @@ interface ComputationCatalogState {
         parameters: AlgorithmParameter[],
         appEnums: AppEnumValue[],
         layerSettingsSetup: LayerSettingsSetup[],
+        metrics: AlgorithmMetric[],
     ) => void;
 
     setProviderAlgorithms: (
         providerId: number,
         algorithms: ComputationAlgorithm[],
         parameters: AlgorithmParameter[],
+        metrics: AlgorithmMetric[],
     ) => void;
 
     upsertProvider: (provider: ComputationProvider) => void;
@@ -45,14 +49,15 @@ export const useComputationCatalogStore = create<ComputationCatalogState>((set) 
     providers: [],
     algorithms: [],
     parameters: [],
+    metrics: [],
     appEnums: [],
     layerSettingsSetup: [],
 
-    setCatalog: (providers, algorithms, parameters, appEnums, layerSettingsSetup) => {
-        set({ providers, algorithms, parameters, appEnums, layerSettingsSetup });
+    setCatalog: (providers, algorithms, parameters, appEnums, layerSettingsSetup, metrics) => {
+        set({ providers, algorithms, parameters, appEnums, layerSettingsSetup, metrics });
     },
 
-    setProviderAlgorithms: (providerId, algorithms, parameters) => {
+    setProviderAlgorithms: (providerId, algorithms, parameters, metrics) => {
         set((state) => ({
             algorithms: [
                 ...state.algorithms.filter((a) => a.computationProviderId !== providerId),
@@ -61,6 +66,10 @@ export const useComputationCatalogStore = create<ComputationCatalogState>((set) 
             parameters: [
                 ...state.parameters.filter((p) => p.computationProviderId !== providerId),
                 ...parameters,
+            ],
+            metrics: [
+                ...state.metrics.filter((m) => m.computationProviderId !== providerId),
+                ...metrics,
             ],
         }));
     },
@@ -81,6 +90,7 @@ export const useComputationCatalogStore = create<ComputationCatalogState>((set) 
             providers: state.providers.filter((p) => p.id !== providerId),
             algorithms: state.algorithms.filter((a) => a.computationProviderId !== providerId),
             parameters: state.parameters.filter((p) => p.computationProviderId !== providerId),
+            metrics: state.metrics.filter((m) => m.computationProviderId !== providerId),
             layerSettingsSetup: state.layerSettingsSetup.filter((s) => s.providerId !== providerId),
         }));
     },
@@ -110,6 +120,9 @@ export const useComputationCatalogStore = create<ComputationCatalogState>((set) 
             parameters: state.parameters.filter(
                 (p) => !(p.algorithmId === id && p.computationProviderId === computationProviderId),
             ),
+            metrics: state.metrics.filter(
+                (m) => !(m.algorithmId === id && m.computationProviderId === computationProviderId),
+            ),
         }));
     },
 
@@ -124,15 +137,16 @@ export const useComputationCatalogStore = create<ComputationCatalogState>((set) 
 }));
 
 export async function loadComputationCatalog(): Promise<void> {
-    const [providers, algorithms, parameters, appEnums, layerSettingsSetupData, allLayers] = await Promise.all([
+    const [providers, algorithms, parameters, appEnums, layerSettingsSetupData, allLayers, metrics] = await Promise.all([
         getAllComputationProviders(),
         getAllComputationAlgorithms(),
         getAllAlgorithmParameters(),
         getAllAppEnums(),
         getAllLayerSettingsSetup(),
         getAllLayers(),
+        getAllAlgorithmMetrics(),
     ]);
-    useComputationCatalogStore.getState().setCatalog(providers, algorithms, parameters, appEnums, layerSettingsSetupData);
+    useComputationCatalogStore.getState().setCatalog(providers, algorithms, parameters, appEnums, layerSettingsSetupData, metrics);
 
     // Hydrate providerLayerStore from persisted layersSetup records.
     // System layers have algorithmId === 0 and are skipped.

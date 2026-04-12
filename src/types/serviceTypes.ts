@@ -61,6 +61,7 @@ export interface ComputationAlgorithmDetails {
     algorithm: ComputationAlgorithm;
     parameters: AlgorithmParameter[];
     layers: ProviderLayerRecord[];
+    metrics: AlgorithmMetric[];
 }
 
 // ─── App Enum Values ──────────────────────────────────────────────────────────
@@ -267,11 +268,28 @@ export interface DebugLayerMetadata {
     style: DebugLayerStyle;
 }
 
+export type MetricType = "Single-value" | "Time-series" | (string & {});
+
+export interface MetricMetadataResponse {
+    id: number;
+    name: string;
+    type: MetricType;
+}
+
+export interface AlgorithmMetric {
+    id: number;
+    algorithmId: number;
+    computationProviderId: number;
+    name: string;
+    type: MetricType;
+}
+
 export interface MetadataAlgorithmResponse {
     id: number;
     name: string;
     parameters: MetadataParamResponse[];
     layers: MetadataLayerResponse[];
+    metrics?: MetricMetadataResponse[];
 }
 
 export interface MetadataResponse {
@@ -308,9 +326,19 @@ export interface AlgorithmDebug {
     layers: DebugResultLayer[];
 }
 
+export interface PerformanceMetric {
+    id: number;
+    value: number | number[];
+}
+
+export interface AlgorithmPerformance {
+    metrics: PerformanceMetric[];
+}
+
 export interface ComputeResult {
     coveragePathPlan: CoveragePathPlan;
     debug?: AlgorithmDebug;
+    performance?: AlgorithmPerformance;
 }
 
 // ─── Generic Canvas Item Contracts ───────────────────────────────────────────

@@ -10,6 +10,7 @@ import type {
     ProviderLayerRecord,
     ComputationAlgorithmDetails,
     MetadataValidationFailure,
+    AlgorithmMetric,
 } from "@/types/serviceTypes";
 
 export type MetadataIngestResult =
@@ -124,6 +125,13 @@ export function ingestProviderMetadata(
                 appHandler: p.appHandler ?? null,
             })),
             layers: buildProviderLayers(algorithmId, providerId, algorithmResponse.layers),
+            metrics: (algorithmResponse.metrics ?? []).map((m): AlgorithmMetric => ({
+                id: m.id,
+                algorithmId,
+                computationProviderId: providerId,
+                name: m.name,
+                type: m.type,
+            })),
         };
     });
 

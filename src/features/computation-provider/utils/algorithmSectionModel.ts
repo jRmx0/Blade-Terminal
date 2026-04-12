@@ -140,6 +140,7 @@ export function buildSavedAlgorithmDetails({
         algorithm,
         parameters: parametersByAlgorithmId.get(algorithm.id) ?? [],
         layers: [],
+        metrics: [],
     }));
 }
 

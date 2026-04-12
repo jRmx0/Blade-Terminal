@@ -208,6 +208,12 @@ Poll `GET /compute/:jobId` until `status` is `"completed"` or `"failed"`.
       },
       "..."
     ]
+  },
+  "performance": {
+    "metrics": [
+      { "id": 1, "value": [0.4, 1.2, 0.8] },
+      "..."
+    ]
   }
 }
 ```
@@ -218,6 +224,20 @@ Poll `GET /compute/:jobId` until `status` is `"completed"` or `"failed"`.
 |---|---|---|
 | `coveragePathPlan` | `CoveragePathPlan` | Primary output container |
 | `debug` | `AlgorithmDebug` | Algorithm-specific debug output — see [`AlgorithmDebug`](#algorithmdebug) |
+| `performance` | `AlgorithmPerformance?` | Performance metrics for this run — see [`AlgorithmPerformance`](#algorithmperformance). Omitted when no metrics were collected |
+
+### `AlgorithmPerformance`
+
+| Field | Type | Notes |
+|---|---|---|
+| `metrics` | `PerformanceMetric[]` | All metrics collected for this run, in declaration order |
+
+### `PerformanceMetric`
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `number` | Matches `metric.id` from `GET /metadata` — used to look up the metric name and type |
+| `value` | `number \| number[]` | A single scalar for `"Single-value"` metrics; an ordered array of scalars for `"Time-series"` metrics |
 
 ### `CoveragePathPlan`
 
