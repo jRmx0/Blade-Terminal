@@ -18,11 +18,9 @@ Providers must implement this endpoint so that blade-terminal can discover and v
           "id": 1,
           "name": "<parameter name>",
           "paramType": "Decimal",
-          "enumValues": [],
           "defaultValue": "15",
           "minValue": 0,
-          "section": "<section label>",
-          "appHandler": null
+          "section": "<section label>"
         },
         {
           "id": 2,
@@ -96,11 +94,11 @@ Providers must implement this endpoint so that blade-terminal can discover and v
 | `id` | `number` | Unique numeric identifier for this parameter |
 | `name` | `string` | Parameter name — used as the key in the compute request `parameters` object |
 | `paramType` | `ParameterType` | Value data type — see [`ParameterType`](#parametertype) |
-| `enumValues` | `string[]` | Allowed values when `paramType` is `"Enum"`; empty array for all other types |
+| `enumValues` | `string[]?` | Allowed values — **present only when `paramType` is `"Enum"`** |
 | `defaultValue` | `string` | Default value serialised as a string |
-| `minValue` | `number \| null` | Minimum allowed numeric value. `null` means no lower bound. Only meaningful for `Integer` and `Decimal` parameters; ignored for all other types |
-| `section` | `string` | UI grouping label |
-| `appHandler` | `string \| null` | When non-null, binds this parameter to an environment-level property — see the `appHandler` note above |
+| `minValue` | `number?` | Minimum allowed numeric value. Only meaningful for `Integer` and `Decimal` parameters; omitted for all other types |
+| `section` | `string?` | UI grouping label |
+| `appHandler` | `string?` | When present, binds this parameter to an environment-level property — see the `appHandler` note above. Omitted when the parameter has no env binding |
 
 ### `ParameterType`
 

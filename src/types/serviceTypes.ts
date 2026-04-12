@@ -122,11 +122,11 @@ export interface MetadataParamResponse {
     id: number;
     name: string;
     paramType: AlgoParamType;
-    enumValues: string[];
+    enumValues?: string[];
     defaultValue?: string;
     minValue?: number;
     section?: MetadataParamSection;
-    appHandler: SupportedAppParameterHandler | null;
+    appHandler?: SupportedAppParameterHandler;
 }
 
 export type MetadataLayerType = "Point" | "Line" | "Polygon";

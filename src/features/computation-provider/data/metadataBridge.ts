@@ -121,7 +121,7 @@ export function ingestProviderMetadata(
                 defaultValue: p.defaultValue ?? "",
                 minValue: p.minValue,
                 section: p.section,
-                appHandler: p.appHandler,
+                appHandler: p.appHandler ?? null,
             })),
             layers: buildProviderLayers(algorithmId, providerId, algorithmResponse.layers),
         };
