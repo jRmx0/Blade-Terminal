@@ -131,6 +131,7 @@ export function ingestProviderMetadata(
                 computationProviderId: providerId,
                 name: m.name,
                 type: m.type,
+                group: m.group,
             })),
         };
     });

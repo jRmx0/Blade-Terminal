@@ -274,6 +274,7 @@ export interface MetricMetadataResponse {
     id: number;
     name: string;
     type: MetricType;
+    group?: string;
 }
 
 export interface AlgorithmMetric {
@@ -282,6 +283,7 @@ export interface AlgorithmMetric {
     computationProviderId: number;
     name: string;
     type: MetricType;
+    group?: string;
 }
 
 export interface MetadataAlgorithmResponse {

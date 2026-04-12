@@ -69,7 +69,8 @@ Providers must implement this endpoint so that blade-terminal can discover and v
         {
           "id": 1,
           "name": "<metric name>",
-          "type": "Single-value"
+          "type": "Single-value",
+          "group": "<group label>"
         },
         "..."
       ]
@@ -103,6 +104,7 @@ Providers must implement this endpoint so that blade-terminal can discover and v
 | `id` | `number` | Unique numeric identifier for this metric — blade-terminal matches this to `performance.metrics[].id` in the compute result |
 | `name` | `string` | Human-readable display name |
 | `type` | `MetricType` | Describes the shape of emitted values — see [`MetricType`](#metrictype) |
+| `group` | `string?` | Optional grouping label — blade-terminal uses this to visually group related metrics together. Omitted when the metric has no group |
 
 ### `MetricType`
 
