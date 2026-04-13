@@ -22,20 +22,20 @@ export default function TimeSeriesMetricCard({ name, data }: TimeSeriesMetricCar
     const showDots = data.length <= 20;
 
     return (
-        <div className="px-4 py-3 border-b border-gray-100 last:border-b-0">
-            <p className="text-sm font-medium text-gray-700 mb-2 select-none">{name}</p>
+        <div className="px-4 py-3 border-b border-gray-200 last:border-b-0">
+            <p className="text-sm font-medium text-gray-700 mb-2 select-none text-center">{name}</p>
             <div className="h-36">
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                         <XAxis
                             dataKey="index"
-                            tick={{ fontSize: 10, fill: "#9ca3af" }}
+                            tick={{ fontSize: 12, fill: "#9ca3af" }}
                             tickLine={false}
                             axisLine={{ stroke: "#e5e7eb" }}
-                            interval="preserveStartEnd"
+                            interval="equidistantPreserveStart"
                         />
                         <YAxis
-                            tick={{ fontSize: 10, fill: "#9ca3af" }}
+                            tick={{ fontSize: 12, fill: "#9ca3af" }}
                             tickLine={false}
                             axisLine={false}
                             width={48}
