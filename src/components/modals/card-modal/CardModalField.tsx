@@ -1,8 +1,9 @@
 import { forwardRef } from "react";
 
-export type InternalCardModalTextFieldHintState = "info" | "warning" | "error";
+export type CardModalTextFieldHintState = "info" | "warning" | "error";
 
-interface InternalCardModalFastTabFieldProps {
+export interface CardModalFieldConfig {
+    id: string;
     label: string;
     value: string;
     placeholder?: string;
@@ -10,19 +11,19 @@ interface InternalCardModalFastTabFieldProps {
     required?: boolean;
     disabled?: boolean;
     hint?: string;
-    hintState?: InternalCardModalTextFieldHintState;
+    hintState?: CardModalTextFieldHintState;
     onChange?: (value: string) => void;
     onConfirm?: () => void;
 }
 
-const HINT_STYLE: Record<InternalCardModalTextFieldHintState, { icon: string; color: string }> = {
+const HINT_STYLE: Record<CardModalTextFieldHintState, { icon: string; color: string }> = {
     info: { icon: "info", color: "text-gray-400 hover:text-teal-600" },
     warning: { icon: "warning", color: "text-amber-500 hover:text-amber-600" },
     error: { icon: "error", color: "text-red-500 hover:text-red-600" },
 };
 
-const InternalCardModalFastTabField = forwardRef<HTMLInputElement, InternalCardModalFastTabFieldProps>(
-    ({ label, value, placeholder, type = "text", required = false, disabled = false, hint, hintState = "info", onChange, onConfirm }, ref) => {
+const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>(
+    ({ id: _id, label, value, placeholder, type = "text", required = false, disabled = false, hint, hintState = "info", onChange, onConfirm }, ref) => {
         const hs = HINT_STYLE[hintState];
         const showRequiredMarker = required && value.trim().length === 0;
 
@@ -73,6 +74,6 @@ const InternalCardModalFastTabField = forwardRef<HTMLInputElement, InternalCardM
     },
 );
 
-InternalCardModalFastTabField.displayName = "InternalCardModalFastTabField";
+CardModalField.displayName = "CardModalField";
 
-export default InternalCardModalFastTabField;
+export default CardModalField;

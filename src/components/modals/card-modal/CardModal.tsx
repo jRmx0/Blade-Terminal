@@ -3,7 +3,7 @@ import ModalActionBar, { type ModalActionBarItem } from "@/components/modal/moda
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import InternalCardModalHeader, { type InternalCardModalSavedState } from "./internal/InternalCardModalHeader";
 import InternalCardModalFastTab from "./internal/InternalCardModalFastTab";
-import InternalCardModalFastTabField, { type InternalCardModalTextFieldHintState } from "./internal/InternalCardModalFastTabField";
+import CardModalField, { type CardModalFieldConfig } from "./CardModalField";
 import InternalCardModalListPart from "./internal/InternalCardModalListPart";
 import type {
     CardModalListPartConfig,
@@ -47,19 +47,8 @@ export interface CardModalHeaderConfig {
     canDelete?: boolean;
 }
 
-export interface CardModalFieldConfig {
-    id: string;
-    label: string;
-    value: string;
-    placeholder?: string;
-    type?: "text" | "password";
-    required?: boolean;
-    disabled?: boolean;
-    hint?: string;
-    hintState?: InternalCardModalTextFieldHintState;
-    onChange?: (value: string) => void;
-    onConfirm?: () => void;
-}
+export type { CardModalFieldConfig } from "./CardModalField";
+export { default as CardModalField } from "./CardModalField";
 
 export interface CardModalFastTabConfig {
     id: string;
@@ -70,13 +59,6 @@ export interface CardModalFastTabConfig {
     fields?: CardModalFieldConfig[];
     listPart?: CardModalListPartConfig;
     content?: ReactNode;
-}
-
-export function CardModalField({
-    id: _id,
-    ...fieldProps
-}: CardModalFieldConfig) {
-    return <InternalCardModalFastTabField {...fieldProps} />;
 }
 
 function CardModalRenderedListPart({

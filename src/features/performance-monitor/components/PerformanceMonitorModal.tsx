@@ -4,7 +4,7 @@ import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
-import { CardModalField } from "@/components/modals/card-modal/CardModal";
+import CardModalField from "@/components/modals/card-modal/CardModalField";
 import TimeSeriesMetricCard from "./internal/TimeSeriesMetricCard";
 
 export default function PerformanceMonitorModal() {
