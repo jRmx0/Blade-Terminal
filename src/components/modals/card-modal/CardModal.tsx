@@ -72,7 +72,7 @@ export interface CardModalFastTabConfig {
     content?: ReactNode;
 }
 
-function CardModalField({
+export function CardModalField({
     id: _id,
     ...fieldProps
 }: CardModalFieldConfig) {

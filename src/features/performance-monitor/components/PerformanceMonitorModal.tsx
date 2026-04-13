@@ -4,7 +4,7 @@ import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
-import SingleValueMetricCard from "./internal/SingleValueMetricCard";
+import { CardModalField } from "@/components/modals/card-modal/CardModal";
 import TimeSeriesMetricCard from "./internal/TimeSeriesMetricCard";
 
 export default function PerformanceMonitorModal() {
@@ -114,26 +114,30 @@ export default function PerformanceMonitorModal() {
 
                 {/* Metrics list */}
                 <div className="flex-1 overflow-y-auto">
-                    {activeMetrics.map((metric: { id: number; name: string; type: string; value: number | number[] | undefined }) => {
-                        if (metric.type === "Time-series") {
-                            const data = Array.isArray(metric.value) ? metric.value : [];
+                    <div className="px-4 py-2 flex flex-col gap-2">
+                        {activeMetrics.map((metric: { id: number; name: string; type: string; value: number | number[] | undefined }) => {
+                            if (metric.type === "Time-series") {
+                                const data = Array.isArray(metric.value) ? metric.value : [];
+                                return (
+                                    <TimeSeriesMetricCard
+                                        key={metric.id}
+                                        name={metric.name}
+                                        data={data}
+                                    />
+                                );
+                            }
+                            const value = typeof metric.value === "number" ? metric.value : null;
                             return (
-                                <TimeSeriesMetricCard
+                                <CardModalField
                                     key={metric.id}
-                                    name={metric.name}
-                                    data={data}
+                                    id={String(metric.id)}
+                                    label={metric.name}
+                                    value={value !== null ? String(value) : "—"}
+                                    disabled
                                 />
                             );
-                        }
-                        const value = typeof metric.value === "number" ? metric.value : null;
-                        return (
-                            <SingleValueMetricCard
-                                key={metric.id}
-                                name={metric.name}
-                                value={value}
-                            />
-                        );
-                    })}
+                        })}
+                    </div>
                 </div>
             </>
         );
