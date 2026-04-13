@@ -7,6 +7,7 @@ import {
     Tooltip,
     Line,
 } from "recharts";
+import CardModalField from "@/components/modals/card-modal/CardModalField";
 
 interface TimeSeriesMetricCardProps {
     name: string;
@@ -56,13 +57,9 @@ export default function TimeSeriesMetricCard({ name, data }: TimeSeriesMetricCar
                     </LineChart>
                 </ResponsiveContainer>
             </div>
-            <div className="flex gap-6 mt-2">
-                <span className="text-xs text-gray-500 select-none">
-                    Min: <span className="font-mono font-medium text-gray-700">{min !== null ? min : "—"}</span>
-                </span>
-                <span className="text-xs text-gray-500 select-none">
-                    Max: <span className="font-mono font-medium text-gray-700">{max !== null ? max : "—"}</span>
-                </span>
+            <div className="flex flex-col gap-2 mt-2">
+                <CardModalField id="min" label="Min" value={min !== null ? String(min) : "—"} disabled />
+                <CardModalField id="max" label="Max" value={max !== null ? String(max) : "—"} disabled />
             </div>
         </div>
     );
