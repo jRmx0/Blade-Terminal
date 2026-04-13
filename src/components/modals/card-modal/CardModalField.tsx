@@ -29,7 +29,7 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>(
 
         return (
             <div className="flex items-start gap-3 min-w-0">
-                <div className="w-1/3 shrink-0 h-9 flex items-center gap-1 min-w-0">
+                <div className="w-1/3 shrink-0 h-8 flex items-center gap-1 min-w-0">
                     <label
                         className="text-sm text-gray-500 tracking-wide whitespace-nowrap shrink-0 cursor-default"
                         title={label}
@@ -66,7 +66,7 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>(
                         onKeyDown={(e) => {
                             if (e.key === "Enter") onConfirm?.();
                         }}
-                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded text-gray-800 focus:outline-none focus:border-teal-600 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-default truncate"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded text-gray-800 focus:outline-none focus:border-teal-600 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-default truncate"
                     />
                 </div>
             </div>
