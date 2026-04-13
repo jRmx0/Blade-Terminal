@@ -63,7 +63,15 @@ export default function TimeSeriesMetricCard({ metricId, name, data }: TimeSerie
                 ctx.font = "16px sans-serif";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "bottom";
-                ctx.fillText(name, (left + right) / 2, top - 4);
+                const maxWidth = right - left;
+                let label = name;
+                if (ctx.measureText(label).width > maxWidth) {
+                    while (label.length > 0 && ctx.measureText(label + "…").width > maxWidth) {
+                        label = label.slice(0, -1);
+                    }
+                    label += "…";
+                }
+                ctx.fillText(label, (left + right) / 2, top - 4);
                 ctx.restore();
             },
         }),
