@@ -40,7 +40,7 @@ export function useChartResize({ metricId, chartSizes, setChartSize, persistChar
 
             // Max width of all OTHER charts — used to mirror React's modal width formula during drag
             const otherMaxW = Math.max(
-                MIN_CHART_W,
+                DEFAULT_CHART_WIDTH,
                 ...Object.entries(chartSizes)
                     .filter(([id]) => Number(id) !== metricId)
                     .map(([, s]) => s.width),
