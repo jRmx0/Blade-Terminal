@@ -6,6 +6,7 @@ import {
     YAxis,
     Tooltip,
     Line,
+    Customized,
 } from "recharts";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
 import {
@@ -39,16 +40,16 @@ export default function TimeSeriesMetricCard({ metricId, name, data }: TimeSerie
             <p className="text-sm font-medium text-gray-700 mb-2 select-none text-center">{name}</p>
             <div className="relative mx-auto" style={{ width: chartWidth, height: chartHeight }}>
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                    <LineChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 10 }}>
                         <XAxis
                             dataKey="index"
-                            tick={{ fontSize: 12, fill: "#9ca3af" }}
+                            tick={{ fontSize: 12, fill: "#4b5563" }}
                             tickLine={false}
-                            axisLine={{ stroke: "#e5e7eb" }}
+                            axisLine={{ stroke: "#9ca3af" }}
                             interval="equidistantPreserveStart"
                         />
                         <YAxis
-                            tick={{ fontSize: 12, fill: "#9ca3af" }}
+                            tick={{ fontSize: 12, fill: "#4b5563" }}
                             tickLine={false}
                             axisLine={false}
                             width={48}
@@ -67,6 +68,17 @@ export default function TimeSeriesMetricCard({ metricId, name, data }: TimeSerie
                             activeDot={{ r: 4 }}
                             isAnimationActive={false}
                         />
+                        <Customized component={({ offset }: any) => (
+                            <rect
+                                x={offset.left}
+                                y={offset.top}
+                                width={offset.width}
+                                height={offset.height}
+                                fill="none"
+                                stroke="#9ca3af"
+                                strokeWidth={1}
+                            />
+                        )} />
                     </LineChart>
                 </ResponsiveContainer>
                 <span
