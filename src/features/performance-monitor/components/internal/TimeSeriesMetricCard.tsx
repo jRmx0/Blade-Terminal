@@ -53,6 +53,23 @@ export default function TimeSeriesMetricCard({ metricId, name, data }: TimeSerie
     const max = useMemo(() => (data.length > 0 ? Math.max(...data) : null), [data]);
     const showDots = data.length <= 20;
 
+    const titlePlugin = useMemo<Plugin<"line">>(
+        () => ({
+            id: "centerTitle",
+            beforeDraw(chart) {
+                const { ctx, chartArea: { left, right, top } } = chart;
+                ctx.save();
+                ctx.fillStyle = "#374151";
+                ctx.font = "16px sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "bottom";
+                ctx.fillText(name, (left + right) / 2, top - 4);
+                ctx.restore();
+            },
+        }),
+        [name],
+    );
+
     const { chartSizes, setChartSize, persistChartSizes } = usePerformanceMonitorModalStore();
     const { width: chartWidth, height: chartHeight } =
         chartSizes[metricId] ?? { width: DEFAULT_CHART_WIDTH, height: DEFAULT_CHART_HEIGHT };
@@ -82,6 +99,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data }: TimeSerie
             responsive: true,
             maintainAspectRatio: false,
             animation: false,
+            layout: { padding: { top: 22 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -93,14 +111,14 @@ export default function TimeSeriesMetricCard({ metricId, name, data }: TimeSerie
             },
             scales: {
                 x: {
-                    title: { display: true, text: "Index", font: { size: 12 }, color: "#4b5563" },
-                    ticks: { font: { size: 12 }, color: "#4b5563", maxRotation: 0 },
+                    title: { display: true, text: "Index", font: { size: 14 }, color: "#4b5563" },
+                    ticks: { font: { size: 14 }, color: "#4b5563", maxRotation: 0 },
                     grid: { color: "#e5e7eb" },
                     border: { color: "#9ca3af" },
                 },
                 y: {
-                    title: { display: true, text: "Value", font: { size: 12 }, color: "#4b5563" },
-                    ticks: { font: { size: 12 }, color: "#4b5563" },
+                    title: { display: true, text: "Value", font: { size: 14 }, color: "#4b5563" },
+                    ticks: { font: { size: 14 }, color: "#4b5563" },
                     grid: { color: "#e5e7eb" },
                     border: { color: "#9ca3af" },
                 },
@@ -111,13 +129,12 @@ export default function TimeSeriesMetricCard({ metricId, name, data }: TimeSerie
 
     return (
         <div className="px-4 py-3 border-b border-gray-200 last:border-b-0">
-            <p className="text-sm font-medium text-gray-700 mb-2 select-none text-center">{name}</p>
             <div className="relative mx-auto" ref={containerRef} style={{ width: chartWidth, height: chartHeight }}>
                 <Line
                     ref={chartRef}
                     data={chartData}
                     options={options}
-                    plugins={[borderBoxPlugin]}
+                    plugins={[borderBoxPlugin, titlePlugin]}
                 />
                 <span
                     onMouseDown={handleResizeMouseDown}
