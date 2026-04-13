@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { usePerformanceMonitorModalStore } from "@/features/performance-monitor/stores/performanceMonitorModalStore";
+import {
+    usePerformanceMonitorModalStore,
+    DEFAULT_CHART_WIDTH,
+    MODAL_CHROME_W,
+} from "@/features/performance-monitor/stores/performanceMonitorModalStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
@@ -8,7 +12,7 @@ import CardModalField from "@/components/modals/card-modal/CardModalField";
 import TimeSeriesMetricCard from "./internal/TimeSeriesMetricCard";
 
 export default function PerformanceMonitorModal() {
-    const { isOpen, close } = usePerformanceMonitorModalStore();
+    const { isOpen, close, chartSizes, initChartSizes } = usePerformanceMonitorModalStore();
     const result = useComputeResultStore((s) => s.result);
     const allMetrics = useComputationCatalogStore((s) => s.metrics);
 
@@ -57,8 +61,9 @@ export default function PerformanceMonitorModal() {
     useEffect(() => {
         if (isOpen) {
             setActiveGroup(groups[0] ?? null);
+            void initChartSizes();
         }
-    }, [isOpen, groups]);
+    }, [isOpen, groups, initChartSizes]);
 
     // Close on Escape
     useEffect(() => {
@@ -121,6 +126,7 @@ export default function PerformanceMonitorModal() {
                                 return (
                                     <TimeSeriesMetricCard
                                         key={metric.id}
+                                        metricId={metric.id}
                                         name={metric.name}
                                         data={data}
                                     />
@@ -148,7 +154,13 @@ export default function PerformanceMonitorModal() {
             className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 select-none"
             onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}
         >
-            <div className="w-175 max-w-[90vw] max-h-[80vh] flex flex-col bg-white rounded-lg shadow-xl overflow-hidden">
+            <div
+                className="max-h-[80vh] flex flex-col bg-white rounded-lg shadow-xl overflow-hidden"
+                style={{
+                    width: Math.max(DEFAULT_CHART_WIDTH, ...Object.values(chartSizes).map((s) => s.width)) + MODAL_CHROME_W,
+                    maxWidth: "90vw",
+                }}
+            >
                 {/* Header */}
                 <div className="border-b border-gray-200 shrink-0">
                     <ModalTitle title="Performance Monitor" onClose={close} />

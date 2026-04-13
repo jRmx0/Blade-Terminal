@@ -23,6 +23,7 @@ db.version(1).stores({
     layersSetup: "[id+algorithmId+providerId], algorithmId, providerId, key, [algorithmId+providerId]",
     layerSettingsSetup: "[id+layerId+algorithmId+providerId], [layerId+algorithmId+providerId], [algorithmId+providerId]",
     layerSettings: "[id+layerId+algorithmId+providerId+environmentId], [layerId+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId",
+    uiPreferences: "key",
 });
 
 db.on("populate", () => {

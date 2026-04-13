@@ -8,23 +8,36 @@ import {
     Line,
 } from "recharts";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
+import {
+    usePerformanceMonitorModalStore,
+    DEFAULT_CHART_WIDTH,
+    DEFAULT_CHART_HEIGHT,
+} from "../../stores/performanceMonitorModalStore";
+import { useChartResize } from "../../hooks/useChartResize";
 
 interface TimeSeriesMetricCardProps {
+    metricId: number;
     name: string;
     data: number[];
 }
 
-export default function TimeSeriesMetricCard({ name, data }: TimeSeriesMetricCardProps) {
+export default function TimeSeriesMetricCard({ metricId, name, data }: TimeSeriesMetricCardProps) {
     const chartData = useMemo(() => data.map((v, i) => ({ index: i, value: v })), [data]);
 
     const min = useMemo(() => (data.length > 0 ? Math.min(...data) : null), [data]);
     const max = useMemo(() => (data.length > 0 ? Math.max(...data) : null), [data]);
     const showDots = data.length <= 20;
 
+    const { chartSizes, setChartSize, persistChartSizes } = usePerformanceMonitorModalStore();
+    const { width: chartWidth, height: chartHeight } =
+        chartSizes[metricId] ?? { width: DEFAULT_CHART_WIDTH, height: DEFAULT_CHART_HEIGHT };
+
+    const { handleResizeMouseDown } = useChartResize({ metricId, chartSizes, setChartSize, persistChartSizes });
+
     return (
         <div className="px-4 py-3 border-b border-gray-200 last:border-b-0">
             <p className="text-sm font-medium text-gray-700 mb-2 select-none text-center">{name}</p>
-            <div className="h-36">
+            <div className="relative mx-auto" style={{ width: chartWidth, height: chartHeight }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                         <XAxis
@@ -56,6 +69,13 @@ export default function TimeSeriesMetricCard({ name, data }: TimeSeriesMetricCar
                         />
                     </LineChart>
                 </ResponsiveContainer>
+                <span
+                    onMouseDown={handleResizeMouseDown}
+                    className="material-symbols-outlined absolute bottom-0 right-0 cursor-se-resize select-none text-gray-300 hover:text-gray-600 leading-none rotate-270"
+                    style={{ fontSize: 16 }}
+                >
+                    resize_window
+                </span>
             </div>
             <div className="flex flex-col gap-2 mt-2">
                 <CardModalField id="min" label="Min" value={min !== null ? String(min) : "—"} disabled />
@@ -64,3 +84,4 @@ export default function TimeSeriesMetricCard({ name, data }: TimeSeriesMetricCar
         </div>
     );
 }
+
