@@ -1,23 +1,25 @@
 import { useCallback, useRef } from "react";
+import type { Chart as ChartJS } from "chart.js";
 import {
     DEFAULT_CHART_WIDTH,
     DEFAULT_CHART_HEIGHT,
     MODAL_CHROME_W,
+    MIN_CHART_W,
+    MIN_CHART_H,
     type ChartSize,
 } from "../stores/performanceMonitorModalStore";
-
-const MIN_CHART_W = 200;
-const MIN_CHART_H = 80;
 
 interface UseChartResizeOptions {
     metricId: number;
     chartSizes: Record<number, ChartSize>;
     setChartSize: (metricId: number, width: number, height: number) => void;
     persistChartSizes: () => Promise<void>;
+    chartRef: React.RefObject<ChartJS | null>;
+    containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
-export function useChartResize({ metricId, chartSizes, setChartSize, persistChartSizes }: UseChartResizeOptions) {
-    const dragRef = useRef<{ startX: number; startY: number; startW: number; startH: number } | null>(null);
+export function useChartResize({ metricId, chartSizes, setChartSize, persistChartSizes, chartRef, containerRef }: UseChartResizeOptions) {
+    const dragRef = useRef<{ startX: number; startY: number; startW: number; startH: number; currentW: number; currentH: number } | null>(null);
 
     const handleResizeMouseDown = useCallback(
         (e: React.MouseEvent) => {
@@ -30,19 +32,50 @@ export function useChartResize({ metricId, chartSizes, setChartSize, persistChar
                 startY: e.clientY,
                 startW: current.width,
                 startH: current.height,
+                currentW: current.width,
+                currentH: current.height,
             };
 
             const maxChartWidth = Math.floor(window.innerWidth * 0.9) - MODAL_CHROME_W;
+
+            // Max width of all OTHER charts — used to mirror React's modal width formula during drag
+            const otherMaxW = Math.max(
+                MIN_CHART_W,
+                ...Object.entries(chartSizes)
+                    .filter(([id]) => Number(id) !== metricId)
+                    .map(([, s]) => s.width),
+            );
+
+            // Measure the modal's actual rendered size at drag start
+            const modalEl = containerRef.current?.closest<HTMLElement>("[data-performance-modal]");
+            const maxChartHeight = modalEl ? Math.floor(modalEl.clientHeight * 0.85) : 800;
 
             const onMouseMove = (event: MouseEvent) => {
                 if (!dragRef.current) return;
                 const { startX, startY, startW, startH } = dragRef.current;
                 const newW = Math.max(MIN_CHART_W, Math.min(maxChartWidth, startW + (event.clientX - startX)));
-                const newH = Math.max(MIN_CHART_H, startH + (event.clientY - startY));
-                setChartSize(metricId, newW, newH);
+                const newH = Math.max(MIN_CHART_H, Math.min(maxChartHeight, startH + (event.clientY - startY)));
+                dragRef.current.currentW = newW;
+                dragRef.current.currentH = newH;
+                // Resize imperatively — no React state update, no re-render
+                chartRef.current?.resize(newW, newH);
+                if (containerRef.current) {
+                    containerRef.current.style.width = `${newW}px`;
+                    containerRef.current.style.height = `${newH}px`;
+                }
+                if (modalEl) {
+                    // Mirror React formula: Math.max(DEFAULT_CHART_WIDTH, ...all widths) + MODAL_CHROME_W
+                    modalEl.style.width = `${Math.max(otherMaxW, newW) + MODAL_CHROME_W}px`;
+                }
             };
 
             const onMouseUp = () => {
+                if (dragRef.current) {
+                    setChartSize(metricId, dragRef.current.currentW, dragRef.current.currentH);
+                }
+                // Do NOT clear modalEl.style.width here — React will overwrite it on the
+                // next render with its computed value. Clearing it first causes a one-frame
+                // snap because the inline style disappears before React paints the new one.
                 dragRef.current = null;
                 document.removeEventListener("mousemove", onMouseMove);
                 document.removeEventListener("mouseup", onMouseUp);
@@ -52,7 +85,7 @@ export function useChartResize({ metricId, chartSizes, setChartSize, persistChar
             document.addEventListener("mousemove", onMouseMove);
             document.addEventListener("mouseup", onMouseUp);
         },
-        [metricId, chartSizes, setChartSize, persistChartSizes],
+        [metricId, chartSizes, setChartSize, persistChartSizes, chartRef, containerRef],
     );
 
     return { handleResizeMouseDown };

@@ -1,6 +1,17 @@
-import { useEffect, useMemo, useRef } from "react";
-import uPlot from "uplot";
-import "uplot/dist/uPlot.min.css";
+import { useMemo, useRef } from "react";
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    type ChartOptions,
+    type Plugin,
+} from "chart.js";
+import { Line } from "react-chartjs-2";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
 import {
     usePerformanceMonitorModalStore,
@@ -9,79 +20,34 @@ import {
 } from "../../stores/performanceMonitorModalStore";
 import { useChartResize } from "../../hooks/useChartResize";
 
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
+const borderBoxPlugin: Plugin<"line"> = {
+    id: "borderBox",
+    afterDraw(chart) {
+        const { ctx, chartArea: { left, top, right, bottom } } = chart;
+        ctx.save();
+        ctx.strokeStyle = "#9ca3af";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(right, top);
+        ctx.lineTo(right, bottom);
+        ctx.moveTo(left, top);
+        ctx.lineTo(right, top);
+        ctx.stroke();
+        ctx.restore();
+    },
+};
+
 interface TimeSeriesMetricCardProps {
     metricId: number;
     name: string;
     data: number[];
 }
 
-function buildOpts(width: number, height: number, showDots: boolean, name: string): uPlot.Options {
-    return {
-        width,
-        height,
-        cursor: { drag: { x: false, y: false } },
-        legend: { show: false },
-        scales: { x: { time: false } },
-        series: [
-            {},
-            {
-                label: name,
-                stroke: "#0d9488",
-                width: 1.5,
-                points: {
-                    show: showDots,
-                    size: 4,
-                    fill: "#0d9488",
-                    stroke: "#0d9488",
-                },
-            },
-        ],
-        axes: [
-            {
-                label: "Index",
-                labelFont: "14px sans-serif",
-                size: 32,
-                stroke: "#4b5563",
-                ticks: { stroke: "#9ca3af", width: 1, size: 4 },
-                border: { show: true, stroke: "#9ca3af", width: 1 },
-                grid: { show: true, stroke: "#e5e7eb", width: 1 },
-                font: "14px sans-serif",
-            },
-            {
-                label: "Value",
-                labelFont: "14px sans-serif",
-                stroke: "#4b5563",
-                ticks: { stroke: "#9ca3af", width: 1, size: 4 },
-                border: { show: true, stroke: "#9ca3af", width: 1 },
-                grid: { show: true, stroke: "#e5e7eb", width: 1 },
-                font: "14px sans-serif",
-                labelGap: 16,
-            },
-        ],
-        hooks: {
-            draw: [
-                (u) => {
-                    const ctx = u.ctx;
-                    const { left, top, width: w, height: h } = u.bbox;
-                    ctx.save();
-                    ctx.strokeStyle = "#9ca3af";
-                    ctx.lineWidth = devicePixelRatio;
-                    ctx.beginPath();
-                    ctx.moveTo(left, top);
-                    ctx.lineTo(left + w, top);
-                    ctx.moveTo(left + w, top);
-                    ctx.lineTo(left + w, top + h);
-                    ctx.stroke();
-                    ctx.restore();
-                },
-            ],
-        },
-    };
-}
-
 export default function TimeSeriesMetricCard({ metricId, name, data }: TimeSeriesMetricCardProps) {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const uplotRef = useRef<uPlot | null>(null);
+    const chartRef = useRef<ChartJS<"line"> | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
 
     const min = useMemo(() => (data.length > 0 ? Math.min(...data) : null), [data]);
     const max = useMemo(() => (data.length > 0 ? Math.max(...data) : null), [data]);
@@ -91,28 +57,68 @@ export default function TimeSeriesMetricCard({ metricId, name, data }: TimeSerie
     const { width: chartWidth, height: chartHeight } =
         chartSizes[metricId] ?? { width: DEFAULT_CHART_WIDTH, height: DEFAULT_CHART_HEIGHT };
 
-    const { handleResizeMouseDown } = useChartResize({ metricId, chartSizes, setChartSize, persistChartSizes });
+    const { handleResizeMouseDown } = useChartResize({ metricId, chartSizes, setChartSize, persistChartSizes, chartRef, containerRef });
 
-    useEffect(() => {
-        if (!containerRef.current) return;
-        uplotRef.current?.destroy();
-        const xData = data.map((_, i) => i);
-        uplotRef.current = new uPlot(
-            buildOpts(chartWidth, chartHeight, showDots, name),
-            [xData, [...data]],
-            containerRef.current,
-        );
-        return () => {
-            uplotRef.current?.destroy();
-            uplotRef.current = null;
-        };
-    }, [data, chartWidth, chartHeight, showDots, name]);
+    const chartData = useMemo(
+        () => ({
+            labels: data.map((_, i) => i),
+            datasets: [
+                {
+                    data,
+                    borderColor: "#0d9488",
+                    borderWidth: 1.5,
+                    pointRadius: showDots ? 2 : 0,
+                    pointHoverRadius: 4,
+                    pointBackgroundColor: "#0d9488",
+                    tension: 0,
+                },
+            ],
+        }),
+        [data, showDots],
+    );
+
+    const options = useMemo<ChartOptions<"line">>(
+        () => ({
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => `Index: ${items[0]?.label ?? ""}`,
+                        label: (item) => `${name}: ${item.raw}`,
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: "Index", font: { size: 12 }, color: "#4b5563" },
+                    ticks: { font: { size: 12 }, color: "#4b5563", maxRotation: 0 },
+                    grid: { color: "#e5e7eb" },
+                    border: { color: "#9ca3af" },
+                },
+                y: {
+                    title: { display: true, text: "Value", font: { size: 12 }, color: "#4b5563" },
+                    ticks: { font: { size: 12 }, color: "#4b5563" },
+                    grid: { color: "#e5e7eb" },
+                    border: { color: "#9ca3af" },
+                },
+            },
+        }),
+        [name],
+    );
 
     return (
         <div className="px-4 py-3 border-b border-gray-200 last:border-b-0">
             <p className="text-sm font-medium text-gray-700 mb-2 select-none text-center">{name}</p>
-            <div className="relative mx-auto" style={{ width: chartWidth, height: chartHeight }}>
-                <div ref={containerRef} />
+            <div className="relative mx-auto" ref={containerRef} style={{ width: chartWidth, height: chartHeight }}>
+                <Line
+                    ref={chartRef}
+                    data={chartData}
+                    options={options}
+                    plugins={[borderBoxPlugin]}
+                />
                 <span
                     onMouseDown={handleResizeMouseDown}
                     className="material-symbols-outlined absolute bottom-0 right-0 cursor-se-resize select-none text-gray-300 hover:text-gray-600 leading-none rotate-270 z-10"

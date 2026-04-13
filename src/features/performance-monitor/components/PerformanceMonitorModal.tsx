@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
     usePerformanceMonitorModalStore,
-    DEFAULT_CHART_WIDTH,
+    MIN_CHART_W,
     MODAL_CHROME_W,
 } from "@/features/performance-monitor/stores/performanceMonitorModalStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
@@ -155,9 +155,10 @@ export default function PerformanceMonitorModal() {
             onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}
         >
             <div
+                data-performance-modal
                 className="max-h-[80vh] flex flex-col bg-white rounded-lg shadow-xl overflow-hidden"
                 style={{
-                    width: Math.max(DEFAULT_CHART_WIDTH, ...Object.values(chartSizes).map((s) => s.width)) + MODAL_CHROME_W,
+                    width: Math.max(MIN_CHART_W, ...Object.values(chartSizes).map((s) => s.width)) + MODAL_CHROME_W,
                     maxWidth: "90vw",
                 }}
             >

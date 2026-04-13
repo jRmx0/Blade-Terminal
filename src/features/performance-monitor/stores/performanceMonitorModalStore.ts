@@ -4,6 +4,8 @@ import { getUiPreference, setUiPreference } from "@server/db/uiPreferences";
 export const DEFAULT_CHART_WIDTH = 636;
 export const DEFAULT_CHART_HEIGHT = 144;
 export const MODAL_CHROME_W = 64;
+export const MIN_CHART_W = 200;
+export const MIN_CHART_H = 80;
 
 const UI_PREF_KEY = "performanceMonitorModal.chartSizes";
 
