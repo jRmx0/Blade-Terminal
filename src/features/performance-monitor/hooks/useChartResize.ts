@@ -54,9 +54,10 @@ export function useChartResize({ metricId, chartSizes, setChartSize, persistChar
 
             const onPointerMove = (event: PointerEvent) => {
                 if (!dragRef.current) return;
-                const { startX, startY, startW, startH } = dragRef.current;
-                const newW = Math.max(MIN_CHART_W, Math.min(maxChartWidth, startW + (event.clientX - startX)));
-                const newH = Math.max(MIN_CHART_H, Math.min(maxChartHeight, startH + (event.clientY - startY)));
+                const containerLeft = containerRef.current?.getBoundingClientRect().left ?? 0;
+                const containerTop = containerRef.current?.getBoundingClientRect().top ?? 0;
+                const newW = Math.max(MIN_CHART_W, Math.min(maxChartWidth, event.clientX - containerLeft));
+                const newH = Math.max(MIN_CHART_H, Math.min(maxChartHeight, event.clientY - containerTop));
                 dragRef.current.currentW = newW;
                 dragRef.current.currentH = newH;
                 // Resize imperatively — no React state update, no re-render
