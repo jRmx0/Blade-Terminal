@@ -340,8 +340,6 @@ Ref: layers.layerSetting.environmentId > workspace.environment.id [delete: casca
 
 // provider → child tables
 Ref: provider.computationProviderAlgorithm.computationProviderId > provider.computationProvider.id [delete: cascade, color: #2980b9]
-Ref: provider_catalog.computationAlgorithmParameterSetup.computationProviderId > provider.computationProvider.id [delete: cascade, color: #5dade2]
-Ref: provider_catalog.algorithmMetricSetup.computationProviderId > provider.computationProvider.id [delete: cascade, color: #5dade2]
 
 // provider.computationProviderAlgorithm → provider_catalog tables
 Ref: provider_catalog.computationAlgorithmParameterSetup.(algorithmId, computationProviderId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade, color: #5dade2]
