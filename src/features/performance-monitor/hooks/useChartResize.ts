@@ -21,8 +21,8 @@ interface UseChartResizeOptions {
 export function useChartResize({ metricId, chartSizes, setChartSize, persistChartSizes, chartRef, containerRef }: UseChartResizeOptions) {
     const dragRef = useRef<{ startX: number; startY: number; startW: number; startH: number; currentW: number; currentH: number } | null>(null);
 
-    const handleResizeMouseDown = useCallback(
-        (e: React.MouseEvent) => {
+    const handleResizePointerDown = useCallback(
+        (e: React.PointerEvent) => {
             e.preventDefault();
             e.stopPropagation();
 
@@ -50,7 +50,7 @@ export function useChartResize({ metricId, chartSizes, setChartSize, persistChar
             const modalEl = containerRef.current?.closest<HTMLElement>("[data-performance-modal]");
             const maxChartHeight = modalEl ? Math.floor(modalEl.clientHeight * 0.85) : 800;
 
-            const onMouseMove = (event: MouseEvent) => {
+            const onPointerMove = (event: PointerEvent) => {
                 if (!dragRef.current) return;
                 const { startX, startY, startW, startH } = dragRef.current;
                 const newW = Math.max(MIN_CHART_W, Math.min(maxChartWidth, startW + (event.clientX - startX)));
@@ -69,7 +69,7 @@ export function useChartResize({ metricId, chartSizes, setChartSize, persistChar
                 }
             };
 
-            const onMouseUp = () => {
+            const onPointerUp = () => {
                 if (dragRef.current) {
                     setChartSize(metricId, dragRef.current.currentW, dragRef.current.currentH);
                 }
@@ -77,16 +77,18 @@ export function useChartResize({ metricId, chartSizes, setChartSize, persistChar
                 // next render with its computed value. Clearing it first causes a one-frame
                 // snap because the inline style disappears before React paints the new one.
                 dragRef.current = null;
-                document.removeEventListener("mousemove", onMouseMove);
-                document.removeEventListener("mouseup", onMouseUp);
+                document.removeEventListener("pointermove", onPointerMove);
+                document.removeEventListener("pointerup", onPointerUp);
+                document.removeEventListener("pointercancel", onPointerUp);
                 void persistChartSizes();
             };
 
-            document.addEventListener("mousemove", onMouseMove);
-            document.addEventListener("mouseup", onMouseUp);
+            document.addEventListener("pointermove", onPointerMove);
+            document.addEventListener("pointerup", onPointerUp);
+            document.addEventListener("pointercancel", onPointerUp);
         },
         [metricId, chartSizes, setChartSize, persistChartSizes, chartRef, containerRef],
     );
 
-    return { handleResizeMouseDown };
+    return { handleResizePointerDown };
 }

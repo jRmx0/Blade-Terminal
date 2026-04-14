@@ -84,7 +84,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, xAxisLabel,
     const { width: chartWidth, height: chartHeight } =
         chartSizes[metricId] ?? { width: DEFAULT_CHART_WIDTH, height: DEFAULT_CHART_HEIGHT };
 
-    const { handleResizeMouseDown } = useChartResize({ metricId, chartSizes, setChartSize, persistChartSizes, chartRef, containerRef });
+    const { handleResizePointerDown } = useChartResize({ metricId, chartSizes, setChartSize, persistChartSizes, chartRef, containerRef });
 
     const chartData = useMemo(
         () => ({
@@ -147,7 +147,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, xAxisLabel,
                     plugins={[borderBoxPlugin, titlePlugin]}
                 />
                 <span
-                    onMouseDown={handleResizeMouseDown}
+                    onPointerDown={handleResizePointerDown}
                     className="material-symbols-outlined absolute bottom-0 right-0 cursor-se-resize select-none text-gray-300 hover:text-gray-600 leading-none rotate-270 z-10"
                     style={{ fontSize: 16 }}
                 >
