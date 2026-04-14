@@ -76,14 +76,6 @@ A spatial workspace containing geometric objects (zones and obstacles). Display 
 | `zoneCount` | `number` | — | *Cached.* Count of zone-category objects |
 | `obstacleCount` | `number` | — | *Cached.* Count of obstacle-category objects |
 
-**Display settings** (stored as inline fields on the same record — not a separate table):
-
-| Column | Type | Description |
-|---|---|---|
-| `centerPoint` | `{x: number, y: number}` | Viewport center position |
-| `scale` | `number` | Zoom level (percentage float) |
-| `gridVisible` | `boolean` | Helper grid overlay toggle |
-
 > **On delete cascade (application-enforced):** deletes all `objects`, `computationAlgorithmParameters`, `computationSelection`, `layerSettings`, and `computeResults` rows for that `environmentId`.
 
 ---
