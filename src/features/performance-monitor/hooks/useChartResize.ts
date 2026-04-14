@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { Chart as ChartJS } from "chart.js";
 import {
     DEFAULT_CHART_WIDTH,
@@ -20,6 +20,7 @@ interface UseChartResizeOptions {
 
 export function useChartResize({ metricId, chartSizes, setChartSize, persistChartSizes, chartRef, containerRef }: UseChartResizeOptions) {
     const dragRef = useRef<{ startX: number; startY: number; startW: number; startH: number; currentW: number; currentH: number } | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
 
     const handleResizePointerDown = useCallback(
         (e: React.PointerEvent) => {
@@ -35,6 +36,7 @@ export function useChartResize({ metricId, chartSizes, setChartSize, persistChar
                 currentW: current.width,
                 currentH: current.height,
             };
+            setIsDragging(true);
 
             const maxChartWidth = Math.floor(window.innerWidth * 0.9) - MODAL_CHROME_W;
 
@@ -77,6 +79,7 @@ export function useChartResize({ metricId, chartSizes, setChartSize, persistChar
                 // next render with its computed value. Clearing it first causes a one-frame
                 // snap because the inline style disappears before React paints the new one.
                 dragRef.current = null;
+                setIsDragging(false);
                 document.removeEventListener("pointermove", onPointerMove);
                 document.removeEventListener("pointerup", onPointerUp);
                 document.removeEventListener("pointercancel", onPointerUp);
@@ -90,5 +93,5 @@ export function useChartResize({ metricId, chartSizes, setChartSize, persistChar
         [metricId, chartSizes, setChartSize, persistChartSizes, chartRef, containerRef],
     );
 
-    return { handleResizePointerDown };
+    return { handleResizePointerDown, isDragging };
 }
