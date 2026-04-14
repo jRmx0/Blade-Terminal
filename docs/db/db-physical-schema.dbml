@@ -108,7 +108,7 @@ Table system.appEnumSetup [headercolor: #7f8c8d, note: 'Seed-only enum lookup ca
   }
 }
 
-Table system.uiPreferences [headercolor: #7f8c8d, note: 'Generic key-value store for persistent UI state. Values are always JSON-serialized strings.'] {
+Table system.uiPreference [headercolor: #7f8c8d, note: 'Generic key-value store for persistent UI state. Values are always JSON-serialized strings.'] {
   key   varchar [not null, note: 'PK — preference identifier']
   value varchar [not null, note: 'JSON-serialized preference value']
 
@@ -119,7 +119,7 @@ Table system.uiPreferences [headercolor: #7f8c8d, note: 'Generic key-value store
 
 // ── workspace ── user-created spatial geometry ────────────────────────────────
 
-Table workspace.environments [headercolor: #27ae60, note: 'Spatial workspaces.'] {
+Table workspace.environment [headercolor: #27ae60, note: 'Spatial workspaces.'] {
   id            integer      [not null, note: 'PK — manually assigned integer']
   name          varchar      [not null, note: 'User-provided; truncated to WORKSPACE_NAME_MAX_LENGTH on write']
   format        env_format   [not null]
@@ -134,9 +134,9 @@ Table workspace.environments [headercolor: #27ae60, note: 'Spatial workspaces.']
   }
 }
 
-Table workspace.objects [headercolor: #27ae60, note: 'Polygon objects (zones / obstacles). Vertices stored inline as an ordered JSON array — no separate vertices table.'] {
+Table workspace.object [headercolor: #27ae60, note: 'Polygon objects (zones / obstacles). Vertices stored inline as an ordered JSON array — no separate vertices table.'] {
   id            integer         [not null, note: 'Compound PK part 1 — local sequential ID within the environment']
-  environmentId integer         [not null, note: 'Compound PK part 2; FK → workspace.environments.id']
+  environmentId integer         [not null, note: 'Compound PK part 2; FK → workspace.environment.id']
   category      object_category [not null]
   type          object_type     [not null]
   vertexCount   integer         [not null, default: 0, note: 'Cached: polygon vertex count (shoelace input size)']
@@ -151,7 +151,7 @@ Table workspace.objects [headercolor: #27ae60, note: 'Polygon objects (zones / o
 
 // ── provider ── external CPP service connections ──────────────────────────────
 
-Table provider.computationProviders [headercolor: #2980b9, note: 'External CPP computation services. Stores credentials and metadata-fetch state.'] {
+Table provider.computationProvider [headercolor: #2980b9, note: 'External CPP computation services. Stores credentials and metadata-fetch state.'] {
   id                integer [not null, increment, note: 'PK — auto-incremented']
   name              varchar [not null, note: 'User-provided display name']
   url               varchar [not null, note: 'Base URL of the external service']
@@ -165,9 +165,9 @@ Table provider.computationProviders [headercolor: #2980b9, note: 'External CPP c
   }
 }
 
-Table provider.computationProviderAlgorithms [headercolor: #2980b9, note: 'CPP algorithms exposed by a provider. Replaced atomically on metadata refresh. IDs are sequential (1-based) within each provider.'] {
+Table provider.computationProviderAlgorithm [headercolor: #2980b9, note: 'CPP algorithms exposed by a provider. Replaced atomically on metadata refresh. IDs are sequential (1-based) within each provider.'] {
   id                    integer [not null, note: 'Compound PK part 1 — sequential within provider (1-based)']
-  computationProviderId integer [not null, note: 'Compound PK part 2; FK → provider.computationProviders.id']
+  computationProviderId integer [not null, note: 'Compound PK part 2; FK → provider.computationProvider.id']
   name                  varchar [not null, note: 'Algorithm display name']
 
   indexes {
@@ -178,10 +178,10 @@ Table provider.computationProviderAlgorithms [headercolor: #2980b9, note: 'CPP a
 
 // ── provider_catalog ── metadata fetched from provider (templates) ────────────
 
-Table provider_catalog.computationAlgorithmParametersSetup [headercolor: #5dade2, note: 'Parameter metadata fetched from a provider. Template table — per-environment computationAlgorithmParameters rows are initialized from these defaults.'] {
+Table provider_catalog.computationAlgorithmParameterSetup [headercolor: #5dade2, note: 'Parameter metadata fetched from a provider. Template table — per-environment computationAlgorithmParameter rows are initialized from these defaults.'] {
   id                    integer         [not null, note: 'Compound PK part 1 — from provider metadata']
-  algorithmId           integer         [not null, note: 'Compound PK part 2; FK → provider.computationProviderAlgorithms.id']
-  computationProviderId integer         [not null, note: 'Compound PK part 3; FK → provider.computationProviders.id']
+  algorithmId           integer         [not null, note: 'Compound PK part 2; FK → provider.computationProviderAlgorithm.id']
+  computationProviderId integer         [not null, note: 'Compound PK part 3; FK → provider.computationProvider.id']
   name                  varchar         [not null, note: 'Parameter display name']
   paramType             algo_param_type [not null]
   enumValues            json            [not null, note: 'Required string array; empty [] for non-Enum params, populated for Enum paramType']
@@ -198,10 +198,10 @@ Table provider_catalog.computationAlgorithmParametersSetup [headercolor: #5dade2
   }
 }
 
-Table provider_catalog.algorithmMetricsSetup [headercolor: #5dade2, note: 'Metric metadata fetched from a provider during metadata refresh.'] {
+Table provider_catalog.algorithmMetricSetup [headercolor: #5dade2, note: 'Metric metadata fetched from a provider during metadata refresh.'] {
   id                    integer     [not null, note: 'Compound PK part 1 — from provider metadata']
-  algorithmId           integer     [not null, note: 'Compound PK part 2; FK → provider.computationProviderAlgorithms.id']
-  computationProviderId integer     [not null, note: 'Compound PK part 3; FK → provider.computationProviders.id']
+  algorithmId           integer     [not null, note: 'Compound PK part 2; FK → provider.computationProviderAlgorithm.id']
+  computationProviderId integer     [not null, note: 'Compound PK part 3; FK → provider.computationProvider.id']
   name                  varchar     [not null, note: 'Metric display name']
   type                  metric_type [not null]
   group                 varchar     [null, note: 'Optional metrics-panel grouping label']
@@ -218,20 +218,20 @@ Table provider_catalog.algorithmMetricsSetup [headercolor: #5dade2, note: 'Metri
 // ── runtime ── per-environment working state ──────────────────────────────────
 
 Table runtime.computationSelection [headercolor: #e67e22, note: 'Active provider + algorithm selection per environment. One row per environment; upserted on every change.'] {
-  environmentId       integer [not null, note: 'PK; FK → workspace.environments.id']
-  selectedProviderId  integer [null,     note: 'FK → provider.computationProviders.id; null = nothing selected']
-  selectedAlgorithmId integer [null,     note: 'FK → provider.computationProviderAlgorithms.id within the provider; null = nothing selected']
+  environmentId       integer [not null, note: 'PK; FK → workspace.environment.id']
+  selectedProviderId  integer [null,     note: 'FK → provider.computationProvider.id; null = nothing selected']
+  selectedAlgorithmId integer [null,     note: 'FK → provider.computationProviderAlgorithm.id within the provider; null = nothing selected']
 
   indexes {
     environmentId [pk]
   }
 }
 
-Table runtime.computationAlgorithmParameters [headercolor: #e67e22, note: 'Per-environment working parameter values. Initialized from provider_catalog.computationAlgorithmParametersSetup defaults when an algorithm is first activated for an environment.'] {
-  id            integer [not null, note: 'Compound PK part 1; matches provider_catalog.computationAlgorithmParametersSetup.id']
-  algorithmId   integer [not null, note: 'Compound PK part 2; FK → provider.computationProviderAlgorithms.id']
-  providerId    integer [not null, note: 'Compound PK part 3; FK → provider.computationProviders.id']
-  environmentId integer [not null, note: 'Compound PK part 4; FK → workspace.environments.id']
+Table runtime.computationAlgorithmParameter [headercolor: #e67e22, note: 'Per-environment working parameter values. Initialized from provider_catalog.computationAlgorithmParameterSetup defaults when an algorithm is first activated for an environment.'] {
+  id            integer [not null, note: 'Compound PK part 1; matches provider_catalog.computationAlgorithmParameterSetup.id']
+  algorithmId   integer [not null, note: 'Compound PK part 2; FK → provider.computationProviderAlgorithm.id']
+  providerId    integer [not null, note: 'Compound PK part 3; FK → provider.computationProvider.id']
+  environmentId integer [not null, note: 'Compound PK part 4; FK → workspace.environment.id']
   value         varchar [not null, note: 'Current serialized string value — all param types serialized to string']
 
   indexes {
@@ -241,8 +241,8 @@ Table runtime.computationAlgorithmParameters [headercolor: #e67e22, note: 'Per-e
   }
 }
 
-Table runtime.computeResults [headercolor: #e67e22, note: 'Latest CPP result per environment. One row per environment; replaced on every successful compute run. result blob is immutable — never partially updated.'] {
-  environmentId integer [not null, note: 'PK; FK → workspace.environments.id — one row per environment']
+Table runtime.computeResult [headercolor: #e67e22, note: 'Latest CPP result per environment. One row per environment; replaced on every successful compute run. result blob is immutable — never partially updated.'] {
+  environmentId integer [not null, note: 'PK; FK → workspace.environment.id — one row per environment']
   jobId         varchar [not null, note: 'Provider-assigned job identifier']
   algorithmId   integer [not null, note: 'Algorithm that produced this result']
   providerId    integer [not null, note: 'Provider that executed the computation']
@@ -270,11 +270,11 @@ Table runtime.computeResults [headercolor: #e67e22, note: 'Latest CPP result per
 
 // ── layers ── layer catalog + per-environment style values ────────────────────
 
-Table layers.layersSetup [headercolor: #8e44ad, note: 'Layer catalog. System layers seeded at populate with algorithmId=0 / providerId=0 as sentinels. Provider layers replaced atomically on metadata refresh.'] {
+Table layers.layerSetup [headercolor: #8e44ad, note: 'Layer catalog. System layers seeded at populate with algorithmId=0 / providerId=0 as sentinels. Provider layers replaced atomically on metadata refresh.'] {
   id           integer    [not null, note: 'Compound PK part 1 — natural key from registry or provider metadata']
-  algorithmId  integer    [not null, note: 'Compound PK part 2; 0 = system sentinel; else FK → provider.computationProviderAlgorithms.id']
-  providerId   integer    [not null, note: 'Compound PK part 3; 0 = system sentinel; else FK → provider.computationProviders.id']
-  key          integer    [not null, note: 'Stable reference ID used by layers.layerSettings and layers.layerSettingsSetup; equals id for system layers']
+  algorithmId  integer    [not null, note: 'Compound PK part 2; 0 = system sentinel; else FK → provider.computationProviderAlgorithm.id']
+  providerId   integer    [not null, note: 'Compound PK part 3; 0 = system sentinel; else FK → provider.computationProvider.id']
+  key          integer    [not null, note: 'Stable reference ID used by layers.layerSetting and layers.layerSettingSetup; equals id for system layers']
   label        varchar    [not null, note: 'Display name']
   computeLayer varchar    [null, note: 'Algorithm-specific result channel key e.g. "coveragePathPlan"']
   type         layer_type [null, note: 'Nullable — absent on pre-type DB records for backward compatibility']
@@ -289,9 +289,9 @@ Table layers.layersSetup [headercolor: #8e44ad, note: 'Layer catalog. System lay
   }
 }
 
-Table layers.layerSettingsSetup [headercolor: #8e44ad, note: 'Style attribute metadata templates. Source-of-truth from which per-environment layers.layerSettings rows are initialized. System attributes use algorithmId=0 / providerId=0.'] {
+Table layers.layerSettingSetup [headercolor: #8e44ad, note: 'Style attribute metadata templates. Source-of-truth from which per-environment layers.layerSetting rows are initialized. System attributes use algorithmId=0 / providerId=0.'] {
   id           integer     [not null, note: 'Compound PK part 1 — attribute ID from provider metadata or system registry']
-  layerId      integer     [not null, note: 'Compound PK part 2; FK → layers.layersSetup.key']
+  layerId      integer     [not null, note: 'Compound PK part 2; FK → layers.layerSetup.key']
   algorithmId  integer     [not null, note: 'Compound PK part 3; 0 = system sentinel']
   providerId   integer     [not null, note: 'Compound PK part 4; 0 = system sentinel']
   key          varchar     [not null, note: 'Attribute label e.g. "Polygon Fill Color", "Show Vertex IDs" — also the display label']
@@ -308,15 +308,15 @@ Table layers.layerSettingsSetup [headercolor: #8e44ad, note: 'Style attribute me
   }
 }
 
-Table layers.layerSettings [headercolor: #8e44ad, note: 'Per-environment working layer style values. Initialized by copying from layers.layerSettingsSetup. key/styleType/styleGroup are de-normalized to avoid joins at render time.'] {
-  id            integer     [not null, note: 'Compound PK part 1; matches layers.layerSettingsSetup.id']
-  layerId       integer     [not null, note: 'Compound PK part 2; FK → layers.layersSetup.key']
+Table layers.layerSetting [headercolor: #8e44ad, note: 'Per-environment working layer style values. Initialized by copying from layers.layerSettingSetup. key/styleType/styleGroup are de-normalized to avoid joins at render time.'] {
+  id            integer     [not null, note: 'Compound PK part 1; matches layers.layerSettingSetup.id']
+  layerId       integer     [not null, note: 'Compound PK part 2; FK → layers.layerSetup.key']
   algorithmId   integer     [not null, note: 'Compound PK part 3; 0 = system sentinel']
   providerId    integer     [not null, note: 'Compound PK part 4; 0 = system sentinel']
-  environmentId integer     [not null, note: 'Compound PK part 5; FK → workspace.environments.id']
-  key           varchar     [not null, note: 'De-normalized from layers.layerSettingsSetup.key']
-  styleType     style_type  [not null, note: 'De-normalized from layers.layerSettingsSetup.styleType']
-  styleGroup    style_group [null,     note: 'De-normalized from layers.layerSettingsSetup.styleGroup; absent for system attributes']
+  environmentId integer     [not null, note: 'Compound PK part 5; FK → workspace.environment.id']
+  key           varchar     [not null, note: 'De-normalized from layers.layerSettingSetup.key']
+  styleType     style_type  [not null, note: 'De-normalized from layers.layerSettingSetup.styleType']
+  styleGroup    style_group [null,     note: 'De-normalized from layers.layerSettingSetup.styleGroup; absent for system attributes']
   value         varchar     [not null, note: 'Current serialized value. PointLabelEnum: JSON.stringify(Array<{value,color}>)']
 
   indexes {
@@ -332,61 +332,61 @@ Table layers.layerSettings [headercolor: #8e44ad, note: 'Per-environment working
 // All cascade deletes are implemented in application code (server/db/).
 
 // workspace → child tables
-Ref: workspace.objects.environmentId > workspace.environments.id [delete: cascade, color: #27ae60]
-Ref: runtime.computationSelection.environmentId - workspace.environments.id [delete: cascade, color: #e67e22]
-Ref: runtime.computationAlgorithmParameters.environmentId > workspace.environments.id [delete: cascade, color: #e67e22]
-Ref: runtime.computeResults.environmentId - workspace.environments.id [delete: cascade, color: #e67e22]
-Ref: layers.layerSettings.environmentId > workspace.environments.id [delete: cascade, color: #8e44ad]
+Ref: workspace.object.environmentId > workspace.environment.id [delete: cascade, color: #27ae60]
+Ref: runtime.computationSelection.environmentId - workspace.environment.id [delete: cascade, color: #e67e22]
+Ref: runtime.computationAlgorithmParameter.environmentId > workspace.environment.id [delete: cascade, color: #e67e22]
+Ref: runtime.computeResult.environmentId - workspace.environment.id [delete: cascade, color: #e67e22]
+Ref: layers.layerSetting.environmentId > workspace.environment.id [delete: cascade, color: #8e44ad]
 
 // provider → child tables
-Ref: provider.computationProviderAlgorithms.computationProviderId > provider.computationProviders.id [delete: cascade, color: #2980b9]
-Ref: provider_catalog.computationAlgorithmParametersSetup.computationProviderId > provider.computationProviders.id [delete: cascade, color: #5dade2]
-Ref: provider_catalog.algorithmMetricsSetup.computationProviderId > provider.computationProviders.id [delete: cascade, color: #5dade2]
+Ref: provider.computationProviderAlgorithm.computationProviderId > provider.computationProvider.id [delete: cascade, color: #2980b9]
+Ref: provider_catalog.computationAlgorithmParameterSetup.computationProviderId > provider.computationProvider.id [delete: cascade, color: #5dade2]
+Ref: provider_catalog.algorithmMetricSetup.computationProviderId > provider.computationProvider.id [delete: cascade, color: #5dade2]
 
-// provider.computationProviderAlgorithms → provider_catalog tables
-Ref: provider_catalog.computationAlgorithmParametersSetup.(algorithmId, computationProviderId) > provider.computationProviderAlgorithms.(id, computationProviderId) [delete: cascade, color: #5dade2]
-Ref: provider_catalog.algorithmMetricsSetup.(algorithmId, computationProviderId) > provider.computationProviderAlgorithms.(id, computationProviderId) [color: #5dade2]
+// provider.computationProviderAlgorithm → provider_catalog tables
+Ref: provider_catalog.computationAlgorithmParameterSetup.(algorithmId, computationProviderId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade, color: #5dade2]
+Ref: provider_catalog.algorithmMetricSetup.(algorithmId, computationProviderId) > provider.computationProviderAlgorithm.(id, computationProviderId) [color: #5dade2]
 
 // runtime params initialized from provider_catalog templates
-Ref: runtime.computationAlgorithmParameters.(algorithmId, providerId) > provider_catalog.computationAlgorithmParametersSetup.(algorithmId, computationProviderId) [color: #e67e22]
+Ref: runtime.computationAlgorithmParameter.(algorithmId, providerId) > provider_catalog.computationAlgorithmParameterSetup.(algorithmId, computationProviderId) [color: #e67e22]
 
-// layers.layerSettings → layers catalog
-Ref: layers.layerSettings.layerId > layers.layersSetup.key [color: #8e44ad]
-Ref: layers.layerSettings.(layerId, algorithmId, providerId) > layers.layerSettingsSetup.(layerId, algorithmId, providerId) [color: #8e44ad]
+// layers.layerSetting → layers catalog
+Ref: layers.layerSetting.layerId > layers.layerSetup.key [color: #8e44ad]
+Ref: layers.layerSetting.(layerId, algorithmId, providerId) > layers.layerSettingSetup.(layerId, algorithmId, providerId) [color: #8e44ad]
 
-// layers.layerSettingsSetup → layers.layersSetup
-Ref: layers.layerSettingsSetup.layerId > layers.layersSetup.key [color: #8e44ad]
+// layers.layerSettingSetup → layers.layerSetup
+Ref: layers.layerSettingSetup.layerId > layers.layerSetup.key [color: #8e44ad]
 
 // ─── TableGroups ──────────────────────────────────────────────────────────────
 
 TableGroup system [color: #7f8c8d, note: 'Seed data & global UI preferences'] {
   system.appEnumSetup
-  system.uiPreferences
+  system.uiPreference
 }
 
 TableGroup workspace [color: #27ae60, note: 'User-created spatial geometry — environments and their polygon objects'] {
-  workspace.environments
-  workspace.objects
+  workspace.environment
+  workspace.object
 }
 
 TableGroup provider [color: #2980b9, note: 'External CPP computation service connections'] {
-  provider.computationProviders
-  provider.computationProviderAlgorithms
+  provider.computationProvider
+  provider.computationProviderAlgorithm
 }
 
 TableGroup provider_catalog [color: #5dade2, note: 'Metadata fetched from providers — parameter and metric definition templates'] {
-  provider_catalog.computationAlgorithmParametersSetup
-  provider_catalog.algorithmMetricsSetup
+  provider_catalog.computationAlgorithmParameterSetup
+  provider_catalog.algorithmMetricSetup
 }
 
 TableGroup runtime [color: #e67e22, note: 'Per-environment working state — active selections, parameter values, and compute results'] {
   runtime.computationSelection
-  runtime.computationAlgorithmParameters
-  runtime.computeResults
+  runtime.computationAlgorithmParameter
+  runtime.computeResult
 }
 
 TableGroup layers [color: #8e44ad, note: 'Layer catalog and per-environment style attribute values'] {
-  layers.layersSetup
-  layers.layerSettingsSetup
-  layers.layerSettings
+  layers.layerSetup
+  layers.layerSettingSetup
+  layers.layerSetting
 }
