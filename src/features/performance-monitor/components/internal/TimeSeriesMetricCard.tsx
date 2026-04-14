@@ -119,6 +119,31 @@ export default function TimeSeriesMetricCard({ metricId, name, data, xAxisLabel,
         }
     }, [name, chartRef]);
 
+    const handleCsvExport = useCallback(async () => {
+        const header = `${xAxisLabel ?? "Index"},${yAxisLabel ?? "Value"}`;
+        const rows = data.map((v, i) => `${i},${v}`);
+        const csv = [header, ...rows].join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        let fileHandle: FileSystemFileHandle;
+        try {
+            fileHandle = await window.showSaveFilePicker({
+                suggestedName: `${name}.csv`,
+                types: [{ description: "CSV file", accept: { "text/csv": [".csv"] } }],
+            });
+        } catch (err) {
+            if (err instanceof DOMException && err.name === "AbortError") return;
+            console.error("[TimeSeriesMetricCard] showSaveFilePicker failed:", err);
+            return;
+        }
+        try {
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+        } catch (err) {
+            console.error("[TimeSeriesMetricCard] CSV write failed:", err);
+        }
+    }, [name, data, xAxisLabel, yAxisLabel]);
+
     const chartData = useMemo(
         () => ({
             labels: data.map((_, i) => i),
@@ -179,6 +204,13 @@ export default function TimeSeriesMetricCard({ metricId, name, data, xAxisLabel,
                     options={options}
                     plugins={[borderBoxPlugin, titlePlugin]}
                 />
+                <span
+                    onClick={handleCsvExport}
+                    className="material-symbols-outlined absolute bottom-0 right-10 cursor-pointer select-none leading-none z-10 text-gray-300 hover:text-gray-600"
+                    style={{ fontSize: 16 }}
+                >
+                    table_chart
+                </span>
                 <span
                     onClick={handleDownload}
                     className="material-symbols-outlined absolute bottom-0 right-5 cursor-pointer select-none leading-none z-10 text-gray-300 hover:text-gray-600"
