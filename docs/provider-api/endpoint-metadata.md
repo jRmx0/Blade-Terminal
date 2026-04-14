@@ -72,6 +72,16 @@ Providers must implement this endpoint so that blade-terminal can discover and v
           "type": "Single-value",
           "group": "<group label>"
         },
+        {
+          "id": 2,
+          "name": "<time-series metric name>",
+          "type": "Time-series",
+          "group": "<group label>",
+          "style": {
+            "xAxisLabel": "<x-axis label>",
+            "yAxisLabel": "<y-axis label>"
+          }
+        },
         "..."
       ]
     }
@@ -105,6 +115,7 @@ Providers must implement this endpoint so that blade-terminal can discover and v
 | `name` | `string` | Human-readable display name |
 | `type` | `MetricType` | Describes the shape of emitted values — see [`MetricType`](#metrictype) |
 | `group` | `string?` | Optional grouping label — blade-terminal uses this to visually group related metrics together. Omitted when the metric has no group |
+| `style` | `TimeSeriesMetricStyle?` | Optional display configuration for the chart — see [`TimeSeriesMetricStyle`](#timeseriesmetricstyle). Only meaningful for `"Time-series"` metrics; ignored on other types. Omitted when defaults are acceptable |
 
 ### `MetricType`
 
@@ -114,6 +125,15 @@ Extensible string enum. blade-terminal accepts unknown values without error.
 |---|---|
 | `"Single-value"` | A single scalar reading per run |
 | `"Time-series"` | An ordered series of scalar readings sampled during the run |
+
+### `TimeSeriesMetricStyle`
+
+Optional display configuration for `"Time-series"` metrics. All fields are optional; blade-terminal falls back to default labels when a field is absent.
+
+| Field | Type | Notes |
+|---|---|---|
+| `xAxisLabel` | `string?` | Label for the chart x-axis. Defaults to `"Index"` when omitted |
+| `yAxisLabel` | `string?` | Label for the chart y-axis. Defaults to `"Value"` when omitted |
 
 ### `ParameterMetadata`
 

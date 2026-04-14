@@ -43,9 +43,11 @@ interface TimeSeriesMetricCardProps {
     metricId: number;
     name: string;
     data: number[];
+    xAxisLabel?: string;
+    yAxisLabel?: string;
 }
 
-export default function TimeSeriesMetricCard({ metricId, name, data }: TimeSeriesMetricCardProps) {
+export default function TimeSeriesMetricCard({ metricId, name, data, xAxisLabel, yAxisLabel }: TimeSeriesMetricCardProps) {
     const chartRef = useRef<ChartJS<"line"> | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -112,27 +114,27 @@ export default function TimeSeriesMetricCard({ metricId, name, data }: TimeSerie
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        title: (items) => `Index: ${items[0]?.label ?? ""}`,
+                        title: (items) => `${xAxisLabel ?? "Index"}: ${items[0]?.label ?? ""}`,
                         label: (item) => `${name}: ${item.raw}`,
                     },
                 },
             },
             scales: {
                 x: {
-                    title: { display: true, text: "Index", font: { size: 14 }, color: "#4b5563" },
+                    title: { display: true, text: xAxisLabel ?? "Index", font: { size: 14 }, color: "#4b5563" },
                     ticks: { font: { size: 14 }, color: "#4b5563", maxRotation: 0 },
                     grid: { color: "#e5e7eb" },
                     border: { color: "#9ca3af" },
                 },
                 y: {
-                    title: { display: true, text: "Value", font: { size: 14 }, color: "#4b5563" },
+                    title: { display: true, text: yAxisLabel ?? "Value", font: { size: 14 }, color: "#4b5563" },
                     ticks: { font: { size: 14 }, color: "#4b5563" },
                     grid: { color: "#e5e7eb" },
                     border: { color: "#9ca3af" },
                 },
             },
         }),
-        [name],
+        [name, xAxisLabel, yAxisLabel],
     );
 
     return (

@@ -270,11 +270,17 @@ export interface DebugLayerMetadata {
 
 export type MetricType = "Single-value" | "Time-series" | (string & {});
 
+export interface TimeSeriesMetricStyle {
+    xAxisLabel?: string;
+    yAxisLabel?: string;
+}
+
 export interface MetricMetadataResponse {
     id: number;
     name: string;
     type: MetricType;
     group?: string;
+    style?: TimeSeriesMetricStyle;
 }
 
 export interface AlgorithmMetric {
@@ -284,6 +290,7 @@ export interface AlgorithmMetric {
     name: string;
     type: MetricType;
     group?: string;
+    style?: TimeSeriesMetricStyle;
 }
 
 export interface MetadataAlgorithmResponse {

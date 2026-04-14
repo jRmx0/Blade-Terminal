@@ -36,7 +36,7 @@ export default function PerformanceMonitorModal() {
 
         // Group — preserving first-appearance order
         const groupOrder: string[] = [];
-        const byGroup = new Map<string, { id: number; name: string; type: string; value: number | number[] | undefined }[]>();
+        const byGroup = new Map<string, { id: number; name: string; type: string; value: number | number[] | undefined; style?: { xAxisLabel?: string; yAxisLabel?: string } }[]>();
 
         for (const meta of metaMapped) {
             const group = meta.group ?? "General";
@@ -49,6 +49,7 @@ export default function PerformanceMonitorModal() {
                 name: meta.name,
                 type: meta.type,
                 value: valueById.get(meta.id),
+                style: meta.style,
             });
         }
 
@@ -120,7 +121,7 @@ export default function PerformanceMonitorModal() {
                 {/* Metrics list */}
                 <div className="flex-1 overflow-y-auto">
                     <div className="px-4 py-2 flex flex-col gap-2">
-                        {activeMetrics.map((metric: { id: number; name: string; type: string; value: number | number[] | undefined }) => {
+                        {activeMetrics.map((metric: { id: number; name: string; type: string; value: number | number[] | undefined; style?: { xAxisLabel?: string; yAxisLabel?: string } }) => {
                             if (metric.type === "Time-series") {
                                 const data = Array.isArray(metric.value) ? metric.value : [];
                                 return (
@@ -129,6 +130,8 @@ export default function PerformanceMonitorModal() {
                                         metricId={metric.id}
                                         name={metric.name}
                                         data={data}
+                                        xAxisLabel={metric.style?.xAxisLabel}
+                                        yAxisLabel={metric.style?.yAxisLabel}
                                     />
                                 );
                             }
