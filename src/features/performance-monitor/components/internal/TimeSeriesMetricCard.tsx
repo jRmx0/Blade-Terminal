@@ -122,7 +122,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, xAxisLabel,
             scales: {
                 x: {
                     title: { display: true, text: xAxisLabel ?? "Index", font: { size: 14 }, color: "#4b5563" },
-                    ticks: { font: { size: 14 }, color: "#4b5563", maxRotation: 0 },
+                    ticks: { font: { size: 14 }, color: "#4b5563", autoSkipPadding: 20, maxRotation: 0 },
                     grid: { color: "#e5e7eb" },
                     border: { color: "#9ca3af" },
                 },
