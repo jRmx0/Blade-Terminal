@@ -206,6 +206,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, xAxisLabel,
                 />
                 <span
                     onClick={handleCsvExport}
+                    title="Export CSV"
                     className="material-symbols-outlined absolute bottom-0 right-10 cursor-pointer select-none leading-none z-10 text-gray-300 hover:text-gray-600"
                     style={{ fontSize: 16 }}
                 >
@@ -213,6 +214,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, xAxisLabel,
                 </span>
                 <span
                     onClick={handleDownload}
+                    title="Export PNG"
                     className="material-symbols-outlined absolute bottom-0 right-5 cursor-pointer select-none leading-none z-10 text-gray-300 hover:text-gray-600"
                     style={{ fontSize: 16 }}
                 >
@@ -220,6 +222,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, xAxisLabel,
                 </span>
                 <span
                     onPointerDown={handleResizePointerDown}
+                    title="Resize"
                     className={`material-symbols-outlined absolute bottom-0 right-0 cursor-se-resize select-none leading-none rotate-270 z-10 ${isDragging ? "text-gray-600" : "text-gray-300 hover:text-gray-600"}`}
                     style={{ fontSize: 16 }}
                 >
