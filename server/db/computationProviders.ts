@@ -21,11 +21,13 @@ export async function deleteComputationProvider(id: number): Promise<void> {
         db.table("computationProviders"),
         db.table("computationProviderAlgorithms"),
         db.table("computationAlgorithmParametersSetup"),
+        db.table("algorithmMetricsSetup"),
         db.table("layersSetup"),
         db.table("layerSettingsSetup"),
         db.table("layerSettings"),
     ], async () => {
         await db.table("computationAlgorithmParametersSetup").where("computationProviderId").equals(id).delete();
+        await db.table("algorithmMetricsSetup").where("computationProviderId").equals(id).delete();
         await db.table("computationProviderAlgorithms").where("computationProviderId").equals(id).delete();
         await db.table("layersSetup").where("providerId").equals(id).delete();
         await db.table("layerSettingsSetup").filter((row) => row.providerId === id).delete();
