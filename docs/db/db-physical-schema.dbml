@@ -346,14 +346,19 @@ Ref: provider_catalog.computationAlgorithmParameterSetup.(algorithmId, computati
 Ref: provider_catalog.algorithmMetricSetup.(algorithmId, computationProviderId) > provider.computationProviderAlgorithm.(id, computationProviderId) [color: #5dade2]
 
 // runtime params initialized from provider_catalog templates
-Ref: runtime.computationAlgorithmParameter.(algorithmId, providerId) > provider_catalog.computationAlgorithmParameterSetup.(algorithmId, computationProviderId) [color: #e67e22]
+Ref: runtime.computationAlgorithmParameter.(id, algorithmId, providerId) > provider_catalog.computationAlgorithmParameterSetup.(id, algorithmId, computationProviderId) [color: #e67e22]
+
+// layers catalog owned by provider algorithms (0/0 sentinel = system, non-zero = provider)
+Ref: layers.layerSetup.(algorithmId, providerId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade, color: #8e44ad]
+Ref: layers.layerSettingSetup.(algorithmId, providerId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade, color: #8e44ad]
+Ref: layers.layerSetting.(algorithmId, providerId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade, color: #8e44ad]
 
 // layers.layerSetting → layers catalog
-Ref: layers.layerSetting.layerId > layers.layerSetup.key [color: #8e44ad]
-Ref: layers.layerSetting.(layerId, algorithmId, providerId) > layers.layerSettingSetup.(layerId, algorithmId, providerId) [color: #8e44ad]
+Ref: layers.layerSetting.(layerId, algorithmId, providerId) > layers.layerSetup.(key, algorithmId, providerId) [color: #8e44ad]
+Ref: layers.layerSetting.(id, layerId, algorithmId, providerId) > layers.layerSettingSetup.(id, layerId, algorithmId, providerId) [color: #8e44ad]
 
 // layers.layerSettingSetup → layers.layerSetup
-Ref: layers.layerSettingSetup.layerId > layers.layerSetup.key [color: #8e44ad]
+Ref: layers.layerSettingSetup.(layerId, algorithmId, providerId) > layers.layerSetup.(key, algorithmId, providerId) [color: #8e44ad]
 
 // ─── TableGroups ──────────────────────────────────────────────────────────────
 

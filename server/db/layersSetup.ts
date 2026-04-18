@@ -14,7 +14,11 @@ export async function replaceLayersForAlgorithm(
     algorithmId: number,
     layers: LayerRecord[],
 ): Promise<void> {
-    await db.transaction("rw", db.table("layersSetup"), async () => {
+    await db.transaction("rw", [
+        db.table("layersSetup"),
+        db.table("layerSettingsSetup"),
+        db.table("layerSettings"),
+    ], async () => {
         await db
             .table<LayerRecord>("layersSetup")
             .where("[algorithmId+providerId]")
@@ -23,5 +27,21 @@ export async function replaceLayersForAlgorithm(
         if (layers.length > 0) {
             await db.table<LayerRecord>("layersSetup").bulkPut(layers);
         }
+
+        const validLayerKeys = new Set(layers.map((layer) => layer.key));
+        await db.table("layerSettingsSetup")
+            .filter(
+                (row) => row.algorithmId === algorithmId
+                    && row.providerId === providerId
+                    && !validLayerKeys.has(row.layerId),
+            )
+            .delete();
+        await db.table("layerSettings")
+            .filter(
+                (row) => row.algorithmId === algorithmId
+                    && row.providerId === providerId
+                    && !validLayerKeys.has(row.layerId),
+            )
+            .delete();
     });
 }

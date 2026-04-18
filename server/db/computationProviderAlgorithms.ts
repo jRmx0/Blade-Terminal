@@ -17,10 +17,37 @@ export async function deleteAlgorithmWithParameters(id: number, computationProvi
     await db.transaction("rw", [
         db.table("computationProviderAlgorithms"),
         db.table("computationAlgorithmParametersSetup"),
+        db.table("algorithmMetricsSetup"),
+        db.table("computationAlgorithmParameters"),
+        db.table("computationSelection"),
+        db.table("layersSetup"),
+        db.table("layerSettingsSetup"),
+        db.table("layerSettings"),
     ], async () => {
         await db.table("computationAlgorithmParametersSetup")
             .where("[algorithmId+computationProviderId]")
             .equals([id, computationProviderId])
+            .delete();
+        await db.table("algorithmMetricsSetup")
+            .where("[algorithmId+computationProviderId]")
+            .equals([id, computationProviderId])
+            .delete();
+        await db.table("computationAlgorithmParameters")
+            .filter((row) => row.algorithmId === id && row.providerId === computationProviderId)
+            .delete();
+        await db.table("computationSelection")
+            .filter((row) => row.selectedProviderId === computationProviderId && row.selectedAlgorithmId === id)
+            .modify({ selectedAlgorithmId: null });
+        await db.table("layersSetup")
+            .where("[algorithmId+providerId]")
+            .equals([id, computationProviderId])
+            .delete();
+        await db.table("layerSettingsSetup")
+            .where("[algorithmId+providerId]")
+            .equals([id, computationProviderId])
+            .delete();
+        await db.table("layerSettings")
+            .filter((row) => row.algorithmId === id && row.providerId === computationProviderId)
             .delete();
         await db.table("computationProviderAlgorithms")
             .where("[id+computationProviderId]")
@@ -36,8 +63,22 @@ export async function replaceAlgorithmsForProvider(
     return db.transaction("rw", [
         db.table("computationProviderAlgorithms"),
         db.table("computationAlgorithmParametersSetup"),
+        db.table("algorithmMetricsSetup"),
+        db.table("computationAlgorithmParameters"),
+        db.table("computationSelection"),
+        db.table("layersSetup"),
+        db.table("layerSettingsSetup"),
+        db.table("layerSettings"),
     ], async () => {
         await db.table("computationAlgorithmParametersSetup").where("computationProviderId").equals(computationProviderId).delete();
+        await db.table("algorithmMetricsSetup").where("computationProviderId").equals(computationProviderId).delete();
+        await db.table("computationAlgorithmParameters").filter((row) => row.providerId === computationProviderId).delete();
+        await db.table("computationSelection")
+            .filter((row) => row.selectedProviderId === computationProviderId)
+            .modify({ selectedAlgorithmId: null });
+        await db.table("layersSetup").where("providerId").equals(computationProviderId).delete();
+        await db.table("layerSettingsSetup").filter((row) => row.providerId === computationProviderId).delete();
+        await db.table("layerSettings").filter((row) => row.providerId === computationProviderId).delete();
         await db.table("computationProviderAlgorithms").where("computationProviderId").equals(computationProviderId).delete();
 
         const saved: ComputationAlgorithm[] = [];

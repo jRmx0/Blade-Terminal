@@ -11,12 +11,14 @@ import type {
 import type { LayerRecord, LayerSettingsSetup } from "@/types/layerTypes";
 import { POINT_LABEL_ENUM_VALUES_SETUP_ID, STYLE_ATTRIBUTE_KEY_ID } from "@/config/computation/supportedLayerAttributes";
 import { db } from "@server/db/db";
+import { getAlgorithmParametersByEnvironment } from "@server/db/computationAlgorithmParameters";
 import { deleteComputationProvider, updateMetadataTimestamp } from "@server/db/computationProviders";
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useProviderLayerStore } from "@/stores/providerLayerStore";
 import { useEnvStore } from "@/stores/envStore";
 import { loadLayerSettings } from "@/stores/layerSettingsStore";
+import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { addMissingLayerSettingsForEnvironment } from "@server/db/layerSettings";
 import { ingestProviderMetadata } from "@/features/computation-provider/data/metadataBridge";
 import { deleteAlgorithmMetricsByProvider, bulkPutMetrics } from "@server/db/computationAlgorithmMetricsSetup";
@@ -60,6 +62,14 @@ function getHttpResponseDetails(response: Response): ServiceHttpResponseDetails 
         statusCode: response.status,
         statusText: response.statusText,
     };
+}
+
+function buildAlgorithmParameterKey(id: number, algorithmId: number, providerId: number): string {
+    return `${id}:${algorithmId}:${providerId}`;
+}
+
+function buildLayerSettingKey(id: number, layerId: number, algorithmId: number, providerId: number): string {
+    return `${id}:${layerId}:${algorithmId}:${providerId}`;
 }
 
 async function requestMetadata(provider: ComputationProvider): Promise<
@@ -168,27 +178,53 @@ export async function persistFetchedMetadata(
         }),
     );
 
+    const algorithms = metadata.algorithms.map(({ algorithm }) => ({
+        ...algorithm,
+        computationProviderId: providerId,
+    }));
+    const parameters = metadata.algorithms.flatMap(({ parameters }) =>
+        parameters.map((parameter) => ({
+            ...parameter,
+            computationProviderId: providerId,
+        })),
+    );
+    const metrics = metadata.algorithms.flatMap(({ metrics: algoMetrics }) =>
+        algoMetrics.map((metric) => ({ ...metric, computationProviderId: providerId })),
+    );
+    const layerRecords: LayerRecord[] = metadata.algorithms.flatMap(({ algorithm, layers }) =>
+        layers.map((l: ProviderLayerRecord) => ({
+            id: l.id,
+            algorithmId: algorithm.id,
+            providerId,
+            key: l.id,
+            label: l.name,
+            computeLayer: l.computeLayer,
+            type: l.layerType,
+        })),
+    );
+    const validAlgorithmIds = new Set(algorithms.map((algorithm) => algorithm.id));
+    const validParameterKeys = new Set(
+        parameters.map((parameter) => buildAlgorithmParameterKey(parameter.id, parameter.algorithmId, parameter.computationProviderId)),
+    );
+    const validLayerSettingKeys = new Set(
+        setupRecords.map((setup) => buildLayerSettingKey(setup.id, setup.layerId, setup.algorithmId, setup.providerId)),
+    );
+
     await db.transaction("rw", [
         db.table("computationProviderAlgorithms"),
         db.table("computationAlgorithmParametersSetup"),
         db.table("algorithmMetricsSetup"),
+        db.table("computationAlgorithmParameters"),
+        db.table("computationSelection"),
         db.table("layersSetup"),
         db.table("layerSettingsSetup"),
+        db.table("layerSettings"),
     ], async () => {
         await db.table("computationAlgorithmParametersSetup").where("computationProviderId").equals(providerId).delete();
         await db.table("computationProviderAlgorithms").where("computationProviderId").equals(providerId).delete();
         await deleteAlgorithmMetricsByProvider(providerId);
-
-        const algorithms = metadata.algorithms.map(({ algorithm }) => ({
-            ...algorithm,
-            computationProviderId: providerId,
-        }));
-        const parameters = metadata.algorithms.flatMap(({ parameters }) =>
-            parameters.map((parameter) => ({
-                ...parameter,
-                computationProviderId: providerId,
-            })),
-        );
+        await db.table("layersSetup").where("providerId").equals(providerId).delete();
+        await db.table("layerSettingsSetup").filter((row) => row.providerId === providerId).delete();
 
         if (algorithms.length > 0) {
             await db.table("computationProviderAlgorithms").bulkPut(algorithms);
@@ -205,31 +241,6 @@ export async function persistFetchedMetadata(
             await bulkPutMetrics(metrics);
         }
 
-        for (const { algorithm } of metadata.algorithms) {
-            await db
-                .table("layersSetup")
-                .where("[algorithmId+providerId]")
-                .equals([algorithm.id, providerId])
-                .delete();
-            await db
-                .table("layerSettingsSetup")
-                .where("[algorithmId+providerId]")
-                .equals([algorithm.id, providerId])
-                .delete();
-        }
-
-        const layerRecords: LayerRecord[] = metadata.algorithms.flatMap(({ algorithm, layers }) =>
-            layers.map((l: ProviderLayerRecord) => ({
-                id: l.id,
-                algorithmId: algorithm.id,
-                providerId,
-                key: l.id,
-                label: l.name,
-                computeLayer: l.computeLayer,
-                type: l.layerType,
-            })),
-        );
-
         if (layerRecords.length > 0) {
             await db.table("layersSetup").bulkPut(layerRecords);
         }
@@ -237,25 +248,41 @@ export async function persistFetchedMetadata(
         if (setupRecords.length > 0) {
             await db.table("layerSettingsSetup").bulkPut(setupRecords);
         }
+
+        await db.table("computationAlgorithmParameters")
+            .filter(
+                (row) => row.providerId === providerId
+                    && !validParameterKeys.has(buildAlgorithmParameterKey(row.id, row.algorithmId, row.providerId)),
+            )
+            .delete();
+        await db.table("layerSettings")
+            .filter(
+                (row) => row.providerId === providerId
+                    && !validLayerSettingKeys.has(buildLayerSettingKey(row.id, row.layerId, row.algorithmId, row.providerId)),
+            )
+            .delete();
+        await db.table("computationSelection")
+            .filter(
+                (row) => row.selectedProviderId === providerId
+                    && row.selectedAlgorithmId !== null
+                    && !validAlgorithmIds.has(row.selectedAlgorithmId),
+            )
+            .modify({ selectedAlgorithmId: null });
     });
+
+    const environmentIds = (await db.table("environments").orderBy("id").keys()) as number[];
+    if (setupRecords.length > 0 && environmentIds.length > 0) {
+        await Promise.all(environmentIds.map((environmentId) => addMissingLayerSettingsForEnvironment(environmentId, setupRecords)));
+    }
 
     await updateMetadataTimestamp(providerId, metadata.urlAtLastFetch, metadata.metadataFetchedAt);
 
-    const savedAlgorithms = metadata.algorithms.map(({ algorithm }) => ({
-        ...algorithm,
-        computationProviderId: providerId,
-    }));
-    const savedParameters = metadata.algorithms.flatMap(({ parameters }) =>
-        parameters.map((parameter) => ({
-            ...parameter,
-            computationProviderId: providerId,
-        })),
-    );
-    const savedMetrics = metadata.algorithms.flatMap(({ metrics: algoMetrics }) =>
-        algoMetrics.map((m) => ({ ...m, computationProviderId: providerId })),
-    );
+    const savedAlgorithms = algorithms;
+    const savedParameters = parameters;
+    const savedMetrics = metrics;
     useComputationCatalogStore.getState().setProviderAlgorithms(providerId, savedAlgorithms, savedParameters, savedMetrics);
     useComputationCatalogStore.getState().setProviderLayerSettingsSetup(providerId, setupRecords);
+    useProviderLayerStore.getState().clearProviderLayers(providerId);
 
     for (const { algorithm, layers } of metadata.algorithms) {
         useProviderLayerStore.getState().setProviderLayers(
@@ -265,9 +292,22 @@ export async function persistFetchedMetadata(
         );
     }
 
-    const envId = useEnvStore.getState().env?.id;
+    const envState = useEnvStore.getState();
+    if (
+        envState.computation.selectedProviderId === providerId
+        && envState.computation.selectedAlgorithmId !== null
+        && !validAlgorithmIds.has(envState.computation.selectedAlgorithmId)
+    ) {
+        envState.setComputation({
+            ...envState.computation,
+            selectedAlgorithmId: null,
+        });
+    }
+
+    const envId = envState.env?.id;
     if (envId != null) {
-        await addMissingLayerSettingsForEnvironment(envId, setupRecords);
+        const parameterValues = await getAlgorithmParametersByEnvironment(envId);
+        useParameterValuesStore.getState().setParameterValues(parameterValues);
         await loadLayerSettings(envId);
     }
 }
@@ -282,8 +322,19 @@ export async function deleteProviderWithCleanup(providerId: number): Promise<voi
     await deleteComputationProvider(providerId);
     useComputationCatalogStore.getState().removeProvider(providerId);
     useProviderLayerStore.getState().clearProviderLayers(providerId);
-    const envId = useEnvStore.getState().env?.id;
+    const envState = useEnvStore.getState();
+    if (envState.computation.selectedProviderId === providerId) {
+        envState.setComputation({
+            ...envState.computation,
+            selectedProviderId: null,
+            selectedAlgorithmId: null,
+        });
+    }
+
+    const envId = envState.env?.id;
     if (envId != null) {
+        const parameterValues = await getAlgorithmParametersByEnvironment(envId);
+        useParameterValuesStore.getState().setParameterValues(parameterValues);
         await loadLayerSettings(envId);
     }
 }

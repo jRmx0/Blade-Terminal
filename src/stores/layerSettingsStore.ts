@@ -119,7 +119,7 @@ export async function loadLayerSettings(environmentId: number): Promise<void> {
     ]);
     const layerInfoMap = new Map<string, LayerRecord>();
     for (const l of allLayers) {
-        layerInfoMap.set(`${l.id}:${l.algorithmId}:${l.providerId}`, l);
+        layerInfoMap.set(`${l.key}:${l.algorithmId}:${l.providerId}`, l);
     }
     const paramsByKey = new Map<string, LayerSettingParameter[]>();
     for (const param of allParams) {
@@ -133,19 +133,16 @@ export async function loadLayerSettings(environmentId: number): Promise<void> {
         const compositeKey = `${param.layerId}:${param.algorithmId}:${param.providerId}`;
         if (!layerKeySet.has(compositeKey)) {
             const info = layerInfoMap.get(compositeKey);
-            layerKeySet.set(compositeKey, {
+            layerKeySet.set(compositeKey, info ?? {
                 id: param.layerId,
                 algorithmId: param.algorithmId,
                 providerId: param.providerId,
                 key: param.layerId,
-                label: info?.label ?? "",
-                type: info?.type,
-                placeholder: info?.placeholder,
+                label: "",
             });
         }
     }
-    const layers: LayerWithSettings[] = Array.from(layerKeySet.values()).map((layer) => {
-        const key = `${layer.id}:${layer.algorithmId}:${layer.providerId}`;
+    const layers: LayerWithSettings[] = Array.from(layerKeySet.entries()).map(([key, layer]) => {
         return { layer, settings: paramsByKey.get(key) ?? [] };
     });
     useLayerSettingsStore.getState().setLayers(layers);
