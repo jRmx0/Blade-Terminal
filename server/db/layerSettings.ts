@@ -1,5 +1,5 @@
 import { db } from "./db";
-import type { LayerSettingParameter, LayerSettingsSetup } from "@/types/layerTypes";
+import type { LayerSettingParameter, LayerSettingView, LayerSettingsSetup } from "@/types/layerTypes";
 
 /**
  * Builds the initial string value for a `layerSettings` row from its setup record.
@@ -34,9 +34,6 @@ export async function initLayerSettingsForEnvironment(environmentId: number): Pr
         algorithmId: s.algorithmId,
         providerId: s.providerId,
         environmentId,
-        key: s.key,
-        styleType: s.styleType,
-        styleGroup: s.styleGroup,
         value: buildInitialValue(s),
     }));
     if (settings.length > 0) {
@@ -52,8 +49,33 @@ export async function deleteLayerSettingsForEnvironment(environmentId: number): 
         .delete();
 }
 
-export async function saveAllLayerSettings(params: LayerSettingParameter[]): Promise<void> {
+export async function saveAllLayerSettings(views: LayerSettingView[]): Promise<void> {
+    const params: LayerSettingParameter[] = views.map(({ id, layerId, algorithmId, providerId, environmentId, value }) => ({
+        id, layerId, algorithmId, providerId, environmentId, value,
+    }));
     await db.table<LayerSettingParameter>("layerSettings").bulkPut(params);
+}
+
+/**
+ * Loads per-environment `layerSettings` rows and joins each with its
+ * `layerSettingsSetup` metadata to produce in-memory `LayerSettingView` objects.
+ * `key`, `styleType`, and `styleGroup` are never stored in `layerSettings` —
+ * they are derived here at read time.
+ */
+export async function loadLayerSettingViews(environmentId: number): Promise<LayerSettingView[]> {
+    const [params, setups] = await Promise.all([
+        db.table<LayerSettingParameter>("layerSettings").where("environmentId").equals(environmentId).toArray(),
+        db.table<LayerSettingsSetup>("layerSettingsSetup").toArray(),
+    ]);
+    const setupMap = new Map<string, LayerSettingsSetup>();
+    for (const s of setups) {
+        setupMap.set(`${s.id}:${s.layerId}:${s.algorithmId}:${s.providerId}`, s);
+    }
+    return params.map((p) => {
+        const s = setupMap.get(`${p.id}:${p.layerId}:${p.algorithmId}:${p.providerId}`);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return { ...p, key: s!.key, styleType: s!.styleType, styleGroup: s?.styleGroup } as LayerSettingView;
+    });
 }
 
 /**
@@ -78,9 +100,6 @@ export async function addMissingLayerSettingsForEnvironment(
                 algorithmId: s.algorithmId,
                 providerId: s.providerId,
                 environmentId,
-                key: s.key,
-                styleType: s.styleType,
-                styleGroup: s.styleGroup,
                 value: buildInitialValue(s),
             });
         }

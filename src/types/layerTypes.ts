@@ -79,26 +79,36 @@ export interface LayerRecord {
  * DB record for the `layerSettings` table.
  * Per-environment working copy initialized from `layerSettingsSetup`.
  * Each environment holds its own independent copy for all layers (system + provider).
+ * Only the mutable `value` field is stored — metadata fields (`key`, `styleType`,
+ * `styleGroup`) live exclusively in `layerSettingsSetup` and are joined at load time.
  */
 export interface LayerSettingParameter {
     /** API attribute ID — part of the compound PK. Matches `LayerSettingsSetup.id`. */
     id: number;
-    /** FK → layers.key */
+    /** FK → layers.id */
     layerId: number;
     algorithmId: number;
     providerId: number;
     /** FK → environments.id */
     environmentId: number;
-    /** Attribute key de-normalized from setup — used as the display label. */
-    key: StyleAttributeKey | InternalStyleAttributeKey;
-    /** Attribute value type — de-normalized from setup, drives input widget selection. */
-    styleType: StyleType;
-    /** Style subgroup — de-normalized from setup, drives section grouping in the panel. Absent for internal attributes. */
-    styleGroup?: StyleAttributeGroup;
     value: string;
+}
+
+/**
+ * In-memory view of a `layerSettings` row joined with its `layerSettingsSetup` metadata.
+ * `key`, `styleType`, and `styleGroup` are sourced from `LayerSettingsSetup` at load time
+ * and are never persisted back to the `layerSettings` table.
+ */
+export interface LayerSettingView extends LayerSettingParameter {
+    /** Attribute key — joined from `LayerSettingsSetup`, used as the display label. */
+    key: StyleAttributeKey | InternalStyleAttributeKey;
+    /** Attribute value type — joined from setup, drives input widget selection. */
+    styleType: StyleType;
+    /** Style subgroup — joined from setup, drives section grouping in the panel. Absent for internal attributes. */
+    styleGroup?: StyleAttributeGroup;
 }
 
 export interface LayerWithSettings {
     layer: LayerRecord;
-    settings: LayerSettingParameter[];
+    settings: LayerSettingView[];
 }

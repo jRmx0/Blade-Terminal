@@ -1,7 +1,7 @@
 // ─── Resolved Layer Style Interfaces ─────────────────────────────────────────
 //
 // These interfaces represent the fully resolved rendering parameters derived
-// from a layer's LayerSettingParameter[] array. They are the output of the
+// from a layer's LayerSettingView[] array. They are the output of the
 // resolveLayerStyle utilities and the direct input to type-specific renderers.
 //
 // Enum string values are preserved as-is from the provider spec (e.g. "solid",

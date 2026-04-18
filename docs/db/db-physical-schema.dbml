@@ -309,15 +309,12 @@ Table layers.layerSettingSetup [note: 'Style attribute metadata templates. Sourc
   }
 }
 
-Table layers.layerSetting [note: 'Per-environment working layer style values. Initialized by copying from layers.layerSettingSetup. key/styleType/styleGroup are de-normalized to avoid joins at render time.'] {
+Table layers.layerSetting [note: 'Per-environment working layer style values. Initialized by copying from layers.layerSettingSetup. key/styleType/styleGroup are joined from layerSettingSetup at load time and never stored here.'] {
   id            integer     [not null, note: 'Compound PK part 1; matches layers.layerSettingSetup.id']
   layerId       integer     [not null, note: 'Compound PK part 2; FK → layers.layerSetup.id']
   algorithmId   integer     [not null, note: 'Compound PK part 3; 0 = system sentinel']
   providerId    integer     [not null, note: 'Compound PK part 4; 0 = system sentinel']
   environmentId integer     [not null, note: 'Compound PK part 5; FK → workspace.environment.id']
-  key           varchar     [not null, note: 'De-normalized from layers.layerSettingSetup.key']
-  styleType     style_type  [not null, note: 'De-normalized from layers.layerSettingSetup.styleType']
-  styleGroup    style_group [null,     note: 'De-normalized from layers.layerSettingSetup.styleGroup; absent for system attributes']
   value         varchar     [not null, note: 'Current serialized value. PointLabelEnum: JSON.stringify(Array<{value,color}>)']
 
   indexes {

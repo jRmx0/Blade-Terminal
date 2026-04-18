@@ -1,5 +1,5 @@
 import { memo } from "react";
-import type { LayerSettingParameter } from "@/types/layerTypes";
+import type { LayerSettingView } from "@/types/layerTypes";
 import type {
     ProviderLayerRecord,
     CanvasLineItem,
@@ -23,7 +23,7 @@ import { CanvasPolygonResultLayer } from "@/features/canvas-editing/components/c
  * settings row. This is the persisted source of truth — always available from
  * IndexedDB even after a page refresh without reconnecting to the provider.
  */
-function extractLabelColorMapping(settings: LayerSettingParameter[]): PointLabelColorEntry[] {
+function extractLabelColorMapping(settings: LayerSettingView[]): PointLabelColorEntry[] {
     const row = settings.find((s) => s.styleType === "PointLabelEnum");
     if (!row?.value) return [];
     try {
@@ -37,7 +37,7 @@ interface CanvasDynamicLayerProps {
     /** Provider layer metadata describing geometry type, computeLayer binding, and style defaults. */
     layerMeta: ProviderLayerRecord;
     /** Per-environment resolved settings for this layer, loaded from the layerSettings DB table. */
-    settings: LayerSettingParameter[];
+    settings: LayerSettingView[];
     /**
      * Raw data items extracted from the compute result for this layer's `computeLayer` key.
      * Typed as `unknown[]` — the terminal enforces the item contract (CanvasLineItem /

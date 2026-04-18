@@ -1,4 +1,4 @@
-import type { LayerSettingParameter } from "@/types/layerTypes";
+import type { LayerSettingView } from "@/types/layerTypes";
 import type {
     ResolvedLineLayerStyle,
     ResolvedPointLayerStyle,
@@ -7,18 +7,18 @@ import type {
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
-function param(settings: LayerSettingParameter[], key: string): string {
+function param(settings: LayerSettingView[], key: string): string {
     return settings.find((p) => p.key === key)?.value ?? "";
 }
 
-function paramNum(settings: LayerSettingParameter[], key: string): number {
+function paramNum(settings: LayerSettingView[], key: string): number {
     const v = param(settings, key);
     if (v === undefined || v === "") return 0;
     const n = parseFloat(v);
     return isNaN(n) ? 0 : n;
 }
 
-function paramBool(settings: LayerSettingParameter[], key: string): boolean {
+function paramBool(settings: LayerSettingView[], key: string): boolean {
     const v = param(settings, key);
     return v === undefined ? false : v === "true";
 }
@@ -33,10 +33,10 @@ function parseDash(style: string): number[] {
 // ─── Resolvers ─────────────────────────────────────────────────────────────────
 //
 // Pure functions — no React, no store access. Each takes the raw
-// LayerSettingParameter[] array and returns a fully resolved style struct.
+// LayerSettingView[] array and returns a fully resolved style struct.
 // Default values are used for any attribute that is absent or has an empty value.
 
-export function resolveLineLayerStyle(settings: LayerSettingParameter[]): ResolvedLineLayerStyle {
+export function resolveLineLayerStyle(settings: LayerSettingView[]): ResolvedLineLayerStyle {
     return {
         visible: paramBool(settings, "Visible"),
         zIndex: paramNum(settings, "Z-Index"),
@@ -69,7 +69,7 @@ export function resolveLineLayerStyle(settings: LayerSettingParameter[]): Resolv
     };
 }
 
-export function resolvePointLayerStyle(settings: LayerSettingParameter[]): ResolvedPointLayerStyle {
+export function resolvePointLayerStyle(settings: LayerSettingView[]): ResolvedPointLayerStyle {
     return {
         visible: paramBool(settings, "Visible"),
         zIndex: paramNum(settings, "Z-Index"),
@@ -95,7 +95,7 @@ export function resolvePointLayerStyle(settings: LayerSettingParameter[]): Resol
 }
 
 export function resolvePolygonResultLayerStyle(
-    settings: LayerSettingParameter[],
+    settings: LayerSettingView[],
 ): ResolvedPolygonResultLayerStyle {
     return {
         visible: paramBool(settings, "Visible"),

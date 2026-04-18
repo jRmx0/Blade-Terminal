@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { StyleAttributeGroup } from "@/types/serviceTypes";
-import type { LayerRecord, LayerSettingParameter } from "@/types/layerTypes";
+import type { LayerRecord, LayerSettingView } from "@/types/layerTypes";
 import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import LayerSettingsPanel, { type SettingsSectionData } from "@/features/inspector/components/calc-layers-section/LayerSettingsPanel";
 
@@ -15,7 +15,7 @@ const GROUP_LABELS: Record<StyleAttributeGroup, string> = {
 
 interface LayerRowProps {
     layer: LayerRecord;
-    settings: LayerSettingParameter[];
+    settings: LayerSettingView[];
     isFirst: boolean;
     isLast: boolean;
     onMoveUp: () => void;
@@ -103,7 +103,7 @@ export default function LayerRow({
 }
 
 function buildSections(
-    settings: LayerSettingParameter[],
+    settings: LayerSettingView[],
     onParamChange: (name: string, value: string) => void,
 ): SettingsSectionData[] {
     const sections: SettingsSectionData[] = [];

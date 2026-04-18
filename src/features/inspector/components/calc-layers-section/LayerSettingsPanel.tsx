@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { LayerSettingParameter } from "@/types/layerTypes";
+import type { LayerSettingView } from "@/types/layerTypes";
 import type { PointLabelColorEntry } from "@/types/serviceTypes";
 import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import SettingsPanelRowInput from "@/components/settings-panel/SettingsPanelRowInput";
@@ -32,7 +32,7 @@ function parseEnumMapping(value: string): PointLabelColorEntry[] {
 
 // ─── Point Label Enum Colors collapsible group ────────────────────────────────
 interface PointLabelEnumColorsGroupProps {
-    param: LayerSettingParameter;
+    param: LayerSettingView;
     disabled: boolean;
     onParamChange: (name: string, value: string) => void;
 }
@@ -81,7 +81,7 @@ function PointLabelEnumColorsGroup({ param, disabled, onParamChange }: PointLabe
 
 // ─── Individual setting field ─────────────────────────────────────────────────
 interface SettingFieldProps {
-    param: LayerSettingParameter;
+    param: LayerSettingView;
     disabled: boolean;
     onParamChange: (name: string, value: string) => void;
 }
@@ -216,7 +216,7 @@ function StyleSubgroupSection({ section, disabled }: StyleSubgroupSectionProps) 
 // ─── Section ──────────────────────────────────────────────────────────────────
 export interface SettingsSectionData {
     label: string;
-    settings: LayerSettingParameter[];
+    settings: LayerSettingView[];
     onParamChange: (name: string, value: string) => void;
     /** When false, renders the section flat without a collapsible header. Defaults to true. */
     showHeader?: boolean;
