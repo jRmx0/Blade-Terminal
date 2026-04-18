@@ -278,7 +278,6 @@ Table layers.layer [note: 'Layer catalog. System layers seeded at populate with 
   label        varchar    [not null, note: 'Display name']
   computeLayer varchar    [null, note: 'Algorithm-specific result channel key e.g. "coveragePathPlan"']
   type         layer_type [null, note: 'Nullable — absent on pre-type DB records for backward compatibility']
-  placeholder  boolean    [null, note: 'When true the layer is a UI placeholder and never renders']
 
   indexes {
     (id, algorithmId, providerId) [pk]

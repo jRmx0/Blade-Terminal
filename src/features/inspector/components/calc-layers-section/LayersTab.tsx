@@ -44,32 +44,28 @@ export default function LayersTab() {
         return bz - az;
     });
 
-    const movable = sorted.filter((item) => !item.layer.placeholder);
-    const placeholders = sorted.filter((item) => item.layer.placeholder === true);
-    const ordered = [...movable, ...placeholders];
-
     // ── Move handlers ─────────────────────────────────────────────────────────
     function handleMoveUp(movableIndex: number) {
         if (movableIndex <= 0) return;
-        const next = [...movable];
+        const next = [...sorted];
         [next[movableIndex - 1], next[movableIndex]] = [next[movableIndex]!, next[movableIndex - 1]!];
-        reorderLayers([...next.map((l) => toLayerPK(l.layer)), ...placeholders.map((l) => toLayerPK(l.layer))]);
+        reorderLayers(next.map((l) => toLayerPK(l.layer)));
     }
 
     function handleMoveDown(movableIndex: number) {
-        if (movableIndex >= movable.length - 1) return;
-        const next = [...movable];
+        if (movableIndex >= sorted.length - 1) return;
+        const next = [...sorted];
         [next[movableIndex], next[movableIndex + 1]] = [next[movableIndex + 1]!, next[movableIndex]!];
-        reorderLayers([...next.map((l) => toLayerPK(l.layer)), ...placeholders.map((l) => toLayerPK(l.layer))]);
+        reorderLayers(next.map((l) => toLayerPK(l.layer)));
     }
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className="flex flex-col divide-y divide-gray-200">
-            {ordered.map((item) => {
-                const movableIdx = movable.indexOf(item);
+            {sorted.map((item) => {
+                const movableIdx = sorted.indexOf(item);
                 const isFirst = movableIdx === 0;
-                const isLast = item.layer.placeholder === true || movableIdx === movable.length - 1;
+                const isLast = movableIdx === sorted.length - 1;
 
                 return (
                     <LayerRow

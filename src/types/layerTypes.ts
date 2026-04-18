@@ -72,7 +72,6 @@ export interface LayerRecord {
     label: string;
     computeLayer?: string;
     type?: LayerType;
-    placeholder?: boolean;
 }
 
 /**
