@@ -309,7 +309,7 @@ Table layers.layerSettingSetup [note: 'Style attribute metadata templates. Sourc
   }
 }
 
-Table layers.layerSetting [note: 'Per-environment working layer style values. Initialized by copying from layers.layerSettingSetup. key/styleType/styleGroup are joined from layerSettingSetup at load time and never stored here.'] {
+Table layers.layerSetting [note: 'Per-environment working layer style values. Initialized by copying from layers.layerSettingSetup. key/styleType/styleGroup are joined from layerSettingSetup at load time and never stored here. (layerId,algorithmId,providerId) is also joined directly against layerSetup to resolve label/type/computeLayer.'] {
   id            integer     [not null, note: 'Compound PK part 1; matches layers.layerSettingSetup.id']
   layerId       integer     [not null, note: 'Compound PK part 2; FK → layers.layerSetup.id']
   algorithmId   integer     [not null, note: 'Compound PK part 3; 0 = system sentinel']

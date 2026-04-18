@@ -18,14 +18,6 @@ function buildInitialValue(setup: LayerSettingsSetup): string {
     return setup.defaultValue ?? "";
 }
 
-export async function getLayerSettingsByEnvironment(environmentId: number): Promise<LayerSettingParameter[]> {
-    return db
-        .table<LayerSettingParameter>("layerSettings")
-        .where("environmentId")
-        .equals(environmentId)
-        .toArray();
-}
-
 export async function initLayerSettingsForEnvironment(environmentId: number): Promise<void> {
     const setups = await db.table<LayerSettingsSetup>("layerSettingsSetup").toArray();
     const settings: LayerSettingParameter[] = setups.map((s) => ({

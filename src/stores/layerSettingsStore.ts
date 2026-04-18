@@ -113,14 +113,10 @@ export const useLayerSettingsStore = create<LayerSettingsState>()((set) => ({
 }));
 
 export async function loadLayerSettings(environmentId: number): Promise<void> {
-    const [allViews, allLayers] = await Promise.all([
-        loadLayerSettingViews(environmentId),
+    const [allLayers, allViews] = await Promise.all([
         getAllLayers(),
+        loadLayerSettingViews(environmentId),
     ]);
-    const layerInfoMap = new Map<string, LayerRecord>();
-    for (const l of allLayers) {
-        layerInfoMap.set(`${l.id}:${l.algorithmId}:${l.providerId}`, l);
-    }
     const viewsByKey = new Map<string, LayerSettingView[]>();
     for (const view of allViews) {
         const key = `${view.layerId}:${view.algorithmId}:${view.providerId}`;
@@ -128,22 +124,10 @@ export async function loadLayerSettings(environmentId: number): Promise<void> {
         list.push(view);
         viewsByKey.set(key, list);
     }
-    const layerKeySet = new Map<string, LayerRecord>();
-    for (const view of allViews) {
-        const compositeKey = `${view.layerId}:${view.algorithmId}:${view.providerId}`;
-        if (!layerKeySet.has(compositeKey)) {
-            const info = layerInfoMap.get(compositeKey);
-            layerKeySet.set(compositeKey, info ?? {
-                id: view.layerId,
-                algorithmId: view.algorithmId,
-                providerId: view.providerId,
-                label: "",
-            });
-        }
-    }
-    const layers: LayerWithSettings[] = Array.from(layerKeySet.entries()).map(([key, layer]) => {
-        return { layer, settings: viewsByKey.get(key) ?? [] };
-    });
+    const layers: LayerWithSettings[] = allLayers.map((layer) => ({
+        layer,
+        settings: viewsByKey.get(`${layer.id}:${layer.algorithmId}:${layer.providerId}`) ?? [],
+    }));
     useLayerSettingsStore.getState().setLayers(layers);
 }
 
