@@ -196,7 +196,6 @@ export async function persistFetchedMetadata(
             id: l.id,
             algorithmId: algorithm.id,
             providerId,
-            key: l.id,
             label: l.name,
             computeLayer: l.computeLayer,
             type: l.layerType,

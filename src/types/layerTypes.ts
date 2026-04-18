@@ -33,7 +33,7 @@ export interface LayerDefinition {
 export interface LayerSettingsSetup {
     /** API attribute ID — part of the compound PK. */
     id: number;
-    /** FK → layers.key */
+    /** FK → layers.id */
     layerId: LayerId;
     algorithmId: number;
     providerId: number;
@@ -69,7 +69,6 @@ export interface LayerRecord {
     id: number;
     algorithmId: number;
     providerId: number;
-    key: LayerId;
     label: string;
     computeLayer?: string;
     type?: LayerType;

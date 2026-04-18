@@ -81,7 +81,7 @@ export default function LayersTab() {
                         onMoveUp={() => handleMoveUp(movableIdx)}
                         onMoveDown={() => handleMoveDown(movableIdx)}
                         onVisibilityChange={(visible) => setVisible(toLayerPK(item.layer), visible)}
-                        onParamChange={(name, value) => setParam(item.layer.key, name, value)}
+                        onParamChange={(name, value) => setParam(item.layer.id, name, value)}
                     />
                 );
             })}

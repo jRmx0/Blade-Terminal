@@ -5,8 +5,8 @@ export async function getAllLayers(): Promise<LayerRecord[]> {
     return db.table<LayerRecord>("layersSetup").toArray();
 }
 
-export async function getLayerByKey(key: number): Promise<LayerRecord | undefined> {
-    return db.table<LayerRecord>("layersSetup").where("key").equals(key).first();
+export async function getLayerById(id: number): Promise<LayerRecord | undefined> {
+    return db.table<LayerRecord>("layersSetup").where("id").equals(id).first();
 }
 
 export async function replaceLayersForAlgorithm(
@@ -28,7 +28,7 @@ export async function replaceLayersForAlgorithm(
             await db.table<LayerRecord>("layersSetup").bulkPut(layers);
         }
 
-        const validLayerKeys = new Set(layers.map((layer) => layer.key));
+        const validLayerKeys = new Set(layers.map((layer) => layer.id));
         await db.table("layerSettingsSetup")
             .filter(
                 (row) => row.algorithmId === algorithmId

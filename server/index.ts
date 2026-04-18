@@ -23,4 +23,4 @@ export { getEnvironment, getAllEnvironments, saveEnvironment, deleteEnvironment 
 export { getObject, getObjectsByEnvironment, saveObject, saveObjects, deleteObject, deleteObjectsByEnvironment } from "./db/objects";
 export { getLayerSettingsByEnvironment, initLayerSettingsForEnvironment, deleteLayerSettingsForEnvironment, saveAllLayerSettings, addMissingLayerSettingsForEnvironment } from "./db/layerSettings";
 export { getAllLayerSettingsSetup, replaceLayerSettingsSetupForAlgorithm } from "./db/layerSettingsSetup";
-export { getAllLayers, getLayerByKey } from "./db/layersSetup";
+export { getAllLayers, getLayerById } from "./db/layersSetup";

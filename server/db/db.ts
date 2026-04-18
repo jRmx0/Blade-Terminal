@@ -20,7 +20,7 @@ db.version(1).stores({
     algorithmMetricsSetup: "[id+algorithmId+computationProviderId], algorithmId, computationProviderId, [algorithmId+computationProviderId]",
     computationAlgorithmParameters: "[id+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId, providerId",
     computeResults: "environmentId",
-    layersSetup: "[id+algorithmId+providerId], algorithmId, providerId, key, [algorithmId+providerId]",
+    layersSetup: "[id+algorithmId+providerId], id, algorithmId, providerId, [algorithmId+providerId]",
     layerSettingsSetup: "[id+layerId+algorithmId+providerId], [layerId+algorithmId+providerId], [algorithmId+providerId], providerId",
     layerSettings: "[id+layerId+algorithmId+providerId+environmentId], [layerId+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId, providerId",
     uiPreferences: "key",
@@ -56,7 +56,6 @@ async function seedLayers(): Promise<void> {
             id: def.id,
             algorithmId: 0,
             providerId: 0,
-            key: def.id,
             label: def.name,
             type: def.type,
         });

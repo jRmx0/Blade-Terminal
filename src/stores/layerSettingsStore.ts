@@ -72,10 +72,10 @@ export const useLayerSettingsStore = create<LayerSettingsState>()((set) => ({
 
     setParam: (layerKey, name, value) => {
         set((state) => {
-            const item = state.layers.find((l) => l.layer.key === layerKey);
+            const item = state.layers.find((l) => l.layer.id === layerKey);
             if (!item || paramValue(item.settings, name) === value) return {};
             const layers = state.layers.map((l) => {
-                if (l.layer.key !== layerKey) return l;
+                if (l.layer.id !== layerKey) return l;
                 return { ...l, settings: l.settings.map((p) => (p.key === name ? { ...p, value } : p)) };
             });
             autosave(layers);
@@ -119,7 +119,7 @@ export async function loadLayerSettings(environmentId: number): Promise<void> {
     ]);
     const layerInfoMap = new Map<string, LayerRecord>();
     for (const l of allLayers) {
-        layerInfoMap.set(`${l.key}:${l.algorithmId}:${l.providerId}`, l);
+        layerInfoMap.set(`${l.id}:${l.algorithmId}:${l.providerId}`, l);
     }
     const paramsByKey = new Map<string, LayerSettingParameter[]>();
     for (const param of allParams) {
@@ -137,7 +137,6 @@ export async function loadLayerSettings(environmentId: number): Promise<void> {
                 id: param.layerId,
                 algorithmId: param.algorithmId,
                 providerId: param.providerId,
-                key: param.layerId,
                 label: "",
             });
         }
@@ -149,5 +148,5 @@ export async function loadLayerSettings(environmentId: number): Promise<void> {
 }
 
 export function getLayerParam(layers: LayerWithSettings[], layerKey: number, key: string): string | undefined {
-    return layers.find((l) => l.layer.key === layerKey)?.settings.find((p) => p.key === key)?.value;
+    return layers.find((l) => l.layer.id === layerKey)?.settings.find((p) => p.key === key)?.value;
 }
