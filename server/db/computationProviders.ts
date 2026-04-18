@@ -24,7 +24,7 @@ export async function deleteComputationProvider(id: number): Promise<void> {
         db.table("algorithmMetricsSetup"),
         db.table("computationAlgorithmParameters"),
         db.table("computationSelection"),
-        db.table("layersSetup"),
+        db.table("layers"),
         db.table("layerSettingsSetup"),
         db.table("layerSettings"),
     ], async () => {
@@ -35,7 +35,7 @@ export async function deleteComputationProvider(id: number): Promise<void> {
             .filter((row) => row.selectedProviderId === id)
             .modify({ selectedProviderId: null, selectedAlgorithmId: null });
         await db.table("computationProviderAlgorithms").where("computationProviderId").equals(id).delete();
-        await db.table("layersSetup").where("providerId").equals(id).delete();
+        await db.table("layers").where("providerId").equals(id).delete();
         await db.table("layerSettingsSetup").where("providerId").equals(id).delete();
         await db.table("layerSettings").where("providerId").equals(id).delete();
         await table.delete(id);

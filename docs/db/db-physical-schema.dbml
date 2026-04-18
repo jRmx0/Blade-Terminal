@@ -271,7 +271,7 @@ Table runtime.computeResult [note: 'Latest CPP result per environment. One row p
 
 // ── layers ── layer catalog + per-environment style values ────────────────────
 
-Table layers.layerSetup [note: 'Layer catalog. System layers seeded at populate with algorithmId=0 / providerId=0 as sentinels. Provider layers replaced atomically on metadata refresh.'] {
+Table layers.layer [note: 'Layer catalog. System layers seeded at populate with algorithmId=0 / providerId=0 as sentinels. Provider layers replaced atomically on metadata refresh.'] {
   id           integer    [not null, note: 'Compound PK part 1 — natural key from registry or provider metadata; referenced by layers.layerSetting.layerId and layers.layerSettingSetup.layerId']
   algorithmId  integer    [not null, note: 'Compound PK part 2; 0 = system sentinel; else FK → provider.computationProviderAlgorithm.id']
   providerId   integer    [not null, note: 'Compound PK part 3; 0 = system sentinel; else FK → provider.computationProvider.id']
@@ -282,16 +282,16 @@ Table layers.layerSetup [note: 'Layer catalog. System layers seeded at populate 
 
   indexes {
     (id, algorithmId, providerId) [pk]
-    id                            [name: 'idx_layersSetup_id']
-    algorithmId                   [name: 'idx_layersSetup_algorithmId']
-    providerId                    [name: 'idx_layersSetup_providerId']
-    (algorithmId, providerId)     [name: 'idx_layersSetup_algo_provider']
+    id                            [name: 'idx_layers_id']
+    algorithmId                   [name: 'idx_layers_algorithmId']
+    providerId                    [name: 'idx_layers_providerId']
+    (algorithmId, providerId)     [name: 'idx_layers_algo_provider']
   }
 }
 
 Table layers.layerSettingSetup [note: 'Style attribute metadata templates. Source-of-truth from which per-environment layers.layerSetting rows are initialized. System attributes use algorithmId=0 / providerId=0.'] {
   id           integer     [not null, note: 'Compound PK part 1 — attribute ID from provider metadata or system registry']
-  layerId      integer     [not null, note: 'Compound PK part 2; FK → layers.layerSetup.id']
+  layerId      integer     [not null, note: 'Compound PK part 2; FK → layers.layer.id']
   algorithmId  integer     [not null, note: 'Compound PK part 3; 0 = system sentinel']
   providerId   integer     [not null, note: 'Compound PK part 4; 0 = system sentinel']
   key          varchar     [not null, note: 'Attribute label e.g. "Polygon Fill Color", "Show Vertex IDs" — also the display label']
@@ -309,9 +309,9 @@ Table layers.layerSettingSetup [note: 'Style attribute metadata templates. Sourc
   }
 }
 
-Table layers.layerSetting [note: 'Per-environment working layer style values. Initialized by copying from layers.layerSettingSetup. key/styleType/styleGroup are joined from layerSettingSetup at load time and never stored here. (layerId,algorithmId,providerId) is also joined directly against layerSetup to resolve label/type/computeLayer.'] {
+Table layers.layerSetting [note: 'Per-environment working layer style values. layers.layer is the load anchor — all layers are present regardless of whether they have setting rows. key/styleType/styleGroup are joined from layerSettingSetup at load time and never stored here.'] {
   id            integer     [not null, note: 'Compound PK part 1; matches layers.layerSettingSetup.id']
-  layerId       integer     [not null, note: 'Compound PK part 2; FK → layers.layerSetup.id']
+  layerId       integer     [not null, note: 'Compound PK part 2; FK → layers.layer.id']
   algorithmId   integer     [not null, note: 'Compound PK part 3; 0 = system sentinel']
   providerId    integer     [not null, note: 'Compound PK part 4; 0 = system sentinel']
   environmentId integer     [not null, note: 'Compound PK part 5; FK → workspace.environment.id']
@@ -352,15 +352,15 @@ Ref: runtime.computationAlgorithmParameter.(algorithmId, providerId) > provider.
 Ref: layers.layerSettingSetup.(algorithmId, providerId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade]
 Ref: layers.layerSetting.(algorithmId, providerId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade]
 
-// layers.layerSettingSetup → layers.layerSetup
-Ref: layers.layerSettingSetup.(layerId, algorithmId, providerId) > layers.layerSetup.(id, algorithmId, providerId)
+// layers.layerSettingSetup → layers.layer
+Ref: layers.layerSettingSetup.(layerId, algorithmId, providerId) > layers.layer.(id, algorithmId, providerId)
 
 // layers.layerSetting → layers catalog
-Ref: layers.layerSetting.(layerId, algorithmId, providerId) > layers.layerSetup.(id, algorithmId, providerId)
+Ref: layers.layerSetting.(layerId, algorithmId, providerId) > layers.layer.(id, algorithmId, providerId)
 Ref: layers.layerSetting.(id, layerId, algorithmId, providerId) > layers.layerSettingSetup.(id, layerId, algorithmId, providerId)
 
 // layers catalog owned by provider algorithms (0/0 sentinel = system, non-zero = provider)
-Ref: layers.layerSetup.(algorithmId, providerId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade]
+Ref: layers.layer.(algorithmId, providerId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade]
 
 
 // ─── TableGroups ──────────────────────────────────────────────────────────────
@@ -392,7 +392,7 @@ Ref: layers.layerSetup.(algorithmId, providerId) > provider.computationProviderA
 // }
 
 // TableGroup layers [note: 'Layer catalog and per-environment style attribute values'] {
-//   layers.layerSetup
+//   layers.layer
 //   layers.layerSettingSetup
 //   layers.layerSetting
 // }

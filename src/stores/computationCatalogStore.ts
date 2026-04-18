@@ -4,7 +4,7 @@ import { getAllComputationAlgorithms } from "@server/db/computationProviderAlgor
 import { getAllAlgorithmParameters } from "@server/db/computationAlgorithmParametersSetup";
 import { getAllAlgorithmMetrics } from "@server/db/computationAlgorithmMetricsSetup";
 import { getAllAppEnums } from "@server/db/appEnumSetup";
-import { getAllLayers } from "@server/db/layersSetup";
+import { getAllLayers } from "@server/db/layers";
 import { getAllLayerSettingsSetup } from "@server/db/layerSettingsSetup";
 import { useProviderLayerStore } from "@/stores/providerLayerStore";
 import type { AlgorithmMetric, AlgorithmParameter, AppEnumValue, ComputationAlgorithm, ComputationProvider, ProviderLayerRecord } from "@/types/serviceTypes";
@@ -148,7 +148,7 @@ export async function loadComputationCatalog(): Promise<void> {
     ]);
     useComputationCatalogStore.getState().setCatalog(providers, algorithms, parameters, appEnums, layerSettingsSetupData, metrics);
 
-    // Hydrate providerLayerStore from persisted layersSetup records.
+    // Hydrate providerLayerStore from persisted layers records.
     // System layers have algorithmId === 0 and are skipped.
     const providerLayersByAlgorithm = new Map<string, ProviderLayerRecord[]>();
     for (const layer of allLayers) {

@@ -20,7 +20,7 @@ db.version(1).stores({
     algorithmMetricsSetup: "[id+algorithmId+computationProviderId], algorithmId, computationProviderId, [algorithmId+computationProviderId]",
     computationAlgorithmParameters: "[id+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId, providerId",
     computeResults: "environmentId",
-    layersSetup: "[id+algorithmId+providerId], id, algorithmId, providerId, [algorithmId+providerId]",
+    layers: "[id+algorithmId+providerId], id, algorithmId, providerId, [algorithmId+providerId]",
     layerSettingsSetup: "[id+layerId+algorithmId+providerId], [layerId+algorithmId+providerId], [algorithmId+providerId], providerId",
     layerSettings: "[id+layerId+algorithmId+providerId+environmentId], [layerId+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId, providerId",
     uiPreferences: "key",
@@ -52,7 +52,7 @@ export { db };
 
 async function seedLayers(): Promise<void> {
     for (const def of LAYER_REGISTRY) {
-        await db.table("layersSetup").add({
+        await db.table("layers").add({
             id: def.id,
             algorithmId: 0,
             providerId: 0,

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { loadLayerSettingViews, saveAllLayerSettings } from "@server/db/layerSettings";
-import { getAllLayers } from "@server/db/layersSetup";
+import { getAllLayers } from "@server/db/layers";
 import { getSaveMode } from "@/stores/saveModeStore";
 import type { LayerPK, LayerRecord, LayerSettingView, LayerWithSettings } from "@/types/layerTypes";
 import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";

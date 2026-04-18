@@ -50,7 +50,7 @@ export interface LayerSettingsSetup {
     mapping?: PointLabelColorEntry[];
 }
 
-/** Compound primary key for the `layersSetup` table. System layers use `algorithmId: 0, providerId: 0`. */
+/** Compound primary key for the `layers` table. System layers use `algorithmId: 0, providerId: 0`. */
 export interface LayerPK {
     id: number;
     algorithmId: number;
@@ -58,7 +58,7 @@ export interface LayerPK {
 }
 
 /**
- * DB record for a canvas layer definition (`layersSetup` table).
+ * DB record for a canvas layer definition (`layers` table).
  * `id` is a natural key from the layer definition or provider metadata.
  * System layers use `algorithmId: 0, providerId: 0` as sentinels.
  * `type` is optional for backward compatibility with DB records that pre-date the type field.

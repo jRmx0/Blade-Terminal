@@ -215,14 +215,14 @@ export async function persistFetchedMetadata(
         db.table("algorithmMetricsSetup"),
         db.table("computationAlgorithmParameters"),
         db.table("computationSelection"),
-        db.table("layersSetup"),
+        db.table("layers"),
         db.table("layerSettingsSetup"),
         db.table("layerSettings"),
     ], async () => {
         await db.table("computationAlgorithmParametersSetup").where("computationProviderId").equals(providerId).delete();
         await db.table("computationProviderAlgorithms").where("computationProviderId").equals(providerId).delete();
         await deleteAlgorithmMetricsByProvider(providerId);
-        await db.table("layersSetup").where("providerId").equals(providerId).delete();
+        await db.table("layers").where("providerId").equals(providerId).delete();
         await db.table("layerSettingsSetup").filter((row) => row.providerId === providerId).delete();
 
         if (algorithms.length > 0) {
@@ -241,7 +241,7 @@ export async function persistFetchedMetadata(
         }
 
         if (layerRecords.length > 0) {
-            await db.table("layersSetup").bulkPut(layerRecords);
+            await db.table("layers").bulkPut(layerRecords);
         }
 
         if (setupRecords.length > 0) {
@@ -314,7 +314,7 @@ export async function persistFetchedMetadata(
 // ─── Delete Provider ──────────────────────────────────────────────────────────
 
 /**
- * Full provider deletion: cascades through all DB tables (layersSetup,
+ * Full provider deletion: cascades through all DB tables (layers,
  * layerSettingsSetup, layerSettings included) then syncs all in-memory stores.
  */
 export async function deleteProviderWithCleanup(providerId: number): Promise<void> {
