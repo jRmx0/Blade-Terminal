@@ -272,10 +272,9 @@ Table runtime.computeResult [note: 'Latest CPP result per environment. One row p
 // ── layers ── layer catalog + per-environment style values ────────────────────
 
 Table layers.layerSetup [note: 'Layer catalog. System layers seeded at populate with algorithmId=0 / providerId=0 as sentinels. Provider layers replaced atomically on metadata refresh.'] {
-  id           integer    [not null, note: 'Compound PK part 1 — natural key from registry or provider metadata']
+  id           integer    [not null, note: 'Compound PK part 1 — natural key from registry or provider metadata; referenced by layers.layerSetting.layerId and layers.layerSettingSetup.layerId']
   algorithmId  integer    [not null, note: 'Compound PK part 2; 0 = system sentinel; else FK → provider.computationProviderAlgorithm.id']
   providerId   integer    [not null, note: 'Compound PK part 3; 0 = system sentinel; else FK → provider.computationProvider.id']
-  key          integer    [not null, note: 'Stable reference ID used by layers.layerSetting and layers.layerSettingSetup; equals id for system layers']
   label        varchar    [not null, note: 'Display name']
   computeLayer varchar    [null, note: 'Algorithm-specific result channel key e.g. "coveragePathPlan"']
   type         layer_type [null, note: 'Nullable — absent on pre-type DB records for backward compatibility']
@@ -283,16 +282,16 @@ Table layers.layerSetup [note: 'Layer catalog. System layers seeded at populate 
 
   indexes {
     (id, algorithmId, providerId) [pk]
+    id                            [name: 'idx_layersSetup_id']
     algorithmId                   [name: 'idx_layersSetup_algorithmId']
     providerId                    [name: 'idx_layersSetup_providerId']
-    key                           [name: 'idx_layersSetup_key']
     (algorithmId, providerId)     [name: 'idx_layersSetup_algo_provider']
   }
 }
 
 Table layers.layerSettingSetup [note: 'Style attribute metadata templates. Source-of-truth from which per-environment layers.layerSetting rows are initialized. System attributes use algorithmId=0 / providerId=0.'] {
   id           integer     [not null, note: 'Compound PK part 1 — attribute ID from provider metadata or system registry']
-  layerId      integer     [not null, note: 'Compound PK part 2; FK → layers.layerSetup.key']
+  layerId      integer     [not null, note: 'Compound PK part 2; FK → layers.layerSetup.id']
   algorithmId  integer     [not null, note: 'Compound PK part 3; 0 = system sentinel']
   providerId   integer     [not null, note: 'Compound PK part 4; 0 = system sentinel']
   key          varchar     [not null, note: 'Attribute label e.g. "Polygon Fill Color", "Show Vertex IDs" — also the display label']
@@ -312,7 +311,7 @@ Table layers.layerSettingSetup [note: 'Style attribute metadata templates. Sourc
 
 Table layers.layerSetting [note: 'Per-environment working layer style values. Initialized by copying from layers.layerSettingSetup. key/styleType/styleGroup are de-normalized to avoid joins at render time.'] {
   id            integer     [not null, note: 'Compound PK part 1; matches layers.layerSettingSetup.id']
-  layerId       integer     [not null, note: 'Compound PK part 2; FK → layers.layerSetup.key']
+  layerId       integer     [not null, note: 'Compound PK part 2; FK → layers.layerSetup.id']
   algorithmId   integer     [not null, note: 'Compound PK part 3; 0 = system sentinel']
   providerId    integer     [not null, note: 'Compound PK part 4; 0 = system sentinel']
   environmentId integer     [not null, note: 'Compound PK part 5; FK → workspace.environment.id']
@@ -357,10 +356,10 @@ Ref: layers.layerSettingSetup.(algorithmId, providerId) > provider.computationPr
 Ref: layers.layerSetting.(algorithmId, providerId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade]
 
 // layers.layerSettingSetup → layers.layerSetup
-Ref: layers.layerSettingSetup.(layerId, algorithmId, providerId) > layers.layerSetup.(key, algorithmId, providerId)
+Ref: layers.layerSettingSetup.(layerId, algorithmId, providerId) > layers.layerSetup.(id, algorithmId, providerId)
 
 // layers.layerSetting → layers catalog
-Ref: layers.layerSetting.(layerId, algorithmId, providerId) > layers.layerSetup.(key, algorithmId, providerId)
+Ref: layers.layerSetting.(layerId, algorithmId, providerId) > layers.layerSetup.(id, algorithmId, providerId)
 Ref: layers.layerSetting.(id, layerId, algorithmId, providerId) > layers.layerSettingSetup.(id, layerId, algorithmId, providerId)
 
 // layers catalog owned by provider algorithms (0/0 sentinel = system, non-zero = provider)
@@ -369,34 +368,34 @@ Ref: layers.layerSetup.(algorithmId, providerId) > provider.computationProviderA
 
 // ─── TableGroups ──────────────────────────────────────────────────────────────
 
-TableGroup system [note: 'Seed data & global UI preferences'] {
-  system.appEnumSetup
-  system.uiPreference
-}
+// TableGroup system [note: 'Seed data & global UI preferences'] {
+//   system.appEnumSetup
+//   system.uiPreference
+// }
 
-TableGroup workspace [note: 'User-created spatial geometry — environments and their polygon objects'] {
-  workspace.environment
-  workspace.object
-}
+// TableGroup workspace [note: 'User-created spatial geometry — environments and their polygon objects'] {
+//   workspace.environment
+//   workspace.object
+// }
 
-TableGroup provider [note: 'External CPP computation service connections'] {
-  provider.computationProvider
-  provider.computationProviderAlgorithm
-}
+// TableGroup provider [note: 'External CPP computation service connections'] {
+//   provider.computationProvider
+//   provider.computationProviderAlgorithm
+// }
 
-TableGroup provider_catalog [note: 'Metadata fetched from providers — parameter and metric definition templates'] {
-  provider_catalog.computationAlgorithmParameterSetup
-  provider_catalog.algorithmMetricSetup
-}
+// TableGroup provider_catalog [note: 'Metadata fetched from providers — parameter and metric definition templates'] {
+//   provider_catalog.computationAlgorithmParameterSetup
+//   provider_catalog.algorithmMetricSetup
+// }
 
-TableGroup runtime [note: 'Per-environment working state — active selections, parameter values, and compute results'] {
-  runtime.computationSelection
-  runtime.computationAlgorithmParameter
-  runtime.computeResult
-}
+// TableGroup runtime [note: 'Per-environment working state — active selections, parameter values, and compute results'] {
+//   runtime.computationSelection
+//   runtime.computationAlgorithmParameter
+//   runtime.computeResult
+// }
 
-TableGroup layers [note: 'Layer catalog and per-environment style attribute values'] {
-  layers.layerSetup
-  layers.layerSettingSetup
-  layers.layerSetting
-}
+// TableGroup layers [note: 'Layer catalog and per-environment style attribute values'] {
+//   layers.layerSetup
+//   layers.layerSettingSetup
+//   layers.layerSetting
+// }
