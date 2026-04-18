@@ -238,6 +238,7 @@ Table runtime.computationAlgorithmParameter [headercolor: #e67e22, note: 'Per-en
     (id, algorithmId, providerId, environmentId) [pk]
     (algorithmId, providerId, environmentId)     [name: 'idx_params_algo_provider_env']
     environmentId                                [name: 'idx_params_environmentId']
+    providerId                                   [name: 'idx_params_providerId']
   }
 }
 
@@ -305,6 +306,7 @@ Table layers.layerSettingSetup [headercolor: #8e44ad, note: 'Style attribute met
     (id, layerId, algorithmId, providerId) [pk]
     (layerId, algorithmId, providerId)     [name: 'idx_settingsSetup_layer_algo_provider']
     (algorithmId, providerId)              [name: 'idx_settingsSetup_algo_provider']
+    providerId                             [name: 'idx_settingsSetup_providerId']
   }
 }
 
@@ -324,6 +326,7 @@ Table layers.layerSetting [headercolor: #8e44ad, note: 'Per-environment working 
     (layerId, algorithmId, providerId, environmentId)     [name: 'idx_layerSettings_layer_algo_provider_env']
     (algorithmId, providerId, environmentId)              [name: 'idx_layerSettings_algo_provider_env']
     environmentId                                         [name: 'idx_layerSettings_environmentId']
+    providerId                                            [name: 'idx_layerSettings_providerId']
   }
 }
 
