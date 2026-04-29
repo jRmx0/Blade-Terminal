@@ -102,14 +102,17 @@ export function _CanvasPolygonObjectsLayer({
                         }}
                         onDragStart={(e) => {
                             if (isPanningRef.current) {
-                                // Middle-mouse pan is active — abort the drag without
-                                // cancelling bubble so mousemove keeps reaching the stage.
-                                e.target.stopDrag();
                                 return;
                             }
                             primaryDragRef.current = true;
                             e.cancelBubble = true;
                             onObjectDragStart(obj);
+                        }}
+                        onDragMove={(e) => {
+                            if (isPanningRef.current) {
+                                e.target.x(0);
+                                e.target.y(0);
+                            }
                         }}
                         onDragEnd={(e) => {
                             if (!primaryDragRef.current) return;
