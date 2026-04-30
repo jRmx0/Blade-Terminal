@@ -4,11 +4,14 @@ import type { LayerRecord, LayerSettingView } from "@/types/layerTypes";
 import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import LayerSettingsPanel, { type SettingsSectionData } from "@/features/inspector/components/calc-layers-section/LayerSettingsPanel";
 
-const GROUP_ORDER: StyleAttributeGroup[] = ["general", "point", "line", "polygon"];
+const GROUP_ORDER: StyleAttributeGroup[] = ["general", "point", "startPoint", "endPoint", "startEndPoint", "line", "polygon"];
 
 const GROUP_LABELS: Record<StyleAttributeGroup, string> = {
     general: "General",
     point: "Point Styles",
+    startPoint: "Start Point",
+    endPoint: "End Point",
+    startEndPoint: "Start & End Point",
     line: "Line Styles",
     polygon: "Polygon Styles",
 };

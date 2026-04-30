@@ -111,14 +111,14 @@ export const LAYER_SETTINGS_SETUP_DEFAULTS: LayerSettingsSetup[] = [
     // ── Env Points ───────────────────────────────────────────────────────────
     { id: 1, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "true" },
     { id: 5, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "general", defaultValue: "40" },
-    { id: 20, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_POINT_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#22c55e" },
-    { id: 21, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_POINT_RADIUS, styleType: "Pixels", styleGroup: "point", defaultValue: "3" },
-    { id: 22, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_POINT_STROKE_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#166534" },
-    { id: 23, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.END_POINT_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#ef4444" },
-    { id: 24, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.END_POINT_RADIUS, styleType: "Pixels", styleGroup: "point", defaultValue: "3" },
-    { id: 25, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.END_POINT_STROKE_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#991b1b" },
-    { id: 26, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_END_POINT_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#a855f7" },
-    { id: 27, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_END_POINT_RADIUS, styleType: "Pixels", styleGroup: "point", defaultValue: "3" },
-    { id: 28, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_END_POINT_STROKE_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#6b21a8" },
+    { id: 20, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_POINT_COLOR, styleType: "Color", styleGroup: "startPoint", defaultValue: "#22c55e" },
+    { id: 21, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_POINT_RADIUS, styleType: "Pixels", styleGroup: "startPoint", defaultValue: "3" },
+    { id: 22, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_POINT_STROKE_COLOR, styleType: "Color", styleGroup: "startPoint", defaultValue: "#166534" },
+    { id: 23, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.END_POINT_COLOR, styleType: "Color", styleGroup: "endPoint", defaultValue: "#ef4444" },
+    { id: 24, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.END_POINT_RADIUS, styleType: "Pixels", styleGroup: "endPoint", defaultValue: "3" },
+    { id: 25, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.END_POINT_STROKE_COLOR, styleType: "Color", styleGroup: "endPoint", defaultValue: "#991b1b" },
+    { id: 26, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_END_POINT_COLOR, styleType: "Color", styleGroup: "startEndPoint", defaultValue: "#a855f7" },
+    { id: 27, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_END_POINT_RADIUS, styleType: "Pixels", styleGroup: "startEndPoint", defaultValue: "3" },
+    { id: 28, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_END_POINT_STROKE_COLOR, styleType: "Color", styleGroup: "startEndPoint", defaultValue: "#6b21a8" },
 ];
 

@@ -3,6 +3,7 @@ import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObj
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useEnvStore } from "@/stores/envStore";
+import { useEnvPointStore } from "@/stores/envPointStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import type { AlgoParamType, ComputeJobState, ComputeJobStateCompleted } from "@/types/serviceTypes";
@@ -101,6 +102,12 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
 
     if (zoneObjects.length === 0) {
         return { ok: false, error: "No zone drawn on canvas." };
+    }
+
+    const { startPoint, endPoint, startEndPoint } = useEnvPointStore.getState();
+    const hasValidPoints = startEndPoint !== null || (startPoint !== null && endPoint !== null);
+    if (!hasValidPoints) {
+        return { ok: false, error: "Start and end points are required before running the algorithm." };
     }
 
     const zones = zoneObjects.map((o) => ({
