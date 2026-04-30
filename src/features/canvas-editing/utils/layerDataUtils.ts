@@ -18,6 +18,11 @@ export function extractLayerData(result: ComputeResult, computeLayer: string): u
     if (computeLayer === "coveragePathPlan") {
         return result.coveragePathPlan.segments;
     }
+    const COVERAGE_PATH_PLAN_PREFIX = "coveragePathPlan.";
+    if (computeLayer.startsWith(COVERAGE_PATH_PLAN_PREFIX)) {
+        const segmentType = computeLayer.slice(COVERAGE_PATH_PLAN_PREFIX.length);
+        return result.coveragePathPlan.segments.filter((s) => s.type === segmentType);
+    }
     return result.debug?.layers?.find((l) => l.source === computeLayer)?.list ?? [];
 }
 

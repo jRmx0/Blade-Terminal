@@ -313,7 +313,7 @@ export interface IndexedPoint {
     point: { x: number; y: number };
 }
 
-export type CoveragePathPlanSegmentType = "coverage" | "transit" | (string & {});
+export type CoveragePathPlanSegmentType = string;
 
 export interface CoveragePathPlanSegment {
     id: number;

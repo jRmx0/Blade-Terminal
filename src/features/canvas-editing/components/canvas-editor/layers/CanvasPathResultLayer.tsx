@@ -18,10 +18,6 @@ interface CanvasPathResultLayerProps {
     style: ResolvedLineLayerStyle;
 }
 
-// Transit segments always render dashed regardless of the configured edge style,
-// since "transit" means the tool is not engaged.
-const TRANSIT_DASH = [6, 4];
-
 function _CanvasPathResultLayer({ items, style }: CanvasPathResultLayerProps) {
     const arrowSize = style.arrowSize;
     const showMarkers = style.pointShape !== "";
@@ -32,7 +28,7 @@ function _CanvasPathResultLayer({ items, style }: CanvasPathResultLayerProps) {
             {/* ── Shape pass: polylines, arrows, and waypoint markers ── */}
             {items.map((item) => {
                 const flatPoints = item.path.flatMap((p) => [p.point.x, p.point.y]);
-                const dash = item.type === "transit" ? TRANSIT_DASH : style.dash;
+                const dash = style.dash;
                 const hasArrows = flatPoints.length >= 4 && arrowSize > 0;
                 const totalLen = hasArrows ? polylineLength(flatPoints) : 0;
 
