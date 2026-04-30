@@ -110,6 +110,9 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
         return { ok: false, error: "Start and end points are required before running the algorithm." };
     }
 
+    const resolvedStart = startPoint ?? startEndPoint!;
+    const resolvedEnd = endPoint ?? startEndPoint!;
+
     const zones = zoneObjects.map((o) => ({
         vertices: o.vertices.map(({ x, y }) => ({ x, y })),
     }));
@@ -119,7 +122,12 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
 
     const requestBody = {
         algorithmId: selectedAlgorithmId,
-        environment: { zones, obstacles },
+        environment: {
+            zones,
+            obstacles,
+            startPoint: { x: resolvedStart.point.x, y: resolvedStart.point.y },
+            endPoint: { x: resolvedEnd.point.x, y: resolvedEnd.point.y },
+        },
         parameters,
     };
 
