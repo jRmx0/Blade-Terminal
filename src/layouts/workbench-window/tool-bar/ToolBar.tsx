@@ -4,6 +4,7 @@ import AddZoneButton from "@/features/canvas-editing/components/tool-bar/AddZone
 import AddObstacleButton from "@/features/canvas-editing/components/tool-bar/AddObstacleButton";
 import AddStartPointButton from "@/features/canvas-editing/components/tool-bar/AddStartPointButton";
 import AddEndPointButton from "@/features/canvas-editing/components/tool-bar/AddEndPointButton";
+import AddStartEndPointButton from "@/features/canvas-editing/components/tool-bar/AddStartEndPointButton";
 import DeleteButton from "@/features/canvas-editing/components/tool-bar/DeleteButton";
 import ExecuteCppButton from "@/features/coverage-planning/components/tool-bar/ExecuteCppButton";
 import ClearCppButton from "@/features/coverage-planning/components/tool-bar/ClearCppButton";
@@ -63,6 +64,7 @@ export default function ToolBar() {
   const isAddObstacleActive = activeTool === "addObstacle";
   const isAddStartPointActive = activeTool === "addStartPoint";
   const isAddEndPointActive = activeTool === "addEndPoint";
+  const isAddStartEndPointActive = activeTool === "addStartEndPoint";
   const isDeleteActive = activeTool === "delete";
   const hasSelection = selectedObject !== null;
   const hasVertexSelection = selectedVertexRefs.length > 0;
@@ -91,6 +93,11 @@ export default function ToolBar() {
   function handleAddEndPoint() {
     cancelDrawing();
     setActiveTool(isAddEndPointActive ? null : "addEndPoint");
+  }
+
+  function handleAddStartEndPoint() {
+    cancelDrawing();
+    setActiveTool(isAddStartEndPointActive ? null : "addStartEndPoint");
   }
 
   function handleDelete() {
@@ -209,11 +216,12 @@ export default function ToolBar() {
     },
     {
       id: "points",
-      buttonCount: 2,
+      buttonCount: 3,
       buttons: (
         <>
           <AddStartPointButton />
           <AddEndPointButton />
+          <AddStartEndPointButton />
         </>
       ),
       trailingSeparator: "thin",
@@ -231,6 +239,13 @@ export default function ToolBar() {
           label: "Add End Point",
           isActive: isAddEndPointActive,
           onClick: handleAddEndPoint,
+        },
+        {
+          id: "add-start-end-point",
+          icon: "loop",
+          label: "Add Start & End Point",
+          isActive: isAddStartEndPointActive,
+          onClick: handleAddStartEndPoint,
         },
       ],
     },

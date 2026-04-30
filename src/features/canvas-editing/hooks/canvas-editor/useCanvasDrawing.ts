@@ -7,6 +7,7 @@ import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDr
 import { useEnvStore } from "@/stores/envStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
+import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 
 interface UseCanvasDrawingOptions {
     activeTool: ActiveTool | null;
@@ -89,16 +90,45 @@ export function useCanvasDrawing({
         (e: Konva.KonvaEventObject<MouseEvent>) => {
             if (e.evt.button !== 0) return;
 
-            if (activeTool === "addStartPoint" || activeTool === "addEndPoint") {
+            if (activeTool === "addStartPoint" || activeTool === "addEndPoint" || activeTool === "addStartEndPoint") {
                 const stage = stageRef.current;
                 if (!stage) return;
                 if (e.target !== stage) return;
                 const ptr = stage.getRelativePointerPosition();
                 if (!ptr) return;
-                const type = activeTool === "addStartPoint" ? "start" : "end";
+                const type = activeTool === "addStartPoint" ? "start" : activeTool === "addEndPoint" ? "end" : "start_end";
                 const environmentId = useEnvStore.getState().env.id;
-                useEnvPointStore.getState().upsertPoint(environmentId, type, { x: ptr.x, y: ptr.y });
-                useCanvasToolStore.getState().setActiveTool(null);
+                const { startPoint, endPoint, startEndPoint, upsertPoint } = useEnvPointStore.getState();
+
+                let conflictMessage: string | null = null;
+                if (type === "start_end") {
+                    if (startPoint && endPoint) {
+                        conflictMessage = "A start and end point already exist. Continuing will remove them.";
+                    } else if (startPoint) {
+                        conflictMessage = "A start point already exists. Continuing will remove it.";
+                    } else if (endPoint) {
+                        conflictMessage = "An end point already exists. Continuing will remove it.";
+                    }
+                } else if (startEndPoint) {
+                    conflictMessage = "A Start & End point already exists. Continuing will remove it.";
+                }
+
+                const doPlace = async () => {
+                    await upsertPoint(environmentId, type, { x: ptr.x, y: ptr.y });
+                    useCanvasToolStore.getState().setActiveTool(null);
+                };
+
+                if (conflictMessage) {
+                    useConfirmationModalStore.getState().requestConfirmation({
+                        title: "Point type already in use",
+                        message: conflictMessage,
+                        tone: "warning",
+                        confirmLabel: "Continue",
+                        confirmAction: doPlace,
+                    });
+                } else {
+                    doPlace();
+                }
                 return;
             }
 

@@ -61,12 +61,18 @@ export default function PointPositionField() {
     const selectedEnvPointType = useCanvasSelectionStore((s) => s.selectedEnvPointType);
     const startPoint = useEnvPointStore((s) => s.startPoint);
     const endPoint = useEnvPointStore((s) => s.endPoint);
+    const startEndPoint = useEnvPointStore((s) => s.startEndPoint);
     const upsertPoint = useEnvPointStore((s) => s.upsertPoint);
     const envId = useEnvStore((s) => s.env.id);
 
     if (!selectedEnvPointType) return null;
 
-    const currentPoint = selectedEnvPointType === "start" ? startPoint : endPoint;
+    const currentPoint =
+        selectedEnvPointType === "start"
+            ? startPoint
+            : selectedEnvPointType === "end"
+                ? endPoint
+                : startEndPoint;
     if (!currentPoint) return null;
 
     const { x, y } = currentPoint.point;

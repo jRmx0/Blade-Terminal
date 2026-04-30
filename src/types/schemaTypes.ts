@@ -43,7 +43,7 @@ export interface Object {
     vertices: Array<{ x: number; y: number }>;
 }
 
-export type EnvPointType = "start" | "end";
+export type EnvPointType = "start" | "end" | "start_end";
 
 export interface EnvPoint {
     id?: number;

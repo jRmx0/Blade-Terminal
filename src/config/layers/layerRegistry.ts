@@ -54,6 +54,9 @@ export const LAYER_PARAM_KEY = {
     END_POINT_COLOR: "End Point Color",
     END_POINT_RADIUS: "End Point Radius",
     END_POINT_STROKE_COLOR: "End Point Stroke Color",
+    START_END_POINT_COLOR: "Start & End Point Color",
+    START_END_POINT_RADIUS: "Start & End Point Radius",
+    START_END_POINT_STROKE_COLOR: "Start & End Point Stroke Color",
 } as const;
 export type LayerParamKey = (typeof LAYER_PARAM_KEY)[keyof typeof LAYER_PARAM_KEY];
 
@@ -114,5 +117,8 @@ export const LAYER_SETTINGS_SETUP_DEFAULTS: LayerSettingsSetup[] = [
     { id: 23, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.END_POINT_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#ef4444" },
     { id: 24, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.END_POINT_RADIUS, styleType: "Pixels", styleGroup: "point", defaultValue: "3" },
     { id: 25, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.END_POINT_STROKE_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#991b1b" },
+    { id: 26, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_END_POINT_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#a855f7" },
+    { id: 27, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_END_POINT_RADIUS, styleType: "Pixels", styleGroup: "point", defaultValue: "3" },
+    { id: 28, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_END_POINT_STROKE_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#6b21a8" },
 ];
 

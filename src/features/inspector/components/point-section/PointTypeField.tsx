@@ -8,6 +8,7 @@ import type { EnvPointType } from "@/types/schemaTypes";
 const POINT_TYPE_OPTIONS = [
     { value: "start", label: "Start" },
     { value: "end", label: "End" },
+    { value: "start_end", label: "Start & End" },
 ];
 
 export default function PointTypeField() {
@@ -25,12 +26,22 @@ export default function PointTypeField() {
         const toType = newType as EnvPointType;
         if (toType === selectedEnvPointType) return;
 
-        const conflictPoint = toType === "start" ? startPoint : endPoint;
+        // Determine which existing point (if any) will be removed by this change
+        let conflictPoint = null;
+        let conflictTypeName = "";
+        if (toType === "start_end") {
+            // start_end clears both; warn about whichever exists besides fromType
+            conflictPoint = selectedEnvPointType === "start" ? endPoint : startPoint;
+            conflictTypeName = selectedEnvPointType === "start" ? "end" : "start";
+        } else {
+            conflictPoint = toType === "start" ? startPoint : endPoint;
+            conflictTypeName = toType;
+        }
 
         if (conflictPoint) {
             requestConfirmation({
                 title: "Point type already in use",
-                message: `A ${toType} point already exists. Continuing will remove it.`,
+                message: `A ${conflictTypeName} point already exists. Continuing will remove it.`,
                 tone: "warning",
                 confirmLabel: "Continue",
                 confirmAction: async () => {

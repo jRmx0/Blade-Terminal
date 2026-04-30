@@ -25,7 +25,10 @@ export type InternalStyleAttributeKey =
     | "Start Point Stroke Color"
     | "End Point Color"
     | "End Point Radius"
-    | "End Point Stroke Color";
+    | "End Point Stroke Color"
+    | "Start & End Point Color"
+    | "Start & End Point Radius"
+    | "Start & End Point Stroke Color";
 
 export interface LayerDefinition {
     id: LayerId;

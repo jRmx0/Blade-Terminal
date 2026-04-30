@@ -38,6 +38,7 @@ export default function CanvasEditor() {
   const [draggingVertexRef, setDraggingVertexRef] = useState<VertexRef | null>(null);
   const [movingObject, setMovingObject] = useState<Object | null>(null);
   const [isHoveringHandle, setIsHoveringHandle] = useState(false);
+  const [isHoveringEnvPoint, setIsHoveringEnvPoint] = useState(false);
   const [isHoveringObject, setIsHoveringObject] = useState<Object | null>(null);
   const centeredRef = useRef(false);
 
@@ -224,7 +225,7 @@ export default function CanvasEditor() {
   }, [selectedObjectForHandles, objects]);
 
   const isDrawing = activeTool === "addZone" || activeTool === "addObstacle";
-  const isPlacingPoint = activeTool === "addStartPoint" || activeTool === "addEndPoint";
+  const isPlacingPoint = activeTool === "addStartPoint" || activeTool === "addEndPoint" || activeTool === "addStartEndPoint";
 
   const handleDeleteObject = useCallback(
     (obj: Object) => {
@@ -278,7 +279,7 @@ export default function CanvasEditor() {
   function resolveCursor() {
     if (isPanning) return "grabbing";
     if (movingObject !== null) return "grabbing";
-    if (isMidpointDragging || isHoveringHandle || draggingVertexRef !== null || isDrawing || isPlacingPoint) return "crosshair";
+    if (isMidpointDragging || isHoveringHandle || isHoveringEnvPoint || draggingVertexRef !== null || isDrawing || isPlacingPoint) return "crosshair";
     if (isHoveringObject !== null && activeTool === "select") return "move";
     if (isHoveringObject && activeTool === "delete") return "crosshair";
     return "default";
@@ -365,7 +366,7 @@ export default function CanvasEditor() {
             );
           }
           if (entry.id === "envPoints") {
-            return <CanvasEnvPointsLayer key="envPoints" />;
+            return <CanvasEnvPointsLayer key="envPoints" onEnvPointHoverChange={setIsHoveringEnvPoint} />;
           }
           return null;
         })}
