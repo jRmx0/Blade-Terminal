@@ -26,6 +26,9 @@ import { CanvasPolygonObjectsLayer } from "@/features/canvas-editing/components/
 import { CanvasVertexHandlesLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasVertexHandlesLayer";
 import { CanvasDrawingPreviewLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasDrawingPreviewLayer";
 import { CanvasDynamicLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasDynamicLayer";
+import { CanvasEnvPointsLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasEnvPointsLayer";
+import { useEnvPointStore } from "@/stores/envPointStore";
+import { useEnvStore } from "@/stores/envStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useProviderLayerStore } from "@/stores/providerLayerStore";
 import { extractLayerData, getProviderLayersForResult } from "@/features/canvas-editing/utils/layerDataUtils";
@@ -62,11 +65,15 @@ export default function CanvasEditor() {
   const {
     selectedObject: selectedStoreObject,
     selectedVertexRefs,
+    selectedEnvPointType,
     selectObject,
     clearSelection,
     selectVertex,
     toggleVertexSelection,
   } = useCanvasSelectionStore();
+
+  const deletePoint = useEnvPointStore((s) => s.deletePoint);
+  const envId = useEnvStore((s) => s.env.id);
 
   const { containerRef, size } = useCanvasSize();
 
@@ -116,12 +123,15 @@ export default function CanvasEditor() {
     drawingPointsCount: drawingPoints.length,
     selectedObject: selectedStoreObject,
     selectedVertexRefs,
+    selectedEnvPointType,
+    envPointEnvironmentId: envId,
     setActiveTool,
     clearSelection,
     selectVertex,
     deleteObject,
     deleteVertex,
     deleteVertices,
+    deleteEnvPoint: deletePoint,
     cancelDrawing,
   });
 
@@ -165,6 +175,7 @@ export default function CanvasEditor() {
   const gridZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.GRID, LAYER_PARAM_KEY.Z_INDEX) ?? "10", 10);
   const zoneZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.ZONES, LAYER_PARAM_KEY.Z_INDEX) ?? "20", 10);
   const obstacleZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.OBSTACLES, LAYER_PARAM_KEY.Z_INDEX) ?? "30", 10);
+  const envPointsZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.ENV_POINTS, LAYER_PARAM_KEY.Z_INDEX) ?? "40", 10);
 
   // Memoize provider layers active for the current compute result.
   const activeProviderLayers = useMemo(
@@ -197,6 +208,7 @@ export default function CanvasEditor() {
     { kind: "system" as const, id: "grid" as const, zIndex: gridZIndex },
     { kind: "system" as const, id: "zones" as const, zIndex: zoneZIndex },
     { kind: "system" as const, id: "obstacles" as const, zIndex: obstacleZIndex },
+    { kind: "system" as const, id: "envPoints" as const, zIndex: envPointsZIndex },
     ...dynamicEntries,
   ].sort((a, b) => a.zIndex - b.zIndex);
 
@@ -212,6 +224,7 @@ export default function CanvasEditor() {
   }, [selectedObjectForHandles, objects]);
 
   const isDrawing = activeTool === "addZone" || activeTool === "addObstacle";
+  const isPlacingPoint = activeTool === "addStartPoint" || activeTool === "addEndPoint";
 
   const handleDeleteObject = useCallback(
     (obj: Object) => {
@@ -265,7 +278,7 @@ export default function CanvasEditor() {
   function resolveCursor() {
     if (isPanning) return "grabbing";
     if (movingObject !== null) return "grabbing";
-    if (isMidpointDragging || isHoveringHandle || draggingVertexRef !== null || isDrawing) return "crosshair";
+    if (isMidpointDragging || isHoveringHandle || draggingVertexRef !== null || isDrawing || isPlacingPoint) return "crosshair";
     if (isHoveringObject !== null && activeTool === "select") return "move";
     if (isHoveringObject && activeTool === "delete") return "crosshair";
     return "default";
@@ -332,23 +345,29 @@ export default function CanvasEditor() {
               />
             );
           }
-          return (
-            <CanvasPolygonObjectsLayer
-              key="obstacles"
-              category={OBJECT_CATEGORY.OBSTACLE}
-              objects={objects}
-              selectedObject={selectedStoreObject}
-              movingObject={movingObject}
-              activeTool={activeTool}
-              scale={scale}
-              isPanningRef={isPanningRef}
-              onSelectObject={selectObject}
-              onDeleteObject={handleDeleteObject}
-              onObjectHoverChange={setIsHoveringObject}
-              onObjectDragStart={handleObjectDragStart}
-              onObjectDragEnd={handleObjectDragEnd}
-            />
-          );
+          if (entry.id === "obstacles") {
+            return (
+              <CanvasPolygonObjectsLayer
+                key="obstacles"
+                category={OBJECT_CATEGORY.OBSTACLE}
+                objects={objects}
+                selectedObject={selectedStoreObject}
+                movingObject={movingObject}
+                activeTool={activeTool}
+                scale={scale}
+                isPanningRef={isPanningRef}
+                onSelectObject={selectObject}
+                onDeleteObject={handleDeleteObject}
+                onObjectHoverChange={setIsHoveringObject}
+                onObjectDragStart={handleObjectDragStart}
+                onObjectDragEnd={handleObjectDragEnd}
+              />
+            );
+          }
+          if (entry.id === "envPoints") {
+            return <CanvasEnvPointsLayer key="envPoints" />;
+          }
+          return null;
         })}
 
         <CanvasVertexHandlesLayer

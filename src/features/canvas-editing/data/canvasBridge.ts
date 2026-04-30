@@ -11,6 +11,7 @@ import { useEnvStore } from "@/stores/envStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
+import { useEnvPointStore } from "@/stores/envPointStore";
 
 // ── Count synchronization ──────────────────────────────────────────────────
 // Reactively keeps envStore zone/obstacle counts derived from the canvas object
@@ -63,8 +64,9 @@ export async function saveCanvas(): Promise<boolean> {
     const { parameterValues, isParameterValuesDirty, clearDirty: clearParamsDirty } = useParameterValuesStore.getState();
     const { layers, isLayerSettingsDirty, clearDirty: clearLayersDirty } = useLayerSettingsStore.getState();
     const { result, isComputeResultDirty, clearDirty: clearResultDirty } = useComputeResultStore.getState();
+    const { isEnvPointsDirty, clearDirty: clearEnvPointsDirty } = useEnvPointStore.getState();
 
-    if (!isEnvDirty && !isParameterValuesDirty && !isLayerSettingsDirty && !dirtyObjects.length && !deletedObjects.length && !isComputeResultDirty) return false;
+    if (!isEnvDirty && !isParameterValuesDirty && !isLayerSettingsDirty && !dirtyObjects.length && !deletedObjects.length && !isComputeResultDirty && !isEnvPointsDirty) return false;
 
     _isSaving = true;
     try {
@@ -83,6 +85,7 @@ export async function saveCanvas(): Promise<boolean> {
         clearParamsDirty();
         clearLayersDirty();
         clearResultDirty();
+        clearEnvPointsDirty();
         return true;
     } finally {
         _isSaving = false;

@@ -15,6 +15,7 @@ import { loadLayerSettings } from "@/stores/layerSettingsStore";
 import { initLayerSettingsForEnvironment } from "@server/db/layerSettings";
 import { getComputeResult } from "@server/db/computeResults";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
+import { useEnvPointStore } from "@/stores/envPointStore";
 import { resolveNextEnvironmentId, loadCanvasForEnvironment, saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
 import { createEmptyComputationSelection } from "@/utils/computationSelection";
 
@@ -45,6 +46,8 @@ export async function initializeWorkspace(): Promise<void> {
     await loadComputationCatalog();
     await initLayerSettingsForEnvironment(nextId);
     await loadLayerSettings(nextId);
+    useEnvPointStore.getState().clearPoints();
+    await useEnvPointStore.getState().loadEnvPoints(nextId);
     useComputeResultStore.getState().resetResult();
 }
 
@@ -61,6 +64,8 @@ export async function resetWorkspace(): Promise<void> {
     useCanvasHistoryStore.getState().resetHistory();
     await initLayerSettingsForEnvironment(nextId);
     await loadLayerSettings(nextId);
+    useEnvPointStore.getState().clearPoints();
+    await useEnvPointStore.getState().loadEnvPoints(nextId);
     useComputeResultStore.getState().resetResult();
 }
 
@@ -85,6 +90,8 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     useEnvStore.getState().setComputation(computation);
     useCanvasHistoryStore.getState().resetHistory();
     await loadLayerSettings(environmentId);
+    useEnvPointStore.getState().clearPoints();
+    await useEnvPointStore.getState().loadEnvPoints(environmentId);
     const existingResult = await getComputeResult(environmentId);
     if (existingResult) {
         useComputeResultStore.getState().loadResult(existingResult);

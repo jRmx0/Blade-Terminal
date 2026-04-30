@@ -43,6 +43,15 @@ export interface Object {
     vertices: Array<{ x: number; y: number }>;
 }
 
+export type EnvPointType = "start" | "end";
+
+export interface EnvPoint {
+    id?: number;
+    environmentId: number;
+    type: EnvPointType;
+    point: { x: number; y: number };
+}
+
 /** Per-environment working compute result. One row per environment; replaced on every successful compute. */
 export interface ComputeResultRecord {
     /** PK — FK → environments.id */

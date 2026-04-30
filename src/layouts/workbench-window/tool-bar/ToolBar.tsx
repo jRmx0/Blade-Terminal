@@ -2,6 +2,8 @@ import { type ReactNode } from "react";
 import UiControlsButton from "@/features/ui-manager/components/tool-bar/UiControlsButton";
 import AddZoneButton from "@/features/canvas-editing/components/tool-bar/AddZoneButton";
 import AddObstacleButton from "@/features/canvas-editing/components/tool-bar/AddObstacleButton";
+import AddStartPointButton from "@/features/canvas-editing/components/tool-bar/AddStartPointButton";
+import AddEndPointButton from "@/features/canvas-editing/components/tool-bar/AddEndPointButton";
 import DeleteButton from "@/features/canvas-editing/components/tool-bar/DeleteButton";
 import ExecuteCppButton from "@/features/coverage-planning/components/tool-bar/ExecuteCppButton";
 import ClearCppButton from "@/features/coverage-planning/components/tool-bar/ClearCppButton";
@@ -59,6 +61,8 @@ export default function ToolBar() {
   const isSelectActive = activeTool === "select";
   const isAddZoneActive = activeTool === "addZone";
   const isAddObstacleActive = activeTool === "addObstacle";
+  const isAddStartPointActive = activeTool === "addStartPoint";
+  const isAddEndPointActive = activeTool === "addEndPoint";
   const isDeleteActive = activeTool === "delete";
   const hasSelection = selectedObject !== null;
   const hasVertexSelection = selectedVertexRefs.length > 0;
@@ -77,6 +81,16 @@ export default function ToolBar() {
   function handleAddObstacle() {
     cancelDrawing();
     setActiveTool(isAddObstacleActive ? null : "addObstacle");
+  }
+
+  function handleAddStartPoint() {
+    cancelDrawing();
+    setActiveTool(isAddStartPointActive ? null : "addStartPoint");
+  }
+
+  function handleAddEndPoint() {
+    cancelDrawing();
+    setActiveTool(isAddEndPointActive ? null : "addEndPoint");
   }
 
   function handleDelete() {
@@ -190,6 +204,33 @@ export default function ToolBar() {
           label: "Add Obstacle",
           isActive: isAddObstacleActive,
           onClick: handleAddObstacle,
+        },
+      ],
+    },
+    {
+      id: "points",
+      buttonCount: 2,
+      buttons: (
+        <>
+          <AddStartPointButton />
+          <AddEndPointButton />
+        </>
+      ),
+      trailingSeparator: "thin",
+      overflowItems: [
+        {
+          id: "add-start-point",
+          icon: "trip_origin",
+          label: "Add Start Point",
+          isActive: isAddStartPointActive,
+          onClick: handleAddStartPoint,
+        },
+        {
+          id: "add-end-point",
+          icon: "flag",
+          label: "Add End Point",
+          isActive: isAddEndPointActive,
+          onClick: handleAddEndPoint,
         },
       ],
     },

@@ -1,27 +1,31 @@
 import { create } from "zustand";
 import type { Object } from "@/types/schemaTypes";
+import type { EnvPointType } from "@/types/schemaTypes";
 import type { VertexRef } from "@/features/canvas-editing/types/canvas";
 import { sameVertexRef } from "@/features/canvas-editing/utils/canvasObjectUtils";
 
 interface CanvasSelectionState {
     selectedObject: Object | null;
     selectedVertexRefs: VertexRef[];
+    selectedEnvPointType: EnvPointType | null;
 
     selectObject: (obj: Object) => void;
     clearSelection: () => void;
     selectVertex: (ref: VertexRef | null) => void;
     toggleVertexSelection: (ref: VertexRef, ctrl: boolean) => void;
+    selectEnvPoint: (type: EnvPointType) => void;
 }
 
 export const useCanvasSelectionStore = create<CanvasSelectionState>((set) => ({
     selectedObject: null,
     selectedVertexRefs: [],
+    selectedEnvPointType: null,
 
     selectObject: (obj) =>
-        set({ selectedObject: obj, selectedVertexRefs: [] }),
+        set({ selectedObject: obj, selectedVertexRefs: [], selectedEnvPointType: null }),
 
     clearSelection: () =>
-        set({ selectedObject: null, selectedVertexRefs: [] }),
+        set({ selectedObject: null, selectedVertexRefs: [], selectedEnvPointType: null }),
 
     selectVertex: (ref) =>
         set({ selectedVertexRefs: ref !== null ? [ref] : [] }),
@@ -40,4 +44,7 @@ export const useCanvasSelectionStore = create<CanvasSelectionState>((set) => ({
                     : [...state.selectedVertexRefs, ref],
             };
         }),
+
+    selectEnvPoint: (type) =>
+        set({ selectedEnvPointType: type, selectedObject: null, selectedVertexRefs: [] }),
 }));

@@ -12,6 +12,8 @@ import CoverageField from "@/features/inspector/components/coverage-section/Cove
 import OverlapField from "@/features/inspector/components/coverage-section/OverlapField";
 import TurnSumField from "@/features/inspector/components/coverage-section/TurnSumField";
 import LayersTab from "@/features/inspector/components/calc-layers-section/LayersTab";
+import PointTypeField from "@/features/inspector/components/point-section/PointTypeField";
+import PointPositionField from "@/features/inspector/components/point-section/PointPositionField";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useInspectorTabStore } from "@/features/inspector/stores/inspectorTabStore";
 import type { InspectorTab } from "@/features/inspector/stores/inspectorTabStore";
@@ -23,6 +25,7 @@ const INSPECTOR_TABS: { id: InspectorTab; label: string }[] = [
 
 export default function InspectorPanel() {
   const hasSelection = useCanvasSelectionStore((s) => s.selectedObject !== null);
+  const hasPointSelection = useCanvasSelectionStore((s) => s.selectedEnvPointType !== null);
   const activeTab = useInspectorTabStore((s) => s.activeTab);
   const setActiveTab = useInspectorTabStore((s) => s.setActiveTab);
 
@@ -36,7 +39,7 @@ export default function InspectorPanel() {
 
       {activeTab === "details" && (
         <div>
-          {!hasSelection && (
+          {!hasSelection && !hasPointSelection && (
             <InspectorPanelSection title="Environment">
               <ZoneSumField />
               <ObstacleSumField />
@@ -50,6 +53,13 @@ export default function InspectorPanel() {
               <VertexSumField />
               <GrossAreaField />
               <NetAreaField />
+            </InspectorPanelSection>
+          )}
+
+          {hasPointSelection && (
+            <InspectorPanelSection title="Point">
+              <PointTypeField />
+              <PointPositionField />
             </InspectorPanelSection>
           )}
 

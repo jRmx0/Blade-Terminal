@@ -19,13 +19,13 @@ export default function InspectorPanelSectionSelectField({
 
     return (
         <div className="flex items-center gap-2 px-5 py-1">
-            <span className="min-w-0 flex-1 truncate text-sm text-gray-800" title={label}>
+            <span className="w-[55%] shrink-0 truncate text-sm text-gray-800" title={label}>
                 {label}
             </span>
             <Listbox value={value} onChange={onChange} disabled={disabled}>
-                <div className="relative shrink-0">
-                    <ListboxButton className="group flex items-center gap-1 rounded border border-gray-300 bg-white px-2 py-0.5 text-sm transition-colors focus:outline-none cursor-pointer data-open:border-teal-700 data-disabled:cursor-not-allowed data-disabled:opacity-50">
-                        <span className="text-gray-900 group-data-disabled:text-gray-400">{selectedLabel}</span>
+                <div className="relative flex-1 min-w-0">
+                    <ListboxButton className="group w-full flex items-center justify-between gap-1 rounded border border-gray-300 bg-white px-2 py-0.5 text-sm transition-colors focus:outline-none cursor-pointer data-open:border-teal-700 data-disabled:cursor-not-allowed data-disabled:opacity-50">
+                        <span className="truncate min-w-0 text-gray-900 group-data-disabled:text-gray-400">{selectedLabel}</span>
                         <span
                             className="material-symbols-outlined transition-transform duration-150 text-gray-400 group-data-open:rotate-180 group-data-open:text-teal-700"
                             style={{ fontSize: 14 }}

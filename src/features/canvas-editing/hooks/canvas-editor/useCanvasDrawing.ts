@@ -5,6 +5,8 @@ import { OBJECT_CATEGORY, defaultObjectTypeForEnv, type ObjectCategory, type Obj
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import { useCanvasDrawingStore } from "@/features/canvas-editing/stores/canvasDrawingStore";
 import { useEnvStore } from "@/stores/envStore";
+import { useEnvPointStore } from "@/stores/envPointStore";
+import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
 
 interface UseCanvasDrawingOptions {
     activeTool: ActiveTool | null;
@@ -86,6 +88,19 @@ export function useCanvasDrawing({
     const handleStageClick = useCallback(
         (e: Konva.KonvaEventObject<MouseEvent>) => {
             if (e.evt.button !== 0) return;
+
+            if (activeTool === "addStartPoint" || activeTool === "addEndPoint") {
+                const stage = stageRef.current;
+                if (!stage) return;
+                if (e.target !== stage) return;
+                const ptr = stage.getRelativePointerPosition();
+                if (!ptr) return;
+                const type = activeTool === "addStartPoint" ? "start" : "end";
+                const environmentId = useEnvStore.getState().env.id;
+                useEnvPointStore.getState().upsertPoint(environmentId, type, { x: ptr.x, y: ptr.y });
+                useCanvasToolStore.getState().setActiveTool(null);
+                return;
+            }
 
             if (activeTool === "addZone" || activeTool === "addObstacle") {
                 const stage = stageRef.current;

@@ -4,6 +4,7 @@ export const LAYER_NAME = {
     GRID: "Grid",
     ZONES: "Zones",
     OBSTACLES: "Obstacles",
+    ENV_POINTS: "Env Points",
 } as const;
 
 export type LayerName = (typeof LAYER_NAME)[keyof typeof LAYER_NAME];
@@ -12,12 +13,14 @@ export const LAYER_ID = {
     GRID: 1,
     ZONES: 2,
     OBSTACLES: 3,
+    ENV_POINTS: 4,
 } as const;
 
 export const LAYER_REGISTRY: LayerDefinition[] = [
     { id: LAYER_ID.GRID, name: LAYER_NAME.GRID, type: "Grid" },
     { id: LAYER_ID.ZONES, name: LAYER_NAME.ZONES, type: "Polygon" },
     { id: LAYER_ID.OBSTACLES, name: LAYER_NAME.OBSTACLES, type: "Polygon" },
+    { id: LAYER_ID.ENV_POINTS, name: LAYER_NAME.ENV_POINTS, type: "EnvPoints" },
 ];
 
 export const POLYGON_EDGE_STYLE = {
@@ -45,6 +48,12 @@ export const LAYER_PARAM_KEY = {
     POLYGON_EDGE_COLOR: "Polygon Edge Color",
     POLYGON_EDGE_WIDTH: "Polygon Edge Width",
     POLYGON_FILL_COLOR: "Polygon Fill Color",
+    START_POINT_COLOR: "Start Point Color",
+    START_POINT_RADIUS: "Start Point Radius",
+    START_POINT_STROKE_COLOR: "Start Point Stroke Color",
+    END_POINT_COLOR: "End Point Color",
+    END_POINT_RADIUS: "End Point Radius",
+    END_POINT_STROKE_COLOR: "End Point Stroke Color",
 } as const;
 export type LayerParamKey = (typeof LAYER_PARAM_KEY)[keyof typeof LAYER_PARAM_KEY];
 
@@ -95,5 +104,15 @@ export const LAYER_SETTINGS_SETUP_DEFAULTS: LayerSettingsSetup[] = [
     { id: 61, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH, styleType: "Pixels", styleGroup: "polygon", defaultValue: "1.5" },
     // rgba(239,68,68,0.23) ≈ #ef44443b
     { id: 80, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_FILL_COLOR, styleType: "Color", styleGroup: "polygon", defaultValue: "#ef44443b" },
+
+    // ── Env Points ───────────────────────────────────────────────────────────
+    { id: 1, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "true" },
+    { id: 5, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "general", defaultValue: "40" },
+    { id: 20, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_POINT_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#22c55e" },
+    { id: 21, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_POINT_RADIUS, styleType: "Pixels", styleGroup: "point", defaultValue: "3" },
+    { id: 22, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_POINT_STROKE_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#166534" },
+    { id: 23, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.END_POINT_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#ef4444" },
+    { id: 24, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.END_POINT_RADIUS, styleType: "Pixels", styleGroup: "point", defaultValue: "3" },
+    { id: 25, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.END_POINT_STROKE_COLOR, styleType: "Color", styleGroup: "point", defaultValue: "#991b1b" },
 ];
 

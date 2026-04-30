@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { Object } from "@/types/schemaTypes";
+import type { EnvPointType } from "@/types/schemaTypes";
 import type { ActiveTool, VertexRef } from "@/features/canvas-editing/types/canvas";
 
 interface UseCanvasKeyboardOptions {
@@ -7,12 +8,15 @@ interface UseCanvasKeyboardOptions {
     drawingPointsCount: number;
     selectedObject: Object | null;
     selectedVertexRefs: VertexRef[];
+    selectedEnvPointType: EnvPointType | null;
+    envPointEnvironmentId: number | null;
     setActiveTool: (tool: ActiveTool | null) => void;
     clearSelection: () => void;
     selectVertex: (ref: VertexRef | null) => void;
     deleteObject: (obj: Object) => void;
     deleteVertex: (obj: Object, index: number) => void;
     deleteVertices: (obj: Object, refs: VertexRef[]) => void;
+    deleteEnvPoint: (environmentId: number, type: EnvPointType) => void;
     cancelDrawing: () => void;
 }
 
@@ -21,12 +25,15 @@ export function useCanvasKeyboard({
     drawingPointsCount,
     selectedObject,
     selectedVertexRefs,
+    selectedEnvPointType,
+    envPointEnvironmentId,
     setActiveTool,
     clearSelection,
     selectVertex,
     deleteObject,
     deleteVertex,
     deleteVertices,
+    deleteEnvPoint,
     cancelDrawing,
 }: UseCanvasKeyboardOptions) {
     const handleKeyDown = useCallback(
@@ -44,6 +51,8 @@ export function useCanvasKeyboard({
                         selectVertex(null); // deselect vertices, keep object selected
                     } else if (selectedObject !== null) {
                         clearSelection();
+                    } else if (selectedEnvPointType !== null) {
+                        clearSelection();
                     } else {
                         setActiveTool(null);
                     }
@@ -60,6 +69,9 @@ export function useCanvasKeyboard({
                 } else if (selectedObject !== null) {
                     deleteObject(selectedObject);
                     clearSelection();
+                } else if (selectedEnvPointType !== null && envPointEnvironmentId !== null) {
+                    deleteEnvPoint(envPointEnvironmentId, selectedEnvPointType);
+                    clearSelection();
                 }
             }
         },
@@ -68,12 +80,15 @@ export function useCanvasKeyboard({
             drawingPointsCount,
             selectedObject,
             selectedVertexRefs,
+            selectedEnvPointType,
+            envPointEnvironmentId,
             setActiveTool,
             clearSelection,
             selectVertex,
             deleteObject,
             deleteVertex,
             deleteVertices,
+            deleteEnvPoint,
             cancelDrawing,
         ],
     );
