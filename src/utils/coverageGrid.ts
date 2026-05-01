@@ -103,9 +103,12 @@ export function buildCoverageVisitMap(input: BuildCoverageVisitMapInput): Covera
 
     for (const segment of segments) {
         const path = segment.path;
+        let previousEdgeCells: Set<string> | null = null;
         for (let i = 0; i + 1 < path.length; i++) {
             const p0 = path[i]!.point;
             const p1 = path[i + 1]!.point;
+            const currentEdgeCells = new Set<string>();
+            const currentEdgeCellCenters = new Map<string, { x: number; y: number }>();
 
             const minCol = Math.floor((Math.min(p0.x, p1.x) - halfWidth) / cellWorld);
             const maxCol = Math.floor((Math.max(p0.x, p1.x) + halfWidth) / cellWorld);
@@ -118,10 +121,25 @@ export function buildCoverageVisitMap(input: BuildCoverageVisitMapInput): Covera
                     const cy = (row + 0.5) * cellWorld;
                     if (distSqPointToSegment(cx, cy, p0.x, p0.y, p1.x, p1.y) <= halfSq) {
                         const key = `${col},${row}`;
-                        visitMap.set(key, (visitMap.get(key) ?? 0) + 1);
+                        currentEdgeCells.add(key);
+                        currentEdgeCellCenters.set(key, { x: cx, y: cy });
                     }
                 }
             }
+
+            for (const key of currentEdgeCells) {
+                // Adjacent edges in the same polyline share a vertex; avoid counting
+                // only the shared-vertex cap cells twice for a single physical pass.
+                if (previousEdgeCells?.has(key)) {
+                    const center = currentEdgeCellCenters.get(key)!;
+                    const dx = center.x - p0.x;
+                    const dy = center.y - p0.y;
+                    if (dx * dx + dy * dy <= halfSq) continue;
+                }
+                visitMap.set(key, (visitMap.get(key) ?? 0) + 1);
+            }
+
+            previousEdgeCells = currentEdgeCells;
         }
     }
 
