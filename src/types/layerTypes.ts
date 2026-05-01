@@ -20,6 +20,7 @@ export type InternalStyleAttributeKey =
     | "Show Vertex IDs"
     | "Grid Line Color"
     | "Coverage Grid Cell Size"
+    | "Coverage Grid Show Grid"
     | "Coverage Grid Line Color"
     | "Coverage Grid Line Width"
     | "Coverage Grid Fill Color"
