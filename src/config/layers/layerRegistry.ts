@@ -101,7 +101,7 @@ export const LAYER_SETTINGS_SETUP_DEFAULTS: LayerSettingsSetup[] = [
     // ── Coverage Grid (internal Grid type) ──────────────────────────────────
     { id: 1, layerId: LAYER_ID.COVERAGE_GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "false" },
     { id: 5, layerId: LAYER_ID.COVERAGE_GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "general", defaultValue: "15" },
-    { id: 11, layerId: LAYER_ID.COVERAGE_GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.COVERAGE_GRID_CELL_SIZE, styleType: "Integer", styleGroup: "general", defaultValue: "1" },
+    { id: 11, layerId: LAYER_ID.COVERAGE_GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.COVERAGE_GRID_CELL_SIZE, styleType: "Integer", styleGroup: "general", defaultValue: "5" },
     { id: 15, layerId: LAYER_ID.COVERAGE_GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.COVERAGE_GRID_SHOW_GRID, styleType: "Boolean", styleGroup: "general", defaultValue: "false" },
     { id: 12, layerId: LAYER_ID.COVERAGE_GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.COVERAGE_GRID_LINE_COLOR, styleType: "Color", styleGroup: "line", defaultValue: "#062e412d" },
     { id: 13, layerId: LAYER_ID.COVERAGE_GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.COVERAGE_GRID_LINE_WIDTH, styleType: "Pixels", styleGroup: "line", defaultValue: "1" },
