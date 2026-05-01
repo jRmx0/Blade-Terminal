@@ -1,13 +1,12 @@
 import InspectorPanelSectionField from "@/components/inspector-panel/InspectorPanelSectionField";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
 import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import { useEnvStore } from "@/stores/envStore";
-import { getObjectsByEnvironment } from "@server/db/objects";
-import type { Object as CanvasObject } from "@/types/schemaTypes";
+import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { buildCoverageVisitMap, computeCoverageRatio, resolvePathWidth } from "@/utils/coverageGrid";
 
 export default function CoverageField() {
@@ -17,6 +16,13 @@ export default function CoverageField() {
   const parameterValues = useParameterValuesStore((s) => s.parameterValues);
   const layers = useLayerSettingsStore((s) => s.layers);
   const env = useEnvStore((s) => s.env);
+  // In-memory objects from the canvas store — always reflect the current session
+  // state (including unsaved edits), so obstacles are visible immediately.
+  const allObjects = useCanvasObjectStore((s) => s.objects);
+  const objects = useMemo(
+    () => allObjects.filter((o) => o.environmentId === env.id),
+    [allObjects, env.id],
+  );
 
   // Refs keep latest catalog/param values available without triggering recalc.
   // Coverage ratio must reflect the last completed run, not the current slider.
@@ -24,23 +30,6 @@ export default function CoverageField() {
   catalogParamsRef.current = catalogParams;
   const parameterValuesRef = useRef(parameterValues);
   parameterValuesRef.current = parameterValues;
-
-  const [objects, setObjects] = useState<CanvasObject[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    getObjectsByEnvironment(env)
-      .then((loaded) => {
-        if (!cancelled) setObjects(loaded);
-      })
-      .catch(() => {
-        if (!cancelled) setObjects([]);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [env]);
 
   const value = useMemo(() => {
     if (!result) return "—";
@@ -84,6 +73,7 @@ export default function CoverageField() {
     return (ratio * 100).toFixed(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, catalogMetrics, layers, objects]);
+
 
   return <InspectorPanelSectionField label="Coverage ratio" value={value} unit="%" />;
 }
