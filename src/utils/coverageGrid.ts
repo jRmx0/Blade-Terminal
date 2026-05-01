@@ -184,6 +184,22 @@ export function computeOverlapRatio(visitMap: Map<string, number>): number | nul
     return (totalVisits / visitMap.size) * 100 - 100;
 }
 
+/** Counts the total number of path waypoints across all segments, skipping consecutive duplicate points. */
+export function computeNumberOfTurns(segments: CoveragePathPlanSegment[]): number {
+    let count = 0;
+    let prevX: number | null = null;
+    let prevY: number | null = null;
+    for (const segment of segments) {
+        for (const { point } of segment.path) {
+            if (point.x === prevX && point.y === prevY) continue;
+            count++;
+            prevX = point.x;
+            prevY = point.y;
+        }
+    }
+    return count;
+}
+
 export function computeCoverageRatio(input: ComputeCoverageRatioInput): number | null {
     const { visitMap, cellSize, objects } = input;
     const cellWorld = Number.isFinite(cellSize) && cellSize > 0 ? cellSize : 1;
