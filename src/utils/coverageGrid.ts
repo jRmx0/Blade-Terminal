@@ -144,6 +144,16 @@ function pointInPolygon(x: number, y: number, vertices: Array<{ x: number; y: nu
     return inside;
 }
 
+/** Returns (total visits / unique visited cells * 100) - 100. 0% = no overlap, 50% = cells visited 1.5× on average. null if nothing was visited. */
+export function computeOverlapRatio(visitMap: Map<string, number>): number | null {
+    if (visitMap.size === 0) return null;
+    let totalVisits = 0;
+    for (const count of visitMap.values()) {
+        totalVisits += count;
+    }
+    return (totalVisits / visitMap.size) * 100 - 100;
+}
+
 export function computeCoverageRatio(input: ComputeCoverageRatioInput): number | null {
     const { visitMap, cellSize, objects } = input;
     const cellWorld = Number.isFinite(cellSize) && cellSize > 0 ? cellSize : 1;
