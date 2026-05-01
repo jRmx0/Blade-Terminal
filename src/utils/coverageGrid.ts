@@ -1,5 +1,6 @@
-import type { ComputeResultRecord, ComputationAlgorithmParameter } from "@/types/schemaTypes";
+import type { ComputeResultRecord, ComputationAlgorithmParameter, Object as CanvasObject } from "@/types/schemaTypes";
 import type { AlgorithmParameter, CoveragePathPlanSegment } from "@/types/serviceTypes";
+import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
 
 export interface ResolvePathWidthInput {
     result: ComputeResultRecord | null;
@@ -17,6 +18,12 @@ export interface BuildCoverageVisitMapInput {
 export interface CoverageVisitMapResult {
     visitMap: Map<string, number>;
     maxCount: number;
+}
+
+export interface ComputeCoverageRatioInput {
+    visitMap: Map<string, number>;
+    cellSize: number;
+    objects: CanvasObject[];
 }
 
 /** Squared distance from point (px, py) to segment (ax, ay)->(bx, by). */
@@ -122,4 +129,72 @@ export function buildCoverageVisitMap(input: BuildCoverageVisitMapInput): Covera
         visitMap,
         maxCount: computeMaxVisitCount(visitMap),
     };
+}
+
+function pointInPolygon(x: number, y: number, vertices: Array<{ x: number; y: number }>): boolean {
+    let inside = false;
+    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+        const vi = vertices[i]!;
+        const vj = vertices[j]!;
+        const intersects =
+            (vi.y > y) !== (vj.y > y) &&
+            x < ((vj.x - vi.x) * (y - vi.y)) / (vj.y - vi.y + Number.EPSILON) + vi.x;
+        if (intersects) inside = !inside;
+    }
+    return inside;
+}
+
+export function computeCoverageRatio(input: ComputeCoverageRatioInput): number | null {
+    const { visitMap, cellSize, objects } = input;
+    const cellWorld = Number.isFinite(cellSize) && cellSize > 0 ? cellSize : 1;
+
+    const zones = objects.filter((o) => o.category === OBJECT_CATEGORY.ZONE && o.vertices.length >= 3);
+    if (zones.length === 0) return null;
+    const obstacles = objects.filter((o) => o.category === OBJECT_CATEGORY.OBSTACLE && o.vertices.length >= 3);
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (const z of zones) {
+        for (const v of z.vertices) {
+            if (v.x < minX) minX = v.x;
+            if (v.x > maxX) maxX = v.x;
+            if (v.y < minY) minY = v.y;
+            if (v.y > maxY) maxY = v.y;
+        }
+    }
+
+    if (!Number.isFinite(minX) || !Number.isFinite(maxX) || !Number.isFinite(minY) || !Number.isFinite(maxY)) {
+        return null;
+    }
+
+    const minCol = Math.floor(minX / cellWorld);
+    const maxCol = Math.floor(maxX / cellWorld);
+    const minRow = Math.floor(minY / cellWorld);
+    const maxRow = Math.floor(maxY / cellWorld);
+
+    let totalWorkCells = 0;
+    let coveredWorkCells = 0;
+
+    for (let col = minCol; col <= maxCol; col++) {
+        for (let row = minRow; row <= maxRow; row++) {
+            const cx = (col + 0.5) * cellWorld;
+            const cy = (row + 0.5) * cellWorld;
+
+            const inZone = zones.some((z) => pointInPolygon(cx, cy, z.vertices));
+            if (!inZone) continue;
+            const inObstacle = obstacles.some((o) => pointInPolygon(cx, cy, o.vertices));
+            if (inObstacle) continue;
+
+            totalWorkCells += 1;
+            if ((visitMap.get(`${col},${row}`) ?? 0) > 0) {
+                coveredWorkCells += 1;
+            }
+        }
+    }
+
+    if (totalWorkCells === 0) return null;
+    return coveredWorkCells / totalWorkCells;
 }
