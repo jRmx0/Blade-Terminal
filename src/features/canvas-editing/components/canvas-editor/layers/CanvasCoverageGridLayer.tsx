@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useRef } from "react";
 import { Layer, Line, Rect } from "react-konva";
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
 import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
@@ -20,6 +20,13 @@ function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProp
     const result = useComputeResultStore((s) => s.result);
     const catalogParams = useComputationCatalogStore((s) => s.parameters);
     const parameterValues = useParameterValuesStore((s) => s.parameterValues);
+
+    // Refs keep the latest catalog/param values available without triggering recalc.
+    // Coverage cells must reflect the segments from the last run, not the current slider value.
+    const catalogParamsRef = useRef(catalogParams);
+    catalogParamsRef.current = catalogParams;
+    const parameterValuesRef = useRef(parameterValues);
+    parameterValuesRef.current = parameterValues;
 
     const coverageLayer = layers.find(
         (l) => l.layer.id === LAYER_ID.COVERAGE_GRID && l.layer.algorithmId === 0 && l.layer.providerId === 0,
@@ -53,9 +60,12 @@ function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProp
     const fillColor = stripHexAlpha(fillColorRaw);
 
     // ── Resolve path width from parameter values ──────────────────────────────
+    // Deps: only result + cellWorld. catalogParams/parameterValues are read via
+    // refs so slider edits before re-running the algorithm don't cause recalc.
     const pathWidth = useMemo(
-        () => resolvePathWidth({ result, catalogParams, parameterValues, fallback: cellWorld }),
-        [result, catalogParams, parameterValues, cellWorld],
+        () => resolvePathWidth({ result, catalogParams: catalogParamsRef.current, parameterValues: parameterValuesRef.current, fallback: cellWorld }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [result, cellWorld],
     );
 
     // ── Build visit count map ─────────────────────────────────────────────────

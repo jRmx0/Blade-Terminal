@@ -1,5 +1,5 @@
 import InspectorPanelSectionField from "@/components/inspector-panel/InspectorPanelSectionField";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
@@ -17,6 +17,13 @@ export default function CoverageField() {
   const parameterValues = useParameterValuesStore((s) => s.parameterValues);
   const layers = useLayerSettingsStore((s) => s.layers);
   const env = useEnvStore((s) => s.env);
+
+  // Refs keep latest catalog/param values available without triggering recalc.
+  // Coverage ratio must reflect the last completed run, not the current slider.
+  const catalogParamsRef = useRef(catalogParams);
+  catalogParamsRef.current = catalogParams;
+  const parameterValuesRef = useRef(parameterValues);
+  parameterValuesRef.current = parameterValues;
 
   const [objects, setObjects] = useState<CanvasObject[]>([]);
 
@@ -65,7 +72,7 @@ export default function CoverageField() {
       getLayerParam(layers, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.COVERAGE_GRID_CELL_SIZE) ?? "1",
     );
     const cellSize = Number.isFinite(cellSizeRaw) && cellSizeRaw > 0 ? cellSizeRaw : 1;
-    const pathWidth = resolvePathWidth({ result, catalogParams, parameterValues, fallback: cellSize });
+    const pathWidth = resolvePathWidth({ result, catalogParams: catalogParamsRef.current, parameterValues: parameterValuesRef.current, fallback: cellSize });
     const visitMap = buildCoverageVisitMap({
       segments: result.result.coveragePathPlan.segments,
       cellSize,
@@ -75,7 +82,8 @@ export default function CoverageField() {
     const ratio = computeCoverageRatio({ visitMap, cellSize, objects });
     if (ratio == null || !Number.isFinite(ratio)) return "—";
     return (ratio * 100).toFixed(1);
-  }, [result, catalogMetrics, layers, catalogParams, parameterValues, objects]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, catalogMetrics, layers, objects]);
 
   return <InspectorPanelSectionField label="Coverage ratio" value={value} unit="%" />;
 }
