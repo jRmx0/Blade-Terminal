@@ -33,9 +33,6 @@ function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProp
         LAYER_PARAM_KEY.COVERAGE_GRID_FILL_COLOR,
     ].every((key) => coverageSettings.some((p) => p.key === key));
 
-    // Skip initial paint until DB layer settings are hydrated to avoid fallback flash on reload.
-    if (!hasHydratedSettings) return null;
-
     const visible = getLayerParam(layers, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.VISIBLE) !== "false";
     const showGrid = getLayerParam(layers, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.COVERAGE_GRID_SHOW_GRID) !== "false";
     const strokeColor = getLayerParam(layers, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.COVERAGE_GRID_LINE_COLOR) ?? "#062e41";
@@ -63,13 +60,17 @@ function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProp
 
     // ── Build visit count map ─────────────────────────────────────────────────
     const coverageMap = useMemo(
-        () => buildCoverageVisitMap({ segments: result?.result.coveragePathPlan.segments ?? [], cellSize: cellWorld, pathWidth }),
-        [result, cellWorld, pathWidth],
+        () =>
+            hasHydratedSettings
+                ? buildCoverageVisitMap({ segments: result?.result.coveragePathPlan.segments ?? [], cellSize: cellWorld, pathWidth })
+                : { visitMap: new Map<string, number>(), maxCount: 0 },
+        [hasHydratedSettings, result, cellWorld, pathWidth],
     );
     const visitMap = coverageMap.visitMap;
     const maxCount = coverageMap.maxCount;
 
-    if (!visible) return null;
+    // Keep hook order stable across renders; gate paint after hooks run.
+    if (!hasHydratedSettings || !visible) return null;
 
     // ── Viewport in world coordinates ─────────────────────────────────────────
     const minX = -position.x / scale;
