@@ -101,14 +101,25 @@ export function buildCoverageVisitMap(input: BuildCoverageVisitMapInput): Covera
     const halfWidth = width / 2;
     const halfSq = halfWidth * halfWidth;
 
+    const CONTIGUITY_EPSILON_SQ = 1e-12;
+    let previousEdgeCells: Set<string> | null = null;
+    let previousEdgeEndPoint: { x: number; y: number } | null = null;
+
     for (const segment of segments) {
         const path = segment.path;
-        let previousEdgeCells: Set<string> | null = null;
         for (let i = 0; i + 1 < path.length; i++) {
             const p0 = path[i]!.point;
             const p1 = path[i + 1]!.point;
             const currentEdgeCells = new Set<string>();
             const currentEdgeCellCenters = new Map<string, { x: number; y: number }>();
+
+            if (previousEdgeEndPoint) {
+                const dx = p0.x - previousEdgeEndPoint.x;
+                const dy = p0.y - previousEdgeEndPoint.y;
+                if (dx * dx + dy * dy > CONTIGUITY_EPSILON_SQ) {
+                    previousEdgeCells = null;
+                }
+            }
 
             const minCol = Math.floor((Math.min(p0.x, p1.x) - halfWidth) / cellWorld);
             const maxCol = Math.floor((Math.max(p0.x, p1.x) + halfWidth) / cellWorld);
@@ -140,6 +151,7 @@ export function buildCoverageVisitMap(input: BuildCoverageVisitMapInput): Covera
             }
 
             previousEdgeCells = currentEdgeCells;
+            previousEdgeEndPoint = p1;
         }
     }
 
