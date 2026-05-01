@@ -12,7 +12,8 @@ import { useSaveModeStore } from "@/stores/saveModeStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { loadComputationCatalog } from "@/stores/computationCatalogStore";
 import { loadLayerSettings } from "@/stores/layerSettingsStore";
-import { initLayerSettingsForEnvironment } from "@server/db/layerSettings";
+import { addMissingLayerSettingsForEnvironment, initLayerSettingsForEnvironment } from "@server/db/layerSettings";
+import { getAllLayerSettingsSetup } from "@server/db/layerSettingsSetup";
 import { getComputeResult } from "@server/db/computeResults";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
@@ -89,6 +90,8 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     useParameterValuesStore.getState().setParameterValues(parameterValues);
     useEnvStore.getState().setComputation(computation);
     useCanvasHistoryStore.getState().resetHistory();
+    const setups = await getAllLayerSettingsSetup();
+    await addMissingLayerSettingsForEnvironment(environmentId, setups);
     await loadLayerSettings(environmentId);
     useEnvPointStore.getState().clearPoints();
     await useEnvPointStore.getState().loadEnvPoints(environmentId);

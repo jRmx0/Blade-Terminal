@@ -2,6 +2,7 @@ import type { LayerDefinition, LayerSettingsSetup } from "@/types/layerTypes";
 
 export const LAYER_NAME = {
     GRID: "Grid",
+    COVERAGE_GRID: "Coverage Grid",
     ZONES: "Zones",
     OBSTACLES: "Obstacles",
     ENV_POINTS: "Env Points",
@@ -14,10 +15,12 @@ export const LAYER_ID = {
     ZONES: 2,
     OBSTACLES: 3,
     ENV_POINTS: 4,
+    COVERAGE_GRID: 5,
 } as const;
 
 export const LAYER_REGISTRY: LayerDefinition[] = [
     { id: LAYER_ID.GRID, name: LAYER_NAME.GRID, type: "Grid" },
+    { id: LAYER_ID.COVERAGE_GRID, name: LAYER_NAME.COVERAGE_GRID, type: "Grid" },
     { id: LAYER_ID.ZONES, name: LAYER_NAME.ZONES, type: "Polygon" },
     { id: LAYER_ID.OBSTACLES, name: LAYER_NAME.OBSTACLES, type: "Polygon" },
     { id: LAYER_ID.ENV_POINTS, name: LAYER_NAME.ENV_POINTS, type: "EnvPoints" },
@@ -45,6 +48,10 @@ export const LAYER_PARAM_KEY = {
     SHOW_VERTEX_IDS: "Show Vertex IDs",
     Z_INDEX: "Z-Index",
     GRID_LINE_COLOR: "Grid Line Color",
+    COVERAGE_GRID_CELL_SIZE: "Coverage Grid Cell Size",
+    COVERAGE_GRID_LINE_COLOR: "Coverage Grid Line Color",
+    COVERAGE_GRID_LINE_WIDTH: "Coverage Grid Line Width",
+    COVERAGE_GRID_FILL_COLOR: "Coverage Grid Fill Color",
     POLYGON_EDGE_COLOR: "Polygon Edge Color",
     POLYGON_EDGE_WIDTH: "Polygon Edge Width",
     POLYGON_FILL_COLOR: "Polygon Fill Color",
@@ -89,6 +96,14 @@ export const LAYER_SETTINGS_SETUP_DEFAULTS: LayerSettingsSetup[] = [
     { id: 1, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "true" },
     { id: 5, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "general", defaultValue: "10" },
     { id: 10, layerId: LAYER_ID.GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.GRID_LINE_COLOR, styleType: "Color", styleGroup: "general", defaultValue: "#e2e8f0" },
+
+    // ── Coverage Grid (internal Grid type) ──────────────────────────────────
+    { id: 1, layerId: LAYER_ID.COVERAGE_GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "true" },
+    { id: 5, layerId: LAYER_ID.COVERAGE_GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "general", defaultValue: "15" },
+    { id: 11, layerId: LAYER_ID.COVERAGE_GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.COVERAGE_GRID_CELL_SIZE, styleType: "Integer", styleGroup: "general", defaultValue: "1" },
+    { id: 12, layerId: LAYER_ID.COVERAGE_GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.COVERAGE_GRID_LINE_COLOR, styleType: "Color", styleGroup: "line", defaultValue: "#062e412d" },
+    { id: 13, layerId: LAYER_ID.COVERAGE_GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.COVERAGE_GRID_LINE_WIDTH, styleType: "Pixels", styleGroup: "line", defaultValue: "1" },
+    { id: 14, layerId: LAYER_ID.COVERAGE_GRID, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.COVERAGE_GRID_FILL_COLOR, styleType: "Color", styleGroup: "line", defaultValue: "#0ea5e922" },
 
     // ── Zones (Polygon) ──────────────────────────────────────────────────────
     { id: 1, layerId: LAYER_ID.ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "true" },

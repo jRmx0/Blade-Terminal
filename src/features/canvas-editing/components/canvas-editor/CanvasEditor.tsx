@@ -22,6 +22,7 @@ import { useCanvasVertexDrag } from "@/features/canvas-editing/hooks/canvas-edit
 import { useCanvasKeyboard } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasKeyboard";
 import { useCanvasAutosave } from "@/features/canvas-editing/hooks/canvas-editor/useCanvasSave";
 import { CanvasGridLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasGridLayer";
+import { CanvasCoverageGridLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasCoverageGridLayer";
 import { CanvasPolygonObjectsLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasPolygonObjectsLayer";
 import { CanvasVertexHandlesLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasVertexHandlesLayer";
 import { CanvasDrawingPreviewLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasDrawingPreviewLayer";
@@ -174,6 +175,7 @@ export default function CanvasEditor() {
   const zonesVisible = getLayerParam(layerSettings, LAYER_ID.ZONES, LAYER_PARAM_KEY.VISIBLE) !== "false";
   const obstaclesVisible = getLayerParam(layerSettings, LAYER_ID.OBSTACLES, LAYER_PARAM_KEY.VISIBLE) !== "false";
   const gridZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.GRID, LAYER_PARAM_KEY.Z_INDEX) ?? "10", 10);
+  const coverageGridZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.Z_INDEX) ?? "15", 10);
   const zoneZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.ZONES, LAYER_PARAM_KEY.Z_INDEX) ?? "20", 10);
   const obstacleZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.OBSTACLES, LAYER_PARAM_KEY.Z_INDEX) ?? "30", 10);
   const envPointsZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.ENV_POINTS, LAYER_PARAM_KEY.Z_INDEX) ?? "40", 10);
@@ -207,6 +209,7 @@ export default function CanvasEditor() {
   // Unified layer order — system and dynamic layers interleaved by Z-Index ascending.
   const allLayerOrder = [
     { kind: "system" as const, id: "grid" as const, zIndex: gridZIndex },
+    { kind: "system" as const, id: "coverageGrid" as const, zIndex: coverageGridZIndex },
     { kind: "system" as const, id: "zones" as const, zIndex: zoneZIndex },
     { kind: "system" as const, id: "obstacles" as const, zIndex: obstacleZIndex },
     { kind: "system" as const, id: "envPoints" as const, zIndex: envPointsZIndex },
@@ -326,6 +329,9 @@ export default function CanvasEditor() {
           }
           if (entry.id === "grid") {
             return <CanvasGridLayer key="grid" width={size.width} height={size.height} />;
+          }
+          if (entry.id === "coverageGrid") {
+            return <CanvasCoverageGridLayer key="coverageGrid" width={size.width} height={size.height} />;
           }
           if (entry.id === "zones") {
             return (

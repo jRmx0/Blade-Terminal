@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { StyleAttributeGroup } from "@/types/serviceTypes";
 import type { LayerRecord, LayerSettingView } from "@/types/layerTypes";
-import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
+import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import LayerSettingsPanel, { type SettingsSectionData } from "@/features/inspector/components/calc-layers-section/LayerSettingsPanel";
 
 const GROUP_ORDER: StyleAttributeGroup[] = ["general", "point", "startPoint", "endPoint", "startEndPoint", "line", "polygon"];
@@ -98,7 +98,7 @@ export default function LayerRow({
             {/* Settings panel */}
             {expanded && (
                 <LayerSettingsPanel
-                    sections={buildSections(settings, onParamChange)}
+                    sections={buildSections(layer, settings, onParamChange)}
                 />
             )}
         </div>
@@ -106,9 +106,20 @@ export default function LayerRow({
 }
 
 function buildSections(
+    layer: LayerRecord,
     settings: LayerSettingView[],
     onParamChange: (name: string, value: string) => void,
 ): SettingsSectionData[] {
+    if (layer.id === LAYER_ID.COVERAGE_GRID && layer.algorithmId === 0 && layer.providerId === 0) {
+        const general = settings.filter((p) => p.styleGroup === "general");
+        const style = settings.filter((p) => p.styleGroup !== "general" && p.key !== LAYER_PARAM_KEY.VISIBLE);
+
+        const sections: SettingsSectionData[] = [];
+        if (general.length > 0) sections.push({ label: "General", settings: general, onParamChange });
+        if (style.length > 0) sections.push({ label: "Style", settings: style, onParamChange });
+        return sections;
+    }
+
     const sections: SettingsSectionData[] = [];
 
     // Internal params with no style group render flat (no collapsible header)
