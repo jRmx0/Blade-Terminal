@@ -2,13 +2,18 @@ import MenuBarItem from "@/components/menu-bar/MenuBarItem";
 import { useEnvStore } from "@/stores/envStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { buildExportXml } from "@/features/workspace-manager/utils/exportWorkspace";
+import { useEnvPointStore } from "@/stores/envPointStore";
 
 export default function WorkspaceExportButton() {
   const env = useEnvStore((s) => s.env);
   const objects = useCanvasObjectStore((s) => s.objects);
+  const startPoint = useEnvPointStore((s) => s.startPoint);
+  const endPoint = useEnvPointStore((s) => s.endPoint);
+  const startEndPoint = useEnvPointStore((s) => s.startEndPoint);
 
   const handleClick = async () => {
-    const xml = buildExportXml(env, objects);
+    const envPoints = [startPoint, endPoint, startEndPoint].filter((point): point is NonNullable<typeof point> => point !== null);
+    const xml = buildExportXml(env, objects, envPoints);
 
     let fileHandle: FileSystemFileHandle;
     try {

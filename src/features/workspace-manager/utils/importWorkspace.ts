@@ -10,6 +10,7 @@ import {
     type ObjectCategory,
     type ObjectType,
 } from "@/config/db-ops/enums";
+import type { EnvPointType } from "@/types/schemaTypes";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,6 +29,12 @@ export interface ImportedWorkspaceData {
     type: EnvType;
     coordSystem: CoordSystemType;
     objects: ParsedObject[];
+    envPoints: ParsedEnvPoint[];
+}
+
+export interface ParsedEnvPoint {
+    type: EnvPointType;
+    point: { x: number; y: number };
 }
 
 export interface ImportParseError {
@@ -47,6 +54,7 @@ const VALID_TYPES = Object.values(ENV_TYPE) as string[];
 const VALID_COORD_SYSTEMS = Object.values(COORD_SYSTEM) as string[];
 const VALID_CATEGORIES = Object.values(OBJECT_CATEGORY) as string[];
 const VALID_OBJECT_TYPES = Object.values(OBJECT_TYPE) as string[];
+const VALID_ENV_POINT_TYPES: EnvPointType[] = ["start", "end", "start_end"];
 
 function textContent(parent: Element, tag: string): string | null {
     return parent.querySelector(tag)?.textContent?.trim() ?? null;
@@ -100,7 +108,7 @@ export function parseImportXml(xml: string): ImportedWorkspaceData | ImportParse
 
     const rootAttrErr = checkNoAttributes(root, "<workspace>");
     if (rootAttrErr) return rootAttrErr;
-    const rootChildErr = checkChildren(root, ["environment", "objects"], "<workspace>");
+    const rootChildErr = checkChildren(root, ["environment", "objects", "envPoints"], "<workspace>");
     if (rootChildErr) return rootChildErr;
 
     // --- <environment> ---
@@ -212,5 +220,59 @@ export function parseImportXml(xml: string): ImportedWorkspaceData | ImportParse
         objects.push({ id, category, type: objType, vertices });
     }
 
-    return { name, format, type, coordSystem, objects };
+    // --- <envPoints> (optional) ---
+    const envPointsEl = root.querySelector(":scope > envPoints");
+    const envPoints: ParsedEnvPoint[] = [];
+    if (envPointsEl) {
+        const envPointsAttrErr = checkNoAttributes(envPointsEl, "<envPoints>");
+        if (envPointsAttrErr) return envPointsAttrErr;
+        const envPointsChildErr = checkChildren(envPointsEl, ["point"], "<envPoints>");
+        if (envPointsChildErr) return envPointsChildErr;
+
+        const pointEls = envPointsEl.querySelectorAll(":scope > point");
+        const seenTypes = new Set<EnvPointType>();
+
+        for (let i = 0; i < pointEls.length; i++) {
+            const pointEl = pointEls[i]!;
+            const label = `<point> #${i + 1}`;
+
+            const pointAttrErr = checkNoAttributes(pointEl, label);
+            if (pointAttrErr) return pointAttrErr;
+            const pointChildErr = checkChildren(pointEl, ["type", "x", "y"], label);
+            if (pointChildErr) return pointChildErr;
+
+            const pointTypeResult = requireText(pointEl, "type", label);
+            if (typeof pointTypeResult !== "string") return pointTypeResult;
+            if (!VALID_ENV_POINT_TYPES.includes(pointTypeResult as EnvPointType)) {
+                return { error: `Invalid <type> "${pointTypeResult}" in ${label}.` };
+            }
+            const type = pointTypeResult as EnvPointType;
+
+            if (seenTypes.has(type)) {
+                return { error: `Duplicate env point type "${type}" in <envPoints>.` };
+            }
+
+            const xText = textContent(pointEl, "x");
+            const yText = textContent(pointEl, "y");
+            if (xText === null || yText === null) {
+                return { error: `Missing <x> or <y> in ${label}.` };
+            }
+
+            const x = parseFloat(xText);
+            const y = parseFloat(yText);
+            if (!isFinite(x) || !isFinite(y)) {
+                return { error: `Non-numeric coordinate in ${label}.` };
+            }
+
+            seenTypes.add(type);
+            envPoints.push({ type, point: { x, y } });
+        }
+
+        const hasStartEnd = seenTypes.has("start_end");
+        if (hasStartEnd && (seenTypes.has("start") || seenTypes.has("end"))) {
+            return { error: `Invalid <envPoints>: <type>start_end</type> cannot be combined with <type>start</type> or <type>end</type>.` };
+        }
+    }
+
+    return { name, format, type, coordSystem, objects, envPoints };
 }

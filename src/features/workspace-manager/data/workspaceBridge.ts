@@ -15,6 +15,7 @@ import { loadLayerSettings } from "@/stores/layerSettingsStore";
 import { addMissingLayerSettingsForEnvironment, initLayerSettingsForEnvironment } from "@server/db/layerSettings";
 import { getAllLayerSettingsSetup } from "@server/db/layerSettingsSetup";
 import { getComputeResult } from "@server/db/computeResults";
+import { deleteEnvPointsByEnvironment, upsertEnvPoint } from "@server/db/envPoints";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { resolveNextEnvironmentId, loadCanvasForEnvironment, saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
@@ -35,6 +36,10 @@ function countByCategory(objects: { category: string }[], category: string): num
 
 function modeAfterFirstSave(): "manual" | "autosave" {
     return useSaveModeStore.getState().isAutoSaveEnabled ? "autosave" : "manual";
+}
+
+function isDefined<T>(value: T | null | undefined): value is T {
+    return value !== null && value !== undefined;
 }
 
 /** Initializes a fresh blank environment at app startup. Seeds the ID counter from IndexedDB. */
@@ -107,10 +112,15 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
 export async function saveAsWorkspace(name: string, selectedEnvId: number | null): Promise<void> {
     const { env, computation } = useEnvStore.getState();
     const { objects } = useCanvasObjectStore.getState();
+    const { startPoint, endPoint, startEndPoint } = useEnvPointStore.getState();
     const targetId = selectedEnvId ?? (await resolveNextEnvironmentId());
     const targetEnv: Environment = { ...env, id: targetId, name };
+    const sourcePoints = [startPoint, endPoint, startEndPoint].filter(isDefined);
     if (selectedEnvId !== null) {
-        await deleteObjectsByEnvironment(targetEnv);
+        await Promise.all([
+            deleteObjectsByEnvironment(targetEnv),
+            deleteEnvPointsByEnvironment(targetId),
+        ]);
     }
     const targetObjects = objects.map((o) => ({ ...o, environmentId: targetId }));
     const { parameterValues } = useParameterValuesStore.getState();
@@ -121,6 +131,9 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
         targetParamValues.length > 0 ? saveAlgorithmParameters(targetParamValues) : Promise.resolve(),
         targetObjects.length > 0 ? saveObjects(targetObjects) : Promise.resolve(),
         selectedEnvId === null ? initLayerSettingsForEnvironment(targetId) : Promise.resolve(),
+        sourcePoints.length > 0
+            ? Promise.all(sourcePoints.map((p) => upsertEnvPoint(targetId, p.type, p.point)))
+            : Promise.resolve(),
     ]);
     await loadWorkspace(targetId);
 }
@@ -132,7 +145,9 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
 export async function copyWorkspace(name: string): Promise<number> {
     const { env, computation } = useEnvStore.getState();
     const { objects } = useCanvasObjectStore.getState();
+    const { startPoint, endPoint, startEndPoint } = useEnvPointStore.getState();
     const { parameterValues } = useParameterValuesStore.getState();
+    const sourcePoints = [startPoint, endPoint, startEndPoint].filter(isDefined);
     const targetId = await resolveNextEnvironmentId();
     const targetEnv: Environment = { ...env, id: targetId, name };
     const targetObjects = objects.map((o) => ({ ...o, environmentId: targetId }));
@@ -143,6 +158,9 @@ export async function copyWorkspace(name: string): Promise<number> {
         targetParamValues.length > 0 ? saveAlgorithmParameters(targetParamValues) : Promise.resolve(),
         targetObjects.length > 0 ? saveObjects(targetObjects) : Promise.resolve(),
         initLayerSettingsForEnvironment(targetId),
+        sourcePoints.length > 0
+            ? Promise.all(sourcePoints.map((p) => upsertEnvPoint(targetId, p.type, p.point)))
+            : Promise.resolve(),
     ]);
     return targetId;
 }
@@ -182,6 +200,9 @@ export async function importWorkspace(data: ImportedWorkspaceData): Promise<void
         saveComputationSelection(createEmptyComputationSelection(targetId)),
         targetObjects.length > 0 ? saveObjects(targetObjects) : Promise.resolve(),
         initLayerSettingsForEnvironment(targetId),
+        data.envPoints.length > 0
+            ? Promise.all(data.envPoints.map((p) => upsertEnvPoint(targetId, p.type, p.point)))
+            : Promise.resolve(),
     ]);
 
     await loadWorkspace(targetId);

@@ -1,5 +1,6 @@
 import type { Environment } from "@/types/schemaTypes";
 import type { Object } from "@/types/schemaTypes";
+import type { EnvPoint } from "@/types/schemaTypes";
 
 function escapeXmlText(value: string): string {
     return value
@@ -8,7 +9,7 @@ function escapeXmlText(value: string): string {
         .replace(/>/g, "&gt;");
 }
 
-export function buildExportXml(env: Environment, objects: Object[]): string {
+export function buildExportXml(env: Environment, objects: Object[], envPoints: EnvPoint[] = []): string {
     const lines: string[] = [];
 
     lines.push('<?xml version="1.0" encoding="UTF-8"?>');
@@ -40,6 +41,18 @@ export function buildExportXml(env: Environment, objects: Object[]): string {
     }
 
     lines.push("  </objects>");
+
+    lines.push("  <envPoints>");
+
+    for (const envPoint of envPoints) {
+        lines.push("    <point>");
+        lines.push(`      <type>${escapeXmlText(envPoint.type)}</type>`);
+        lines.push(`      <x>${envPoint.point.x}</x>`);
+        lines.push(`      <y>${envPoint.point.y}</y>`);
+        lines.push("    </point>");
+    }
+
+    lines.push("  </envPoints>");
     lines.push("</workspace>");
 
     return lines.join("\n");

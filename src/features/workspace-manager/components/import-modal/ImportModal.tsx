@@ -27,6 +27,7 @@ export default function ImportModal() {
 
     const zoneCount = preview?.objects.filter((o) => o.category === OBJECT_CATEGORY.ZONE).length ?? 0;
     const obstacleCount = preview?.objects.filter((o) => o.category === OBJECT_CATEGORY.OBSTACLE).length ?? 0;
+    const envPointCount = preview?.envPoints.length ?? 0;
 
     const canConfirm = name.trim().length > 0 && !isImporting;
 
@@ -63,6 +64,9 @@ export default function ImportModal() {
                         </span>
                         <span>
                             <span className="font-medium text-gray-700">{obstacleCount}</span> obstacle{obstacleCount !== 1 ? "s" : ""}
+                        </span>
+                        <span>
+                            <span className="font-medium text-gray-700">{envPointCount}</span> point{envPointCount !== 1 ? "s" : ""}
                         </span>
                     </div>
                 </div>
