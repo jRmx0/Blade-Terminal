@@ -1,3 +1,4 @@
+import polygonClipping from "polygon-clipping";
 import type { Object } from "@/types/schemaTypes";
 import { OBJECT_CATEGORY, type ObjectCategory } from "@/config/db-ops/enums";
 import { computePolygonArea } from "@/utils/geometry";
@@ -28,66 +29,24 @@ export function computeEdgeMidpoints(vertices: Array<{ x: number; y: number }>):
 }
 
 // ---------------------------------------------------------------------------
-// Sutherland-Hodgman polygon clipping
-// ---------------------------------------------------------------------------
-
-/** Returns the intersection point of segment (a→b) with the infinite line (c→d). */
-function lineIntersect(a: Point, b: Point, c: Point, d: Point): Point {
-    const A1 = b.y - a.y, B1 = a.x - b.x, C1 = A1 * a.x + B1 * a.y;
-    const A2 = d.y - c.y, B2 = c.x - d.x, C2 = A2 * c.x + B2 * c.y;
-    const det = A1 * B2 - A2 * B1;
-    // det ≈ 0 means parallel — return midpoint as a safe fallback
-    if (Math.abs(det) < 1e-10) return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    return { x: (C1 * B2 - C2 * B1) / det, y: (A1 * C2 - A2 * C1) / det };
-}
-
-/** Returns true when point p is on the inside (left) of edge a→b. */
-function inside(p: Point, a: Point, b: Point): boolean {
-    return (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x) >= 0;
-}
-
-/**
- * Sutherland-Hodgman algorithm.
- * Clips `subject` polygon against the `clip` polygon (which must be convex or at
- * least simply-connected and wound counter-clockwise when using the standard rule).
- * Returns the intersection polygon vertices, or an empty array if no overlap.
- */
-export function clipPolygon(subject: Point[], clip: Point[]): Point[] {
-    let output = [...subject];
-    if (output.length === 0) return [];
-
-    for (let i = 0; i < clip.length; i++) {
-        if (output.length === 0) return [];
-        const a = clip[i]!;
-        const b = clip[(i + 1) % clip.length]!;
-        const input = output;
-        output = [];
-
-        for (let j = 0; j < input.length; j++) {
-            const curr = input[j]!;
-            const prev = input[(j + input.length - 1) % input.length]!;
-            const currInside = inside(curr, a, b);
-            const prevInside = inside(prev, a, b);
-
-            if (currInside) {
-                if (!prevInside) output.push(lineIntersect(prev, curr, a, b));
-                output.push(curr);
-            } else if (prevInside) {
-                output.push(lineIntersect(prev, curr, a, b));
-            }
-        }
-    }
-
-    return output;
-}
-
-// ---------------------------------------------------------------------------
 // Net area helper
 // ---------------------------------------------------------------------------
+
+/** Converts an {x,y}[] polygon to a closed polygon-clipping ring [[x,y],...,[x0,y0]]. */
+function toRing(vertices: Array<{ x: number; y: number }>): [number, number][] {
+    const ring: [number, number][] = vertices.map((v) => [v.x, v.y]);
+    // polygon-clipping requires a closed ring: last point must equal first point
+    if (ring.length > 0) ring.push(ring[0]!);
+    return ring;
+}
 
 /**
  * Computes the net area of a zone object: gross area minus the total area of all
  * obstacle polygons that overlap with it (clipped to the zone boundary).
+ *
+ * Uses the Martinez-Rueda-Feito algorithm (polygon-clipping library) which correctly
+ * handles arbitrary concave polygons. Sutherland-Hodgman was replaced because it only
+ * works with convex clip polygons.
  *
  * For obstacle objects the concept of "net area" doesn't apply — returns `null`.
  */
@@ -97,15 +56,23 @@ export function computeNetArea(
 ): number | null {
     if (obj.category !== OBJECT_CATEGORY.ZONE) return null;
 
-    const zonePoints: Point[] = obj.vertices;
+    const zoneRing = toRing(obj.vertices);
 
     let overlapArea = 0;
     for (const o of objects) {
         if (o.category !== OBJECT_CATEGORY.OBSTACLE) continue;
-        const obstPoints: Point[] = o.vertices;
-        const clipped = clipPolygon(obstPoints, zonePoints);
-        if (clipped.length >= 3) {
-            overlapArea += computePolygonArea(clipped);
+        const obstRing = toRing(o.vertices);
+
+        const intersection = polygonClipping.intersection([[zoneRing]], [[obstRing]]);
+        for (const polygon of intersection) {
+            // polygon[0] is the outer ring; polygon[1+] are holes (subtract them)
+            for (let i = 0; i < polygon.length; i++) {
+                const ring = polygon[i]!;
+                // Drop the closing duplicate before computing area
+                const pts = ring.slice(0, -1).map(([x, y]) => ({ x, y }));
+                const area = computePolygonArea(pts);
+                overlapArea += i === 0 ? area : -area;
+            }
         }
     }
 
