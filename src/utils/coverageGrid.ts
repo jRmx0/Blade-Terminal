@@ -205,6 +205,26 @@ export function computeNumberOfTurns(segments: CoveragePathPlanSegment[]): numbe
     return count;
 }
 
+/** Computes the total Euclidean path length across all segments, skipping consecutive duplicate points. */
+export function computePathLength(segments: CoveragePathPlanSegment[]): number {
+    let totalLength = 0;
+    let prevX: number | null = null;
+    let prevY: number | null = null;
+    for (const segment of segments) {
+        for (const { point } of segment.path) {
+            if (point.x === prevX && point.y === prevY) continue;
+            if (prevX !== null && prevY !== null) {
+                const dx = point.x - prevX;
+                const dy = point.y - prevY;
+                totalLength += Math.sqrt(dx * dx + dy * dy);
+            }
+            prevX = point.x;
+            prevY = point.y;
+        }
+    }
+    return totalLength;
+}
+
 export function computeCoverageRatio(input: ComputeCoverageRatioInput): number | null {
     const { visitMap, cellSize, objects } = input;
     const cellWorld = Number.isFinite(cellSize) && cellSize > 0 ? cellSize : 1;

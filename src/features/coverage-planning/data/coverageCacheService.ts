@@ -15,6 +15,7 @@ import {
     computeCoverageRatio,
     computeNumberOfTurns,
     computeOverlapRatio,
+    computePathLength,
     computeResultSignature,
     resolvePathWidth,
     serializeVisitMap,
@@ -29,7 +30,7 @@ function resolveCellSizeFromLayers(): number {
 }
 
 function resolveNumericMetricValueByName(
-    metricName: "coverage ratio" | "overlap ratio" | "number of turns",
+    metricName: "coverage ratio" | "overlap ratio" | "number of turns" | "path length",
 ): number | null {
     const result = useComputeResultStore.getState().result;
     if (!result) return null;
@@ -45,6 +46,7 @@ function resolveNumericMetricValueByName(
             const n = m.name.toLowerCase();
             if (metricName === "coverage ratio") return n.includes("coverage") && n.includes("ratio");
             if (metricName === "overlap ratio") return n.includes("overlap") && n.includes("ratio");
+            if (metricName === "path length") return n.includes("path") && n.includes("length");
             return n.includes("turn");
         });
 
@@ -76,6 +78,11 @@ function toTurnCount(metricValue: number | null, fallbackTurns: number): number 
     return fallbackTurns;
 }
 
+function toPathLength(metricValue: number | null, fallbackLength: number): number {
+    if (metricValue !== null && Number.isFinite(metricValue)) return metricValue;
+    return fallbackLength;
+}
+
 function toCoverageMetricsState(record: CoverageGridVisitCacheRecord, source: CoverageMetricsState["source"]): CoverageMetricsState {
     return {
         resultSignature: record.resultSignature,
@@ -84,6 +91,7 @@ function toCoverageMetricsState(record: CoverageGridVisitCacheRecord, source: Co
         coverageRatioPct: record.coverageRatioPct,
         overlapRatioPct: record.overlapRatioPct,
         turnCount: record.turnCount,
+        pathLength: record.pathLength,
         visitEntries: record.visitEntries,
         maxCount: record.maxCount,
         source,
@@ -139,10 +147,12 @@ export async function hydrateCoverageCacheForCurrentResult(): Promise<void> {
     const fallbackCoverageRatio = computeCoverageRatio({ visitMap, cellSize, objects });
     const fallbackOverlapPct = computeOverlapRatio(visitMap);
     const fallbackTurns = computeNumberOfTurns(result.result.coveragePathPlan.segments);
+    const fallbackPathLength = computePathLength(result.result.coveragePathPlan.segments);
 
     const coverageMetricValue = resolveNumericMetricValueByName("coverage ratio");
     const overlapMetricValue = resolveNumericMetricValueByName("overlap ratio");
     const turnsMetricValue = resolveNumericMetricValueByName("number of turns");
+    const pathLengthMetricValue = resolveNumericMetricValueByName("path length");
 
     const record: CoverageGridVisitCacheRecord = {
         environmentId,
@@ -154,6 +164,7 @@ export async function hydrateCoverageCacheForCurrentResult(): Promise<void> {
         coverageRatioPct: toCoveragePct(coverageMetricValue, fallbackCoverageRatio),
         overlapRatioPct: toOverlapPct(overlapMetricValue, fallbackOverlapPct),
         turnCount: toTurnCount(turnsMetricValue, fallbackTurns),
+        pathLength: toPathLength(pathLengthMetricValue, fallbackPathLength),
         createdAt: new Date().toISOString(),
     };
 
