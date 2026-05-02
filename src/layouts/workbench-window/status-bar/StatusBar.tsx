@@ -3,6 +3,7 @@ import SaveStateButton from "@/features/workspace-manager/components/status-bar/
 import CanvasPointerPosition from "@/features/canvas-editing/components/status-bar/CanvasPointerPosition";
 import CanvasGridScale from "@/features/canvas-editing/components/status-bar/CanvasGridScale";
 import CanvasZoomLevel from "@/features/canvas-editing/components/status-bar/CanvasZoomLevel";
+import UnitOfMeasureSelect from "@/features/ui-manager/components/status-bar/UnitOfMeasureSelect";
 import StatusBarSeparator from "@/components/status-bar/StatusBarSeparator";
 
 export default function StatusBar() {
@@ -11,6 +12,8 @@ export default function StatusBar() {
       leftChildren={<SaveStateButton />}
       rightChildren={
         <>
+          <UnitOfMeasureSelect />
+          <StatusBarSeparator />
           <CanvasGridScale />
           <StatusBarSeparator />
           <CanvasZoomLevel />

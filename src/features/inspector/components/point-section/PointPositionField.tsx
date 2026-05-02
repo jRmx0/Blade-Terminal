@@ -1,30 +1,38 @@
 import { useEffect, useState } from "react";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useEnvStore } from "@/stores/envStore";
+import {
+    formatNumber,
+    unitLabel,
+    type UnitOfMeasure,
+} from "@/utils/unitOfMeasure";
 
 function CoordInput({
     label,
-    value,
+    baseValue,
+    unit,
     onCommit,
 }: {
     label: string;
-    value: number;
+    baseValue: number;
+    unit: UnitOfMeasure;
     onCommit: (v: number) => void;
 }) {
-    const [local, setLocal] = useState(value.toFixed(2));
+    const [local, setLocal] = useState(formatNumber(baseValue, 2));
     const [isFocused, setIsFocused] = useState(false);
 
     useEffect(() => {
-        if (!isFocused) setLocal(value.toFixed(2));
-    }, [value, isFocused]);
+        if (!isFocused) setLocal(formatNumber(baseValue, 2));
+    }, [baseValue, isFocused]);
 
     const isFloated = local !== "" || isFocused;
 
     function commit() {
         const parsed = parseFloat(local);
-        if (!isNaN(parsed) && parsed !== value) {
+        if (!isNaN(parsed) && parsed !== baseValue) {
             onCommit(parsed);
         }
     }
@@ -70,6 +78,10 @@ export default function PointPositionField() {
     const moveVertexAt = useCanvasObjectStore((s) => s.moveVertexAt);
     const finalizeVertexMoveAt = useCanvasObjectStore((s) => s.finalizeVertexMoveAt);
     const envId = useEnvStore((s) => s.env.id);
+    const selectedUnit = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
+
+    const xLabel = unitLabel(selectedUnit) ? `X (${unitLabel(selectedUnit)})` : "X";
+    const yLabel = unitLabel(selectedUnit) ? `Y (${unitLabel(selectedUnit)})` : "Y";
 
     if (selectedEnvPointType) {
         const envPointType = selectedEnvPointType;
@@ -95,8 +107,8 @@ export default function PointPositionField() {
             <div className="flex items-center gap-2 px-5 py-1">
                 <span className="w-[30%] shrink-0 truncate text-sm text-gray-800">Position</span>
                 <div className="flex-1 min-w-0 flex gap-1.5">
-                    <CoordInput label="X" value={x} onCommit={commitX} />
-                    <CoordInput label="Y" value={y} onCommit={commitY} />
+                    <CoordInput label={xLabel} baseValue={x} unit={selectedUnit} onCommit={commitX} />
+                    <CoordInput label={yLabel} baseValue={y} unit={selectedUnit} onCommit={commitY} />
                 </div>
             </div>
         );
@@ -127,8 +139,8 @@ export default function PointPositionField() {
         <div className="flex items-center gap-2 px-5 py-1">
             <span className="w-[30%] shrink-0 truncate text-sm text-gray-800">Position</span>
             <div className="flex-1 min-w-0 flex gap-1.5">
-                <CoordInput label="X" value={x} onCommit={commitX} />
-                <CoordInput label="Y" value={y} onCommit={commitY} />
+                <CoordInput label={xLabel} baseValue={x} unit={selectedUnit} onCommit={commitX} />
+                <CoordInput label={yLabel} baseValue={y} unit={selectedUnit} onCommit={commitY} />
             </div>
         </div>
     );

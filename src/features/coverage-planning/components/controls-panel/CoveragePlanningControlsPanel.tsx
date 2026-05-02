@@ -19,6 +19,7 @@ import {
 import CoordinateSystemSelect from "@/features/coverage-planning/components/controls-panel/env-section/CoordinateSystemSelect";
 import FormatSelection from "@/features/coverage-planning/components/controls-panel/env-section/FormatSelect";
 import EnvTypeSelection from "@/features/coverage-planning/components/controls-panel/env-section/EnvTypeSelect";
+import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
@@ -26,6 +27,10 @@ import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObj
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 import type { AlgorithmParameter, AppEnumValue } from "@/types/serviceTypes";
 import type { ComputationAlgorithmParameter } from "@/types/schemaTypes";
+import {
+    type UnitOfMeasure,
+    unitLabel,
+} from "@/utils/unitOfMeasure";
 
 interface ParameterSectionGroup {
     title: string;
@@ -81,6 +86,7 @@ interface DynamicParameterFieldProps {
     selectedAlgorithmId: number;
     parameterValues: ComputationAlgorithmParameter[];
     appEnums: AppEnumValue[];
+    unitOfMeasure: UnitOfMeasure;
     onChange: (parameterId: number, value: string) => void;
 }
 
@@ -90,6 +96,7 @@ function DynamicParameterField({
     selectedAlgorithmId,
     parameterValues,
     appEnums,
+    unitOfMeasure,
     onChange,
 }: DynamicParameterFieldProps) {
     const value = getParameterDisplayValue(parameter, parameterValues);
@@ -122,27 +129,31 @@ function DynamicParameterField({
                 />
             );
 
-        case "Integer":
+        case "Integer": {
+            const integerUnit = unitLabel(unitOfMeasure);
             return (
                 <ControlsPanelSectionInput
-                    label={parameter.name}
+                    label={integerUnit ? `${parameter.name} (${integerUnit})` : parameter.name}
                     value={value}
                     onChange={(nextValue) => onChange(parameter.id, nextValue)}
                     type="number"
                     min={parameter.minValue}
                 />
             );
+        }
 
-        case "Decimal":
+        case "Decimal": {
+            const decimalUnit = unitLabel(unitOfMeasure);
             return (
                 <ControlsPanelSectionInput
-                    label={parameter.name}
+                    label={decimalUnit ? `${parameter.name} (${decimalUnit})` : parameter.name}
                     value={value}
                     onChange={(nextValue) => onChange(parameter.id, nextValue)}
                     type="number"
                     min={parameter.minValue}
                 />
             );
+        }
 
         case "String":
         default:
@@ -176,6 +187,7 @@ export default function CoveragePlanningControlsPanel() {
     const allAlgorithms = useComputationCatalogStore((s) => s.algorithms);
     const allParameters = useComputationCatalogStore((s) => s.parameters);
     const appEnums = useComputationCatalogStore((s) => s.appEnums);
+    const selectedUnitOfMeasure = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
 
     const providers = allProviders;
     const algorithms = useMemo(
@@ -462,6 +474,7 @@ export default function CoveragePlanningControlsPanel() {
                                     selectedAlgorithmId={computation.selectedAlgorithmId!}
                                     parameterValues={parameterValues}
                                     appEnums={resolvedAppEnums}
+                                    unitOfMeasure={selectedUnitOfMeasure}
                                     onChange={(parameterId, value) => {
                                         setParameterValueInStore(
                                             parameterId,

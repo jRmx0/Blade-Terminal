@@ -1,9 +1,16 @@
 import InspectorPanelSectionField from "@/components/inspector-panel/InspectorPanelSectionField";
+import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
+import { convertLinear, formatNumber, pickAutoLinearUnit, unitLabel } from "@/utils/unitOfMeasure";
 
 export default function PathLengthField() {
     const value = useComputeResultStore((s) => s.coverageMetrics.pathLength);
-    const display = value == null || !Number.isFinite(value) ? "—" : value.toFixed(2);
+    const selectedUnit = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
 
-    return <InspectorPanelSectionField label="Path length" value={display} />;
+    if (value == null || !Number.isFinite(value)) {
+        return <InspectorPanelSectionField label="Path length" value="—" />;
+    }
+
+    const displayUnit = pickAutoLinearUnit(value, selectedUnit);
+    return <InspectorPanelSectionField label="Path length" value={formatNumber(convertLinear(value, selectedUnit, displayUnit), 2)} unit={unitLabel(displayUnit)} />;
 }

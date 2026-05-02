@@ -2,10 +2,13 @@ import InspectorPanelSectionField from "@/components/inspector-panel/InspectorPa
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { computeNetArea } from "@/features/canvas-editing/utils/canvasGeometry";
+import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
+import { areaUnitLabel, convertArea, formatNumber, pickAutoAreaUnit } from "@/utils/unitOfMeasure";
 
 export default function NetAreaField() {
   const selectedObjectId = useCanvasSelectionStore((s) => s.selectedObject?.id ?? null);
   const objects = useCanvasObjectStore((s) => s.objects);
+  const selectedUnit = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
 
   if (selectedObjectId === null) return null;
 
@@ -19,10 +22,12 @@ export default function NetAreaField() {
   // For obstacles the field is not applicable
   if (netArea === null) return null;
 
+  const displayUnit = pickAutoAreaUnit(netArea, selectedUnit);
   return (
     <InspectorPanelSectionField
       label="Net area"
-      value={netArea.toFixed(2)}
+      value={formatNumber(convertArea(netArea, selectedUnit, displayUnit), 2)}
+      unit={areaUnitLabel(displayUnit)}
     />
   );
 }
