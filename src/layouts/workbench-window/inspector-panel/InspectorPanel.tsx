@@ -3,6 +3,7 @@ import InspectorPanelSection from "@/components/inspector-panel/InspectorPanelSe
 import InspectorPanelTabBar from "@/components/inspector-panel/InspectorPanelTabBar";
 import ZoneSumField from "@/features/inspector/components/env-section/ZoneSumField";
 import ObstacleSumField from "@/features/inspector/components/env-section/ObstacleSumField";
+import VertexTotalField from "@/features/inspector/components/env-section/VertexTotalField";
 import CategoryField from "@/features/inspector/components/object-section/CategoryField";
 import TypeField from "@/features/inspector/components/object-section/TypeField";
 import VertexSumField from "@/features/inspector/components/object-section/VertexSumField";
@@ -50,6 +51,7 @@ export default function InspectorPanel() {
             <InspectorPanelSection title="Environment">
               <ZoneSumField />
               <ObstacleSumField />
+              <VertexTotalField />
             </InspectorPanelSection>
           )}
 
