@@ -82,5 +82,6 @@ export interface CoverageGridVisitCacheRecord {
     overlapRatioPct: number | null;
     turnCount: number | null;
     pathLength: number | null;
+    efficiency: number | null;
     createdAt: string;
 }

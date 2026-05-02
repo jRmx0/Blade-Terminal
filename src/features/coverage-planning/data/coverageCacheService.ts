@@ -10,9 +10,11 @@ import { useEnvStore } from "@/stores/envStore";
 import { getLayerParam, useLayerSettingsStore } from "@/stores/layerSettingsStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import type { CoverageGridVisitCacheRecord } from "@/types/schemaTypes";
+import { computeNetArea } from "@/features/canvas-editing/utils/canvasGeometry";
 import {
     buildCoverageVisitMap,
     computeCoverageRatio,
+    computeEfficiency,
     computeNumberOfTurns,
     computeOverlapRatio,
     computePathLength,
@@ -92,6 +94,7 @@ function toCoverageMetricsState(record: CoverageGridVisitCacheRecord, source: Co
         overlapRatioPct: record.overlapRatioPct,
         turnCount: record.turnCount,
         pathLength: record.pathLength,
+        efficiency: record.efficiency,
         visitEntries: record.visitEntries,
         maxCount: record.maxCount,
         source,
@@ -149,10 +152,16 @@ export async function hydrateCoverageCacheForCurrentResult(): Promise<void> {
     const fallbackTurns = computeNumberOfTurns(result.result.coveragePathPlan.segments);
     const fallbackPathLength = computePathLength(result.result.coveragePathPlan.segments);
 
+    const totalNetArea = objects
+        .filter((o) => o.environmentId === envId)
+        .reduce((sum, o) => sum + (computeNetArea(o, objects) ?? 0), 0);
+
     const coverageMetricValue = resolveNumericMetricValueByName("coverage ratio");
     const overlapMetricValue = resolveNumericMetricValueByName("overlap ratio");
     const turnsMetricValue = resolveNumericMetricValueByName("number of turns");
     const pathLengthMetricValue = resolveNumericMetricValueByName("path length");
+
+    const resolvedPathLength = toPathLength(pathLengthMetricValue, fallbackPathLength);
 
     const record: CoverageGridVisitCacheRecord = {
         environmentId,
@@ -164,7 +173,8 @@ export async function hydrateCoverageCacheForCurrentResult(): Promise<void> {
         coverageRatioPct: toCoveragePct(coverageMetricValue, fallbackCoverageRatio),
         overlapRatioPct: toOverlapPct(overlapMetricValue, fallbackOverlapPct),
         turnCount: toTurnCount(turnsMetricValue, fallbackTurns),
-        pathLength: toPathLength(pathLengthMetricValue, fallbackPathLength),
+        pathLength: resolvedPathLength,
+        efficiency: computeEfficiency(totalNetArea, pathWidth, resolvedPathLength),
         createdAt: new Date().toISOString(),
     };
 

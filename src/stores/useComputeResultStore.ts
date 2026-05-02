@@ -12,6 +12,7 @@ export interface CoverageMetricsState {
     overlapRatioPct: number | null;
     turnCount: number | null;
     pathLength: number | null;
+    efficiency: number | null;
     visitEntries: CoverageGridVisitEntry[];
     maxCount: number;
     source: CoverageMetricsSource;
@@ -26,6 +27,7 @@ const EMPTY_COVERAGE_METRICS: CoverageMetricsState = {
     overlapRatioPct: null,
     turnCount: null,
     pathLength: null,
+    efficiency: null,
     visitEntries: [],
     maxCount: 0,
     source: "none",

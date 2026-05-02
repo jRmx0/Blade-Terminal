@@ -225,6 +225,30 @@ export function computePathLength(segments: CoveragePathPlanSegment[]): number {
     return totalLength;
 }
 
+/**
+ * Computes coverage efficiency as a percentage.
+ *
+ * Efficiency = (minimum path length required / actual path length) × 100
+ * Minimum path length = totalNetArea / pathWidth
+ *
+ * Returns null when any input is zero or non-finite.
+ */
+export function computeEfficiency(
+    totalNetArea: number,
+    pathWidth: number,
+    pathLength: number,
+): number | null {
+    if (
+        !Number.isFinite(totalNetArea) || totalNetArea <= 0 ||
+        !Number.isFinite(pathWidth) || pathWidth <= 0 ||
+        !Number.isFinite(pathLength) || pathLength <= 0
+    ) {
+        return null;
+    }
+    const minPathLength = totalNetArea / pathWidth;
+    return (minPathLength / pathLength) * 100;
+}
+
 export function computeCoverageRatio(input: ComputeCoverageRatioInput): number | null {
     const { visitMap, cellSize, objects } = input;
     const cellWorld = Number.isFinite(cellSize) && cellSize > 0 ? cellSize : 1;
