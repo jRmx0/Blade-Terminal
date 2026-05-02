@@ -62,6 +62,21 @@ export function stripHexAlpha(hex: string): string {
     return hex;
 }
 
+/** Returns alpha as [0..1] when color is #RRGGBBAA; otherwise null. */
+export function parseHexAlphaOpacity(hex: string): number | null {
+    if (!/^#[0-9a-fA-F]{8}$/.test(hex)) {
+        return null;
+    }
+
+    const alphaHex = hex.slice(7, 9);
+    const alpha = Number.parseInt(alphaHex, 16);
+    if (!Number.isFinite(alpha)) {
+        return null;
+    }
+
+    return alpha / 255;
+}
+
 /** Resolves numeric Path Width from catalog metadata + per-environment parameter values. */
 export function resolvePathWidth(input: ResolvePathWidthInput): number {
     const { result, catalogParams, parameterValues, fallback } = input;

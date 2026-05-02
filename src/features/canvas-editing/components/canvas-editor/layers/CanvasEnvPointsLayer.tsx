@@ -16,13 +16,13 @@ export const CanvasEnvPointsLayer = memo(function CanvasEnvPointsLayer({
     const startPoint = useEnvPointStore((s) => s.startPoint);
     const endPoint = useEnvPointStore((s) => s.endPoint);
     const startEndPoint = useEnvPointStore((s) => s.startEndPoint);
+    const movePointLive = useEnvPointStore((s) => s.movePointLive);
     const upsertPoint = useEnvPointStore((s) => s.upsertPoint);
     const envId = useEnvStore((s) => s.env.id);
     const layerSettings = useLayerSettingsStore((s) => s.layers);
     const { activeTool } = useCanvasToolStore();
     const selectedEnvPointType = useCanvasSelectionStore((s) => s.selectedEnvPointType);
     const selectEnvPoint = useCanvasSelectionStore((s) => s.selectEnvPoint);
-    const clearSelection = useCanvasSelectionStore((s) => s.clearSelection);
 
     const [draggingType, setDraggingType] = useState<EnvPointType | null>(null);
 
@@ -71,10 +71,17 @@ export const CanvasEnvPointsLayer = memo(function CanvasEnvPointsLayer({
                         e.cancelBubble = true;
                         selectEnvPoint("start");
                     }}
-                    onDragStart={() => { clearSelection(); setDraggingType("start"); }}
+                    onDragStart={() => {
+                        setDraggingType("start");
+                        selectEnvPoint("start");
+                    }}
                     onDragEnd={(e) => {
                         setDraggingType(null);
                         upsertPoint(envId, "start", { x: e.target.x(), y: e.target.y() });
+                        selectEnvPoint("start");
+                    }}
+                    onDragMove={(e) => {
+                        movePointLive(envId, "start", { x: e.target.x(), y: e.target.y() });
                     }}
                 />
             )}
@@ -100,10 +107,17 @@ export const CanvasEnvPointsLayer = memo(function CanvasEnvPointsLayer({
                         e.cancelBubble = true;
                         selectEnvPoint("end");
                     }}
-                    onDragStart={() => { clearSelection(); setDraggingType("end"); }}
+                    onDragStart={() => {
+                        setDraggingType("end");
+                        selectEnvPoint("end");
+                    }}
                     onDragEnd={(e) => {
                         setDraggingType(null);
                         upsertPoint(envId, "end", { x: e.target.x(), y: e.target.y() });
+                        selectEnvPoint("end");
+                    }}
+                    onDragMove={(e) => {
+                        movePointLive(envId, "end", { x: e.target.x(), y: e.target.y() });
                     }}
                 />
             )}
@@ -129,10 +143,17 @@ export const CanvasEnvPointsLayer = memo(function CanvasEnvPointsLayer({
                         e.cancelBubble = true;
                         selectEnvPoint("start_end");
                     }}
-                    onDragStart={() => { clearSelection(); setDraggingType("start_end"); }}
+                    onDragStart={() => {
+                        setDraggingType("start_end");
+                        selectEnvPoint("start_end");
+                    }}
                     onDragEnd={(e) => {
                         setDraggingType(null);
                         upsertPoint(envId, "start_end", { x: e.target.x(), y: e.target.y() });
+                        selectEnvPoint("start_end");
+                    }}
+                    onDragMove={(e) => {
+                        movePointLive(envId, "start_end", { x: e.target.x(), y: e.target.y() });
                     }}
                 />
             )}

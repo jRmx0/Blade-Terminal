@@ -7,6 +7,7 @@ interface EnvPointState {
     endPoint: EnvPoint | null;
     startEndPoint: EnvPoint | null;
     isEnvPointsDirty: boolean;
+    movePointLive: (environmentId: number, type: EnvPointType, point: { x: number; y: number }) => void;
     loadEnvPoints: (environmentId: number) => Promise<void>;
     upsertPoint: (environmentId: number, type: EnvPointType, point: { x: number; y: number }) => Promise<void>;
     deletePoint: (environmentId: number, type: EnvPointType) => Promise<void>;
@@ -20,6 +21,17 @@ export const useEnvPointStore = create<EnvPointState>((set) => ({
     endPoint: null,
     startEndPoint: null,
     isEnvPointsDirty: false,
+
+    movePointLive: (environmentId: number, type: EnvPointType, point: { x: number; y: number }) => {
+        const updated: EnvPoint = { environmentId, type, point };
+        if (type === "start") {
+            set({ startPoint: updated, startEndPoint: null, isEnvPointsDirty: true });
+        } else if (type === "end") {
+            set({ endPoint: updated, startEndPoint: null, isEnvPointsDirty: true });
+        } else {
+            set({ startPoint: null, endPoint: null, startEndPoint: updated, isEnvPointsDirty: true });
+        }
+    },
 
     loadEnvPoints: async (environmentId: number) => {
         const points = await getEnvPoints(environmentId);

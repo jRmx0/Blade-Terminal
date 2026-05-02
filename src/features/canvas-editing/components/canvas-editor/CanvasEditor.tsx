@@ -264,16 +264,40 @@ export default function CanvasEditor() {
     [toggleVertexSelection],
   );
 
-  const handleVertexDragStart = useCallback((ref: VertexRef) => {
-    setDraggingVertexRef(ref);
-    beginBatch();
-  }, []);
+  const handleVertexDragStart = useCallback(
+    (ref: VertexRef) => {
+      const targetObject = objects.find((obj) => obj.id === ref.objectId);
+      clearSelection();
+      if (targetObject) selectObject(targetObject);
+      selectVertex(ref);
+      setDraggingVertexRef(ref);
+      beginBatch();
+    },
+    [objects, clearSelection, selectObject, selectVertex],
+  );
 
   const handleVertexDragEndCb = useCallback(
     (ref: VertexRef, pos: Point) => {
       setDraggingVertexRef(null);
       handleVertexDragEnd(ref, pos);
-      selectVertex(null); // winding correction may reverse array; clear stale index
+
+      const latestObject = useCanvasObjectStore
+        .getState()
+        .objects.find((obj) => obj.id === ref.objectId);
+
+      if (latestObject && latestObject.vertices.length > 0) {
+        const nearestIndex = latestObject.vertices.reduce((bestIndex, vertex, index) => {
+          const best = latestObject.vertices[bestIndex]!;
+          const bestDistSq = (best.x - pos.x) * (best.x - pos.x) + (best.y - pos.y) * (best.y - pos.y);
+          const currentDistSq = (vertex.x - pos.x) * (vertex.x - pos.x) + (vertex.y - pos.y) * (vertex.y - pos.y);
+          return currentDistSq < bestDistSq ? index : bestIndex;
+        }, 0);
+
+        selectVertex({ objectId: ref.objectId, index: nearestIndex });
+      } else {
+        selectVertex(ref);
+      }
+
       endBatch();
     },
     [handleVertexDragEnd, selectVertex],

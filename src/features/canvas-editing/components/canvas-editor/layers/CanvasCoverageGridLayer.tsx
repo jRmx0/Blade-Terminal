@@ -10,6 +10,7 @@ import {
     buildCoverageVisitMap,
     computeResultSignature,
     deserializeVisitEntries,
+    parseHexAlphaOpacity,
     resolvePathWidth,
     stripHexAlpha,
 } from "@/utils/coverageGrid";
@@ -53,7 +54,7 @@ function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProp
     const strokeWidthRaw = parseFloat(
         getLayerParam(layers, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.COVERAGE_GRID_LINE_WIDTH) ?? "1",
     );
-    const fillColorRaw = getLayerParam(layers, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.COVERAGE_GRID_FILL_COLOR) ?? "#0ea5e9";
+    const fillColorRaw = getLayerParam(layers, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.COVERAGE_GRID_FILL_COLOR) ?? "#0ea5e922";
     const cellSizeRaw = parseFloat(
         getLayerParam(layers, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.COVERAGE_GRID_CELL_SIZE) ?? "1",
     );
@@ -65,6 +66,7 @@ function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProp
     const lineWorld = Number.isFinite(strokeWidthRaw) && strokeWidthRaw > 0 ? strokeWidthRaw : 1;
     const sw = lineWorld / scale;
     const fillColor = stripHexAlpha(fillColorRaw);
+    const minCoverageCellOpacity = parseHexAlphaOpacity(fillColorRaw) ?? 0.2;
 
     // ── Resolve path width from parameter values ──────────────────────────────
     // Deps: only result + cellWorld. catalogParams/parameterValues are read via
@@ -131,7 +133,7 @@ function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProp
             const col = parseInt(key.slice(0, commaIdx), 10);
             const row = parseInt(key.slice(commaIdx + 1), 10);
             if (col >= visMinCol && col <= visMaxCol && row >= visMinRow && row <= visMaxRow) {
-                filledCells.push({ key, col, row, opacity: count / maxCount });
+                filledCells.push({ key, col, row, opacity: Math.max(minCoverageCellOpacity, count / maxCount) });
             }
         }
     }
