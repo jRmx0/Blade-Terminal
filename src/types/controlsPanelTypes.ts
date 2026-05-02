@@ -34,6 +34,7 @@ export interface ControlsPanelSectionInputProps {
   placeholder?: string;
   type?: string;
   min?: number;
+  max?: number;
 }
 
 export interface ControlsPanelSectionSelectProps {

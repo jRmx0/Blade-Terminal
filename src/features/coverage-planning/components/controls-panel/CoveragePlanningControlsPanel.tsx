@@ -138,6 +138,7 @@ function DynamicParameterField({
                     onChange={(nextValue) => onChange(parameter.id, nextValue)}
                     type="number"
                     min={parameter.minValue}
+                    max={parameter.maxValue}
                 />
             );
         }
@@ -151,6 +152,7 @@ function DynamicParameterField({
                     onChange={(nextValue) => onChange(parameter.id, nextValue)}
                     type="number"
                     min={parameter.minValue}
+                    max={parameter.maxValue}
                 />
             );
         }

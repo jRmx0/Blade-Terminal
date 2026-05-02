@@ -52,6 +52,8 @@ export interface AlgorithmParameter {
     defaultValue: string;
     /** Minimum allowed numeric value. Only meaningful for Integer and Decimal params. */
     minValue?: number;
+    /** Maximum allowed numeric value. Only meaningful for Integer and Decimal params. */
+    maxValue?: number;
     section?: MetadataParamSection;
     /** Optional application-level behavior handler for enum params. */
     appHandler: SupportedAppParameterHandler | null;
@@ -126,6 +128,7 @@ export interface MetadataParamResponse {
     enumValues?: string[];
     defaultValue?: string;
     minValue?: number;
+    maxValue?: number;
     section?: MetadataParamSection;
     appHandler?: SupportedAppParameterHandler;
 }

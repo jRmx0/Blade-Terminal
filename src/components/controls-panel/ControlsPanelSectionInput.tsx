@@ -8,6 +8,7 @@ export default function ControlsPanelSectionInput({
   disabled = false,
   type = "text",
   min,
+  max,
 }: ControlsPanelSectionInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -35,13 +36,18 @@ export default function ControlsPanelSectionInput({
         value={displayValue}
         onChange={(e) => onChange(e.target.value)}
         min={min}
+        max={max}
         onFocus={() => setIsFocused(true)}
         onBlur={() => {
           setIsFocused(false);
-          if (type === "number" && min !== undefined && value !== "") {
+          if (type === "number" && value !== "") {
             const numeric = Number(value);
-            if (!isNaN(numeric) && numeric < min) {
-              onChange(String(min));
+            if (!isNaN(numeric)) {
+              if (min !== undefined && numeric < min) {
+                onChange(String(min));
+              } else if (max !== undefined && numeric > max) {
+                onChange(String(max));
+              }
             }
           }
         }}
@@ -60,7 +66,9 @@ export default function ControlsPanelSectionInput({
             disabled={disabled}
             onMouseDown={(e) => {
               e.preventDefault();
-              onChange(String(Number(value) + 1));
+              const nextVal = Number(value) + 1;
+              const constrained = max !== undefined && nextVal > max ? max : nextVal;
+              onChange(String(constrained));
             }}
             className="flex-1 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors rounded-t cursor-pointer active:text-teal-700"
           >
@@ -73,7 +81,9 @@ export default function ControlsPanelSectionInput({
             disabled={disabled}
             onMouseDown={(e) => {
               e.preventDefault();
-              onChange(String(Math.max(min ?? -Infinity, Number(value) - 1)));
+              const nextVal = Math.max(min ?? -Infinity, Number(value) - 1);
+              const constrained = max !== undefined && nextVal > max ? max : nextVal;
+              onChange(String(constrained));
             }}
             className="flex-1 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors rounded-b cursor-pointer active:text-teal-700"
           >
