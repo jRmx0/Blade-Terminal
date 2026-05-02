@@ -14,6 +14,7 @@ import TurnSumField from "@/features/inspector/components/coverage-section/TurnS
 import LayersTab from "@/features/inspector/components/calc-layers-section/LayersTab";
 import PointTypeField from "@/features/inspector/components/point-section/PointTypeField";
 import PointPositionField from "@/features/inspector/components/point-section/PointPositionField";
+import SelectedVertexCountField from "../../../features/inspector/components/point-section/SelectedVertexCountField";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useInspectorTabStore } from "@/features/inspector/stores/inspectorTabStore";
 import type { InspectorTab } from "@/features/inspector/stores/inspectorTabStore";
@@ -25,10 +26,13 @@ const INSPECTOR_TABS: { id: InspectorTab; label: string }[] = [
 
 export default function InspectorPanel() {
   const hasSelection = useCanvasSelectionStore((s) => s.selectedObject !== null);
-  const hasPointSelection = useCanvasSelectionStore((s) => s.selectedEnvPointType !== null);
-  const hasSingleObjectPointSelection = useCanvasSelectionStore(
-    (s) => s.selectedObject !== null && s.selectedVertexRefs.length === 1,
+  const hasEnvPointSelection = useCanvasSelectionStore((s) => s.selectedEnvPointType !== null);
+  const selectedVertexCount = useCanvasSelectionStore((s) => s.selectedVertexRefs.length);
+  const hasAnyVertexSelection = useCanvasSelectionStore(
+    (s) => s.selectedObject !== null && s.selectedVertexRefs.length > 0,
   );
+  const hasSingleVertexSelection = hasAnyVertexSelection && selectedVertexCount === 1;
+  const hasMultiVertexSelection = hasAnyVertexSelection && selectedVertexCount > 1;
   const activeTab = useInspectorTabStore((s) => s.activeTab);
   const setActiveTab = useInspectorTabStore((s) => s.setActiveTab);
 
@@ -42,14 +46,14 @@ export default function InspectorPanel() {
 
       {activeTab === "details" && (
         <div>
-          {!hasSelection && !hasPointSelection && (
+          {!hasSelection && !hasEnvPointSelection && !hasAnyVertexSelection && (
             <InspectorPanelSection title="Environment">
               <ZoneSumField />
               <ObstacleSumField />
             </InspectorPanelSection>
           )}
 
-          {hasSelection && (
+          {hasSelection && !hasEnvPointSelection && !hasAnyVertexSelection && (
             <InspectorPanelSection title="Object">
               <CategoryField />
               <TypeField />
@@ -59,14 +63,26 @@ export default function InspectorPanel() {
             </InspectorPanelSection>
           )}
 
-          {(hasPointSelection || hasSingleObjectPointSelection) && (
+          {hasEnvPointSelection && (
             <InspectorPanelSection title="Point">
               <PointTypeField />
               <PointPositionField />
             </InspectorPanelSection>
           )}
 
-          {!hasSelection && (
+          {hasSingleVertexSelection && (
+            <InspectorPanelSection title="Vertex">
+              <PointPositionField />
+            </InspectorPanelSection>
+          )}
+
+          {hasMultiVertexSelection && (
+            <InspectorPanelSection title="Vertices">
+              <SelectedVertexCountField />
+            </InspectorPanelSection>
+          )}
+
+          {!hasSelection && !hasEnvPointSelection && !hasAnyVertexSelection && (
             <InspectorPanelSection title="Coverage">
               <CoverageField />
               <OverlapField />
