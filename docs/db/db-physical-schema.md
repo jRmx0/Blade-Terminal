@@ -28,6 +28,7 @@
 | [`algorithmMetricsSetup`](#algorithmMetricsSetup) | `[id+algorithmId+computationProviderId]` | Metric metadata fetched from a provider |
 | [`computationAlgorithmParameters`](#computationAlgorithmParameters) | `[id+algorithmId+providerId+environmentId]` | Per-environment parameter values |
 | [`computeResults`](#computeResults) | `environmentId` | Latest CPP result per environment |
+| [`coverageGridVisitCache`](#coverageGridVisitCache) | `[environmentId+resultSignature+cellSize]` | Cached coverage-grid visits + derived metrics per result signature and cell size |
 | [`layersSetup`](#layersSetup) | `[id+algorithmId+providerId]` | Layer catalog (system + provider) |
 | [`layerSettingsSetup`](#layerSettingsSetup) | `[id+layerId+algorithmId+providerId]` | Layer style attribute metadata templates |
 | [`layerSettings`](#layerSettings) | `[id+layerId+algorithmId+providerId+environmentId]` | Per-environment working layer style values |
@@ -76,7 +77,7 @@ A spatial workspace containing geometric objects (zones and obstacles). Display 
 | `zoneCount` | `number` | — | *Cached.* Count of zone-category objects |
 | `obstacleCount` | `number` | — | *Cached.* Count of obstacle-category objects |
 
-> **On delete cascade (application-enforced):** deletes all `objects`, `computationAlgorithmParameters`, `computationSelection`, `layerSettings`, and `computeResults` rows for that `environmentId`.
+> **On delete cascade (application-enforced):** deletes all `objects`, `computationAlgorithmParameters`, `computationSelection`, `layerSettings`, `computeResults`, and `coverageGridVisitCache` rows for that `environmentId`.
 
 ---
 
@@ -239,6 +240,27 @@ result: {
   }
 }
 ```
+
+---
+
+### `coverageGridVisitCache`
+
+Caches coverage-grid cell visits and inspector-derived metrics for a specific computation output signature and cell size. This table is performance-oriented and allows workspace load/render paths to reuse precomputed visit maps.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `environmentId` | `number` | PK (part 1), IDX, FK → `environments.id` | Parent environment |
+| `resultSignature` | `string` | PK (part 2), IDX | Stable signature derived from compute result output |
+| `cellSize` | `number` | PK (part 3) | Coverage grid cell size used for visit-map computation |
+| `pathWidth` | `number` | — | Resolved path width used during rasterization |
+| `visitEntries` | `Array<{key: string, count: number}>` | — | Sparse visit-map entries where `key = "col,row"` |
+| `maxCount` | `number` | — | Maximum visit count across `visitEntries` |
+| `coverageRatioPct` | `number \| null` | — | Cached coverage ratio in percentage units |
+| `overlapRatioPct` | `number \| null` | — | Cached overlap ratio in percentage units |
+| `turnCount` | `number \| null` | — | Cached number-of-turns metric |
+| `createdAt` | `string` | — | ISO 8601 timestamp of cache write time |
+
+**Indexes:** `[environmentId+resultSignature+cellSize]` (compound PK), `environmentId` (IDX), `[environmentId+resultSignature]` (compound IDX), `resultSignature` (IDX)
 
 ---
 
@@ -405,6 +427,19 @@ erDiagram
         json   result           "immutable ComputeResult blob"
     }
 
+    coverageGridVisitCache {
+        number environmentId PK "compound PK part 1; FK"
+        string resultSignature PK "compound PK part 2; stable compute output signature"
+        number cellSize PK "compound PK part 3"
+        number pathWidth "resolved path width used for visit-map build"
+        json visitEntries "Array<{key: string, count: number}> sparse visit map"
+        number maxCount "max visit count among visitEntries"
+        number coverageRatioPct "nullable cached coverage ratio percentage"
+        number overlapRatioPct "nullable cached overlap ratio percentage"
+        number turnCount "nullable cached number of turns"
+        string createdAt "ISO 8601 cache write timestamp"
+    }
+
     layersSetup {
         number  id           PK "compound PK part 1"
         number  algorithmId  PK "compound PK part 2; 0 = system sentinel"
@@ -450,6 +485,7 @@ erDiagram
     environments                          ||--o|  computationSelection                 : "has"
     environments                          ||--o{  computationAlgorithmParameters       : "has"
     environments                          ||--o|  computeResults                       : "has"
+    environments                          ||--o{  coverageGridVisitCache               : "has"
     environments                          ||--o{  layerSettings                        : "has"
 
     computationProviders                  ||--o{  computationProviderAlgorithms        : "exposes"
@@ -493,6 +529,6 @@ All cascade deletes are enforced in application code (no DB-level FK constraints
 
 | Trigger | Cascades to |
 |---|---|
-| Delete `environments` row | `objects` (where `environmentId`), `computationAlgorithmParameters` (where `environmentId`), `computationSelection` (where `environmentId`), `layerSettings` (where `environmentId`), `computeResults` (where `environmentId`) |
+| Delete `environments` row | `objects` (where `environmentId`), `computationAlgorithmParameters` (where `environmentId`), `computationSelection` (where `environmentId`), `layerSettings` (where `environmentId`), `computeResults` (where `environmentId`), `coverageGridVisitCache` (where `environmentId`) |
 | Delete `computationProviders` row | `computationProviderAlgorithms` (where `computationProviderId`), `computationAlgorithmParametersSetup` (where `computationProviderId`), `layersSetup` (where `providerId`), `layerSettingsSetup` (where `providerId`), `layerSettings` (where `providerId`) |
 | Delete `computationProviderAlgorithms` row | `computationAlgorithmParametersSetup` (where `[algorithmId+computationProviderId]`) |

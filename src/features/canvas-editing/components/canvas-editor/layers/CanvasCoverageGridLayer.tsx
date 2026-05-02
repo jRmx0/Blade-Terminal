@@ -6,7 +6,13 @@ import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewS
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
-import { buildCoverageVisitMap, resolvePathWidth, stripHexAlpha } from "@/utils/coverageGrid";
+import {
+    buildCoverageVisitMap,
+    computeResultSignature,
+    deserializeVisitEntries,
+    resolvePathWidth,
+    stripHexAlpha,
+} from "@/utils/coverageGrid";
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -18,6 +24,7 @@ interface CanvasCoverageGridLayerProps {
 function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProps) {
     const layers = useLayerSettingsStore((s) => s.layers);
     const result = useComputeResultStore((s) => s.result);
+    const coverageMetrics = useComputeResultStore((s) => s.coverageMetrics);
     const catalogParams = useComputationCatalogStore((s) => s.parameters);
     const parameterValues = useParameterValuesStore((s) => s.parameterValues);
 
@@ -68,14 +75,37 @@ function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProp
         [result, cellWorld],
     );
 
-    // ── Build visit count map ─────────────────────────────────────────────────
-    const coverageMap = useMemo(
-        () =>
-            hasHydratedSettings
-                ? buildCoverageVisitMap({ segments: result?.result.coveragePathPlan.segments ?? [], cellSize: cellWorld, pathWidth })
-                : { visitMap: new Map<string, number>(), maxCount: 0 },
-        [hasHydratedSettings, result, cellWorld, pathWidth],
+    const resultSignature = useMemo(
+        () => (result ? computeResultSignature(result) : null),
+        [result],
     );
+
+    // ── Build visit count map ─────────────────────────────────────────────────
+    const coverageMap = useMemo(() => {
+        if (!hasHydratedSettings) {
+            return { visitMap: new Map<string, number>(), maxCount: 0 };
+        }
+
+        const canUseCachedVisits =
+            result !== null &&
+            resultSignature !== null &&
+            coverageMetrics.resultSignature === resultSignature &&
+            coverageMetrics.cellSize === cellWorld &&
+            coverageMetrics.pathWidth === pathWidth;
+
+        if (canUseCachedVisits) {
+            return {
+                visitMap: deserializeVisitEntries(coverageMetrics.visitEntries),
+                maxCount: coverageMetrics.maxCount,
+            };
+        }
+
+        return buildCoverageVisitMap({
+            segments: result?.result.coveragePathPlan.segments ?? [],
+            cellSize: cellWorld,
+            pathWidth,
+        });
+    }, [hasHydratedSettings, result, resultSignature, coverageMetrics, cellWorld, pathWidth]);
     const visitMap = coverageMap.visitMap;
     const maxCount = coverageMap.maxCount;
 

@@ -63,3 +63,23 @@ export interface ComputeResultRecord {
     completedAt: string;
     result: ComputeResult;
 }
+
+/** Sparse serialized coverage-grid visit map entry: key = "col,row", count = visit count. */
+export interface CoverageGridVisitEntry {
+    key: string;
+    count: number;
+}
+
+/** Per-environment cached coverage-grid visits and derived metrics for a specific result + cell size. */
+export interface CoverageGridVisitCacheRecord {
+    environmentId: number;
+    resultSignature: string;
+    cellSize: number;
+    pathWidth: number;
+    visitEntries: CoverageGridVisitEntry[];
+    maxCount: number;
+    coverageRatioPct: number | null;
+    overlapRatioPct: number | null;
+    turnCount: number | null;
+    createdAt: string;
+}

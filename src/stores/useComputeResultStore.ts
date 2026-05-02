@@ -1,7 +1,34 @@
 import { create } from "zustand";
-import type { ComputeResultRecord } from "@/types/schemaTypes";
+import type { ComputeResultRecord, CoverageGridVisitEntry } from "@/types/schemaTypes";
 
 export type ComputeStatus = "idle" | "submitting" | "polling" | "completed" | "failed";
+export type CoverageMetricsSource = "none" | "cache" | "computed";
+
+export interface CoverageMetricsState {
+    resultSignature: string | null;
+    cellSize: number | null;
+    pathWidth: number | null;
+    coverageRatioPct: number | null;
+    overlapRatioPct: number | null;
+    turnCount: number | null;
+    visitEntries: CoverageGridVisitEntry[];
+    maxCount: number;
+    source: CoverageMetricsSource;
+    computedAt: string | null;
+}
+
+const EMPTY_COVERAGE_METRICS: CoverageMetricsState = {
+    resultSignature: null,
+    cellSize: null,
+    pathWidth: null,
+    coverageRatioPct: null,
+    overlapRatioPct: null,
+    turnCount: null,
+    visitEntries: [],
+    maxCount: 0,
+    source: "none",
+    computedAt: null,
+};
 
 interface ComputeResultState {
     result: ComputeResultRecord | null;
@@ -14,10 +41,14 @@ interface ComputeResultState {
     error: string | null;
     /** True when the result has changed since the last DB sync (new result or cleared). */
     isComputeResultDirty: boolean;
+    /** Cached coverage-grid visits + derived inspector metrics for current result signature/cell size. */
+    coverageMetrics: CoverageMetricsState;
     /** Stages a new compute result and marks dirty. Used after a successful compute run. */
     setResult: (record: ComputeResultRecord) => void;
     /** Hydrates the result from DB on environment load. Does NOT mark dirty. */
     loadResult: (record: ComputeResultRecord) => void;
+    setCoverageMetrics: (metrics: CoverageMetricsState) => void;
+    clearCoverageMetrics: () => void;
     /** Sets status. Calling with "submitting" opens the modal and captures the open timestamp. */
     setStatus: (status: ComputeStatus) => void;
     setError: (error: string) => void;
@@ -38,10 +69,17 @@ export const useComputeResultStore = create<ComputeResultState>((set) => ({
     openedAt: null,
     error: null,
     isComputeResultDirty: false,
+    coverageMetrics: EMPTY_COVERAGE_METRICS,
 
-    setResult: (record) => set({ result: record, status: "completed", isComputeResultDirty: true }),
+    setResult: (record) =>
+        set({ result: record, status: "completed", isComputeResultDirty: true, coverageMetrics: EMPTY_COVERAGE_METRICS }),
 
-    loadResult: (record) => set({ result: record, status: "completed", isComputeResultDirty: false }),
+    loadResult: (record) =>
+        set({ result: record, status: "completed", isComputeResultDirty: false, coverageMetrics: EMPTY_COVERAGE_METRICS }),
+
+    setCoverageMetrics: (coverageMetrics) => set({ coverageMetrics }),
+
+    clearCoverageMetrics: () => set({ coverageMetrics: EMPTY_COVERAGE_METRICS }),
 
     setStatus: (status) => {
         if (status === "submitting") {
@@ -55,9 +93,27 @@ export const useComputeResultStore = create<ComputeResultState>((set) => ({
 
     closeModal: () => set({ isModalOpen: false, status: "idle", error: null }),
 
-    clearResult: () => set({ result: null, status: "idle", isModalOpen: false, openedAt: null, error: null, isComputeResultDirty: true }),
+    clearResult: () =>
+        set({
+            result: null,
+            status: "idle",
+            isModalOpen: false,
+            openedAt: null,
+            error: null,
+            isComputeResultDirty: true,
+            coverageMetrics: EMPTY_COVERAGE_METRICS,
+        }),
 
-    resetResult: () => set({ result: null, status: "idle", isModalOpen: false, openedAt: null, error: null, isComputeResultDirty: false }),
+    resetResult: () =>
+        set({
+            result: null,
+            status: "idle",
+            isModalOpen: false,
+            openedAt: null,
+            error: null,
+            isComputeResultDirty: false,
+            coverageMetrics: EMPTY_COVERAGE_METRICS,
+        }),
 
     clearDirty: () => set({ isComputeResultDirty: false }),
 }));

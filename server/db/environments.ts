@@ -7,6 +7,7 @@ import { deleteAlgorithmParametersByEnvironment } from "./computationAlgorithmPa
 import { deleteComputationSelection } from "./computationSelection";
 import { deleteLayerSettingsForEnvironment } from "./layerSettings";
 import { deleteComputeResult } from "./computeResults";
+import { deleteCoverageGridVisitCacheByEnvironment } from "./coverageGridVisitCache";
 import { deleteEnvPointsByEnvironment } from "./envPoints";
 
 const environmentsTable: Table<Environment, number> = db.table("environments");
@@ -33,6 +34,7 @@ export async function deleteEnvironment(env: Environment): Promise<void> {
     await deleteComputationSelection(env.id);
     await deleteLayerSettingsForEnvironment(env.id);
     await deleteComputeResult(env.id);
+    await deleteCoverageGridVisitCacheByEnvironment(env.id);
     await deleteEnvPointsByEnvironment(env.id);
     await environmentsTable.delete(env.id);
 }

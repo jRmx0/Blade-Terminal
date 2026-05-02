@@ -269,6 +269,26 @@ Table runtime.computeResult [note: 'Latest CPP result per environment. One row p
   }
 }
 
+Table runtime.coverageGridVisitCache [note: 'Cached coverage-grid cell visits and derived metrics for a specific compute output signature and cell size. Used to avoid recomputation on reload and UI remount.'] {
+  environmentId     integer [not null, note: 'Compound PK part 1; FK → workspace.environment.id']
+  resultSignature   varchar [not null, note: 'Compound PK part 2; stable signature of compute output']
+  cellSize          float   [not null, note: 'Compound PK part 3; coverage-grid cell size used for rasterization']
+  pathWidth         float   [not null, note: 'Resolved path width used for visit-map generation']
+  visitEntries      json    [not null, note: 'Array<{ key: "col,row", count: number }> sparse visit map']
+  maxCount          integer [not null, note: 'Maximum visit count among visitEntries']
+  coverageRatioPct  float   [null, note: 'Cached coverage ratio percentage']
+  overlapRatioPct   float   [null, note: 'Cached overlap ratio percentage']
+  turnCount         integer [null, note: 'Cached number-of-turns metric']
+  createdAt         varchar [not null, note: 'ISO 8601 cache write timestamp']
+
+  indexes {
+    (environmentId, resultSignature, cellSize) [pk]
+    environmentId                              [name: 'idx_coverageGridVisitCache_environmentId']
+    (environmentId, resultSignature)           [name: 'idx_coverageGridVisitCache_env_signature']
+    resultSignature                            [name: 'idx_coverageGridVisitCache_resultSignature']
+  }
+}
+
 // ── layers ── layer catalog + per-environment style values ────────────────────
 
 Table layers.layer [note: 'Layer catalog. System layers seeded at populate with algorithmId=0 / providerId=0 as sentinels. Provider layers replaced atomically on metadata refresh.'] {
@@ -334,6 +354,7 @@ Ref: workspace.object.environmentId > workspace.environment.id [delete: cascade]
 Ref: runtime.computationSelection.environmentId - workspace.environment.id [delete: cascade]
 Ref: runtime.computationAlgorithmParameter.environmentId > workspace.environment.id [delete: cascade]
 Ref: runtime.computeResult.environmentId - workspace.environment.id [delete: cascade]
+Ref: runtime.coverageGridVisitCache.environmentId > workspace.environment.id [delete: cascade]
 Ref: layers.layerSetting.environmentId > workspace.environment.id [delete: cascade]
 
 // provider → child tables
@@ -384,10 +405,11 @@ Ref: layers.layer.(algorithmId, providerId) > provider.computationProviderAlgori
 //   provider_catalog.algorithmMetricSetup
 // }
 
-// TableGroup runtime [note: 'Per-environment working state — active selections, parameter values, and compute results'] {
+// TableGroup runtime [note: 'Per-environment working state — active selections, parameter values, compute results, and derived coverage-grid cache'] {
 //   runtime.computationSelection
 //   runtime.computationAlgorithmParameter
 //   runtime.computeResult
+//   runtime.coverageGridVisitCache
 // }
 
 // TableGroup layers [note: 'Layer catalog and per-environment style attribute values'] {

@@ -20,6 +20,7 @@ db.version(1).stores({
     algorithmMetricsSetup: "[id+algorithmId+computationProviderId], algorithmId, computationProviderId, [algorithmId+computationProviderId]",
     computationAlgorithmParameters: "[id+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId, providerId",
     computeResults: "environmentId",
+    coverageGridVisitCache: "[environmentId+resultSignature+cellSize], environmentId, [environmentId+resultSignature], resultSignature",
     envPoint: "++id, environmentId, type, [environmentId+type]",
     layers: "[id+algorithmId+providerId], id, algorithmId, providerId, [algorithmId+providerId]",
     layerSettingsSetup: "[id+layerId+algorithmId+providerId], [layerId+algorithmId+providerId], [algorithmId+providerId], providerId",

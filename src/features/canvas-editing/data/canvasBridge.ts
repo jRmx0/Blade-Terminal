@@ -4,6 +4,7 @@ import { saveAlgorithmParameters } from "@server/db/computationAlgorithmParamete
 import { saveAllLayerSettings } from "@server/db/layerSettings";
 import { getObjectsByEnvironment, saveObjects, deleteObject } from "@server/db/objects";
 import { saveComputeResult, deleteComputeResult } from "@server/db/computeResults";
+import { deleteCoverageGridVisitCacheByEnvironment } from "@server/db/coverageGridVisitCache";
 import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
 import type { Object, Environment } from "@/types/schemaTypes";
 import { useCanvasObjectStore } from "../stores/canvasObjectStore";
@@ -77,7 +78,12 @@ export async function saveCanvas(): Promise<boolean> {
             isLayerSettingsDirty ? saveAllLayerSettings(layers.flatMap((l) => l.settings)) : Promise.resolve(),
             persistDirtyObjects(dirtyObjects, deletedObjects),
             isComputeResultDirty
-                ? (result !== null ? saveComputeResult(result) : deleteComputeResult(env.id))
+                ? (result !== null
+                    ? saveComputeResult(result)
+                    : Promise.all([
+                        deleteComputeResult(env.id),
+                        deleteCoverageGridVisitCacheByEnvironment(env.id),
+                    ]).then(() => undefined))
                 : Promise.resolve(),
         ]);
         clearDirty();

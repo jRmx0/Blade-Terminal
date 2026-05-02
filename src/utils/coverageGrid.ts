@@ -1,4 +1,9 @@
-import type { ComputeResultRecord, ComputationAlgorithmParameter, Object as CanvasObject } from "@/types/schemaTypes";
+import type {
+    ComputeResultRecord,
+    ComputationAlgorithmParameter,
+    CoverageGridVisitEntry,
+    Object as CanvasObject,
+} from "@/types/schemaTypes";
 import type { AlgorithmParameter, CoveragePathPlanSegment } from "@/types/serviceTypes";
 import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
 
@@ -253,4 +258,35 @@ export function computeCoverageRatio(input: ComputeCoverageRatioInput): number |
 
     if (totalWorkCells === 0) return null;
     return coveredWorkCells / totalWorkCells;
+}
+
+export function serializeVisitMap(visitMap: Map<string, number>): CoverageGridVisitEntry[] {
+    const entries: CoverageGridVisitEntry[] = [];
+    for (const [key, count] of visitMap.entries()) {
+        entries.push({ key, count });
+    }
+    return entries;
+}
+
+export function deserializeVisitEntries(entries: CoverageGridVisitEntry[]): Map<string, number> {
+    const visitMap = new Map<string, number>();
+    for (const entry of entries) {
+        visitMap.set(entry.key, entry.count);
+    }
+    return visitMap;
+}
+
+function hashString(value: string): string {
+    let hash = 5381;
+    for (let i = 0; i < value.length; i++) {
+        hash = (hash * 33) ^ value.charCodeAt(i);
+    }
+    return (hash >>> 0).toString(36);
+}
+
+/** Stable signature for cache-keying coverage derivations for a specific compute output. */
+export function computeResultSignature(result: ComputeResultRecord): string {
+    const segmentsJson = JSON.stringify(result.result.coveragePathPlan.segments);
+    const segmentsHash = hashString(segmentsJson);
+    return `${result.environmentId}:${result.providerId}:${result.algorithmId}:${result.jobId}:${result.completedAt}:${segmentsHash}`;
 }
