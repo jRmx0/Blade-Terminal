@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
+import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useEnvStore } from "@/stores/envStore";
 
@@ -58,31 +59,68 @@ function CoordInput({
 }
 
 export default function PointPositionField() {
+    const selectedObject = useCanvasSelectionStore((s) => s.selectedObject);
+    const selectedVertexRefs = useCanvasSelectionStore((s) => s.selectedVertexRefs);
     const selectedEnvPointType = useCanvasSelectionStore((s) => s.selectedEnvPointType);
     const startPoint = useEnvPointStore((s) => s.startPoint);
     const endPoint = useEnvPointStore((s) => s.endPoint);
     const startEndPoint = useEnvPointStore((s) => s.startEndPoint);
     const upsertPoint = useEnvPointStore((s) => s.upsertPoint);
+    const objects = useCanvasObjectStore((s) => s.objects);
+    const moveVertexAt = useCanvasObjectStore((s) => s.moveVertexAt);
+    const finalizeVertexMoveAt = useCanvasObjectStore((s) => s.finalizeVertexMoveAt);
     const envId = useEnvStore((s) => s.env.id);
 
-    if (!selectedEnvPointType) return null;
+    if (selectedEnvPointType) {
+        const envPointType = selectedEnvPointType;
+        const currentPoint =
+            envPointType === "start"
+                ? startPoint
+                : envPointType === "end"
+                    ? endPoint
+                    : startEndPoint;
+        if (!currentPoint) return null;
 
-    const currentPoint =
-        selectedEnvPointType === "start"
-            ? startPoint
-            : selectedEnvPointType === "end"
-                ? endPoint
-                : startEndPoint;
-    if (!currentPoint) return null;
+        const { x, y } = currentPoint.point;
 
-    const { x, y } = currentPoint.point;
+        function commitX(newX: number) {
+            upsertPoint(envId, envPointType, { x: newX, y });
+        }
+
+        function commitY(newY: number) {
+            upsertPoint(envId, envPointType, { x, y: newY });
+        }
+
+        return (
+            <div className="flex items-center gap-2 px-5 py-1">
+                <span className="w-[30%] shrink-0 truncate text-sm text-gray-800">Position</span>
+                <div className="flex-1 min-w-0 flex gap-1.5">
+                    <CoordInput label="X" value={x} onCommit={commitX} />
+                    <CoordInput label="Y" value={y} onCommit={commitY} />
+                </div>
+            </div>
+        );
+    }
+
+    if (!selectedObject || selectedVertexRefs.length !== 1) return null;
+
+    const vertexRef = selectedVertexRefs[0]!;
+    if (!vertexRef || vertexRef.objectId !== selectedObject.id) return null;
+
+    const liveObject = objects.find((obj) => obj.id === selectedObject.id);
+    const liveVertex = liveObject?.vertices[vertexRef.index];
+    if (!liveVertex) return null;
+
+    const { x, y } = liveVertex;
 
     function commitX(newX: number) {
-        upsertPoint(envId, selectedEnvPointType!, { x: newX, y });
+        moveVertexAt(vertexRef, { x: newX, y });
+        finalizeVertexMoveAt(vertexRef);
     }
 
     function commitY(newY: number) {
-        upsertPoint(envId, selectedEnvPointType!, { x, y: newY });
+        moveVertexAt(vertexRef, { x, y: newY });
+        finalizeVertexMoveAt(vertexRef);
     }
 
     return (

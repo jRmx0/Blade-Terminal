@@ -26,6 +26,9 @@ const INSPECTOR_TABS: { id: InspectorTab; label: string }[] = [
 export default function InspectorPanel() {
   const hasSelection = useCanvasSelectionStore((s) => s.selectedObject !== null);
   const hasPointSelection = useCanvasSelectionStore((s) => s.selectedEnvPointType !== null);
+  const hasSingleObjectPointSelection = useCanvasSelectionStore(
+    (s) => s.selectedObject !== null && s.selectedVertexRefs.length === 1,
+  );
   const activeTab = useInspectorTabStore((s) => s.activeTab);
   const setActiveTab = useInspectorTabStore((s) => s.setActiveTab);
 
@@ -56,18 +59,20 @@ export default function InspectorPanel() {
             </InspectorPanelSection>
           )}
 
-          {hasPointSelection && (
+          {(hasPointSelection || hasSingleObjectPointSelection) && (
             <InspectorPanelSection title="Point">
               <PointTypeField />
               <PointPositionField />
             </InspectorPanelSection>
           )}
 
-          <InspectorPanelSection title="Coverage">
-            <CoverageField />
-            <OverlapField />
-            <TurnSumField />
-          </InspectorPanelSection>
+          {!hasSelection && (
+            <InspectorPanelSection title="Coverage">
+              <CoverageField />
+              <OverlapField />
+              <TurnSumField />
+            </InspectorPanelSection>
+          )}
         </div>
       )}
 
