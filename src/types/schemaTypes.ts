@@ -70,7 +70,7 @@ export interface CoverageGridVisitEntry {
     count: number;
 }
 
-/** Per-environment cached coverage-grid visits and derived metrics for a specific result + cell size. */
+/** Per-environment latest cached coverage-grid visits and derived metrics (single row per environment). */
 export interface CoverageGridVisitCacheRecord {
     environmentId: number;
     resultSignature: string;

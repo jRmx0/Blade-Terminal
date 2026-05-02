@@ -28,7 +28,7 @@
 | [`algorithmMetricsSetup`](#algorithmMetricsSetup) | `[id+algorithmId+computationProviderId]` | Metric metadata fetched from a provider |
 | [`computationAlgorithmParameters`](#computationAlgorithmParameters) | `[id+algorithmId+providerId+environmentId]` | Per-environment parameter values |
 | [`computeResults`](#computeResults) | `environmentId` | Latest CPP result per environment |
-| [`coverageGridVisitCache`](#coverageGridVisitCache) | `[environmentId+resultSignature+cellSize]` | Cached coverage-grid visits + derived metrics per result signature and cell size |
+| [`coverageGridVisitCache`](#coverageGridVisitCache) | `environmentId` | Latest cached coverage-grid visits + derived metrics per environment |
 | [`layersSetup`](#layersSetup) | `[id+algorithmId+providerId]` | Layer catalog (system + provider) |
 | [`layerSettingsSetup`](#layerSettingsSetup) | `[id+layerId+algorithmId+providerId]` | Layer style attribute metadata templates |
 | [`layerSettings`](#layerSettings) | `[id+layerId+algorithmId+providerId+environmentId]` | Per-environment working layer style values |
@@ -245,22 +245,24 @@ result: {
 
 ### `coverageGridVisitCache`
 
-Caches coverage-grid cell visits and inspector-derived metrics for a specific computation output signature and cell size. This table is performance-oriented and allows workspace load/render paths to reuse precomputed visit maps.
+Caches the latest coverage-grid cell visits and inspector-derived metrics per environment. This table is performance-oriented and always stores only the current snapshot for each environment.
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
-| `environmentId` | `number` | PK (part 1), IDX, FK → `environments.id` | Parent environment |
-| `resultSignature` | `string` | PK (part 2), IDX | Stable signature derived from compute result output |
-| `cellSize` | `number` | PK (part 3) | Coverage grid cell size used for visit-map computation |
+| `environmentId` | `number` | PK, FK → `environments.id` | Parent environment |
+| `resultSignature` | `string` | — | Stable signature derived from compute result output for staleness checks |
+| `cellSize` | `number` | — | Coverage grid cell size used for visit-map computation |
 | `pathWidth` | `number` | — | Resolved path width used during rasterization |
 | `visitEntries` | `Array<{key: string, count: number}>` | — | Sparse visit-map entries where `key = "col,row"` |
 | `maxCount` | `number` | — | Maximum visit count across `visitEntries` |
 | `coverageRatioPct` | `number \| null` | — | Cached coverage ratio in percentage units |
 | `overlapRatioPct` | `number \| null` | — | Cached overlap ratio in percentage units |
 | `turnCount` | `number \| null` | — | Cached number-of-turns metric |
+| `pathLength` | `number \| null` | — | Cached path-length metric in world units |
+| `efficiency` | `number \| null` | — | Cached efficiency metric as percentage |
 | `createdAt` | `string` | — | ISO 8601 timestamp of cache write time |
 
-**Indexes:** `[environmentId+resultSignature+cellSize]` (compound PK), `environmentId` (IDX), `[environmentId+resultSignature]` (compound IDX), `resultSignature` (IDX)
+**Indexes:** `environmentId` (PK)
 
 ---
 

@@ -116,23 +116,9 @@ export async function hydrateCoverageCacheForCurrentResult(): Promise<void> {
     const resultSignature = computeResultSignature(result);
     const environmentId = result.environmentId;
 
-    const cached = await getCoverageGridVisitCache(environmentId, resultSignature, cellSize);
-    if (runId !== inFlightRunId) return;
-
-    const currentResult = useComputeResultStore.getState().result;
-    if (!currentResult || computeResultSignature(currentResult) !== resultSignature) return;
-
-    if (cached) {
-        useComputeResultStore.getState().setCoverageMetrics(toCoverageMetricsState(cached, "cache"));
-        return;
-    }
-
     const layers = useLayerSettingsStore.getState().layers;
     const catalogParams = useComputationCatalogStore.getState().parameters;
     const parameterValues = useParameterValuesStore.getState().parameterValues;
-    const envId = useEnvStore.getState().env.id;
-    const allObjects = useCanvasObjectStore.getState().objects;
-    const objects = allObjects.filter((o) => o.environmentId === envId);
 
     const pathWidth = resolvePathWidth({
         result,
@@ -140,6 +126,25 @@ export async function hydrateCoverageCacheForCurrentResult(): Promise<void> {
         parameterValues,
         fallback: cellSize,
     });
+
+    const cached = await getCoverageGridVisitCache(environmentId);
+    if (runId !== inFlightRunId) return;
+
+    const currentResult = useComputeResultStore.getState().result;
+    if (!currentResult || computeResultSignature(currentResult) !== resultSignature) return;
+
+    if (
+        cached &&
+        cached.resultSignature === resultSignature &&
+        cached.cellSize === cellSize &&
+        cached.pathWidth === pathWidth
+    ) {
+        useComputeResultStore.getState().setCoverageMetrics(toCoverageMetricsState(cached, "cache"));
+        return;
+    }
+
+    const allObjects = useCanvasObjectStore.getState().objects;
+    const objects = allObjects.filter((o) => o.environmentId === environmentId);
 
     const { visitMap, maxCount } = buildCoverageVisitMap({
         segments: result.result.coveragePathPlan.segments,
@@ -152,9 +157,7 @@ export async function hydrateCoverageCacheForCurrentResult(): Promise<void> {
     const fallbackTurns = computeNumberOfTurns(result.result.coveragePathPlan.segments);
     const fallbackPathLength = computePathLength(result.result.coveragePathPlan.segments);
 
-    const totalNetArea = objects
-        .filter((o) => o.environmentId === envId)
-        .reduce((sum, o) => sum + (computeNetArea(o, objects) ?? 0), 0);
+    const totalNetArea = objects.reduce((sum, o) => sum + (computeNetArea(o, objects) ?? 0), 0);
 
     const coverageMetricValue = resolveNumericMetricValueByName("coverage ratio");
     const overlapMetricValue = resolveNumericMetricValueByName("overlap ratio");

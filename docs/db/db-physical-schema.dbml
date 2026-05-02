@@ -269,23 +269,22 @@ Table runtime.computeResult [note: 'Latest CPP result per environment. One row p
   }
 }
 
-Table runtime.coverageGridVisitCache [note: 'Cached coverage-grid cell visits and derived metrics for a specific compute output signature and cell size. Used to avoid recomputation on reload and UI remount.'] {
-  environmentId     integer [not null, note: 'Compound PK part 1; FK → workspace.environment.id']
-  resultSignature   varchar [not null, note: 'Compound PK part 2; stable signature of compute output']
-  cellSize          float   [not null, note: 'Compound PK part 3; coverage-grid cell size used for rasterization']
+Table runtime.coverageGridVisitCache [note: 'Latest cached coverage-grid visits and derived metrics per environment. Used to avoid recomputation on reload and UI remount.'] {
+  environmentId     integer [not null, note: 'PK; FK → workspace.environment.id']
+  resultSignature   varchar [not null, note: 'Stable signature of compute output for staleness checks']
+  cellSize          float   [not null, note: 'Coverage-grid cell size used for rasterization']
   pathWidth         float   [not null, note: 'Resolved path width used for visit-map generation']
   visitEntries      json    [not null, note: 'Array<{ key: "col,row", count: number }> sparse visit map']
   maxCount          integer [not null, note: 'Maximum visit count among visitEntries']
   coverageRatioPct  float   [null, note: 'Cached coverage ratio percentage']
   overlapRatioPct   float   [null, note: 'Cached overlap ratio percentage']
   turnCount         integer [null, note: 'Cached number-of-turns metric']
+  pathLength        float   [null, note: 'Cached path-length metric in world units']
+  efficiency        float   [null, note: 'Cached efficiency percentage']
   createdAt         varchar [not null, note: 'ISO 8601 cache write timestamp']
 
   indexes {
-    (environmentId, resultSignature, cellSize) [pk]
-    environmentId                              [name: 'idx_coverageGridVisitCache_environmentId']
-    (environmentId, resultSignature)           [name: 'idx_coverageGridVisitCache_env_signature']
-    resultSignature                            [name: 'idx_coverageGridVisitCache_resultSignature']
+    environmentId [pk]
   }
 }
 
