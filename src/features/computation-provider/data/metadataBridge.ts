@@ -122,6 +122,7 @@ export function ingestProviderMetadata(
                 defaultValue: p.defaultValue ?? "",
                 minValue: p.minValue,
                 maxValue: p.maxValue,
+                isRatio: p.isRatio,
                 section: p.section,
                 appHandler: p.appHandler ?? null,
             })),

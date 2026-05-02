@@ -54,6 +54,8 @@ export interface AlgorithmParameter {
     minValue?: number;
     /** Maximum allowed numeric value. Only meaningful for Integer and Decimal params. */
     maxValue?: number;
+    /** True if this is a ratio/percentage parameter (0-100). Disables unit of measure conversion. */
+    isRatio?: boolean;
     section?: MetadataParamSection;
     /** Optional application-level behavior handler for enum params. */
     appHandler: SupportedAppParameterHandler | null;
@@ -129,6 +131,7 @@ export interface MetadataParamResponse {
     defaultValue?: string;
     minValue?: number;
     maxValue?: number;
+    isRatio?: boolean;
     section?: MetadataParamSection;
     appHandler?: SupportedAppParameterHandler;
 }

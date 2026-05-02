@@ -130,7 +130,7 @@ function DynamicParameterField({
             );
 
         case "Integer": {
-            const integerUnit = unitLabel(unitOfMeasure);
+            const integerUnit = parameter.isRatio ? "%" : unitLabel(unitOfMeasure);
             return (
                 <ControlsPanelSectionInput
                     label={integerUnit ? `${parameter.name} (${integerUnit})` : parameter.name}
@@ -144,7 +144,7 @@ function DynamicParameterField({
         }
 
         case "Decimal": {
-            const decimalUnit = unitLabel(unitOfMeasure);
+            const decimalUnit = parameter.isRatio ? "%" : unitLabel(unitOfMeasure);
             return (
                 <ControlsPanelSectionInput
                     label={decimalUnit ? `${parameter.name} (${decimalUnit})` : parameter.name}
