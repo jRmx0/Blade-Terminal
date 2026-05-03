@@ -244,23 +244,27 @@ export function computePathLength(segments: CoveragePathPlanSegment[]): number {
  * Computes coverage efficiency as a percentage.
  *
  * Efficiency = (minimum path length required / actual path length) × 100
- * Minimum path length = totalNetArea / pathWidth
+ * Minimum path length = coveredArea / pathWidth
+ *
+ * coveredArea is the portion of the work area that was actually covered
+ * (coverageRatio × totalNetArea), so efficiency reflects how optimally
+ * the robot covered the area it did cover, not the full field.
  *
  * Returns null when any input is zero or non-finite.
  */
 export function computeEfficiency(
-    totalNetArea: number,
+    coveredArea: number,
     pathWidth: number,
     pathLength: number,
 ): number | null {
     if (
-        !Number.isFinite(totalNetArea) || totalNetArea <= 0 ||
+        !Number.isFinite(coveredArea) || coveredArea <= 0 ||
         !Number.isFinite(pathWidth) || pathWidth <= 0 ||
         !Number.isFinite(pathLength) || pathLength <= 0
     ) {
         return null;
     }
-    const minPathLength = totalNetArea / pathWidth;
+    const minPathLength = coveredArea / pathWidth;
     return (minPathLength / pathLength) * 100;
 }
 

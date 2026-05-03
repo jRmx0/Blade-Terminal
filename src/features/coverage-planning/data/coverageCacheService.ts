@@ -165,6 +165,11 @@ export async function hydrateCoverageCacheForCurrentResult(): Promise<void> {
     const pathLengthMetricValue = resolveNumericMetricValueByName("path length");
 
     const resolvedPathLength = toPathLength(pathLengthMetricValue, fallbackPathLength);
+    const resolvedCoverageRatioPct = toCoveragePct(coverageMetricValue, fallbackCoverageRatio);
+    const coveredArea =
+        resolvedCoverageRatioPct !== null
+            ? totalNetArea * (resolvedCoverageRatioPct / 100)
+            : totalNetArea;
 
     const record: CoverageGridVisitCacheRecord = {
         environmentId,
@@ -173,11 +178,11 @@ export async function hydrateCoverageCacheForCurrentResult(): Promise<void> {
         pathWidth,
         visitEntries: serializeVisitMap(visitMap),
         maxCount,
-        coverageRatioPct: toCoveragePct(coverageMetricValue, fallbackCoverageRatio),
+        coverageRatioPct: resolvedCoverageRatioPct,
         overlapRatioPct: toOverlapPct(overlapMetricValue, fallbackOverlapPct),
         turnCount: toTurnCount(turnsMetricValue, fallbackTurns),
         pathLength: resolvedPathLength,
-        efficiency: computeEfficiency(totalNetArea, pathWidth, resolvedPathLength),
+        efficiency: computeEfficiency(coveredArea, pathWidth, resolvedPathLength),
         createdAt: new Date().toISOString(),
     };
 
