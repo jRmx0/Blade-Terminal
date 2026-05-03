@@ -77,7 +77,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                 const { ctx, chartArea: { left, right, top } } = chart;
                 ctx.save();
                 ctx.fillStyle = "#374151";
-                ctx.font = "16px sans-serif";
+                ctx.font = "bold 16px sans-serif";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "bottom";
                 const maxWidth = right - left;
@@ -136,13 +136,130 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
     const handleDownload = useCallback(async () => {
         if (!chartRef.current) return;
         const src = chartRef.current.canvas;
+        const dpr = window.devicePixelRatio || 1;
+
+        const LEGEND_PAD_X = 12;
+        const LEGEND_PAD_Y = 8;
+        const SWATCH_W = 20;
+        const SWATCH_GAP = 6;
+        const ITEM_GAP = 16;
+        const ROW_H = 20;
+        const FONT = "bold 12px sans-serif";
+        const EXPORT_PAD_X = 20;
+        const EXPORT_PAD_Y = 20;
+        const LEGEND_TOP_GAP = 8;
+
+        const legendLayout = (() => {
+            if (normalizedStages.length === 0) return null;
+
+            const probe = document.createElement("canvas").getContext("2d");
+            if (!probe) return null;
+
+            probe.font = FONT;
+            const maxRowContentWidth = Math.max(0, src.width / dpr - LEGEND_PAD_X * 2);
+
+            const rows: Array<{
+                items: Array<{ stage: (typeof normalizedStages)[number]; itemWidth: number }>;
+                rowWidth: number;
+            }> = [];
+
+            let currentItems: Array<{ stage: (typeof normalizedStages)[number]; itemWidth: number }> = [];
+            let currentRowWidth = 0;
+
+            const flushRow = () => {
+                if (currentItems.length === 0) return;
+                rows.push({
+                    items: currentItems,
+                    rowWidth: Math.max(0, currentRowWidth - ITEM_GAP),
+                });
+                currentItems = [];
+                currentRowWidth = 0;
+            };
+
+            for (const stage of normalizedStages) {
+                const labelWidth = probe.measureText(stage.label).width;
+                const itemWidth = SWATCH_W + SWATCH_GAP + labelWidth + ITEM_GAP;
+
+                const projectedRowWidth = currentRowWidth === 0
+                    ? itemWidth - ITEM_GAP
+                    : currentRowWidth + itemWidth - ITEM_GAP;
+
+                if (currentItems.length > 0 && projectedRowWidth > maxRowContentWidth) {
+                    flushRow();
+                }
+
+                currentItems.push({ stage, itemWidth });
+                currentRowWidth += itemWidth;
+            }
+
+            flushRow();
+            if (rows.length === 0) return null;
+
+            const contentWidth = Math.max(...rows.map((row) => row.rowWidth));
+            const panelWidth = contentWidth + LEGEND_PAD_X * 2;
+            const panelHeight = LEGEND_PAD_Y * 2 + rows.length * ROW_H;
+
+            return { rows, contentWidth, panelWidth, panelHeight };
+        })();
+
+        const legendH = legendLayout ? LEGEND_TOP_GAP + legendLayout.panelHeight : 0;
+
         const offscreen = document.createElement("canvas");
-        offscreen.width = src.width;
-        offscreen.height = src.height;
+        offscreen.width = src.width + Math.round(EXPORT_PAD_X * 2 * dpr);
+        offscreen.height = src.height + Math.round((EXPORT_PAD_Y * 2 + legendH) * dpr);
         const ctx2d = offscreen.getContext("2d")!;
         ctx2d.fillStyle = "#ffffff";
         ctx2d.fillRect(0, 0, offscreen.width, offscreen.height);
-        ctx2d.drawImage(src, 0, 0);
+        ctx2d.drawImage(src, Math.round(EXPORT_PAD_X * dpr), Math.round(EXPORT_PAD_Y * dpr));
+
+        if (legendLayout) {
+            ctx2d.save();
+            ctx2d.scale(dpr, dpr);
+
+            const chartH = src.height / dpr;
+            const panelX = EXPORT_PAD_X + (src.width / dpr - legendLayout.panelWidth) / 2;
+            const panelY = EXPORT_PAD_Y + chartH + LEGEND_TOP_GAP;
+            const panelW = legendLayout.panelWidth;
+
+            // Panel border
+            ctx2d.strokeStyle = "#e5e7eb";
+            ctx2d.lineWidth = 1;
+            ctx2d.setLineDash([]);
+            ctx2d.strokeRect(panelX, panelY, panelW, legendLayout.panelHeight);
+
+            ctx2d.font = FONT;
+            ctx2d.fillStyle = "#374151";
+            ctx2d.textBaseline = "middle";
+
+            let y = panelY + LEGEND_PAD_Y + ROW_H / 2;
+
+            for (const row of legendLayout.rows) {
+                let x = panelX + LEGEND_PAD_X + (legendLayout.contentWidth - row.rowWidth) / 2;
+
+                for (const { stage, itemWidth } of row.items) {
+                    // Dashed swatch
+                    ctx2d.strokeStyle = stage.color;
+                    ctx2d.lineWidth = 2;
+                    ctx2d.setLineDash([4, 3]);
+                    ctx2d.beginPath();
+                    ctx2d.moveTo(x, y);
+                    ctx2d.lineTo(x + SWATCH_W, y);
+                    ctx2d.stroke();
+
+                    // Label
+                    ctx2d.setLineDash([]);
+                    ctx2d.lineWidth = 1;
+                    ctx2d.fillText(stage.label, x + SWATCH_W + SWATCH_GAP, y);
+
+                    x += itemWidth;
+                }
+
+                y += ROW_H;
+            }
+
+            ctx2d.restore();
+        }
+
         const blob = await new Promise<Blob>((resolve, reject) =>
             offscreen.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png"),
         );
@@ -164,7 +281,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
         } catch (err) {
             console.error("[TimeSeriesMetricCard] File write failed:", err);
         }
-    }, [name, chartRef]);
+    }, [name, chartRef, normalizedStages]);
 
     const handleCsvExport = useCallback(async () => {
         const header = `${xAxisLabel ?? "Index"},${yAxisLabel ?? "Value"}`;
@@ -226,14 +343,14 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
             },
             scales: {
                 x: {
-                    title: { display: true, text: xAxisLabel ?? "Index", font: { size: 14 }, color: "#4b5563" },
-                    ticks: { font: { size: 14 }, color: "#4b5563", autoSkipPadding: 20, maxRotation: 0 },
+                    title: { display: true, text: xAxisLabel ?? "Index", font: { size: 14, weight: "bold" }, color: "#4b5563" },
+                    ticks: { font: { size: 14, weight: "bold" }, color: "#4b5563", autoSkipPadding: 20, maxRotation: 0 },
                     grid: { color: "#e5e7eb" },
                     border: { color: "#9ca3af" },
                 },
                 y: {
-                    title: { display: true, text: yAxisLabel ?? "Value", font: { size: 14 }, color: "#4b5563" },
-                    ticks: { font: { size: 14 }, color: "#4b5563" },
+                    title: { display: true, text: yAxisLabel ?? "Value", font: { size: 14, weight: "bold" }, color: "#4b5563" },
+                    ticks: { font: { size: 14, weight: "bold" }, color: "#4b5563" },
                     grid: { color: "#e5e7eb" },
                     border: { color: "#9ca3af" },
                 },
