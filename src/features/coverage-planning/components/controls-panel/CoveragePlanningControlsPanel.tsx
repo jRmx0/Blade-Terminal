@@ -80,6 +80,18 @@ function getParameterDisplayValue(
     return persistedValue ?? parameter.defaultValue ?? "";
 }
 
+function getNumericParameterUnit(parameter: AlgorithmParameter, unitOfMeasure: UnitOfMeasure): string {
+    if (parameter.unitType === "ratio") {
+        return "%";
+    }
+
+    if (parameter.unitType === "unitless") {
+        return "";
+    }
+
+    return unitLabel(unitOfMeasure);
+}
+
 interface DynamicParameterFieldProps {
     parameter: AlgorithmParameter;
     selectedProviderId: number;
@@ -130,7 +142,7 @@ function DynamicParameterField({
             );
 
         case "Integer": {
-            const integerUnit = parameter.isRatio ? "%" : unitLabel(unitOfMeasure);
+            const integerUnit = getNumericParameterUnit(parameter, unitOfMeasure);
             return (
                 <ControlsPanelSectionInput
                     label={integerUnit ? `${parameter.name} (${integerUnit})` : parameter.name}
@@ -144,7 +156,7 @@ function DynamicParameterField({
         }
 
         case "Decimal": {
-            const decimalUnit = parameter.isRatio ? "%" : unitLabel(unitOfMeasure);
+            const decimalUnit = getNumericParameterUnit(parameter, unitOfMeasure);
             return (
                 <ControlsPanelSectionInput
                     label={decimalUnit ? `${parameter.name} (${decimalUnit})` : parameter.name}

@@ -43,6 +43,10 @@ function coerceParamValue(raw: string, paramType: AlgoParamType): number | boole
     }
 }
 
+function isNumericParameter(paramType: AlgoParamType): boolean {
+    return paramType === "Integer" || paramType === "Decimal";
+}
+
 function isNullableParameter(paramName: string, paramType: AlgoParamType): boolean {
     return paramType === "String" && paramName === "Seed";
 }
@@ -94,7 +98,7 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
                 v.providerId === param.computationProviderId,
         );
 
-        if (pv === undefined && isNullableParameter(param.name, param.paramType)) {
+        if (pv === undefined && (isNullableParameter(param.name, param.paramType) || isNumericParameter(param.paramType))) {
             parameters[param.name] = null;
             continue;
         }
@@ -103,7 +107,7 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
             return { ok: false, error: `Missing parameter value for "${param.name}".` };
         }
 
-        if (isNullableParameter(param.name, param.paramType) && pv.value.trim() === "") {
+        if ((isNullableParameter(param.name, param.paramType) || isNumericParameter(param.paramType)) && pv.value.trim() === "") {
             parameters[param.name] = null;
             continue;
         }
