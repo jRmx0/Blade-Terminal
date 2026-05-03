@@ -13,6 +13,7 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
+import type { PerformanceMetricStage } from "@/types/serviceTypes";
 import {
     usePerformanceMonitorModalStore,
     DEFAULT_CHART_WIDTH,
@@ -21,6 +22,8 @@ import {
 import { useChartResize } from "../../hooks/useChartResize";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
+const STAGE_COLORS = ["#ef4444", "#f59e0b", "#84cc16", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6"];
 
 const borderBoxPlugin: Plugin<"line"> = {
     id: "borderBox",
@@ -43,17 +46,29 @@ interface TimeSeriesMetricCardProps {
     metricId: number;
     name: string;
     data: number[];
+    stages?: PerformanceMetricStage[];
     xAxisLabel?: string;
     yAxisLabel?: string;
 }
 
-export default function TimeSeriesMetricCard({ metricId, name, data, xAxisLabel, yAxisLabel }: TimeSeriesMetricCardProps) {
+export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAxisLabel, yAxisLabel }: TimeSeriesMetricCardProps) {
     const chartRef = useRef<ChartJS<"line"> | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
 
     const min = useMemo(() => (data.length > 0 ? Math.min(...data) : null), [data]);
     const max = useMemo(() => (data.length > 0 ? Math.max(...data) : null), [data]);
     const showDots = data.length <= 20;
+
+    const normalizedStages = useMemo(
+        () => (stages ?? [])
+            .map((stage, index) => ({
+                label: stage.label,
+                sampleIndex: Math.max(0, Math.min(data.length - 1, Math.round(stage.sampleIndex))),
+                color: STAGE_COLORS[index % STAGE_COLORS.length] ?? "#9ca3af",
+            }))
+            .sort((a, b) => a.sampleIndex - b.sampleIndex),
+        [data.length, stages],
+    );
 
     const titlePlugin = useMemo<Plugin<"line">>(
         () => ({
@@ -78,6 +93,38 @@ export default function TimeSeriesMetricCard({ metricId, name, data, xAxisLabel,
             },
         }),
         [name],
+    );
+
+    const stageMarkersPlugin = useMemo<Plugin<"line">>(
+        () => ({
+            id: `stageMarkers-${metricId}`,
+            afterDatasetsDraw(chart) {
+                if (normalizedStages.length === 0 || data.length === 0) return;
+
+                const xScale = chart.scales.x as { getPixelForValue: (value: number) => number } | undefined;
+                if (!xScale) return;
+
+                const { ctx, chartArea: { left, right, top, bottom } } = chart;
+
+                ctx.save();
+                ctx.setLineDash([6, 4]);
+                ctx.lineWidth = 2;
+
+                for (const stage of normalizedStages) {
+                    const x = xScale.getPixelForValue(stage.sampleIndex);
+                    if (!Number.isFinite(x) || x < left || x > right) continue;
+
+                    ctx.strokeStyle = stage.color;
+                    ctx.beginPath();
+                    ctx.moveTo(x, top);
+                    ctx.lineTo(x, bottom);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            },
+        }),
+        [data.length, metricId, normalizedStages],
     );
 
     const { chartSizes, setChartSize, persistChartSizes } = usePerformanceMonitorModalStore();
@@ -202,7 +249,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, xAxisLabel,
                     ref={chartRef}
                     data={chartData}
                     options={options}
-                    plugins={[borderBoxPlugin, titlePlugin]}
+                    plugins={[borderBoxPlugin, titlePlugin, stageMarkersPlugin]}
                 />
                 <span
                     onClick={handleCsvExport}
@@ -229,6 +276,20 @@ export default function TimeSeriesMetricCard({ metricId, name, data, xAxisLabel,
                     resize_window
                 </span>
             </div>
+            {normalizedStages.length > 0 && (
+                <div className="mx-auto mt-2 w-full max-w-[95%] rounded border border-gray-200 px-3 py-2">
+                    {/* <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">Stage legend</div> */}
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                        {normalizedStages.map((stage, index) => (
+                            <div key={`${stage.label}-${stage.sampleIndex}-${index}`} className="flex items-center gap-2 text-xs text-gray-700">
+                                <span className="inline-block h-0 w-5 border-t-2 border-dashed" style={{ borderTopColor: stage.color }} />
+                                <span className="font-medium">{stage.label}</span>
+                                {/* <span className="text-gray-500">@ {stage.sampleIndex}</span> */}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
             <div className="flex flex-col gap-2 mt-2">
                 <CardModalField id="min" label="Min" value={min !== null ? String(min) : "—"} disabled />
                 <CardModalField id="max" label="Max" value={max !== null ? String(max) : "—"} disabled />

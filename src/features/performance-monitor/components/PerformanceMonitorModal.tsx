@@ -9,6 +9,7 @@ import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
+import type { PerformanceMetric, PerformanceMetricStage } from "@/types/serviceTypes";
 import TimeSeriesMetricCard from "./internal/TimeSeriesMetricCard";
 
 export default function PerformanceMonitorModal() {
@@ -28,15 +29,15 @@ export default function PerformanceMonitorModal() {
             .filter((m) => m.algorithmId === algorithmId && m.computationProviderId === providerId)
             .sort((a, b) => a.id - b.id);
 
-        // Build a lookup from id → value
-        const valueById = new Map<number, number | number[]>();
+        // Build a lookup from id → metric payload
+        const valueById = new Map<number, PerformanceMetric>();
         for (const pv of performanceValues) {
-            valueById.set(pv.id, pv.value);
+            valueById.set(pv.id, pv);
         }
 
         // Group — preserving first-appearance order
         const groupOrder: string[] = [];
-        const byGroup = new Map<string, { id: number; name: string; type: string; value: number | number[] | undefined; style?: { xAxisLabel?: string; yAxisLabel?: string } }[]>();
+        const byGroup = new Map<string, { id: number; name: string; type: string; value: number | number[] | undefined; stages?: PerformanceMetricStage[]; style?: { xAxisLabel?: string; yAxisLabel?: string } }[]>();
 
         for (const meta of metaMapped) {
             const group = meta.group ?? "General";
@@ -44,11 +45,13 @@ export default function PerformanceMonitorModal() {
                 groupOrder.push(group);
                 byGroup.set(group, []);
             }
+            const metric = valueById.get(meta.id);
             byGroup.get(group)!.push({
                 id: meta.id,
                 name: meta.name,
                 type: meta.type,
-                value: valueById.get(meta.id),
+                value: metric?.value,
+                stages: metric?.stages,
                 style: meta.style,
             });
         }
@@ -121,7 +124,7 @@ export default function PerformanceMonitorModal() {
                 {/* Metrics list */}
                 <div className="flex-1 overflow-y-auto">
                     <div className="px-4 py-2 flex flex-col gap-2">
-                        {activeMetrics.map((metric: { id: number; name: string; type: string; value: number | number[] | undefined; style?: { xAxisLabel?: string; yAxisLabel?: string } }) => {
+                        {activeMetrics.map((metric: { id: number; name: string; type: string; value: number | number[] | undefined; stages?: PerformanceMetricStage[]; style?: { xAxisLabel?: string; yAxisLabel?: string } }) => {
                             if (metric.type === "Time-series") {
                                 const data = Array.isArray(metric.value) ? metric.value : [];
                                 return (
@@ -130,6 +133,7 @@ export default function PerformanceMonitorModal() {
                                         metricId={metric.id}
                                         name={metric.name}
                                         data={data}
+                                        stages={metric.stages}
                                         xAxisLabel={metric.style?.xAxisLabel}
                                         yAxisLabel={metric.style?.yAxisLabel}
                                     />

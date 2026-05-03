@@ -344,6 +344,12 @@ export interface AlgorithmDebug {
 export interface PerformanceMetric {
     id: number;
     value: number | number[];
+    stages?: PerformanceMetricStage[];
+}
+
+export interface PerformanceMetricStage {
+    label: string;
+    sampleIndex: number;
 }
 
 export interface AlgorithmPerformance {
