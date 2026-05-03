@@ -43,6 +43,10 @@ function coerceParamValue(raw: string, paramType: AlgoParamType): number | boole
     }
 }
 
+function isNullableParameter(paramName: string, paramType: AlgoParamType): boolean {
+    return paramType === "String" && paramName === "Seed";
+}
+
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
@@ -81,7 +85,7 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
 
     const { parameterValues } = useParameterValuesStore.getState();
 
-    const parameters: Record<string, number | boolean | string> = {};
+    const parameters: Record<string, number | boolean | string | null> = {};
     for (const param of algoParams) {
         const pv = parameterValues.find(
             (v) =>
@@ -89,9 +93,21 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
                 v.algorithmId === param.algorithmId &&
                 v.providerId === param.computationProviderId,
         );
+
+        if (pv === undefined && isNullableParameter(param.name, param.paramType)) {
+            parameters[param.name] = null;
+            continue;
+        }
+
         if (pv === undefined) {
             return { ok: false, error: `Missing parameter value for "${param.name}".` };
         }
+
+        if (isNullableParameter(param.name, param.paramType) && pv.value.trim() === "") {
+            parameters[param.name] = null;
+            continue;
+        }
+
         parameters[param.name] = coerceParamValue(pv.value, param.paramType);
     }
 
