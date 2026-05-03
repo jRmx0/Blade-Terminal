@@ -394,9 +394,9 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                 </span>
             </div>
             {normalizedStages.length > 0 && (
-                <div className="mx-auto mt-2 w-full max-w-[95%] rounded border border-gray-200 px-3 py-2">
+                <div className="mx-auto mt-2 inline-flex w-fit flex-col items-center rounded border border-gray-200 px-3 py-2">
                     {/* <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">Stage legend</div> */}
-                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    <div className="inline-flex w-fit flex-wrap justify-center gap-x-4 gap-y-1">
                         {normalizedStages.map((stage, index) => (
                             <div key={`${stage.label}-${stage.sampleIndex}-${index}`} className="flex items-center gap-2 text-xs text-gray-700">
                                 <span className="inline-block h-0 w-5 border-t-2 border-dashed" style={{ borderTopColor: stage.color }} />
