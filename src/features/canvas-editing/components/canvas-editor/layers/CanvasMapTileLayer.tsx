@@ -12,6 +12,7 @@ import {
     mercYToTileY,
     tileXToMercX,
     tileYToMercY,
+    canvasToMerc,
     mercToCanvas,
 } from "@/utils/geoProjection";
 import type { GeoAnchorMerc } from "@/utils/geoProjection";
@@ -66,10 +67,11 @@ function _CanvasMapTileLayer() {
         const anchorMerc: GeoAnchorMerc = {
             anchorMx: lonToMercX(geoAnchor.lon),
             anchorMy: latToMercY(geoAnchor.lat),
+            anchorLat: geoAnchor.lat,
             metersPerUnit: geoAnchor.metersPerUnit,
         };
 
-        const { zoom, overscale } = getTileZoomState(scale, geoAnchor.metersPerUnit);
+        const { zoom, overscale } = getTileZoomState(scale, geoAnchor.metersPerUnit, geoAnchor.lat);
 
         // Viewport bounds in canvas world coordinates
         const worldMinX = -position.x / scale;
@@ -77,9 +79,9 @@ function _CanvasMapTileLayer() {
         const worldMinY = -position.y / scale;
         const worldMaxY = (height - position.y) / scale;
 
-        // Canvas world corners → Web Mercator
-        const { mx: mxMin, my: myMax } = { mx: anchorMerc.anchorMx + worldMinX * geoAnchor.metersPerUnit, my: anchorMerc.anchorMy - worldMinY * geoAnchor.metersPerUnit };
-        const { mx: mxMax, my: myMin } = { mx: anchorMerc.anchorMx + worldMaxX * geoAnchor.metersPerUnit, my: anchorMerc.anchorMy - worldMaxY * geoAnchor.metersPerUnit };
+        // Canvas world corners → Web Mercator (applies Mercator scale factor internally)
+        const { mx: mxMin, my: myMax } = canvasToMerc(worldMinX, worldMinY, anchorMerc);
+        const { mx: mxMax, my: myMin } = canvasToMerc(worldMaxX, worldMaxY, anchorMerc);
 
         // Tile range
         const tileXMin = Math.floor(mercXToTileX(mxMin, zoom)) - TILE_BUFFER;
