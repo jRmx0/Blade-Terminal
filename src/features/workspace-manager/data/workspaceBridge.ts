@@ -218,7 +218,9 @@ export async function importWorkspace(data: ImportedWorkspaceData): Promise<void
         data.envPoints.length > 0
             ? Promise.all(data.envPoints.map((p) => upsertEnvPoint(targetId, p.type, p.point)))
             : Promise.resolve(),
-        initEnvironmentGeoAnchorFromSystem(targetId),
+        data.geoAnchor
+            ? persistEnvironmentGeoAnchor(targetId, data.geoAnchor)
+            : initEnvironmentGeoAnchorFromSystem(targetId),
     ]);
 
     await loadWorkspace(targetId);

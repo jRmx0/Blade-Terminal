@@ -1,4 +1,4 @@
-import type { Environment } from "@/types/schemaTypes";
+import type { Environment, GeoAnchor } from "@/types/schemaTypes";
 import type { Object } from "@/types/schemaTypes";
 import type { EnvPoint } from "@/types/schemaTypes";
 
@@ -9,7 +9,7 @@ function escapeXmlText(value: string): string {
         .replace(/>/g, "&gt;");
 }
 
-export function buildExportXml(env: Environment, objects: Object[], envPoints: EnvPoint[] = []): string {
+export function buildExportXml(env: Environment, objects: Object[], envPoints: EnvPoint[] = [], geoAnchor?: GeoAnchor): string {
     const lines: string[] = [];
 
     lines.push('<?xml version="1.0" encoding="UTF-8"?>');
@@ -53,6 +53,15 @@ export function buildExportXml(env: Environment, objects: Object[], envPoints: E
     }
 
     lines.push("  </envPoints>");
+
+    if (geoAnchor) {
+        lines.push("  <geoAnchor>");
+        lines.push(`    <lat>${geoAnchor.lat}</lat>`);
+        lines.push(`    <lon>${geoAnchor.lon}</lon>`);
+        lines.push(`    <metersPerUnit>${geoAnchor.metersPerUnit}</metersPerUnit>`);
+        lines.push("  </geoAnchor>");
+    }
+
     lines.push("</workspace>");
 
     return lines.join("\n");

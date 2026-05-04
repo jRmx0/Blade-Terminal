@@ -10,7 +10,7 @@ import {
     type ObjectCategory,
     type ObjectType,
 } from "@/config/db-ops/enums";
-import type { EnvPointType } from "@/types/schemaTypes";
+import type { EnvPointType, GeoAnchor } from "@/types/schemaTypes";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -30,6 +30,7 @@ export interface ImportedWorkspaceData {
     coordSystem: CoordSystemType;
     objects: ParsedObject[];
     envPoints: ParsedEnvPoint[];
+    geoAnchor?: GeoAnchor;
 }
 
 export interface ParsedEnvPoint {
@@ -108,7 +109,7 @@ export function parseImportXml(xml: string): ImportedWorkspaceData | ImportParse
 
     const rootAttrErr = checkNoAttributes(root, "<workspace>");
     if (rootAttrErr) return rootAttrErr;
-    const rootChildErr = checkChildren(root, ["environment", "objects", "envPoints"], "<workspace>");
+    const rootChildErr = checkChildren(root, ["environment", "objects", "envPoints", "geoAnchor"], "<workspace>");
     if (rootChildErr) return rootChildErr;
 
     // --- <environment> ---
@@ -274,5 +275,33 @@ export function parseImportXml(xml: string): ImportedWorkspaceData | ImportParse
         }
     }
 
-    return { name, format, type, coordSystem, objects, envPoints };
+    // --- <geoAnchor> (optional) ---
+    let geoAnchor: GeoAnchor | undefined;
+    const geoAnchorEl = root.querySelector(":scope > geoAnchor");
+    if (geoAnchorEl) {
+        const geoAttrErr = checkNoAttributes(geoAnchorEl, "<geoAnchor>");
+        if (geoAttrErr) return geoAttrErr;
+        const geoChildErr = checkChildren(geoAnchorEl, ["lat", "lon", "metersPerUnit"], "<geoAnchor>");
+        if (geoChildErr) return geoChildErr;
+
+        const latText = textContent(geoAnchorEl, "lat");
+        const lonText = textContent(geoAnchorEl, "lon");
+        const mppText = textContent(geoAnchorEl, "metersPerUnit");
+
+        if (latText === null || lonText === null || mppText === null) {
+            return { error: "<geoAnchor> must contain <lat>, <lon>, and <metersPerUnit>." };
+        }
+
+        const lat = parseFloat(latText);
+        const lon = parseFloat(lonText);
+        const metersPerUnit = parseFloat(mppText);
+
+        if (!isFinite(lat) || !isFinite(lon) || !isFinite(metersPerUnit)) {
+            return { error: "Non-numeric value in <geoAnchor>." };
+        }
+
+        geoAnchor = { lat, lon, metersPerUnit };
+    }
+
+    return { name, format, type, coordSystem, objects, envPoints, geoAnchor };
 }

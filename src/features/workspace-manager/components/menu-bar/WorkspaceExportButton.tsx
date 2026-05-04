@@ -3,6 +3,7 @@ import { useEnvStore } from "@/stores/envStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { buildExportXml } from "@/features/workspace-manager/utils/exportWorkspace";
 import { useEnvPointStore } from "@/stores/envPointStore";
+import { useGeoAnchorStore } from "@/stores/geoAnchorStore";
 
 export default function WorkspaceExportButton() {
   const env = useEnvStore((s) => s.env);
@@ -10,10 +11,11 @@ export default function WorkspaceExportButton() {
   const startPoint = useEnvPointStore((s) => s.startPoint);
   const endPoint = useEnvPointStore((s) => s.endPoint);
   const startEndPoint = useEnvPointStore((s) => s.startEndPoint);
+  const environmentGeoAnchor = useGeoAnchorStore((s) => s.environmentGeoAnchor);
 
   const handleClick = async () => {
     const envPoints = [startPoint, endPoint, startEndPoint].filter((point): point is NonNullable<typeof point> => point !== null);
-    const xml = buildExportXml(env, objects, envPoints);
+    const xml = buildExportXml(env, objects, envPoints, environmentGeoAnchor ?? undefined);
 
     let fileHandle: FileSystemFileHandle;
     try {
