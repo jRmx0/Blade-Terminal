@@ -13,8 +13,8 @@
 /** Circumference of the Earth along the equator in Web-Mercator metres. */
 const EARTH_CIRC = 20_037_508.342_789_244;
 
-/** Side length of a Mapbox tile in pixels. */
-export const MAPBOX_TILE_SIZE = 512;
+/** Side length of an ArcGIS World Imagery tile in pixels. */
+export const TILE_SIZE = 256;
 
 // ── WGS-84 ↔ Web-Mercator ────────────────────────────────────────────────────
 
@@ -70,12 +70,12 @@ export function tileYToMercY(ty: number, zoom: number): number {
  * @returns             Integer zoom in [0, 22].
  */
 export function selectTileZoom(scale: number, metersPerUnit: number): number {
-    // At zoom Z, one tile pixel covers: (2 * EARTH_CIRC) / (MAPBOX_TILE_SIZE * 2^Z) metres.
+    // At zoom Z, one tile pixel covers: (2 * EARTH_CIRC) / (TILE_SIZE * 2^Z) metres.
     // We want that to equal metersPerUnit / scale (metres per screen pixel).
-    // → 2^Z = (2 * EARTH_CIRC * scale) / (MAPBOX_TILE_SIZE * metersPerUnit)
-    const z = Math.log2((EARTH_CIRC * 2 * scale) / (MAPBOX_TILE_SIZE * metersPerUnit));
-    // Round to the nearest integer so tiles don't drift; clamp to valid range.
-    return Math.min(22, Math.max(0, Math.round(z)));
+    // → 2^Z = (2 * EARTH_CIRC * scale) / (TILE_SIZE * metersPerUnit)
+    const z = Math.log2((EARTH_CIRC * 2 * scale) / (TILE_SIZE * metersPerUnit));
+    // Floor so we always pick the coarser zoom — better global coverage and fewer missing tiles.
+    return Math.min(22, Math.max(0, Math.floor(z)));
 }
 
 // ── Canvas ↔ screen via geo-anchor ──────────────────────────────────────────

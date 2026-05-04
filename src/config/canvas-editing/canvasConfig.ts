@@ -21,7 +21,7 @@ export function pickGridLevel(scale: number): number {
     return GRID_LEVEL_STEPS[GRID_LEVEL_STEPS.length - 1] ?? 1000;
 }
 
-export const ZOOM_MIN = 0.1;
+export const ZOOM_MIN = 0.000001;
 export const ZOOM_MAX = 8;
 export const ZOOM_STEP = 0.1;
 export const ZOOM_FACTOR = 1.15;

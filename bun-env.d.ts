@@ -41,16 +41,3 @@ declare module "*.module.css" {
 }
 
 declare module "*.css" { }
-
-/**
- * Public environment variables embedded at build time via `bun build --env='BUN_PUBLIC_*'`.
- * Set these in a `.env` file at the project root:
- *
- *   BUN_PUBLIC_MAPBOX_TOKEN=pk.eyJ1...
- */
-declare namespace NodeJS {
-  interface ProcessEnv {
-    /** Mapbox public access token for satellite tile rendering. */
-    BUN_PUBLIC_MAPBOX_TOKEN?: string;
-  }
-}

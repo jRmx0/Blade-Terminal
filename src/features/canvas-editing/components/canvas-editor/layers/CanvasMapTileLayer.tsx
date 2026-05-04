@@ -12,17 +12,19 @@ import {
     tileXToMercX,
     tileYToMercY,
     mercToCanvas,
-    MAPBOX_TILE_SIZE,
 } from "@/utils/geoProjection";
 import type { GeoAnchorMerc } from "@/utils/geoProjection";
 
 /** How many extra tile rows/columns to load beyond the visible edge. */
 const TILE_BUFFER = 1;
 
-const MAPBOX_TOKEN: string = process.env.BUN_PUBLIC_MAPBOX_TOKEN ?? "";
-
-function mapboxTileUrl(z: number, x: number, y: number): string {
-    return `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/${MAPBOX_TILE_SIZE}/${z}/${x}/${y}@2x?access_token=${MAPBOX_TOKEN}`;
+/**
+ * ArcGIS World Imagery tile URL.
+ * No API key required; attribution to Esri et al. must be shown in production.
+ * Note: ArcGIS uses z/y/x order (row before column), unlike the standard z/x/y.
+ */
+function arcgisTileUrl(z: number, x: number, y: number): string {
+    return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
 }
 
 interface TileEntry {
@@ -49,7 +51,7 @@ function _CanvasMapTileLayer() {
     const canvasSize = useCanvasViewStore((s) => s.canvasSize);
 
     const tiles = useMemo<TileEntry[]>(() => {
-        if (!visible || !geoAnchor || !MAPBOX_TOKEN) return [];
+        if (!visible || !geoAnchor) return [];
 
         const { width, height } = canvasSize;
         if (width <= 0 || height <= 0) return [];
@@ -105,7 +107,7 @@ function _CanvasMapTileLayer() {
 
                 result.push({
                     key: `${zoom}/${tx}/${ty}`,
-                    url: mapboxTileUrl(zoom, tx, ty),
+                    url: arcgisTileUrl(zoom, tx, ty),
                     screenX,
                     screenY,
                     screenSize: tilePx,
@@ -116,7 +118,7 @@ function _CanvasMapTileLayer() {
         return result;
     }, [visible, geoAnchor, position, scale, canvasSize]);
 
-    if (!visible || !geoAnchor || !MAPBOX_TOKEN || tiles.length === 0) return null;
+    if (!visible || !geoAnchor || tiles.length === 0) return null;
 
     return (
         <div
