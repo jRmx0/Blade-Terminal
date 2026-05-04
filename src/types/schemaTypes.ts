@@ -38,7 +38,21 @@ export interface Environment {
     coordSystem: CoordSystemType;
     zoneCount: number;
     obstacleCount: number;
-    /** Optional geographic anchor used for satellite map tile rendering. */
+}
+
+/** Singleton row containing system-level default geo anchor values. */
+export interface GeoAnchorSystemRecord {
+    /** Fixed PK; the app uses id=1. */
+    id: number;
+    /** Optional system default anchor. */
+    geoAnchor?: GeoAnchor;
+}
+
+/** Per-environment geo anchor assignment. One row per environment. */
+export interface EnvironmentGeoAnchorRecord {
+    /** PK — FK → environments.id */
+    environmentId: number;
+    /** Optional environment-specific anchor. */
     geoAnchor?: GeoAnchor;
 }
 

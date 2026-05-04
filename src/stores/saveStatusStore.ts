@@ -7,6 +7,7 @@ import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
+import { useGeoAnchorStore } from "@/stores/geoAnchorStore";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -32,8 +33,9 @@ function computeStatus(): SaveStatus {
 
     const { isComputeResultDirty } = useComputeResultStore.getState();
     const { isEnvPointsDirty } = useEnvPointStore.getState();
+    const { isSystemGeoAnchorDirty, isEnvironmentGeoAnchorDirty } = useGeoAnchorStore.getState();
 
-    const isDirty = isEnvDirty || isCanvasDirty || isParameterValuesDirty || isLayerSettingsDirty || isComputeResultDirty || isEnvPointsDirty;
+    const isDirty = isEnvDirty || isCanvasDirty || isParameterValuesDirty || isLayerSettingsDirty || isComputeResultDirty || isEnvPointsDirty || isSystemGeoAnchorDirty || isEnvironmentGeoAnchorDirty;
 
     if (isDirty && mode !== "autosave") return "unsaved";
     if (mode === "autosave" || (mode === "manual" && !isDirty)) return "saved";
@@ -72,3 +74,4 @@ useParameterValuesStore.subscribe(syncStatus);
 useLayerSettingsStore.subscribe(syncStatus);
 useComputeResultStore.subscribe(syncStatus);
 useEnvPointStore.subscribe(syncStatus);
+useGeoAnchorStore.subscribe(syncStatus);

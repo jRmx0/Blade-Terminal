@@ -16,8 +16,10 @@ import { addMissingLayerSettingsForEnvironment, initLayerSettingsForEnvironment 
 import { getAllLayerSettingsSetup } from "@server/db/layerSettingsSetup";
 import { getComputeResult } from "@server/db/computeResults";
 import { deleteEnvPointsByEnvironment, upsertEnvPoint } from "@server/db/envPoints";
+import { initEnvironmentGeoAnchorFromSystem, setEnvironmentGeoAnchor as persistEnvironmentGeoAnchor } from "@server/db/environmentGeoAnchor";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
+import { useGeoAnchorStore } from "@/stores/geoAnchorStore";
 import { resolveNextEnvironmentId, loadCanvasForEnvironment, saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
 import { createEmptyComputationSelection } from "@/utils/computationSelection";
 
@@ -52,6 +54,9 @@ export async function initializeWorkspace(): Promise<void> {
     await loadComputationCatalog();
     await initLayerSettingsForEnvironment(nextId);
     await loadLayerSettings(nextId);
+    await initEnvironmentGeoAnchorFromSystem(nextId);
+    await useGeoAnchorStore.getState().loadSystemGeoAnchor();
+    await useGeoAnchorStore.getState().loadEnvironmentGeoAnchor(nextId);
     useEnvPointStore.getState().clearPoints();
     await useEnvPointStore.getState().loadEnvPoints(nextId);
     useComputeResultStore.getState().resetResult();
@@ -70,6 +75,9 @@ export async function resetWorkspace(): Promise<void> {
     useCanvasHistoryStore.getState().resetHistory();
     await initLayerSettingsForEnvironment(nextId);
     await loadLayerSettings(nextId);
+    await initEnvironmentGeoAnchorFromSystem(nextId);
+    await useGeoAnchorStore.getState().loadSystemGeoAnchor();
+    await useGeoAnchorStore.getState().loadEnvironmentGeoAnchor(nextId);
     useEnvPointStore.getState().clearPoints();
     await useEnvPointStore.getState().loadEnvPoints(nextId);
     useComputeResultStore.getState().resetResult();
@@ -98,6 +106,9 @@ export async function loadWorkspace(environmentId: number): Promise<void> {
     const setups = await getAllLayerSettingsSetup();
     await addMissingLayerSettingsForEnvironment(environmentId, setups);
     await loadLayerSettings(environmentId);
+    await initEnvironmentGeoAnchorFromSystem(environmentId);
+    await useGeoAnchorStore.getState().loadSystemGeoAnchor();
+    await useGeoAnchorStore.getState().loadEnvironmentGeoAnchor(environmentId);
     useEnvPointStore.getState().clearPoints();
     await useEnvPointStore.getState().loadEnvPoints(environmentId);
     const existingResult = await getComputeResult(environmentId);
@@ -115,6 +126,7 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
     const { startPoint, endPoint, startEndPoint } = useEnvPointStore.getState();
     const targetId = selectedEnvId ?? (await resolveNextEnvironmentId());
     const targetEnv: Environment = { ...env, id: targetId, name };
+    const activeGeoAnchor = useGeoAnchorStore.getState().environmentGeoAnchor;
     const sourcePoints = [startPoint, endPoint, startEndPoint].filter(isDefined);
     if (selectedEnvId !== null) {
         await Promise.all([
@@ -134,6 +146,7 @@ export async function saveAsWorkspace(name: string, selectedEnvId: number | null
         sourcePoints.length > 0
             ? Promise.all(sourcePoints.map((p) => upsertEnvPoint(targetId, p.type, p.point)))
             : Promise.resolve(),
+        persistEnvironmentGeoAnchor(targetId, activeGeoAnchor ?? null),
     ]);
     await loadWorkspace(targetId);
 }
@@ -148,6 +161,7 @@ export async function copyWorkspace(name: string): Promise<number> {
     const { startPoint, endPoint, startEndPoint } = useEnvPointStore.getState();
     const { parameterValues } = useParameterValuesStore.getState();
     const sourcePoints = [startPoint, endPoint, startEndPoint].filter(isDefined);
+    const activeGeoAnchor = useGeoAnchorStore.getState().environmentGeoAnchor;
     const targetId = await resolveNextEnvironmentId();
     const targetEnv: Environment = { ...env, id: targetId, name };
     const targetObjects = objects.map((o) => ({ ...o, environmentId: targetId }));
@@ -161,6 +175,7 @@ export async function copyWorkspace(name: string): Promise<number> {
         sourcePoints.length > 0
             ? Promise.all(sourcePoints.map((p) => upsertEnvPoint(targetId, p.type, p.point)))
             : Promise.resolve(),
+        persistEnvironmentGeoAnchor(targetId, activeGeoAnchor ?? null),
     ]);
     return targetId;
 }
@@ -203,6 +218,7 @@ export async function importWorkspace(data: ImportedWorkspaceData): Promise<void
         data.envPoints.length > 0
             ? Promise.all(data.envPoints.map((p) => upsertEnvPoint(targetId, p.type, p.point)))
             : Promise.resolve(),
+        initEnvironmentGeoAnchorFromSystem(targetId),
     ]);
 
     await loadWorkspace(targetId);

@@ -13,6 +13,7 @@ import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
+import { useGeoAnchorStore } from "@/stores/geoAnchorStore";
 
 // ── Count synchronization ──────────────────────────────────────────────────
 // Reactively keeps envStore zone/obstacle counts derived from the canvas object
@@ -66,8 +67,9 @@ export async function saveCanvas(): Promise<boolean> {
     const { layers, isLayerSettingsDirty, clearDirty: clearLayersDirty } = useLayerSettingsStore.getState();
     const { result, isComputeResultDirty, clearDirty: clearResultDirty } = useComputeResultStore.getState();
     const { isEnvPointsDirty, clearDirty: clearEnvPointsDirty } = useEnvPointStore.getState();
+    const { isSystemGeoAnchorDirty, isEnvironmentGeoAnchorDirty, saveGeoAnchors } = useGeoAnchorStore.getState();
 
-    if (!isEnvDirty && !isParameterValuesDirty && !isLayerSettingsDirty && !dirtyObjects.length && !deletedObjects.length && !isComputeResultDirty && !isEnvPointsDirty) return false;
+    if (!isEnvDirty && !isParameterValuesDirty && !isLayerSettingsDirty && !dirtyObjects.length && !deletedObjects.length && !isComputeResultDirty && !isEnvPointsDirty && !isSystemGeoAnchorDirty && !isEnvironmentGeoAnchorDirty) return false;
 
     _isSaving = true;
     try {
@@ -85,6 +87,7 @@ export async function saveCanvas(): Promise<boolean> {
                         deleteCoverageGridVisitCacheByEnvironment(env.id),
                     ]).then(() => undefined))
                 : Promise.resolve(),
+            saveGeoAnchors(),
         ]);
         clearDirty();
         clearEnvDirty();

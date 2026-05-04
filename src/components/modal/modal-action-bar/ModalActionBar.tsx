@@ -5,6 +5,7 @@ export interface ModalActionBarItem {
     icon: string;
     label: string;
     onClick: () => void;
+    showStatusSection?: boolean;
     disabled?: boolean;
     loading?: boolean;
     status?: ModalActionStatus;

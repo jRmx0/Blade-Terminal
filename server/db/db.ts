@@ -22,6 +22,8 @@ db.version(1).stores({
     computeResults: "environmentId",
     coverageGridVisitCache: "environmentId",
     envPoint: "++id, environmentId, type, [environmentId+type]",
+    geoAnchorSystem: "id",
+    environmentGeoAnchor: "environmentId",
     layers: "[id+algorithmId+providerId], id, algorithmId, providerId, [algorithmId+providerId]",
     layerSettingsSetup: "[id+layerId+algorithmId+providerId], [layerId+algorithmId+providerId], [algorithmId+providerId], providerId",
     layerSettings: "[id+layerId+algorithmId+providerId+environmentId], [layerId+algorithmId+providerId+environmentId], [algorithmId+providerId+environmentId], environmentId, providerId",

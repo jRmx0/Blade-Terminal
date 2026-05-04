@@ -6,6 +6,7 @@ import MenuSeparator from "@/components/menu-bar/MenuBarSeparator";
 import UiInspectorButton from "@/features/ui-manager/components/menu-bar/UiInspectorButton";
 import UiControlsButton from "@/features/ui-manager/components/menu-bar/UiControlsButton";
 import UiStatusBarButton from "@/features/ui-manager/components/menu-bar/UiStatusBarButton";
+import GeoAnchorModalButton from "@/features/geo-anchor/components/menu-bar/GeoAnchorModalButton";
 import MenuBarSubmenu from "@/components/menu-bar/MenuBarSubmenu";
 
 export default function MenuBarViewSubmenu() {
@@ -27,6 +28,10 @@ export default function MenuBarViewSubmenu() {
       <UiInspectorButton />
       <UiControlsButton />
       <UiStatusBarButton />
+
+      <MenuSeparator />
+
+      <GeoAnchorModalButton />
     </MenuBarSubmenu>
   );
 }

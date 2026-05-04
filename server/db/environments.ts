@@ -9,6 +9,7 @@ import { deleteLayerSettingsForEnvironment } from "./layerSettings";
 import { deleteComputeResult } from "./computeResults";
 import { deleteCoverageGridVisitCacheByEnvironment } from "./coverageGridVisitCache";
 import { deleteEnvPointsByEnvironment } from "./envPoints";
+import { deleteEnvironmentGeoAnchor } from "./environmentGeoAnchor";
 
 const environmentsTable: Table<Environment, number> = db.table("environments");
 
@@ -36,6 +37,7 @@ export async function deleteEnvironment(env: Environment): Promise<void> {
     await deleteComputeResult(env.id);
     await deleteCoverageGridVisitCacheByEnvironment(env.id);
     await deleteEnvPointsByEnvironment(env.id);
+    await deleteEnvironmentGeoAnchor(env.id);
     await environmentsTable.delete(env.id);
 }
 

@@ -114,6 +114,7 @@ interface ModalActionProps {
     icon: string;
     label: string;
     onClick: () => void;
+    showStatusSection?: boolean;
     disabled?: boolean;
     loading?: boolean;
     status?: ModalActionStatus;
@@ -124,6 +125,7 @@ export default function ModalActionBarAction({
     icon,
     label,
     onClick,
+    showStatusSection = true,
     disabled = false,
     loading = false,
     status,
@@ -152,8 +154,7 @@ export default function ModalActionBarAction({
                 <span className="px-1 pr-3 whitespace-nowrap group-active:text-gray-900 transition-colors">{label}</span>
             </button>
 
-            {/* Status section — always rendered to prevent layout shift */}
-            <StatusSection status={status} message={statusMessage} />
+            {showStatusSection ? <StatusSection status={status} message={statusMessage} /> : null}
         </div>
     );
 }

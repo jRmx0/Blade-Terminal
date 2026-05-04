@@ -24,3 +24,11 @@ export { getObject, getObjectsByEnvironment, saveObject, saveObjects, deleteObje
 export { loadLayerSettingViews, initLayerSettingsForEnvironment, deleteLayerSettingsForEnvironment, saveAllLayerSettings, addMissingLayerSettingsForEnvironment } from "./db/layerSettings";
 export { getAllLayerSettingsSetup, replaceLayerSettingsSetupForAlgorithm } from "./db/layerSettingsSetup";
 export { getAllLayers, getLayerById } from "./db/layers";
+export { getSystemGeoAnchor, getSystemGeoAnchorRecord, setSystemGeoAnchor } from "./db/geoAnchorSystem";
+export {
+  getEnvironmentGeoAnchor,
+  getEnvironmentGeoAnchorRecord,
+  setEnvironmentGeoAnchor,
+  initEnvironmentGeoAnchorFromSystem,
+  deleteEnvironmentGeoAnchor,
+} from "./db/environmentGeoAnchor";

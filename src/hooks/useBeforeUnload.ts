@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useEnvStore } from "@/stores/envStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
 import { useCanvasObjectStore, selectIsDirty } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { useGeoAnchorStore } from "@/stores/geoAnchorStore";
 
 /**
  * Registers a native browser "Leave site?" dialog when there are unsaved
@@ -11,9 +12,11 @@ import { useCanvasObjectStore, selectIsDirty } from "@/features/canvas-editing/s
 export function useBeforeUnload(): void {
     const isEnvDirty = useEnvStore((state) => state.isEnvDirty);
     const isCanvasDirty = useCanvasObjectStore(selectIsDirty);
+    const isSystemGeoAnchorDirty = useGeoAnchorStore((state) => state.isSystemGeoAnchorDirty);
+    const isEnvironmentGeoAnchorDirty = useGeoAnchorStore((state) => state.isEnvironmentGeoAnchorDirty);
     const mode = useSaveModeStore((state) => state.mode);
 
-    const isDirty = isEnvDirty || isCanvasDirty;
+    const isDirty = isEnvDirty || isCanvasDirty || isSystemGeoAnchorDirty || isEnvironmentGeoAnchorDirty;
     const shouldWarn = isDirty && mode !== "autosave";
 
     useEffect(() => {

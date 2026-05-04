@@ -1,6 +1,6 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
-import { useEnvStore } from "@/stores/envStore";
+import { useGeoAnchorStore } from "@/stores/geoAnchorStore";
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
 import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import {
@@ -47,7 +47,7 @@ function _CanvasMapTileLayer() {
     const opacityStr = getLayerParam(layers, LAYER_ID.SATELLITE_MAP, LAYER_PARAM_KEY.MAP_OPACITY);
     const opacity = Math.min(100, Math.max(0, Number(opacityStr ?? "100"))) / 100;
 
-    const geoAnchor = useEnvStore((s) => s.env.geoAnchor);
+    const geoAnchor = useGeoAnchorStore((s) => s.environmentGeoAnchor);
 
     const position = useCanvasViewStore((s) => s.position);
     const scale = useCanvasViewStore((s) => s.scale);

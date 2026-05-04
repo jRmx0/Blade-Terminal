@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { COORD_SYSTEM, ENV_FORMAT, ENV_TYPE, type CoordSystemType, type EnvFormat, type EnvType } from "@/config/db-ops/enums";
-import type { Environment, ComputationSelection, GeoAnchor } from "@/types/schemaTypes";
+import type { Environment, ComputationSelection } from "@/types/schemaTypes";
 import { getSaveMode } from "@/stores/saveModeStore";
 import { saveEnvironment } from "@server/db/environments";
 import { saveComputationSelection } from "@server/db/computationSelection";
@@ -27,8 +27,6 @@ interface EnvState {
     setType: (type: EnvType) => void;
     /** Updates the environment coordinate system and marks the record as dirty. Triggers autosave when mode is "autosave". */
     setCoordSystem: (coordSystem: CoordSystemType) => void;
-    /** Sets or clears the geographic anchor used for satellite map tile rendering. Triggers autosave when mode is "autosave". */
-    setGeoAnchor: (geoAnchor: GeoAnchor | null) => void;
     /** Updates the active computation provider and clears the active algorithm selection. */
     setComputationProviderId: (providerId: number | null) => void;
     /** Updates the active computation algorithm within the selected provider. */
@@ -80,11 +78,6 @@ export const useEnvStore = create<EnvState>()((set) => ({
     setType: (type) => markEnvDirty(set, (env) => ({ ...env, type })),
 
     setCoordSystem: (coordSystem) => markEnvDirty(set, (env) => ({ ...env, coordSystem })),
-
-    setGeoAnchor: (geoAnchor) => markEnvDirty(set, (env) => ({
-        ...env,
-        geoAnchor: geoAnchor ?? undefined,
-    })),
 
     setComputationProviderId: (providerId) => {
         set((state) => {

@@ -23,6 +23,5 @@ export function normalizeEnvironment(env: Environment): Environment {
     return {
         ...env,
         coordSystem: (env as Environment & { coordSystem?: string }).coordSystem ?? COORD_SYSTEM.CARTESIAN,
-        geoAnchor: env.geoAnchor,
     };
 }
