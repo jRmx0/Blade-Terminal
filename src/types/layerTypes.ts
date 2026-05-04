@@ -23,7 +23,7 @@ export type InternalStyleAttributeKey =
     | "Coverage Grid Show Grid"
     | "Coverage Grid Line Color"
     | "Coverage Grid Line Width"
-    | "Coverage Grid Fill Color"
+    | "Coverage Grid Fill Opacity"
     | "Point Label Enum Values"
     | "Start Point Color"
     | "Start Point Radius"

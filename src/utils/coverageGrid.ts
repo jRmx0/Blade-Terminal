@@ -101,6 +101,42 @@ export function resolvePathWidth(input: ResolvePathWidthInput): number {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+// ─── Heatmap coloring ────────────────────────────────────────────────────────
+
+type RGB = [number, number, number];
+
+const HEATMAP_STOPS: [number, RGB][] = [
+    [0.00, [13, 0, 17]],    // near-black
+    [0.25, [81, 18, 124]],  // dark purple
+    [0.50, [184, 50, 137]], // magenta/pink
+    [0.75, [251, 135, 97]], // orange
+    [1.00, [252, 253, 191]],// pale yellow
+];
+
+function lerpRGB(c0: RGB, c1: RGB, t: number): string {
+    const r = Math.round(c0[0] + (c1[0] - c0[0]) * t);
+    const g = Math.round(c0[1] + (c1[1] - c0[1]) * t);
+    const b = Math.round(c0[2] + (c1[2] - c0[2]) * t);
+    return `rgb(${r},${g},${b})`;
+}
+
+/**
+ * Maps a normalized intensity t ∈ [0, 1] to an RGB heatmap color
+ * (blue → green → red).
+ */
+export function heatmapColor(t: number): string {
+    const clamped = Math.max(0, Math.min(1, t));
+    for (let i = 1; i < HEATMAP_STOPS.length; i++) {
+        const [s0, c0] = HEATMAP_STOPS[i - 1]!;
+        const [s1, c1] = HEATMAP_STOPS[i]!;
+        if (clamped <= s1) {
+            const localT = (clamped - s0) / (s1 - s0);
+            return lerpRGB(c0, c1, localT);
+        }
+    }
+    return "rgb(252,253,191)";
+}
+
 /** Iterative max scan (stack-safe for large maps). */
 export function computeMaxVisitCount(visitMap: Map<string, number>): number {
     let max = 0;

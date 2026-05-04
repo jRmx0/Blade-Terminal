@@ -10,9 +10,8 @@ import {
     buildCoverageVisitMap,
     computeResultSignature,
     deserializeVisitEntries,
-    parseHexAlphaOpacity,
+    heatmapColor,
     resolvePathWidth,
-    stripHexAlpha,
 } from "@/utils/coverageGrid";
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -45,7 +44,7 @@ function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProp
         LAYER_PARAM_KEY.COVERAGE_GRID_CELL_SIZE,
         LAYER_PARAM_KEY.COVERAGE_GRID_LINE_COLOR,
         LAYER_PARAM_KEY.COVERAGE_GRID_LINE_WIDTH,
-        LAYER_PARAM_KEY.COVERAGE_GRID_FILL_COLOR,
+        LAYER_PARAM_KEY.COVERAGE_GRID_FILL_OPACITY,
     ].every((key) => coverageSettings.some((p) => p.key === key));
 
     const visible = getLayerParam(layers, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.VISIBLE) !== "false";
@@ -54,7 +53,10 @@ function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProp
     const strokeWidthRaw = parseFloat(
         getLayerParam(layers, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.COVERAGE_GRID_LINE_WIDTH) ?? "1",
     );
-    const fillColorRaw = getLayerParam(layers, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.COVERAGE_GRID_FILL_COLOR) ?? "#0ea5e922";
+    const heatmapOpacityRaw = parseFloat(
+        getLayerParam(layers, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.COVERAGE_GRID_FILL_OPACITY) ?? "75",
+    );
+    const heatmapOpacity = Number.isFinite(heatmapOpacityRaw) ? Math.max(0, Math.min(100, heatmapOpacityRaw)) / 100 : 0.75;
     const cellSizeRaw = parseFloat(
         getLayerParam(layers, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.COVERAGE_GRID_CELL_SIZE) ?? "1",
     );
@@ -65,8 +67,6 @@ function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProp
     const cellWorld = Number.isFinite(cellSizeRaw) && cellSizeRaw > 0 ? cellSizeRaw : 1;
     const lineWorld = Number.isFinite(strokeWidthRaw) && strokeWidthRaw > 0 ? strokeWidthRaw : 1;
     const sw = lineWorld / scale;
-    const fillColor = stripHexAlpha(fillColorRaw);
-    const minCoverageCellOpacity = parseHexAlphaOpacity(fillColorRaw) ?? 0.2;
 
     // ── Resolve path width from parameter values ──────────────────────────────
     // Deps: only result + cellWorld. catalogParams/parameterValues are read via
@@ -126,14 +126,14 @@ function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProp
     const visMinRow = Math.floor(minY / cellWorld) - 1;
     const visMaxRow = Math.floor(maxY / cellWorld) + 1;
 
-    const filledCells: { key: string; col: number; row: number; opacity: number }[] = [];
+    const filledCells: { key: string; col: number; row: number; color: string }[] = [];
     if (maxCount > 0) {
         for (const [key, count] of visitMap) {
             const commaIdx = key.indexOf(",");
             const col = parseInt(key.slice(0, commaIdx), 10);
             const row = parseInt(key.slice(commaIdx + 1), 10);
             if (col >= visMinCol && col <= visMaxCol && row >= visMinRow && row <= visMaxRow) {
-                filledCells.push({ key, col, row, opacity: Math.max(minCoverageCellOpacity, count / maxCount) });
+                filledCells.push({ key, col, row, color: heatmapColor(count / maxCount) });
             }
         }
     }
@@ -150,16 +150,16 @@ function _CanvasCoverageGridLayer({ width, height }: CanvasCoverageGridLayerProp
 
     return (
         <Layer listening={false}>
-            {/* Cell fills */}
-            {filledCells.map(({ key, col, row, opacity }) => (
+            {/* Cell fills – heatmap coloring */}
+            {filledCells.map(({ key, col, row, color }) => (
                 <Rect
                     key={key}
                     x={col * cellWorld}
                     y={row * cellWorld}
                     width={cellWorld}
                     height={cellWorld}
-                    fill={fillColor}
-                    opacity={opacity}
+                    fill={color}
+                    opacity={heatmapOpacity}
                     perfectDrawEnabled={false}
                 />
             ))}
