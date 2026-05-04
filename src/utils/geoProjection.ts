@@ -16,6 +16,26 @@ const EARTH_CIRC = 20_037_508.342_789_244;
 /** Side length of an ArcGIS World Imagery tile in pixels. */
 export const TILE_SIZE = 256;
 
+/**
+ * Maximum tile zoom level requested from ArcGIS World Imagery.
+ * ArcGIS has reliable global coverage up to zoom 18; beyond that many areas
+ * return a "not yet available" placeholder. When the canvas is zoomed in past
+ * this level the same zoom-18 tiles are CSS-upscaled instead of requesting
+ * higher zoom tiles that don't exist.
+ */
+export const MAX_TILE_ZOOM = 18;
+
+export interface TileZoomState {
+    /** Requested tile zoom level used in URL paths. */
+    zoom: number;
+    /**
+     * Scale multiplier applied to 256px source tiles on screen.
+     * - For normal (non-clamped) zoom this is in [1, 2).
+     * - Past MAX_TILE_ZOOM this keeps increasing (over-zoom).
+     */
+    overscale: number;
+}
+
 // ── WGS-84 ↔ Web-Mercator ────────────────────────────────────────────────────
 
 /** Convert a WGS-84 longitude (degrees) to a Web-Mercator X (metres). */
@@ -75,7 +95,22 @@ export function selectTileZoom(scale: number, metersPerUnit: number): number {
     // → 2^Z = (2 * EARTH_CIRC * scale) / (TILE_SIZE * metersPerUnit)
     const z = Math.log2((EARTH_CIRC * 2 * scale) / (TILE_SIZE * metersPerUnit));
     // Floor so we always pick the coarser zoom — better global coverage and fewer missing tiles.
-    return Math.min(22, Math.max(0, Math.floor(z)));
+    // Cap at MAX_TILE_ZOOM: beyond that ArcGIS returns "not yet available" placeholders.
+    return Math.min(MAX_TILE_ZOOM, Math.max(0, Math.floor(z)));
+}
+
+/**
+ * Compute requested tile zoom and overscale factor for stable rendering.
+ *
+ * This helper is especially useful when `rawZoom > MAX_TILE_ZOOM`:
+ * requests stay pinned at `MAX_TILE_ZOOM` while `overscale` continues to grow,
+ * so zooming remains smooth without requesting unavailable tiles.
+ */
+export function getTileZoomState(scale: number, metersPerUnit: number): TileZoomState {
+    const rawZoom = Math.log2((EARTH_CIRC * 2 * scale) / (TILE_SIZE * metersPerUnit));
+    const zoom = Math.min(MAX_TILE_ZOOM, Math.max(0, Math.floor(rawZoom)));
+    const overscale = Math.pow(2, rawZoom - zoom);
+    return { zoom, overscale };
 }
 
 // ── Canvas ↔ screen via geo-anchor ──────────────────────────────────────────

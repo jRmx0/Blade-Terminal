@@ -1,12 +1,13 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
 import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import {
+    TILE_SIZE,
     lonToMercX,
     latToMercY,
-    selectTileZoom,
+    getTileZoomState,
     mercXToTileX,
     mercYToTileY,
     tileXToMercX,
@@ -17,6 +18,8 @@ import type { GeoAnchorMerc } from "@/utils/geoProjection";
 
 /** How many extra tile rows/columns to load beyond the visible edge. */
 const TILE_BUFFER = 1;
+/** Small overlap (in screen px) to hide anti-aliased seams between tiles. */
+const TILE_OVERLAP_PX = 1;
 
 /**
  * ArcGIS World Imagery tile URL.
@@ -50,6 +53,10 @@ function _CanvasMapTileLayer() {
     const scale = useCanvasViewStore((s) => s.scale);
     const canvasSize = useCanvasViewStore((s) => s.canvasSize);
 
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
+    const [imageVersion, setImageVersion] = useState(0);
+
     const tiles = useMemo<TileEntry[]>(() => {
         if (!visible || !geoAnchor) return [];
 
@@ -62,7 +69,7 @@ function _CanvasMapTileLayer() {
             metersPerUnit: geoAnchor.metersPerUnit,
         };
 
-        const zoom = selectTileZoom(scale, geoAnchor.metersPerUnit);
+        const { zoom, overscale } = getTileZoomState(scale, geoAnchor.metersPerUnit);
 
         // Viewport bounds in canvas world coordinates
         const worldMinX = -position.x / scale;
@@ -82,10 +89,20 @@ function _CanvasMapTileLayer() {
 
         const maxTileIndex = Math.pow(2, zoom) - 1;
 
-        // Screen size of one tile
-        const tileMeters = (2 * 20_037_508.342_789_244) / Math.pow(2, zoom);
-        const tileWorld = tileMeters / geoAnchor.metersPerUnit;
-        const tilePx = tileWorld * scale;
+        // Screen size of one source tile (256px) at current view scale.
+        // When zoom is clamped to MAX_TILE_ZOOM, overscale grows past 1.
+        const tilePx = TILE_SIZE * overscale;
+
+        // Use a single reference tile origin, then place neighbors via index
+        // offsets. This avoids tiny per-tile float divergences that can show up
+        // as periodic seams at high zoom.
+        const refTx = tileXMin;
+        const refTy = tileYMin;
+        const refMx = tileXToMercX(refTx, zoom);
+        const refMy = tileYToMercY(refTy, zoom);
+        const { cx: refCx, cy: refCy } = mercToCanvas(refMx, refMy, anchorMerc);
+        const refScreenX = refCx * scale + position.x;
+        const refScreenY = refCy * scale + position.y;
 
         const result: TileEntry[] = [];
 
@@ -94,16 +111,8 @@ function _CanvasMapTileLayer() {
             for (let tx = tileXMin; tx <= tileXMax; tx++) {
                 if (tx < 0 || tx > maxTileIndex) continue;
 
-                // Top-left Web-Mercator corner of this tile
-                const mx_tl = tileXToMercX(tx, zoom);
-                const my_tl = tileYToMercY(ty, zoom);
-
-                // Convert to canvas world coordinates
-                const { cx, cy } = mercToCanvas(mx_tl, my_tl, anchorMerc);
-
-                // Convert to screen coordinates
-                const screenX = cx * scale + position.x;
-                const screenY = cy * scale + position.y;
+                const screenX = refScreenX + (tx - refTx) * tilePx;
+                const screenY = refScreenY + (ty - refTy) * tilePx;
 
                 result.push({
                     key: `${zoom}/${tx}/${ty}`,
@@ -118,32 +127,75 @@ function _CanvasMapTileLayer() {
         return result;
     }, [visible, geoAnchor, position, scale, canvasSize]);
 
-    if (!visible || !geoAnchor || tiles.length === 0) return null;
+    useEffect(() => {
+        if (!visible || tiles.length === 0) return;
+
+        let cancelled = false;
+
+        for (const tile of tiles) {
+            if (imageCacheRef.current.has(tile.url)) continue;
+
+            const img = new Image();
+            img.decoding = "async";
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+                if (!cancelled) setImageVersion((v) => v + 1);
+            };
+            img.onerror = () => {
+                if (!cancelled) setImageVersion((v) => v + 1);
+            };
+            img.src = tile.url;
+            imageCacheRef.current.set(tile.url, img);
+        }
+
+        return () => {
+            cancelled = true;
+        };
+    }, [visible, tiles]);
+
+    useLayoutEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const { width, height } = canvasSize;
+        const dpr = window.devicePixelRatio || 1;
+
+        canvas.width = Math.max(1, Math.round(width * dpr));
+        canvas.height = Math.max(1, Math.round(height * dpr));
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+        if (!visible || !geoAnchor || tiles.length === 0) return;
+
+        ctx.globalAlpha = opacity;
+        ctx.imageSmoothingEnabled = true;
+
+        for (const tile of tiles) {
+            const img = imageCacheRef.current.get(tile.url);
+            if (!img || !img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) continue;
+            ctx.drawImage(
+                img,
+                tile.screenX,
+                tile.screenY,
+                tile.screenSize + TILE_OVERLAP_PX,
+                tile.screenSize + TILE_OVERLAP_PX,
+            );
+        }
+    }, [visible, geoAnchor, tiles, canvasSize, opacity, imageVersion]);
+
+    if (!visible || !geoAnchor) return null;
 
     return (
-        <div
+        <canvas
+            ref={canvasRef}
             className="absolute inset-0 overflow-hidden pointer-events-none"
-            style={{ opacity }}
-        >
-            {tiles.map((tile) => (
-                <img
-                    key={tile.key}
-                    src={tile.url}
-                    alt=""
-                    decoding="async"
-                    draggable={false}
-                    style={{
-                        position: "absolute",
-                        left: tile.screenX,
-                        top: tile.screenY,
-                        width: tile.screenSize,
-                        height: tile.screenSize,
-                        imageRendering: "pixelated",
-                        userSelect: "none",
-                    }}
-                />
-            ))}
-        </div>
+            aria-hidden="true"
+        />
     );
 }
 
