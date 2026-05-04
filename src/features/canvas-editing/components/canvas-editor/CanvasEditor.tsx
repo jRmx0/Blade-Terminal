@@ -28,6 +28,7 @@ import { CanvasVertexHandlesLayer } from "@/features/canvas-editing/components/c
 import { CanvasDrawingPreviewLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasDrawingPreviewLayer";
 import { CanvasDynamicLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasDynamicLayer";
 import { CanvasEnvPointsLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasEnvPointsLayer";
+import { CanvasMapTileLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasMapTileLayer";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
@@ -315,12 +316,14 @@ export default function CanvasEditor() {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full bg-white overflow-hidden outline-none"
+      className="w-full h-full bg-white overflow-hidden outline-none relative"
       style={{ cursor: resolveCursor() }}
       tabIndex={0}
       onKeyDown={handleKeyDown}
       onContextMenu={(e) => e.preventDefault()}
     >
+      {/* Satellite map tiles — CSS div behind the transparent Konva Stage */}
+      <CanvasMapTileLayer />
       <Stage
         ref={stageRef}
         width={size.width}

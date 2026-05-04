@@ -6,6 +6,7 @@ export const LAYER_NAME = {
     ZONES: "Zones",
     OBSTACLES: "Obstacles",
     ENV_POINTS: "Env Points",
+    SATELLITE_MAP: "Satellite Map",
 } as const;
 
 export type LayerName = (typeof LAYER_NAME)[keyof typeof LAYER_NAME];
@@ -16,6 +17,7 @@ export const LAYER_ID = {
     OBSTACLES: 3,
     ENV_POINTS: 4,
     COVERAGE_GRID: 5,
+    SATELLITE_MAP: 6,
 } as const;
 
 export const LAYER_REGISTRY: LayerDefinition[] = [
@@ -24,6 +26,7 @@ export const LAYER_REGISTRY: LayerDefinition[] = [
     { id: LAYER_ID.ZONES, name: LAYER_NAME.ZONES, type: "Polygon" },
     { id: LAYER_ID.OBSTACLES, name: LAYER_NAME.OBSTACLES, type: "Polygon" },
     { id: LAYER_ID.ENV_POINTS, name: LAYER_NAME.ENV_POINTS, type: "EnvPoints" },
+    { id: LAYER_ID.SATELLITE_MAP, name: LAYER_NAME.SATELLITE_MAP, type: "Map" },
 ];
 
 export const POLYGON_EDGE_STYLE = {
@@ -65,6 +68,7 @@ export const LAYER_PARAM_KEY = {
     START_END_POINT_COLOR: "Start & End Point Color",
     START_END_POINT_RADIUS: "Start & End Point Radius",
     START_END_POINT_STROKE_COLOR: "Start & End Point Stroke Color",
+    MAP_OPACITY: "Map Opacity",
 } as const;
 export type LayerParamKey = (typeof LAYER_PARAM_KEY)[keyof typeof LAYER_PARAM_KEY];
 
@@ -137,5 +141,10 @@ export const LAYER_SETTINGS_SETUP_DEFAULTS: LayerSettingsSetup[] = [
     { id: 26, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_END_POINT_COLOR, styleType: "Color", styleGroup: "startEndPoint", defaultValue: "#a855f7" },
     { id: 27, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_END_POINT_RADIUS, styleType: "Pixels", styleGroup: "startEndPoint", defaultValue: "3" },
     { id: 28, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.START_END_POINT_STROKE_COLOR, styleType: "Color", styleGroup: "startEndPoint", defaultValue: "#6b21a8" },
+
+    // ── Satellite Map ────────────────────────────────────────────────────────
+    { id: 1, layerId: LAYER_ID.SATELLITE_MAP, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "false" },
+    { id: 5, layerId: LAYER_ID.SATELLITE_MAP, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "general", defaultValue: "1" },
+    { id: 90, layerId: LAYER_ID.SATELLITE_MAP, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.MAP_OPACITY, styleType: "Pixels", styleGroup: "general", defaultValue: "100" },
 ];
 

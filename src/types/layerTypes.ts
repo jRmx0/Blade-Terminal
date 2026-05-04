@@ -10,7 +10,7 @@ export type LayerId = number;
  * - "ObjectGroup" — a dedicated settings-owner layer for a group of polygon object types.
  *   It stores group-level settings (e.g. "Show Vertex IDs") but never renders standalone.
  */
-export type LayerType = "Polygon" | "Point" | "Line" | "Grid" | "ObjectGroup" | "EnvPoints";
+export type LayerType = "Polygon" | "Point" | "Line" | "Grid" | "ObjectGroup" | "EnvPoints" | "Map";
 
 /**
  * Attribute keys managed internally by the terminal (not part of the provider metadata spec).
@@ -33,7 +33,8 @@ export type InternalStyleAttributeKey =
     | "End Point Stroke Color"
     | "Start & End Point Color"
     | "Start & End Point Radius"
-    | "Start & End Point Stroke Color";
+    | "Start & End Point Stroke Color"
+    | "Map Opacity";
 
 export interface LayerDefinition {
     id: LayerId;
