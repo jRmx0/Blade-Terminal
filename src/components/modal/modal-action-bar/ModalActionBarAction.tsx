@@ -79,7 +79,7 @@ function StatusSection({ status, message }: StatusSectionProps) {
                             }`}
                     >
                         <span
-                            className={`material-symbols-outlined${status === "loading" ? " animate-spin" : ""}`}
+                            className={`material-symbols-outlined${status === "loading" ? " animate-spin [animation-direction:reverse]" : ""}`}
                             style={{ fontSize: 15 }}
                         >
                             {isIdle ? "info" : triggerIcon}

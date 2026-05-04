@@ -83,7 +83,7 @@ export default function ComputeExecuteModal() {
                 {/* Header — icon + title */}
                 <div className="flex items-center gap-4 px-5 py-4">
                     <span
-                        className={`material-symbols-outlined ${phase.iconColorClass} ${phase.spin ? "animate-spin" : ""}`}
+                        className={`material-symbols-outlined ${phase.iconColorClass} ${phase.spin ? "animate-spin [animation-direction:reverse]" : ""}`}
                         style={{ fontSize: 24 }}
                     >
                         {phase.icon}
