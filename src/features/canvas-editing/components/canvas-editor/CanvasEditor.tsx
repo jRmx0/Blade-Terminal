@@ -29,6 +29,7 @@ import { CanvasDrawingPreviewLayer } from "@/features/canvas-editing/components/
 import { CanvasDynamicLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasDynamicLayer";
 import { CanvasEnvPointsLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasEnvPointsLayer";
 import { CanvasMapTileLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasMapTileLayer";
+import CanvasFloatingControlMock from "@/features/canvas-editing/components/floating-control/CanvasFloatingControlMock";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
@@ -426,6 +427,7 @@ export default function CanvasEditor() {
           scale={scale}
         />
       </Stage>
+      <CanvasFloatingControlMock />
     </div>
   );
 }
