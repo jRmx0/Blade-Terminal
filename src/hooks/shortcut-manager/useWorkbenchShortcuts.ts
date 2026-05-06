@@ -71,25 +71,19 @@ export function useWorkbenchShortcuts() {
 
     useShortcut("canvas.tool-select", S["canvas.tool-select"].keys, () => {
         const { activeTool, setActiveTool } = useCanvasToolStore.getState();
-        const { clearSelection } = useCanvasSelectionStore.getState();
         useCanvasDrawingStore.getState().cancelDrawing();
-        clearSelection();
         setActiveTool(activeTool === "select" ? null : "select");
     });
 
     useShortcut("canvas.tool-add-zone", S["canvas.tool-add-zone"].keys, () => {
         const { activeTool, setActiveTool } = useCanvasToolStore.getState();
-        const { clearSelection } = useCanvasSelectionStore.getState();
         useCanvasDrawingStore.getState().cancelDrawing();
-        clearSelection();
         setActiveTool(activeTool === "addZone" ? null : "addZone");
     });
 
     useShortcut("canvas.tool-add-obstacle", S["canvas.tool-add-obstacle"].keys, () => {
         const { activeTool, setActiveTool } = useCanvasToolStore.getState();
-        const { clearSelection } = useCanvasSelectionStore.getState();
         useCanvasDrawingStore.getState().cancelDrawing();
-        clearSelection();
         setActiveTool(activeTool === "addObstacle" ? null : "addObstacle");
     });
 
@@ -109,7 +103,6 @@ export function useWorkbenchShortcuts() {
             return;
         }
         useCanvasDrawingStore.getState().cancelDrawing();
-        clearSelection();
         setActiveTool(activeTool === "delete" ? null : "delete");
     });
 

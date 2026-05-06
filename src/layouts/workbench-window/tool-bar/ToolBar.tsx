@@ -71,7 +71,6 @@ export default function ToolBar() {
 
   function handleSelect() {
     cancelDrawing();
-    if (isSelectActive) clearSelection();
     setActiveTool(isSelectActive ? null : "select");
   }
 
@@ -102,7 +101,6 @@ export default function ToolBar() {
 
   function handleDelete() {
     if (isDeleteActive) {
-      clearSelection();
       setActiveTool(null);
       return;
     }

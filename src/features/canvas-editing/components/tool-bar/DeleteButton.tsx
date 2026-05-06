@@ -19,7 +19,6 @@ export default function DeleteButton() {
 
   function handleClick() {
     if (isActive) {
-      clearSelection();
       setActiveTool(null);
       return;
     }
