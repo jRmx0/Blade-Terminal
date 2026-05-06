@@ -8,7 +8,11 @@ import {
 } from "@/components/floating-control";
 import { useCanvasGeneratorFloatingControlStore } from "@/features/canvas-editing/stores/canvasGeneratorFloatingControlStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { generateEnvironment } from "@/features/canvas-editing/utils/canvasGenerator";
 import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
+import { useEnvPointStore } from "@/stores/envPointStore";
+import { useEnvStore } from "@/stores/envStore";
+import { OBJECT_CATEGORY, OBJECT_TYPE } from "@/config/db-ops/enums";
 import { unitLabel } from "@/utils/unitOfMeasure";
 
 export default function CanvasGeneratorFloatingControl() {
@@ -17,11 +21,15 @@ export default function CanvasGeneratorFloatingControl() {
 
     const objects = useCanvasObjectStore((s) => s.objects);
     const deleteObject = useCanvasObjectStore((s) => s.deleteObject);
+    const addObject = useCanvasObjectStore((s) => s.addObject);
+    const upsertPoint = useEnvPointStore((s) => s.upsertPoint);
+    const envId = useEnvStore((s) => s.env.id);
     const uom = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
 
     const [width, setWidth] = useState("1000");
     const [height, setHeight] = useState("1000");
     const [minPassageWidth, setMinPassageWidth] = useState("30");
+    const [obstacleRatio, setObstacleRatio] = useState("");
     const [seed, setSeed] = useState("");
 
     const uomLabel = unitLabel(uom);
@@ -35,7 +43,23 @@ export default function CanvasGeneratorFloatingControl() {
     }
 
     function handleGenerate() {
-        // TODO: implement generation logic
+        const w = parseFloat(width);
+        const h = parseFloat(height);
+        const mpw = parseFloat(minPassageWidth);
+        if (!isFinite(w) || w <= 0 || !isFinite(h) || h <= 0 || !isFinite(mpw) || mpw <= 0) return;
+
+        const parsedRatio = parseFloat(obstacleRatio);
+        const obRatio = isFinite(parsedRatio) ? parsedRatio : undefined;
+
+        const snapshot = [...objects];
+        snapshot.forEach((o) => deleteObject(o));
+
+        const env = generateEnvironment({ width: w, height: h, minPassageWidth: mpw, obstacleRatio: obRatio, seed });
+        addObject(OBJECT_CATEGORY.ZONE, env.boundary, OBJECT_TYPE.EMPTY);
+        for (const obs of env.obstacles) {
+            addObject(OBJECT_CATEGORY.OBSTACLE, obs, OBJECT_TYPE.EMPTY);
+        }
+        upsertPoint(envId, "start_end", env.startEndPoint);
     }
 
     return (
@@ -68,6 +92,15 @@ export default function CanvasGeneratorFloatingControl() {
                 onChange={setMinPassageWidth}
                 type="decimal"
                 min={0}
+                step={1}
+            />
+            <FloatingControlNumberField
+                label="Obstacle ratio (%)"
+                value={obstacleRatio}
+                onChange={setObstacleRatio}
+                type="decimal"
+                min={0}
+                max={100}
                 step={1}
             />
             <FloatingControlTextField
