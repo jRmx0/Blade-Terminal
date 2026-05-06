@@ -47,6 +47,7 @@ export default function CanvasModifierFloatingControl() {
 
     return (
         <FloatingControl
+            id="canvas-modifier"
             title="Modifier"
             isOpen={isOpen}
             onClose={() => setOpen(false)}

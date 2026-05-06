@@ -41,6 +41,7 @@ export default function CanvasGeneratorFloatingControl() {
 
     return (
         <FloatingControl
+            id="canvas-generator"
             title="Generator"
             isOpen={isOpen}
             onClose={() => setOpen(false)}

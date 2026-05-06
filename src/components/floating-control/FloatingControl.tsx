@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { useFloatingControlZStore } from "./floatingControlZStore";
 
 const MIN_WIDTH = 256;
 const MIN_HEIGHT = 120;
 
 interface FloatingControlProps {
+    id: string;
     title: string;
     children: ReactNode;
     isOpen: boolean;
@@ -13,6 +15,7 @@ interface FloatingControlProps {
 }
 
 export default function FloatingControl({
+    id,
     title,
     children,
     isOpen,
@@ -23,6 +26,12 @@ export default function FloatingControl({
     const [pos, setPos] = useState(defaultPosition);
     const [minimized, setMinimized] = useState(false);
     const [tooSmall, setTooSmall] = useState(false);
+
+    const register = useFloatingControlZStore((s) => s.register);
+    const bringToFront = useFloatingControlZStore((s) => s.bringToFront);
+    const zIndex = useFloatingControlZStore((s) => s.getZIndex(id));
+
+    useEffect(() => { register(id); }, [id, register]);
 
     // Clamp position so the window stays within parent bounds
     function clampPos(x: number, y: number, parentW: number, parentH: number): { x: number; y: number } {
@@ -109,9 +118,9 @@ export default function FloatingControl({
     return (
         <div
             ref={windowRef}
-            className="absolute w-64 bg-gray-100 border border-gray-300 rounded shadow-md z-20 select-none"
-            style={{ left: pos.x, top: pos.y }}
-            onMouseDown={(e) => e.stopPropagation()}
+            className="absolute w-64 bg-gray-100 border border-gray-300 rounded shadow-md select-none"
+            style={{ left: pos.x, top: pos.y, zIndex }}
+            onMouseDown={(e) => { e.stopPropagation(); bringToFront(id); }}
             onKeyDown={(e) => e.stopPropagation()}
         >
             {/* Header */}
