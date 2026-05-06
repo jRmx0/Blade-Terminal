@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 
 interface FloatingControlNumberFieldProps {
     label: string;
@@ -23,6 +24,7 @@ export default function FloatingControlNumberField({
 }: FloatingControlNumberFieldProps) {
     const [isFocused, setIsFocused] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    useShortcutsBlocked(`floating-control-number-${label}`, isFocused);
 
     const effectiveStep = step ?? (type === "decimal" ? 0.1 : 1);
     const showSpinners = (isFocused || isHovered) && !disabled;
@@ -61,9 +63,10 @@ export default function FloatingControlNumberField({
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <span className="w-[45%] text-xs text-gray-500 shrink-0 truncate select-none">
-                {label}
-            </span>
+            <div className="w-[45%] shrink-0 flex items-center gap-1 min-w-0">
+                <span className="text-xs text-gray-500 shrink-0 truncate select-none">{label}</span>
+                <span className="flex-1 min-w-0 h-1 bg-[radial-gradient(circle,#d1d5db_1.5px,transparent_1.5px)] bg-size-[10px_10px] bg-repeat-x bg-center" />
+            </div>
             <div className="relative flex-1 min-w-0">
                 <input
                     type="number"
@@ -79,16 +82,16 @@ export default function FloatingControlNumberField({
                         } ${disabled ? "text-gray-400 cursor-not-allowed opacity-50" : "text-gray-900"}`}
                 />
                 {showSpinners && (
-                    <div className="absolute right-px top-1/2 -translate-y-1/2 flex flex-col w-3 mr-1">
+                    <div className="absolute right-px top-1/2 -translate-y-1/2 flex flex-col w-3 pt-0.5 mr-1.5">
                         <button
                             type="button"
                             tabIndex={-1}
                             disabled={disabled}
                             onMouseDown={(e) => { e.preventDefault(); increment(); }}
                             className="flex items-center justify-center text-gray-400 hover:text-gray-700 active:text-teal-700 cursor-pointer"
-                            style={{ height: 11 }}
+                            style={{ height: 10 }}
                         >
-                            <span className="material-symbols-outlined leading-none" style={{ fontSize: 13 }}>expand_less</span>
+                            <span className="material-symbols-outlined leading-none" style={{ fontSize: 14 }}>expand_less</span>
                         </button>
                         <button
                             type="button"
@@ -96,9 +99,9 @@ export default function FloatingControlNumberField({
                             disabled={disabled}
                             onMouseDown={(e) => { e.preventDefault(); decrement(); }}
                             className="flex items-center justify-center text-gray-400 hover:text-gray-700 active:text-teal-700 cursor-pointer"
-                            style={{ height: 11 }}
+                            style={{ height: 10 }}
                         >
-                            <span className="material-symbols-outlined leading-none" style={{ fontSize: 13 }}>expand_more</span>
+                            <span className="material-symbols-outlined leading-none" style={{ fontSize: 14 }}>expand_more</span>
                         </button>
                     </div>
                 )}

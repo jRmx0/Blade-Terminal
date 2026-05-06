@@ -56,7 +56,7 @@ export default function CanvasFloatingControlMock() {
                 max={100}
                 step={0.1}
             />
-            <div className="mx-3 my-1 border-t border-gray-200" />
+            <div className="mx-3 my-1 border-t border-gray-300" />
             <FloatingControlButton label="Reset" onClick={handleReset} />
             <FloatingControlMainButton label="Apply" onClick={handleApply} />
         </FloatingControl>
