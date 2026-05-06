@@ -20,7 +20,6 @@ import LayersTab from "@/features/inspector/components/calc-layers-section/Layer
 import PointTypeField from "@/features/inspector/components/point-section/PointTypeField";
 import PointPositionField from "@/features/inspector/components/point-section/PointPositionField";
 import SelectedVertexCountField from "../../../features/inspector/components/point-section/SelectedVertexCountField";
-import ModifierSection from "@/features/inspector/components/modifier-section/ModifierSection";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useInspectorTabStore } from "@/features/inspector/stores/inspectorTabStore";
 import type { InspectorTab } from "@/features/inspector/stores/inspectorTabStore";
@@ -69,12 +68,6 @@ export default function InspectorPanel() {
               <VertexSumField />
               <GrossAreaField />
               <NetAreaField />
-            </InspectorPanelSection>
-          )}
-
-          {hasSelection && !hasEnvPointSelection && !hasAnyVertexSelection && (
-            <InspectorPanelSection title="Modifier">
-              <ModifierSection />
             </InspectorPanelSection>
           )}
 
