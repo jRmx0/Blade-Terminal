@@ -61,7 +61,7 @@ export default function FloatingControlNumberField({
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <div className="w-[45%] shrink-0 flex items-center gap-1 min-w-0">
+            <div className="w-2/3 shrink-0 flex items-center gap-1 min-w-0">
                 <span className="text-xs text-gray-500 shrink-0 truncate select-none">{label}</span>
                 <span className="flex-1 min-w-0 h-1 bg-[radial-gradient(circle,#d1d5db_1.5px,transparent_1.5px)] bg-size-[10px_10px] bg-repeat-x bg-center" />
             </div>

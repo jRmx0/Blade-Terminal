@@ -7,6 +7,8 @@ import {
 import { useCanvasModifierFloatingControlStore } from "@/features/canvas-editing/stores/canvasModifierFloatingControlStore";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
+import { unitLabel } from "@/utils/unitOfMeasure";
 import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
 
 export default function CanvasModifierFloatingControl() {
@@ -19,6 +21,7 @@ export default function CanvasModifierFloatingControl() {
         (s) => s.objects.find((o) => o.id === selectedObject?.id)?.category,
     );
     const modifyObjectVertices = useCanvasObjectStore((s) => s.modifyObjectVertices);
+    const uom = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
 
     const [multiplier, setMultiplier] = useState("1");
     const [maxOffset, setMaxOffset] = useState("0");
@@ -58,7 +61,7 @@ export default function CanvasModifierFloatingControl() {
                 step={0.1}
             />
             <FloatingControlNumberField
-                label="Max random offset"
+                label={unitLabel(uom) ? `Max random offset (${unitLabel(uom)})` : "Max random offset"}
                 value={maxOffset}
                 onChange={setMaxOffset}
                 type="decimal"
