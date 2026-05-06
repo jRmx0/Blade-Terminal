@@ -19,14 +19,16 @@ export default function CanvasGeneratorFloatingControl() {
     const deleteObject = useCanvasObjectStore((s) => s.deleteObject);
     const uom = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
 
-    const [vertexCount, setVertexCount] = useState("250");
+    const [vertexCount, setVertexCount] = useState("0");
     const [width, setWidth] = useState("1000");
     const [height, setHeight] = useState("1000");
+    const [minPassageWidth, setMinPassageWidth] = useState("30");
     const [seed, setSeed] = useState("");
 
     const uomLabel = unitLabel(uom);
     const widthLabel = uomLabel ? `Width (${uomLabel})` : "Width";
     const heightLabel = uomLabel ? `Height (${uomLabel})` : "Height";
+    const minPassageWidthLabel = uomLabel ? `Min. passage width (${uomLabel})` : "Min. passage width";
 
     function handleClearEnvironment() {
         const snapshot = [...objects];
@@ -64,6 +66,14 @@ export default function CanvasGeneratorFloatingControl() {
                 label={heightLabel}
                 value={height}
                 onChange={setHeight}
+                type="decimal"
+                min={0}
+                step={1}
+            />
+            <FloatingControlNumberField
+                label={minPassageWidthLabel}
+                value={minPassageWidth}
+                onChange={setMinPassageWidth}
                 type="decimal"
                 min={0}
                 step={1}
