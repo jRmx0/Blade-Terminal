@@ -281,26 +281,24 @@ export function parseImportXml(xml: string): ImportedWorkspaceData | ImportParse
     if (geoAnchorEl) {
         const geoAttrErr = checkNoAttributes(geoAnchorEl, "<geoAnchor>");
         if (geoAttrErr) return geoAttrErr;
-        const geoChildErr = checkChildren(geoAnchorEl, ["lat", "lon", "metersPerUnit"], "<geoAnchor>");
+        const geoChildErr = checkChildren(geoAnchorEl, ["lat", "lon"], "<geoAnchor>");
         if (geoChildErr) return geoChildErr;
 
         const latText = textContent(geoAnchorEl, "lat");
         const lonText = textContent(geoAnchorEl, "lon");
-        const mppText = textContent(geoAnchorEl, "metersPerUnit");
 
-        if (latText === null || lonText === null || mppText === null) {
-            return { error: "<geoAnchor> must contain <lat>, <lon>, and <metersPerUnit>." };
+        if (latText === null || lonText === null) {
+            return { error: "<geoAnchor> must contain <lat> and <lon>." };
         }
 
         const lat = parseFloat(latText);
         const lon = parseFloat(lonText);
-        const metersPerUnit = parseFloat(mppText);
 
-        if (!isFinite(lat) || !isFinite(lon) || !isFinite(metersPerUnit)) {
+        if (!isFinite(lat) || !isFinite(lon)) {
             return { error: "Non-numeric value in <geoAnchor>." };
         }
 
-        geoAnchor = { lat, lon, metersPerUnit };
+        geoAnchor = { lat, lon };
     }
 
     return { name, format, type, coordSystem, objects, envPoints, geoAnchor };

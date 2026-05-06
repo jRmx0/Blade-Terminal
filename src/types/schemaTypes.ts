@@ -3,17 +3,14 @@ import type { ComputeResult } from "@/types/serviceTypes";
 
 /**
  * Geographic anchor that binds the canvas world origin (0, 0) to a real-world
- * WGS-84 coordinate. Together with `metersPerUnit` it provides the full
- * affine mapping between canvas units and Web-Mercator metres needed for
- * satellite tile rendering.
+ * WGS-84 coordinate. The active UoM setting determines the metres-per-unit
+ * mapping used for satellite tile rendering.
  */
 export interface GeoAnchor {
     /** WGS-84 latitude of the canvas world origin (0, 0). */
     lat: number;
     /** WGS-84 longitude of the canvas world origin (0, 0). */
     lon: number;
-    /** Number of real-world metres represented by one canvas unit. */
-    metersPerUnit: number;
 }
 
 export interface ComputationSelection {

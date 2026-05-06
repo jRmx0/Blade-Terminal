@@ -58,7 +58,6 @@ export function buildExportXml(env: Environment, objects: Object[], envPoints: E
         lines.push("  <geoAnchor>");
         lines.push(`    <lat>${geoAnchor.lat}</lat>`);
         lines.push(`    <lon>${geoAnchor.lon}</lon>`);
-        lines.push(`    <metersPerUnit>${geoAnchor.metersPerUnit}</metersPerUnit>`);
         lines.push("  </geoAnchor>");
     }
 

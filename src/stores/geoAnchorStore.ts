@@ -15,19 +15,17 @@ import { useEnvStore } from "@/stores/envStore";
 interface GeoAnchorDraft {
     lat: string;
     lon: string;
-    mpu: string;
 }
 
 function toDraft(anchor?: GeoAnchor): GeoAnchorDraft {
     return {
         lat: anchor ? String(anchor.lat) : "",
         lon: anchor ? String(anchor.lon) : "",
-        mpu: anchor ? String(anchor.metersPerUnit) : "",
     };
 }
 
 function isBlankDraft(draft: GeoAnchorDraft): boolean {
-    return draft.lat === "" && draft.lon === "" && draft.mpu === "";
+    return draft.lat === "" && draft.lon === "";
 }
 
 function parseDraft(draft: GeoAnchorDraft): GeoAnchor | undefined {
@@ -35,18 +33,16 @@ function parseDraft(draft: GeoAnchorDraft): GeoAnchor | undefined {
 
     const lat = Number.parseFloat(draft.lat);
     const lon = Number.parseFloat(draft.lon);
-    const mpu = Number.parseFloat(draft.mpu);
 
-    if (Number.isNaN(lat) || Number.isNaN(lon) || Number.isNaN(mpu)) return undefined;
+    if (Number.isNaN(lat) || Number.isNaN(lon)) return undefined;
     if (lat < -90 || lat > 90) return undefined;
     if (lon < -180 || lon > 180) return undefined;
-    if (mpu <= 0) return undefined;
 
-    return { lat, lon, metersPerUnit: mpu };
+    return { lat, lon };
 }
 
 function draftsEqual(a: GeoAnchorDraft, b: GeoAnchorDraft): boolean {
-    return a.lat === b.lat && a.lon === b.lon && a.mpu === b.mpu;
+    return a.lat === b.lat && a.lon === b.lon;
 }
 
 interface GeoAnchorState {

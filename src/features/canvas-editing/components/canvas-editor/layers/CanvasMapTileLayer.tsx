@@ -2,7 +2,9 @@ import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "rea
 import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 import { useGeoAnchorStore } from "@/stores/geoAnchorStore";
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
+import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
+import { convertLinearToBase } from "@/utils/unitOfMeasure";
 import {
     TILE_SIZE,
     lonToMercX,
@@ -49,6 +51,7 @@ function _CanvasMapTileLayer() {
     const opacity = Math.min(100, Math.max(0, Number(opacityStr ?? "100"))) / 100;
 
     const geoAnchor = useGeoAnchorStore((s) => s.environmentGeoAnchor);
+    const unitOfMeasure = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
 
     const position = useCanvasViewStore((s) => s.position);
     const scale = useCanvasViewStore((s) => s.scale);
@@ -64,14 +67,18 @@ function _CanvasMapTileLayer() {
         const { width, height } = canvasSize;
         if (width <= 0 || height <= 0) return [];
 
+        if (unitOfMeasure === "none") return [];
+
+        const effectiveMpu = convertLinearToBase(1, unitOfMeasure);
+
         const anchorMerc: GeoAnchorMerc = {
             anchorMx: lonToMercX(geoAnchor.lon),
             anchorMy: latToMercY(geoAnchor.lat),
             anchorLat: geoAnchor.lat,
-            metersPerUnit: geoAnchor.metersPerUnit,
+            metersPerUnit: effectiveMpu,
         };
 
-        const { zoom, overscale } = getTileZoomState(scale, geoAnchor.metersPerUnit, geoAnchor.lat);
+        const { zoom, overscale } = getTileZoomState(scale, effectiveMpu, geoAnchor.lat);
 
         // Viewport bounds in canvas world coordinates
         const worldMinX = -position.x / scale;
@@ -127,7 +134,7 @@ function _CanvasMapTileLayer() {
         }
 
         return result;
-    }, [visible, geoAnchor, position, scale, canvasSize]);
+    }, [visible, geoAnchor, position, scale, canvasSize, unitOfMeasure]);
 
     useEffect(() => {
         if (!visible || tiles.length === 0) return;

@@ -17,12 +17,6 @@ function validateLon(v: string): string | undefined {
     if (n < -180 || n > 180) return "Range: -180 to 180";
 }
 
-function validateMpu(v: string): string | undefined {
-    const n = Number.parseFloat(v);
-    if (Number.isNaN(n)) return;
-    if (n <= 0) return "Must be greater than 0";
-}
-
 function toCardSavedState(status: "nothing_to_save" | "unsaved" | "saved", isSaving: boolean): CardModalSavedState {
     if (isSaving) return "saving";
     return status;
@@ -55,7 +49,6 @@ function GeoAnchorSystemModal({
 
     const systemLatError = validateLat(systemDraft.lat);
     const systemLonError = validateLon(systemDraft.lon);
-    const systemMpuError = validateMpu(systemDraft.mpu);
     const savedState = toCardSavedState(saveStatus, isSaving);
     const canSave = saveStatus === "unsaved";
 
@@ -102,16 +95,6 @@ function GeoAnchorSystemModal({
                     onChange: (v) => void setSystemGeoAnchorDraft({ ...systemDraft, lon: v }),
                     onConfirm: () => void handleSave(),
                 },
-                {
-                    id: "system-mpu",
-                    label: "Metres per unit",
-                    value: systemDraft.mpu,
-                    disabled: !isEditMode,
-                    hint: systemMpuError,
-                    hintState: systemMpuError ? "error" : undefined,
-                    onChange: (v) => void setSystemGeoAnchorDraft({ ...systemDraft, mpu: v }),
-                    onConfirm: () => void handleSave(),
-                },
             ],
         },
     ];
@@ -131,7 +114,7 @@ function GeoAnchorSystemModal({
                 canSave,
                 isEditMode,
                 onEdit: () => setIsEditMode((v) => !v),
-                onNew: () => {},
+                onNew: () => { },
                 onDelete: () => void handleDelete(),
                 canEdit: true,
                 canNew: false,
@@ -171,7 +154,6 @@ export default function GeoAnchorModal() {
 
     const envLatError = validateLat(envDraft.lat);
     const envLonError = validateLon(envDraft.lon);
-    const envMpuError = validateMpu(envDraft.mpu);
 
     const savedState = toCardSavedState(saveStatus, isSaving);
     const canSave = saveStatus === "unsaved";
@@ -220,16 +202,6 @@ export default function GeoAnchorModal() {
                     onChange: (v) => void setEnvironmentGeoAnchorDraft(env.id, { ...envDraft, lon: v }),
                     onConfirm: () => void handleSave(),
                 },
-                {
-                    id: "env-mpu",
-                    label: "Metres per unit",
-                    value: envDraft.mpu,
-                    disabled: !isEditMode,
-                    hint: envMpuError,
-                    hintState: envMpuError ? "error" : undefined,
-                    onChange: (v) => void setEnvironmentGeoAnchorDraft(env.id, { ...envDraft, mpu: v }),
-                    onConfirm: () => void handleSave(),
-                },
             ],
         },
     ];
@@ -250,7 +222,7 @@ export default function GeoAnchorModal() {
                     canSave,
                     isEditMode,
                     onEdit: () => setIsEditMode((v) => !v),
-                    onNew: () => {},
+                    onNew: () => { },
                     onDelete: () => void handleDelete(),
                     canEdit: true,
                     canNew: false,
