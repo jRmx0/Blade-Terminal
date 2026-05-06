@@ -31,6 +31,24 @@ export function computePolygonArea(vertices: Point[]): number {
 }
 
 /**
+ * Computes the perimeter of a closed polygon as the sum of Euclidean edge lengths.
+ * Returns 0 for fewer than 2 points.
+ */
+export function computePolygonPerimeter(vertices: Point[]): number {
+    const n = vertices.length;
+    if (n < 2) return 0;
+    let perimeter = 0;
+    for (let i = 0; i < n; i++) {
+        const curr = vertices[i]!;
+        const next = vertices[(i + 1) % n]!;
+        const dx = next.x - curr.x;
+        const dy = next.y - curr.y;
+        perimeter += Math.sqrt(dx * dx + dy * dy);
+    }
+    return perimeter;
+}
+
+/**
  * Returns vertices in the required winding order for the given category.
  * In screen coordinates (Y↓): zones must be CW (signed area > 0),
  * obstacles must be CCW (signed area < 0).
