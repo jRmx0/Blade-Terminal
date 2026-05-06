@@ -19,7 +19,6 @@ export default function CanvasGeneratorFloatingControl() {
     const deleteObject = useCanvasObjectStore((s) => s.deleteObject);
     const uom = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
 
-    const [vertexCount, setVertexCount] = useState("0");
     const [width, setWidth] = useState("1000");
     const [height, setHeight] = useState("1000");
     const [minPassageWidth, setMinPassageWidth] = useState("30");
@@ -47,14 +46,6 @@ export default function CanvasGeneratorFloatingControl() {
             onClose={() => setOpen(false)}
             defaultPosition={{ x: 16, y: 16 }}
         >
-            <FloatingControlNumberField
-                label="Vertex Count"
-                value={vertexCount}
-                onChange={setVertexCount}
-                type="int"
-                min={3}
-                step={1}
-            />
             <FloatingControlNumberField
                 label={widthLabel}
                 value={width}
