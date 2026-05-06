@@ -111,6 +111,8 @@ export default function FloatingControl({
             ref={windowRef}
             className="absolute w-64 bg-gray-100 border border-gray-300 rounded shadow-md z-20 select-none"
             style={{ left: pos.x, top: pos.y }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
         >
             {/* Header */}
             <div

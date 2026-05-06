@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 
 interface FloatingControlTextFieldProps {
     label: string;
@@ -17,7 +16,6 @@ export default function FloatingControlTextField({
     disabled = false,
 }: FloatingControlTextFieldProps) {
     const [isFocused, setIsFocused] = useState(false);
-    useShortcutsBlocked(`floating-control-text-${label}`, isFocused);
 
     return (
         <div className="flex items-center gap-2 px-3 h-8">

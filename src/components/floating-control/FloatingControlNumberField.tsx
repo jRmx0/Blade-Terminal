@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useShortcutsBlocked } from "@/hooks/shortcut-manager/useShortcutsBlocked";
 
 interface FloatingControlNumberFieldProps {
     label: string;
@@ -24,7 +23,6 @@ export default function FloatingControlNumberField({
 }: FloatingControlNumberFieldProps) {
     const [isFocused, setIsFocused] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
-    useShortcutsBlocked(`floating-control-number-${label}`, isFocused);
 
     const effectiveStep = step ?? (type === "decimal" ? 0.1 : 1);
     const showSpinners = (isFocused || isHovered) && !disabled;
