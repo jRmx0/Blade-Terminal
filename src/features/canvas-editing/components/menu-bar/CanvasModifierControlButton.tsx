@@ -7,7 +7,7 @@ export default function CanvasModifierControlButton() {
 
     return (
         <MenuBarItem
-            label="Modifier Control"
+            label="Modifier"
             hasCheckmark
             defaultChecked={isOpen}
             onClick={() => setOpen(!isOpen)}

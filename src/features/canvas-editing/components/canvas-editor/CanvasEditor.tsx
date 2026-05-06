@@ -31,6 +31,7 @@ import { CanvasEnvPointsLayer } from "@/features/canvas-editing/components/canva
 import { CanvasMapTileLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasMapTileLayer";
 import CanvasFloatingControlMock from "@/features/canvas-editing/components/floating-control/CanvasFloatingControlMock";
 import CanvasModifierFloatingControl from "@/features/canvas-editing/components/floating-control/CanvasModifierFloatingControl";
+import CanvasGeneratorFloatingControl from "@/features/canvas-editing/components/floating-control/CanvasGeneratorFloatingControl";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useEnvStore } from "@/stores/envStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
@@ -430,6 +431,7 @@ export default function CanvasEditor() {
       </Stage>
       <CanvasFloatingControlMock />
       <CanvasModifierFloatingControl />
+      <CanvasGeneratorFloatingControl />
     </div>
   );
 }
