@@ -17,6 +17,8 @@ import { useEnvStore } from "@/stores/envStore";
 import { OBJECT_CATEGORY, OBJECT_TYPE } from "@/config/db-ops/enums";
 import { unitLabel } from "@/utils/unitOfMeasure";
 import { getUiPreference, setUiPreference } from "@server/db/uiPreferences";
+import { useComputeResultStore } from "@/stores/useComputeResultStore";
+import { executeComputeRequest } from "@/features/coverage-planning/data/computeService";
 
 const UI_PREF_KEY = "floatingControl.canvas-generator";
 
@@ -45,6 +47,8 @@ export default function CanvasGeneratorFloatingControl() {
     const deletePoint = useEnvPointStore((s) => s.deletePoint);
     const envId = useEnvStore((s) => s.env.id);
     const uom = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
+    const computeStatus = useComputeResultStore((s) => s.status);
+    const isComputeBusy = computeStatus === "submitting" || computeStatus === "polling";
 
     const [width, setWidth] = useState("1000");
     const [height, setHeight] = useState("1000");
@@ -197,6 +201,15 @@ export default function CanvasGeneratorFloatingControl() {
         upsertPoint(envId, "start_end", env.startEndPoint);
     }
 
+    function handleGenerateAndRun() {
+        handleGenerate();
+        executeComputeRequest().then((result) => {
+            if (!result.ok) {
+                console.error("[GenerateAndRun] compute error:", result.error);
+            }
+        });
+    }
+
     return (
         <FloatingControl
             id="canvas-generator"
@@ -259,9 +272,14 @@ export default function CanvasGeneratorFloatingControl() {
                 label="Clear Environment"
                 onClick={handleClearEnvironment}
             />
-            <FloatingControlMainButton
+            <FloatingControlButton
                 label="Generate"
                 onClick={handleGenerate}
+            />
+            <FloatingControlMainButton
+                label="Generate and Run"
+                onClick={handleGenerateAndRun}
+                disabled={isComputeBusy}
             />
         </FloatingControl>
     );
