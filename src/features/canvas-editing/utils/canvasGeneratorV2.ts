@@ -273,6 +273,16 @@ function walkEdgeChains(
     return polygons;
 }
 
+function polygonSignedArea(poly: Point[]): number {
+    let area = 0;
+    for (let i = 0; i < poly.length; i++) {
+        const j = (i + 1) % poly.length;
+        area += poly[i]!.x * poly[j]!.y;
+        area -= poly[j]!.x * poly[i]!.y;
+    }
+    return area / 2;
+}
+
 // ---------------------------------------------------------------------------
 // Polygon: CCW boundary tracing for a single interior obstacle component.
 //
@@ -282,13 +292,13 @@ function walkEdgeChains(
 //   Left   (free left):   enc(r,   c  ) → enc(r+1, c  )
 //   Right  (free right):  enc(r+1, c+1) → enc(r,   c+1)
 // ---------------------------------------------------------------------------
-function traceObstaclePolygon(
+function traceObstaclePolygons(
     cells: Array<[number, number]>,
     free: boolean[][],
     rows: number,
     cols: number,
     cellSize: number,
-): Point[] {
+): Point[][] {
     const cols2 = cols + 1;
     const enc = (gr: number, gc: number) => gr * cols2 + gc;
     const edgeMap = new Map<number, number>();
@@ -304,7 +314,8 @@ function traceObstaclePolygon(
         if (freeLeft)  edgeMap.set(enc(r,     c    ), enc(r + 1, c    )); // left
         if (freeRight) edgeMap.set(enc(r + 1, c + 1), enc(r,     c + 1)); // right
     }
-    return walkEdgeChains(edgeMap, cols2, cellSize)[0] ?? [];
+    return walkEdgeChains(edgeMap, cols2, cellSize)
+        .map((loop) => (polygonSignedArea(loop) < 0 ? loop : [...loop].reverse()));
 }
 
 // ---------------------------------------------------------------------------
@@ -681,15 +692,6 @@ export function generateEnvironment({
     // 6. Trace polygons
     // -------------------------------------------------------------------------
     const zoneLoops = traceZonePolygons(borderObstacleSet, rows, cols, cellSize);
-    const polygonSignedArea = (poly: Point[]): number => {
-        let area = 0;
-        for (let i = 0; i < poly.length; i++) {
-            const j = (i + 1) % poly.length;
-            area += poly[i]!.x * poly[j]!.y;
-            area -= poly[j]!.x * poly[i]!.y;
-        }
-        return area / 2;
-    };
 
     let boundary: Point[] = [];
     if (zoneLoops.length > 0) {
@@ -706,7 +708,7 @@ export function generateEnvironment({
 
     const obstacles: Point[][] = components
         .filter(({ isBorder }) => !isBorder)
-        .map(({ cells }) => traceObstaclePolygon(cells, free, rows, cols, cellSize))
+        .flatMap(({ cells }) => traceObstaclePolygons(cells, free, rows, cols, cellSize))
         .concat(extraObstacleLoops);
 
     const startEndPoint = findStartPoint(free, rows, cols, cellSize);
