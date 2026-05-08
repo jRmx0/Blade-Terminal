@@ -655,6 +655,14 @@ export function generateEnvironment({ width, height, minPassageWidth, obstacleRa
 
     const startEndPoint = findBestPoint(free, rows, cols, cellSize);
 
+    let finalObstacleCount = 0;
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            if (!free[r]![c]) finalObstacleCount++;
+        }
+    }
+    const usedObstacleRatioPct = Math.round((finalObstacleCount / (rows * cols)) * 100);
+
     const usedSeedHex = `0x${seedNum.toString(16).toUpperCase().padStart(8, "0")}`;
-    return { boundary, obstacles, startEndPoint, usedClusteringPct: Math.round(clusteringFrac * 100), usedObstacleRatioPct: Math.round(targetDensity * 100), usedSeedHex };
+    return { boundary, obstacles, startEndPoint, usedClusteringPct: Math.round(clusteringFrac * 100), usedObstacleRatioPct, usedSeedHex };
 }
