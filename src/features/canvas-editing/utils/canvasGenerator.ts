@@ -4,8 +4,15 @@ export interface GeneratorParams {
     width: number;
     height: number;
     minPassageWidth: number;
-    /** Obstacle ratio as a percentage [0, 100]. When omitted the density is chosen automatically. */
-    obstacleRatio?: number;
+    /** Obstacle ratio as a percentage [0, 100], or a [min, max] range the generator
+     * picks from randomly. When omitted the density is derived from the seed. */
+    obstacleRatio?: number | [number, number];
+    /** Clustering probability as a percentage [0, 100], or a [min, max] range the generator
+     * picks from randomly.
+     * 0  = every obstacle is an isolated single-cell seed (maximum spread).
+     * 100 = all obstacles expand into one large connected blob (minimum spread).
+     * When omitted a random value is derived deterministically from the seed. */
+    clustering?: number | [number, number];
     seed: string;
 }
 
@@ -13,6 +20,17 @@ export interface GeneratedEnvironment {
     boundary: Point[];
     obstacles: Point[][];
     startEndPoint: Point;
+    /** Clustering percentage [0, 100] that was actually used during this generation.
+     * Reflects the explicitly supplied value or the auto-derived random value when
+     * `clustering` was omitted from GeneratorParams. */
+    usedClusteringPct: number;
+    /** Obstacle ratio percentage [0, 100] that was targeted during this generation.
+     * Reflects the explicitly supplied value or the auto-derived random value when
+     * `obstacleRatio` was omitted from GeneratorParams. */
+    usedObstacleRatioPct: number;
+    /** The resolved 32-bit seed expressed as a hex literal (e.g. `0x8A3F1C2D`).
+     * Paste this back into the seed field to reproduce the exact same environment. */
+    usedSeedHex: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -29,8 +47,11 @@ function mulberry32(seed: number): () => number {
     };
 }
 
-// FNV-1a 32-bit hash for seed strings
+// FNV-1a 32-bit hash for seed strings.
+// If the string starts with '0x' or '0X' it is treated as a hex literal and
+// parsed directly so round-tripping a displayed seed produces identical output.
 function hashSeed(s: string): number {
+    if (/^0x[0-9a-f]+$/i.test(s.trim())) return (parseInt(s.trim(), 16)) >>> 0;
     let h = 2166136261;
     for (let i = 0; i < s.length; i++) {
         h ^= s.charCodeAt(i);
@@ -324,32 +345,165 @@ function findBestPoint(
 // Generator helpers
 // ---------------------------------------------------------------------------
 
-/** Default fraction of cells randomly assigned as obstacles when obstacleRatio is not specified. */
-const DEFAULT_OBSTACLE_DENSITY = 0.3;
+/** Range for auto-generated obstacle ratio: [AUTO_RATIO_MIN, AUTO_RATIO_MIN + AUTO_RATIO_RANGE]% */
+const AUTO_RATIO_MIN = 5;
+const AUTO_RATIO_RANGE = 55; // → [5, 60]%
 
 /**
- * Places obstacles randomly at `initialDensity` using the given seed,
- * then stabilises (diagonal closure + BFS connectivity) until the grid
- * is fully consistent.  Returns the stabilised free grid.
+ * Returns the obstacle ratio percentage that will be used for a given seed.
  *
- * Creating a fresh PRNG from `seedNum` each call ensures the random
- * sequence is identical regardless of how many times this is invoked
- * (used by the binary-search calibration in generateEnvironment).
+ * When `range` is provided the return value is the deterministic pick from that
+ * range. When omitted the auto range [5, 60]% is used.
+ *
+ * Returns `null` when `seed` is blank (value would change on every call because
+ * seedNum falls back to Date.now()).
  */
-function buildAndStabilize(
+export function computeResolvedObstacleRatioPct(seed: string, range?: [number, number]): number | null {
+    if (!seed.trim()) return null;
+    const draw = mulberry32(hashSeed(seed.trim()) ^ 0x9e3779b9)();
+    if (range !== undefined) {
+        const lo = Math.min(range[0], range[1]);
+        const hi = Math.max(range[0], range[1]);
+        return Math.round(lo + draw * (hi - lo));
+    }
+    return Math.round(AUTO_RATIO_MIN + draw * AUTO_RATIO_RANGE);
+}
+
+/**
+ * Returns the clustering percentage that will be used for a given seed.
+ *
+ * When `range` is provided the return value is the deterministic pick from that
+ * range. When omitted the full auto range [0, 100]% is used.
+ *
+ * Returns `null` when `seed` is blank (the value would change on every call
+ * because seedNum falls back to Date.now()).
+ */
+export function computeResolvedClusteringPct(seed: string, range?: [number, number]): number | null {
+    if (!seed.trim()) return null;
+    const draw = mulberry32(hashSeed(seed.trim()))();
+    if (range !== undefined) {
+        const lo = Math.min(range[0], range[1]);
+        const hi = Math.max(range[0], range[1]);
+        return Math.round(lo + draw * (hi - lo));
+    }
+    return Math.round(draw * 100);
+}
+
+/**
+ * Builds a grid by sequentially placing `targetObstacles` obstacle cells using
+ * a growth-based clustering strategy, then stabilises the result.
+ *
+ * @param clusteringFrac  Probability [0, 1] that each placement EXPANDS an existing
+ *                        obstacle cluster rather than starting a new isolated seed.
+ *                        0 = all obstacles are isolated single-cell seeds.
+ *                        1 = all obstacles grow into one large connected blob
+ *                            (the first obstacle is always seeded since the frontier
+ *                            starts empty).
+ *
+ * When the seed pool is exhausted the algorithm falls back to growth only,
+ * so that the requested Obstacle Ratio is always honoured.
+ *
+ * Creating a fresh PRNG from `seedNum` each call ensures identical output
+ * regardless of how many times this is invoked (used by the binary-search
+ * calibration in generateEnvironment).
+ */
+function buildWithClustering(
     rows: number,
     cols: number,
     startC: number,
     startR: number,
-    initialDensity: number,
+    targetObstacles: number,
+    clusteringFrac: number,
     seedNum: number,
 ): boolean[][] {
     const rand = mulberry32(seedNum);
+
+    // All cells start free
     const free: boolean[][] = Array.from({ length: rows }, () =>
-        Array.from({ length: cols }, () => rand() >= initialDensity),
+        new Array<boolean>(cols).fill(true),
     );
+
+    // Shuffled pool of all cell indices (except start) used as isolated seed candidates.
+    const totalCells = rows * cols;
+    const seedPool: number[] = [];
+    for (let i = 0; i < totalCells; i++) {
+        if (i !== startR * cols + startC) seedPool.push(i);
+    }
+    // Fisher-Yates shuffle so each seed pops in a deterministic random order
+    for (let i = seedPool.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        const tmp = seedPool[i]!; seedPool[i] = seedPool[j]!; seedPool[j] = tmp;
+    }
+
+    // frontier: indices of obstacle cells that may still have free neighbours (lazily cleaned)
+    const frontier: number[] = [];
+    let seedIdx = 0;
+    let placed = 0;
+    const target = Math.min(targetObstacles, totalCells - 1);
+
+    function markObstacle(r: number, c: number): void {
+        free[r]![c] = false;
+        placed++;
+        frontier.push(r * cols + c);
+    }
+
+    /** Expands a random frontier cell into one of its free neighbours.
+     *  Lazily removes exhausted frontier cells. Returns true if a cell was placed. */
+    function grow(): boolean {
+        while (frontier.length > 0) {
+            const fi = Math.floor(rand() * frontier.length);
+            const idx = frontier[fi]!;
+            const fr = Math.floor(idx / cols), fc = idx % cols;
+            const nbrs: Array<[number, number]> = [];
+            for (const [dr, dc] of DIRS4) {
+                const nr = fr + dr!, nc = fc + dc!;
+                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && free[nr]![nc]) {
+                    nbrs.push([nr, nc]);
+                }
+            }
+            if (nbrs.length === 0) {
+                // Lazy delete: swap-and-pop
+                frontier[fi] = frontier[frontier.length - 1]!;
+                frontier.pop();
+                continue;
+            }
+            const [nr, nc] = nbrs[Math.floor(rand() * nbrs.length)]!;
+            markObstacle(nr, nc);
+            return true;
+        }
+        return false;
+    }
+
+    /** Places the next unused seed from the shuffled pool.
+     *  Skips cells already turned into obstacles by a grow step.
+     *  Returns true if a cell was placed. */
+    function seed(): boolean {
+        while (seedIdx < seedPool.length) {
+            const idx = seedPool[seedIdx++]!;
+            const r = Math.floor(idx / cols), c = idx % cols;
+            if (free[r]![c]) {
+                markObstacle(r, c);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    while (placed < target) {
+        if (rand() < clusteringFrac && frontier.length > 0) {
+            // Prefer growth; fall back to seed if frontier is unexpectedly exhausted
+            if (!grow() && !seed()) break;
+        } else {
+            // Prefer new isolated seed; fall back to growth when pool is exhausted
+            // (fallback ensures Obstacle Ratio is honoured even at high densities)
+            if (!seed() && !grow()) break;
+        }
+    }
+
+    // Ensure the start cell is always accessible
     free[startR]![startC] = true;
 
+    // Stabilise: diagonal closure + BFS flood-fill
     for (let pass = 0; pass < 10; pass++) {
         closeDiagonals(free, rows, cols);
         const reachable = floodFill(free, rows, cols, startC, startR);
@@ -387,9 +541,9 @@ const MAX_GRID_CELLS = 40_000;
  * 5. Trace the zone polygon (CW) as the boundary of all non-border-obstacle cells.
  * 6. Trace interior obstacle polygons (CCW) for each interior component.
  */
-export function generateEnvironment({ width, height, minPassageWidth, obstacleRatio, seed }: GeneratorParams): GeneratedEnvironment {
+export function generateEnvironment({ width, height, minPassageWidth, obstacleRatio, clustering, seed }: GeneratorParams): GeneratedEnvironment {
     if (width <= 0 || height <= 0 || minPassageWidth <= 0) {
-        return { boundary: [], obstacles: [], startEndPoint: { x: 0, y: 0 } };
+        return { boundary: [], obstacles: [], startEndPoint: { x: 0, y: 0 }, usedClusteringPct: 0, usedObstacleRatioPct: 0, usedSeedHex: "0x00000000" };
     }
 
     // Scale up cell size if the raw grid would exceed the cell cap
@@ -406,15 +560,26 @@ export function generateEnvironment({ width, height, minPassageWidth, obstacleRa
 
     const seedNum = seed.trim()
         ? hashSeed(seed.trim())
-        : ((Date.now() ^ Math.floor(Math.random() * 0xffff)) >>> 0);
+        : ((Date.now() ^ (Math.random() * 0x100000000 >>> 0)) >>> 0);
+
+    // Clustering: resolved from explicit value, range, or seed-derived random draw
+    const clusterRandDraw = mulberry32(seedNum)();
+    const clusteringFrac = clustering === undefined
+        ? clusterRandDraw
+        : Array.isArray(clustering)
+            ? Math.max(0, Math.min(1, (Math.min(clustering[0], clustering[1]) + clusterRandDraw * Math.abs(clustering[1] - clustering[0])) / 100))
+            : Math.max(0, Math.min(1, clustering / 100));
 
     const startC = Math.floor(cols / 2);
     const startR = Math.floor(rows / 2);
 
-    const targetDensity =
-        obstacleRatio !== undefined && isFinite(obstacleRatio)
-            ? Math.max(0, Math.min(1, obstacleRatio / 100))
-            : DEFAULT_OBSTACLE_DENSITY;
+    // Obstacle ratio: resolved from explicit value, range, or seed-derived random draw
+    const obsRandDraw = mulberry32(seedNum ^ 0x9e3779b9)();
+    const targetDensity = obstacleRatio === undefined
+        ? (AUTO_RATIO_MIN + obsRandDraw * AUTO_RATIO_RANGE) / 100
+        : Array.isArray(obstacleRatio)
+            ? Math.max(0, Math.min(1, (Math.min(obstacleRatio[0], obstacleRatio[1]) + obsRandDraw * Math.abs(obstacleRatio[1] - obstacleRatio[0])) / 100))
+            : Math.max(0, Math.min(1, obstacleRatio / 100));
 
     // -----------------------------------------------------------------------
     // 1. Calibrate initial density to hit the target FINAL obstacle ratio.
@@ -426,7 +591,7 @@ export function generateEnvironment({ width, height, minPassageWidth, obstacleRa
     //    (lo is chosen so finalDensity(lo) ≤ target, guaranteeing no overshoot.)
     // -----------------------------------------------------------------------
     let initialDensity = targetDensity;
-    if (obstacleRatio !== undefined && isFinite(obstacleRatio)) {
+    if (obstacleRatio !== undefined) {
         const targetObstacles = Math.round(rows * cols * targetDensity);
         // hi must be 1, not targetDensity: stabilisation always adds obstacles, so
         // finalDensity(d) >= d. Using hi=targetDensity as the upper bound causes
@@ -437,7 +602,7 @@ export function generateEnvironment({ width, height, minPassageWidth, obstacleRa
         let lastHiObs = -1;  // stabilised obstacle count at the current hi boundary (-1 = uninitialised)
         for (let i = 0; i < 10; i++) {
             const mid = (lo + hi) / 2;
-            const trialFree = buildAndStabilize(rows, cols, startC, startR, mid, seedNum);
+            const trialFree = buildWithClustering(rows, cols, startC, startR, Math.round(mid * rows * cols), clusteringFrac, seedNum);
             let obs = 0;
             for (let r = 0; r < rows; r++)
                 for (let c = 0; c < cols; c++)
@@ -460,7 +625,7 @@ export function generateEnvironment({ width, height, minPassageWidth, obstacleRa
     // -----------------------------------------------------------------------
     // 2. Generate the final stabilised grid with the calibrated initial density.
     // -----------------------------------------------------------------------
-    const free = buildAndStabilize(rows, cols, startC, startR, initialDensity, seedNum);
+    const free = buildWithClustering(rows, cols, startC, startR, Math.round(initialDensity * rows * cols), clusteringFrac, seedNum);
 
     // -----------------------------------------------------------------------
     // 3. Find obstacle components; classify border vs. interior
@@ -490,5 +655,6 @@ export function generateEnvironment({ width, height, minPassageWidth, obstacleRa
 
     const startEndPoint = findBestPoint(free, rows, cols, cellSize);
 
-    return { boundary, obstacles, startEndPoint };
+    const usedSeedHex = `0x${seedNum.toString(16).toUpperCase().padStart(8, "0")}`;
+    return { boundary, obstacles, startEndPoint, usedClusteringPct: Math.round(clusteringFrac * 100), usedObstacleRatioPct: Math.round(targetDensity * 100), usedSeedHex };
 }

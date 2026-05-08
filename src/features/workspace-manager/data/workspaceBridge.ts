@@ -58,6 +58,7 @@ export async function initializeWorkspace(): Promise<void> {
     await useGeoAnchorStore.getState().loadSystemGeoAnchor();
     await useGeoAnchorStore.getState().loadEnvironmentGeoAnchor(nextId);
     useEnvPointStore.getState().clearPoints();
+    await deleteEnvPointsByEnvironment(nextId);
     await useEnvPointStore.getState().loadEnvPoints(nextId);
     useComputeResultStore.getState().resetResult();
 }
@@ -79,6 +80,7 @@ export async function resetWorkspace(): Promise<void> {
     await useGeoAnchorStore.getState().loadSystemGeoAnchor();
     await useGeoAnchorStore.getState().loadEnvironmentGeoAnchor(nextId);
     useEnvPointStore.getState().clearPoints();
+    await deleteEnvPointsByEnvironment(nextId);
     await useEnvPointStore.getState().loadEnvPoints(nextId);
     useComputeResultStore.getState().resetResult();
 }
