@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
     FloatingControl,
     FloatingControlNumberField,
@@ -16,6 +16,23 @@ import { useEnvPointStore } from "@/stores/envPointStore";
 import { useEnvStore } from "@/stores/envStore";
 import { OBJECT_CATEGORY, OBJECT_TYPE } from "@/config/db-ops/enums";
 import { unitLabel } from "@/utils/unitOfMeasure";
+import { getUiPreference, setUiPreference } from "@server/db/uiPreferences";
+
+const UI_PREF_KEY = "floatingControl.canvas-generator";
+
+interface CanvasGeneratorFloatingControlPrefs {
+    isOpen: boolean;
+    position: { x: number; y: number };
+    values: {
+        width: string;
+        height: string;
+        minPassageWidth: string;
+        obstacleRatio: string;
+        clustering: string;
+        seed: string;
+        lastSeedHex: string | null;
+    };
+}
 
 export default function CanvasGeneratorFloatingControl() {
     const isOpen = useCanvasGeneratorFloatingControlStore((s) => s.isOpen);
@@ -38,6 +55,8 @@ export default function CanvasGeneratorFloatingControl() {
     const [autoObstacleRatioHint, setAutoObstacleRatioHint] = useState<number | null>(null);
     const [autoClusteringHint, setAutoClusteringHint] = useState<number | null>(null);
     const [lastSeedHex, setLastSeedHex] = useState<string | null>(null);
+    const [controlPosition, setControlPosition] = useState({ x: 16, y: 16 });
+    const isHydratedRef = useRef(false);
 
     const uomLabel = unitLabel(uom);
     const widthLabel = uomLabel ? `Width (${uomLabel})` : "Width";
@@ -71,6 +90,78 @@ export default function CanvasGeneratorFloatingControl() {
         : autoClusteringHint !== null ? String(autoClusteringHint) : "auto";
     const clustPlaceholder = clustIsAuto ? clustHintStr : undefined;
     const clustPreview = !clustIsAuto && seedDerivedClust !== null ? `~${seedDerivedClust}` : undefined;
+
+    useEffect(() => {
+        let isCancelled = false;
+
+        async function hydrate() {
+            const fallback: CanvasGeneratorFloatingControlPrefs = {
+                isOpen: false,
+                position: { x: 16, y: 16 },
+                values: {
+                    width: "1000",
+                    height: "1000",
+                    minPassageWidth: "30",
+                    obstacleRatio: "",
+                    clustering: "",
+                    seed: "",
+                    lastSeedHex: null,
+                },
+            };
+
+            const saved = await getUiPreference<CanvasGeneratorFloatingControlPrefs>(UI_PREF_KEY, fallback);
+            if (isCancelled) return;
+
+            setOpen(saved.isOpen);
+            setControlPosition(saved.position);
+            setWidth(saved.values.width);
+            setHeight(saved.values.height);
+            setMinPassageWidth(saved.values.minPassageWidth);
+            setObstacleRatio(saved.values.obstacleRatio);
+            setClustering(saved.values.clustering);
+            setSeed(saved.values.seed);
+            setLastSeedHex(saved.values.lastSeedHex);
+            isHydratedRef.current = true;
+        }
+
+        void hydrate();
+        return () => {
+            isCancelled = true;
+        };
+    }, [setOpen]);
+
+    useEffect(() => {
+        if (!isHydratedRef.current) return;
+
+        const timeoutId = setTimeout(() => {
+            const payload: CanvasGeneratorFloatingControlPrefs = {
+                isOpen,
+                position: controlPosition,
+                values: {
+                    width,
+                    height,
+                    minPassageWidth,
+                    obstacleRatio,
+                    clustering,
+                    seed,
+                    lastSeedHex,
+                },
+            };
+            void setUiPreference(UI_PREF_KEY, payload);
+        }, 120);
+
+        return () => clearTimeout(timeoutId);
+    }, [
+        isOpen,
+        controlPosition,
+        width,
+        height,
+        minPassageWidth,
+        obstacleRatio,
+        clustering,
+        seed,
+        lastSeedHex,
+    ]);
 
     function handleClearEnvironment() {
         const snapshot = [...objects];
@@ -112,7 +203,8 @@ export default function CanvasGeneratorFloatingControl() {
             title="Generator"
             isOpen={isOpen}
             onClose={() => setOpen(false)}
-            defaultPosition={{ x: 16, y: 16 }}
+            defaultPosition={controlPosition}
+            onPositionChange={setControlPosition}
         >
             <FloatingControlNumberField
                 label={widthLabel}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     FloatingControl,
     FloatingControlNumberField,
@@ -10,6 +10,18 @@ import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObj
 import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { unitLabel } from "@/utils/unitOfMeasure";
 import { OBJECT_CATEGORY } from "@/config/db-ops/enums";
+import { getUiPreference, setUiPreference } from "@server/db/uiPreferences";
+
+const UI_PREF_KEY = "floatingControl.canvas-modifier";
+
+interface CanvasModifierFloatingControlPrefs {
+    isOpen: boolean;
+    position: { x: number; y: number };
+    values: {
+        multiplier: string;
+        maxOffset: string;
+    };
+}
 
 export default function CanvasModifierFloatingControl() {
     const isOpen = useCanvasModifierFloatingControlStore((s) => s.isOpen);
@@ -25,6 +37,49 @@ export default function CanvasModifierFloatingControl() {
 
     const [multiplier, setMultiplier] = useState("1");
     const [maxOffset, setMaxOffset] = useState("0");
+    const [controlPosition, setControlPosition] = useState({ x: 16, y: 16 });
+    const isHydratedRef = useRef(false);
+
+    useEffect(() => {
+        let isCancelled = false;
+
+        async function hydrate() {
+            const fallback: CanvasModifierFloatingControlPrefs = {
+                isOpen: false,
+                position: { x: 16, y: 16 },
+                values: { multiplier: "1", maxOffset: "0" },
+            };
+
+            const saved = await getUiPreference<CanvasModifierFloatingControlPrefs>(UI_PREF_KEY, fallback);
+            if (isCancelled) return;
+
+            setOpen(saved.isOpen);
+            setControlPosition(saved.position);
+            setMultiplier(saved.values.multiplier);
+            setMaxOffset(saved.values.maxOffset);
+            isHydratedRef.current = true;
+        }
+
+        void hydrate();
+        return () => {
+            isCancelled = true;
+        };
+    }, [setOpen]);
+
+    useEffect(() => {
+        if (!isHydratedRef.current) return;
+
+        const timeoutId = setTimeout(() => {
+            const payload: CanvasModifierFloatingControlPrefs = {
+                isOpen,
+                position: controlPosition,
+                values: { multiplier, maxOffset },
+            };
+            void setUiPreference(UI_PREF_KEY, payload);
+        }, 120);
+
+        return () => clearTimeout(timeoutId);
+    }, [isOpen, controlPosition, multiplier, maxOffset]);
 
     const isValidSelection =
         !!selectedObject &&
@@ -51,7 +106,8 @@ export default function CanvasModifierFloatingControl() {
             title="Modifier"
             isOpen={isOpen}
             onClose={() => setOpen(false)}
-            defaultPosition={{ x: 16, y: 16 }}
+            defaultPosition={controlPosition}
+            onPositionChange={setControlPosition}
         >
             <FloatingControlNumberField
                 label="Vertex multiplier"

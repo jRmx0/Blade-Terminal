@@ -12,6 +12,7 @@ interface FloatingControlProps {
     isOpen: boolean;
     onClose: () => void;
     defaultPosition?: { x: number; y: number };
+    onPositionChange?: (position: { x: number; y: number }) => void;
 }
 
 export default function FloatingControl({
@@ -21,6 +22,7 @@ export default function FloatingControl({
     isOpen,
     onClose,
     defaultPosition = { x: 16, y: 16 },
+    onPositionChange,
 }: FloatingControlProps) {
     const windowRef = useRef<HTMLDivElement>(null);
     const [pos, setPos] = useState(defaultPosition);
@@ -32,6 +34,14 @@ export default function FloatingControl({
     const zIndex = useFloatingControlZStore((s) => s.getZIndex(id));
 
     useEffect(() => { register(id); }, [id, register]);
+
+    useEffect(() => {
+        setPos(defaultPosition);
+    }, [defaultPosition.x, defaultPosition.y]);
+
+    useEffect(() => {
+        onPositionChange?.(pos);
+    }, [onPositionChange, pos]);
 
     // Clamp position so the window stays within parent bounds
     function clampPos(x: number, y: number, parentW: number, parentH: number): { x: number; y: number } {
