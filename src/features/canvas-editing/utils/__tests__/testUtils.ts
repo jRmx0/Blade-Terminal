@@ -5,7 +5,7 @@ import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
  */
 export function isPointInPolygon(point: Point, polygon: Point[]): boolean {
     if (polygon.length < 3) return false;
-    
+
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
         const xi = polygon[i]!.x, yi = polygon[i]!.y;
@@ -93,17 +93,17 @@ export function getBoundingBox(polygon: Point[]): {
     maxY: number;
 } | null {
     if (polygon.length === 0) return null;
-    
+
     let minX = polygon[0]!.x, maxX = polygon[0]!.x;
     let minY = polygon[0]!.y, maxY = polygon[0]!.y;
-    
+
     for (const p of polygon) {
         minX = Math.min(minX, p.x);
         maxX = Math.max(maxX, p.x);
         minY = Math.min(minY, p.y);
         maxY = Math.max(maxY, p.y);
     }
-    
+
     return { minX, minY, maxX, maxY };
 }
 
@@ -122,14 +122,14 @@ export function distance(p1: Point, p2: Point): number {
  */
 export function minDistanceToPolygon(point: Point, polygon: Point[]): number {
     if (polygon.length === 0) return Infinity;
-    
+
     let minDist = Infinity;
-    
+
     // Distance to vertices
     for (const v of polygon) {
         minDist = Math.min(minDist, distance(point, v));
     }
-    
+
     // Distance to edges
     for (let i = 0; i < polygon.length; i++) {
         const p1 = polygon[i]!;
@@ -137,7 +137,7 @@ export function minDistanceToPolygon(point: Point, polygon: Point[]): number {
         const d = distanceToLineSegment(point, p1, p2);
         minDist = Math.min(minDist, d);
     }
-    
+
     return minDist;
 }
 
@@ -148,17 +148,17 @@ function distanceToLineSegment(point: Point, p1: Point, p2: Point): number {
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
     const len2 = dx * dx + dy * dy;
-    
+
     if (len2 === 0) return distance(point, p1);
-    
+
     let t = ((point.x - p1.x) * dx + (point.y - p1.y) * dy) / len2;
     t = Math.max(0, Math.min(1, t));
-    
+
     const closest = {
         x: p1.x + t * dx,
         y: p1.y + t * dy,
     };
-    
+
     return distance(point, closest);
 }
 
@@ -176,4 +176,53 @@ export function validateNoOverlap(boundary: Point[], obstacles: Point[][]): bool
         }
     }
     return true;
+}
+
+/**
+ * Seeded PRNG — mulberry32 (32-bit)
+ */
+export function mulberry32(seed: number): () => number {
+    return () => {
+        seed |= 0;
+        seed = (seed + 0x6d2b79f5) | 0;
+        let z = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        z = (z + Math.imul(z ^ (z >>> 7), 61 | z)) ^ z;
+        return ((z ^ (z >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+/**
+ * Converts a 32-bit number to a hex seed string (e.g. "0xDEADBEEF").
+ */
+export function toHexSeed(value: number): string {
+    return `0x${value.toString(16).toUpperCase().padStart(8, "0")}`;
+}
+
+/**
+ * Computes the actual obstacle ratio percentage by sampling cell centers.
+ * A cell is counted as obstacle if it's outside the boundary or inside an obstacle polygon.
+ */
+export function computeActualObstacleRatioPct(
+    boundary: Point[],
+    obstacles: Point[][],
+    cellSize: number,
+    cols: number,
+    rows: number,
+): number {
+    let obstacleCells = 0;
+
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            const point = {
+                x: (col + 0.5) * cellSize,
+                y: (row + 0.5) * cellSize,
+            };
+
+            const insideBoundary = isPointInPolygon(point, boundary);
+            const insideObstacle = obstacles.some((polygon) => isPointInPolygon(point, polygon));
+            if (!insideBoundary || insideObstacle) obstacleCells++;
+        }
+    }
+
+    return (obstacleCells / (cols * rows)) * 100;
 }
