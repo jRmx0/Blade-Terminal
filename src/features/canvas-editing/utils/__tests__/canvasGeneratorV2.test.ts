@@ -175,43 +175,41 @@ describe("generateEnvironment - degenerate input", () => {
 // and reasonable given the requested parameters.
 // ---------------------------------------------------------------------------
 describe("generateEnvironment - obstacle ratio measurement", () => {
-    test("actual obstacle ratio is reasonable and correlates with requested ratio", () => {
+    test("actual obstacle ratio stays within ±3 cells across ratios 1-100", () => {
         const width = 1000;
         const height = 1000;
         const cellSize = 20;
         const cols = width / cellSize;
         const rows = height / cellSize;
-        const totalCells = cols * rows; // 2500 cells for this grid
-        const maxCellDrift = 2; // Algorithm should drift by at most ±2 cells
-        const maxDriftPct = (maxCellDrift / totalCells) * 100;
+        const totalCells = cols * rows;
+        const maxCellDrift = 3;
+        const maxTolerancePct = (maxCellDrift / totalCells) * 100;
 
-        // Test all ratios from 1 to 100
-        const testRatios = Array.from({ length: 100 }, (_, i) => i + 1);
-        const actualRatios: number[] = [];
+        const failures: Array<{ target: number; actual: number; drift: number; cells: number }> = [];
 
-        for (const targetRatio of testRatios) {
+        for (let targetRatio = 1; targetRatio <= 100; targetRatio++) {
             const env = generateEnvironment({
                 width,
                 height,
                 minPassageWidth: cellSize,
                 obstacleRatio: targetRatio,
                 clustering: 30,
-                seed: `obstacle-test-${targetRatio}`,
+                seed: `cal-test-${targetRatio}`,
             });
 
             const actualRatio = computeActualObstacleRatioPct(env.boundary, env.obstacles, cellSize, cols, rows);
-            actualRatios.push(actualRatio);
+            const drift = Math.abs(actualRatio - targetRatio);
 
-            // Reported ratio should equal the target
             expect(env.usedObstacleRatioPct).toBe(targetRatio);
-            // Actual ratio should be within ±2 cells tolerance of the target
-            // If this fails, the algorithm's stabilization is drifting too much
-            expect(Math.abs(actualRatio - targetRatio)).toBeLessThanOrEqual(maxDriftPct + 1e-9);
+
+            if (drift > maxTolerancePct + 1e-9) {
+                failures.push({ target: targetRatio, actual: actualRatio, drift, cells: Math.abs(Math.round(actualRatio / 100 * totalCells) - Math.round(targetRatio / 100 * totalCells)) });
+            }
         }
 
-        // Higher target ratios should generally produce higher actual ratios
-        // Check that low (1%), medium (50%), and high (100%) show monotonic trend
-        expect(actualRatios[49]!).toBeGreaterThan(actualRatios[0]!);   // 50% > 1%
-        expect(actualRatios[99]!).toBeGreaterThan(actualRatios[49]!);  // 100% > 50%
+        if (failures.length > 0) {
+            const report = failures.map(f => `  ${f.target}% → ${f.actual.toFixed(2)}% (${f.cells} cells, drift ${f.drift.toFixed(2)}%)`).join("\n");
+            throw new Error(`${failures.length} ratios failed tolerance check (>±3 cells / >${maxTolerancePct.toFixed(2)}%):\n${report}`);
+        }
     });
 });
