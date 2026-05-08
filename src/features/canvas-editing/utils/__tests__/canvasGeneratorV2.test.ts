@@ -175,13 +175,13 @@ describe("generateEnvironment - degenerate input", () => {
 // and reasonable given the requested parameters.
 // ---------------------------------------------------------------------------
 describe("generateEnvironment - obstacle ratio measurement", () => {
-    test("actual obstacle ratio stays within ±5% across 100 random ratio runs", () => {
+    test("actual obstacle ratio stays within ±1% across 100 random ratio runs", () => {
         const width = 1000;
         const height = 1000;
         const cellSize = 20;
         const cols = width / cellSize;
         const rows = height / cellSize;
-        const maxTolerancePct = 5;
+        const maxTolerancePct = 1;
         const runs = 100;
         const rand = mulberry32(0xC0FFEE42);
         const calibrationSeed = "calibration-fixed-seed";
