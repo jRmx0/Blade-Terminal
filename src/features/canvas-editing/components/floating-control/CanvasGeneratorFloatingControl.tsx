@@ -15,7 +15,7 @@ import {
     computeResolvedObstacleRatioPct,
     computeResolvedClusteringPct,
 } from "@/features/canvas-editing/utils/canvasGenerator";
-import { validateCanvasGeneratorInputs } from "@/features/canvas-editing/utils/canvasGeneratorInputValidation";
+import { validateCanvasGeneratorInputs } from "@/features/canvas-editing/utils/environmentInputValidation";
 import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useEnvStore } from "@/stores/envStore";
