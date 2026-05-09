@@ -132,6 +132,45 @@ function hasObstacleNeighbor4(grid: Uint8Array, x: number, y: number, cols: numb
     return false;
 }
 
+function diagonalNeighborHasOrthogonalBridge(
+    grid: Uint8Array,
+    x: number,
+    y: number,
+    cols: number,
+    rows: number,
+): boolean {
+    for (const [dx, dy] of ORTHO_DIRS) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (isInBounds(nx, ny, cols, rows) && grid[toIndex(nx, ny, cols)] === 1) return true;
+    }
+
+    // Any diagonal obstacle must be side-connected to at least one orthogonal
+    // obstacle neighbor of the target cell.
+    for (const [dx, dy] of DIAG_DIRS) {
+        const dxCell = x + dx;
+        const dyCell = y + dy;
+        if (!isInBounds(dxCell, dyCell, cols, rows)) continue;
+        if (grid[toIndex(dxCell, dyCell, cols)] !== 1) continue;
+
+        const bridgeAX = x + dx;
+        const bridgeAY = y;
+        const bridgeBX = x;
+        const bridgeBY = y + dy;
+
+        const bridgeAIsObstacle = isInBounds(bridgeAX, bridgeAY, cols, rows)
+            && grid[toIndex(bridgeAX, bridgeAY, cols)] === 1;
+        const bridgeBIsObstacle = isInBounds(bridgeBX, bridgeBY, cols, rows)
+            && grid[toIndex(bridgeBX, bridgeBY, cols)] === 1;
+
+        const hasBridge = bridgeAIsObstacle || bridgeBIsObstacle;
+
+        if (!hasBridge) return false;
+    }
+
+    return true;
+}
+
 function getAvailableCellsForNonClustering(grid: Uint8Array, cols: number, rows: number): Cell[] {
     const out: Cell[] = [];
     for (let y = 0; y < rows; y++) {
@@ -193,6 +232,7 @@ function getAvailableCellsForClustering(grid: Uint8Array, cols: number, rows: nu
         for (let x = 0; x < cols; x++) {
             if (grid[toIndex(x, y, cols)] === 1) continue;
             if (!hasObstacleNeighbor4(grid, x, y, cols, rows)) continue;
+            if (!diagonalNeighborHasOrthogonalBridge(grid, x, y, cols, rows)) continue;
             if (!wouldCreatePocket(grid, { x, y }, cols, rows)) {
                 out.push({ x, y });
             }
