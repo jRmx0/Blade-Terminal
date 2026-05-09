@@ -318,16 +318,27 @@ function findBestPoint(
 //   Z 0 0
 //
 // Rules for AvailableCellsForClustering:
-// - Candidate has at least one ORTHOGONAL (4-neighbour) obstacle neighbour.
+// - Candidate MUST have at least one ORTHOGONAL (4-neighbour) obstacle neighbour.
+//   Diagonal-only contact is insufficient.
+// - A diagonal obstacle touching the candidate is only relevant if that diagonal
+//   obstacle is also adjacent to one of the candidate's orthogonal neighbors.
+//   In other words, every diagonal obstacle must have an orthogonal bridge
+//   back to the candidate's 4-neighbourhood to count for clustering.
 //
+// RIGHT: Candidate has orthogonal obstacle neighbor
+//   0 O O
+//   0 C 0
 //   0 0 0
-//   0 C O
-//   0 0 0
 //
-// - Diagonal-only contact does NOT qualify as clustering.
-//
+// WRONG: Candidate has only diagonal obstacle neighbors (no orthogonal)
 //   0 0 O
 //   0 C 0
+//   0 0 0
+//
+// RIGHT only if the diagonal obstacle is connected through a candidate-side
+// orthogonal neighbor.
+//   0 O O
+//   O C 0
 //   0 0 0
 //
 // Pocket-prevention rule
