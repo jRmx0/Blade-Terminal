@@ -1,20 +1,11 @@
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 
 // ============================================================================
-// PERFORMANCE OPTIMIZATIONS
+// PERFORMANCE NOTES
 // ============================================================================
 //
-// Phase 1: Incremental Candidate Tracking + Union-Find Connectivity
-// - Replaced O(n·k) full grid scans with Union-Find structures
-// - Replaced O(n²·k) BFS pocket detection with O(k·α(n)) amortized lookups
-// - Added early-exit optimization to neighbor checks
-// - Expected improvement: 90-98% faster for large grids (1000x1000+)
-//
-// Previous bottlenecks eliminated:
-// 1. Full grid recalculation every iteration → Union-Find incremental
-// 2. Double BFS for each pocket check → Single Union-Find connectivity query
-// 3. No early exit in neighbor loops → Early break on first obstacle found
-// 4. Redundant diagonal checks → Short-circuit when no orthogonal neighbors
+// Pocket validation uses local connectivity flood-fill with reusable scratch
+// buffers to avoid per-candidate global connectivity structure rebuilds.
 //
 
 // ============================================================================
@@ -63,61 +54,6 @@ function hashSeed(s: string): number {
         h = Math.imul(h, 16777619);
     }
     return h >>> 0;
-}
-
-// ============================================================================
-// UNION-FIND FOR CONNECTIVITY TRACKING
-// ============================================================================
-
-class UnionFind {
-    parent: Uint32Array;
-    rank: Uint8Array;
-
-    constructor(n: number) {
-        this.parent = new Uint32Array(n);
-        this.rank = new Uint8Array(n);
-        for (let i = 0; i < n; i++) {
-            this.parent[i] = i;
-        }
-    }
-
-    find(x: number): number {
-        const px = this.parent[x] as number;
-        if (px !== x) {
-            this.parent[x] = this.find(px);
-        }
-        return this.parent[x] as number;
-    }
-
-    union(x: number, y: number): boolean {
-        const rootX = this.find(x);
-        const rootY = this.find(y);
-        if (rootX === rootY) return false;
-
-        const rankX = this.rank[rootX] as number;
-        const rankY = this.rank[rootY] as number;
-
-        // union by rank
-        if (rankX < rankY) {
-            this.parent[rootX] = rootY;
-        } else if (rankX > rankY) {
-            this.parent[rootY] = rootX;
-        } else {
-            this.parent[rootY] = rootX;
-            this.rank[rootX] = (rankX + 1) as any;
-        }
-        return true;
-    }
-
-    getComponentCount(grid: Uint8Array, gridSize: number): number {
-        const roots = new Set<number>();
-        for (let i = 0; i < gridSize; i++) {
-            if (grid[i] === 0) {
-                roots.add(this.find(i));
-            }
-        }
-        return roots.size;
-    }
 }
 
 // ============================================================================
@@ -265,49 +201,83 @@ function getAvailableCellsForNonClustering(grid: Uint8Array, cols: number, rows:
     return out;
 }
 
-// Optimized pocket detection using Union-Find
-function wouldCreatePocketUnionFind(
+function wouldCreatePocketByLocalConnectivity(
     grid: Uint8Array,
     candidate: Cell,
     cols: number,
     rows: number,
-    uf: UnionFind,
+    visited: Uint8Array,
+    queue: Uint32Array,
 ): boolean {
     const candidateIdx = toIndex(candidate.x, candidate.y, cols);
-    const componentsBefore = uf.getComponentCount(grid, cols * rows);
+    let neighborCount = 0;
+    let seed = -1;
+    let n1 = -1;
+    let n2 = -1;
+    let n3 = -1;
 
-    // Simulate placement: mark candidate as obstacle
-    grid[candidateIdx] = 1;
+    for (const [dx, dy] of ORTHO_DIRS) {
+        const nx = candidate.x + dx;
+        const ny = candidate.y + dy;
+        if (!isInBounds(nx, ny, cols, rows)) continue;
+        const nIdx = toIndex(nx, ny, cols);
+        if (grid[nIdx] !== 0) continue;
 
-    // Rebuild union-find with candidate as obstacle
-    const ufAfter = new UnionFind(cols * rows);
-    for (let i = 0; i < cols * rows; i++) {
-        if (grid[i] === 1) continue;
-        for (const [dx, dy] of ORTHO_DIRS) {
-            const x = i % cols;
-            const y = Math.floor(i / cols);
-            const nx = x + dx;
-            const ny = y + dy;
-            if (isInBounds(nx, ny, cols, rows)) {
-                const nIdx = toIndex(nx, ny, cols);
-                if (grid[nIdx] === 0 && i < nIdx) {
-                    ufAfter.union(i, nIdx);
-                }
-            }
+        if (neighborCount === 0) {
+            seed = nIdx;
+        } else if (neighborCount === 1) {
+            n1 = nIdx;
+        } else if (neighborCount === 2) {
+            n2 = nIdx;
+        } else {
+            n3 = nIdx;
         }
+        neighborCount += 1;
     }
 
-    const componentsAfter = ufAfter.getComponentCount(grid, cols * rows);
-    grid[candidateIdx] = 0; // Restore
+    // 0-1 reachable free neighbors can never be split by removing candidate.
+    if (neighborCount <= 1) return false;
 
-    return componentsAfter > componentsBefore;
+    visited.fill(0);
+    let head = 0;
+    let tail = 0;
+
+    visited[seed] = 1;
+    queue[tail++] = seed;
+
+    while (head < tail) {
+        const cur = queue[head++] as number;
+        const cx = cur % cols;
+        const cy = Math.floor(cur / cols);
+
+        const tryPush = (idx: number) => {
+            if (idx === candidateIdx) return;
+            if (grid[idx] === 1) return;
+            if (visited[idx] === 1) return;
+            visited[idx] = 1;
+            queue[tail++] = idx;
+        };
+
+        if (cx > 0) tryPush(cur - 1);
+        if (cx + 1 < cols) tryPush(cur + 1);
+        if (cy > 0) tryPush(cur - cols);
+        if (cy + 1 < rows) tryPush(cur + cols);
+    }
+
+    // If any orthogonal free neighbor is unreachable once candidate is removed,
+    // candidate is an articulation point and would split free space.
+    if (n1 >= 0 && visited[n1] === 0) return true;
+    if (n2 >= 0 && visited[n2] === 0) return true;
+    if (n3 >= 0 && visited[n3] === 0) return true;
+    return false;
 }
 
 function getAvailableCellsForClusteringOptimized(
     grid: Uint8Array,
     cols: number,
     rows: number,
-    uf: UnionFind,
+    visited: Uint8Array,
+    queue: Uint32Array,
 ): Cell[] {
     const out: Cell[] = [];
     for (let y = 0; y < rows; y++) {
@@ -315,7 +285,7 @@ function getAvailableCellsForClusteringOptimized(
             if (grid[toIndex(x, y, cols)] === 1) continue;
             if (!hasObstacleNeighbor4(grid, x, y, cols, rows)) continue;
             if (!diagonalNeighborHasOrthogonalBridge(grid, x, y, cols, rows)) continue;
-            if (!wouldCreatePocketUnionFind(grid, { x, y }, cols, rows, uf)) {
+            if (!wouldCreatePocketByLocalConnectivity(grid, { x, y }, cols, rows, visited, queue)) {
                 out.push({ x, y });
             }
         }
@@ -540,14 +510,6 @@ function findBestPoint(
 const AUTO_RATIO_MIN = 5;
 const AUTO_RATIO_RANGE = 55; // → [5, 60]%
 
-// Performance tracking (for diagnostics)
-interface PerformanceMetrics {
-    totalTime: number;
-    candidateCollectionTime: number;
-    pocketCheckTime: number;
-    placementCount: number;
-}
-
 export function computeResolvedObstacleRatioPct(seed: string, range?: [number, number]): number | null {
     if (!seed.trim()) return null;
     const draw = mulberry32(hashSeed(seed.trim()) ^ 0x9e3779b9)();
@@ -643,26 +605,20 @@ export function generateEnvironment({
 
     const obstacleGrid = new Uint8Array(totalCells);
     let placedObstacleCells = 0;
-    const uf = new UnionFind(totalCells);
-
-    // Initialize union-find with all free cells connected
-    for (let i = 0; i < totalCells; i++) {
-        for (const [dx, dy] of ORTHO_DIRS) {
-            const x = i % cols;
-            const y = Math.floor(i / cols);
-            const nx = x + dx;
-            const ny = y + dy;
-            if (isInBounds(nx, ny, cols, rows) && i < toIndex(nx, ny, cols)) {
-                uf.union(i, toIndex(nx, ny, cols));
-            }
-        }
-    }
+    const pocketVisited = new Uint8Array(totalCells);
+    const pocketQueue = new Uint32Array(totalCells);
 
     for (let i = 0; i < targetObstacleCells; i++) {
         const preferClustering = rng() < usedClusteringPct / 100;
 
         const nonClusteringCandidates = getAvailableCellsForNonClustering(obstacleGrid, cols, rows);
-        const clusteringCandidates = getAvailableCellsForClusteringOptimized(obstacleGrid, cols, rows, uf);
+        const clusteringCandidates = getAvailableCellsForClusteringOptimized(
+            obstacleGrid,
+            cols,
+            rows,
+            pocketVisited,
+            pocketQueue,
+        );
 
         const preferredCandidates = preferClustering ? clusteringCandidates : nonClusteringCandidates;
         const fallbackCandidates = preferClustering ? nonClusteringCandidates : clusteringCandidates;
