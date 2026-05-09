@@ -139,10 +139,14 @@ function diagonalNeighborHasOrthogonalBridge(
     cols: number,
     rows: number,
 ): boolean {
+    let hasOrthogonalObstacleNeighbor = false;
+
     for (const [dx, dy] of ORTHO_DIRS) {
         const nx = x + dx;
         const ny = y + dy;
-        if (isInBounds(nx, ny, cols, rows) && grid[toIndex(nx, ny, cols)] === 1) return true;
+        if (isInBounds(nx, ny, cols, rows) && grid[toIndex(nx, ny, cols)] === 1) {
+            hasOrthogonalObstacleNeighbor = true;
+        }
     }
 
     // Any diagonal obstacle must be side-connected to at least one orthogonal
@@ -168,7 +172,7 @@ function diagonalNeighborHasOrthogonalBridge(
         if (!hasBridge) return false;
     }
 
-    return true;
+    return hasOrthogonalObstacleNeighbor;
 }
 
 function getAvailableCellsForNonClustering(grid: Uint8Array, cols: number, rows: number): Cell[] {
