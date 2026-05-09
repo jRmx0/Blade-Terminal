@@ -60,8 +60,6 @@ function hashSeed(s: string): number {
 // HELPER FUNCTIONS (PLACEHOLDER STUBS)
 // ============================================================================
 
-type Cell = { x: number; y: number };
-
 class CandidatePool {
     private values: number[] = [];
     private positionByIdx: Int32Array;
@@ -237,19 +235,6 @@ function diagonalNeighborHasOrthogonalBridge(
     return true;
 }
 
-function getAvailableCellsForNonClustering(grid: Uint8Array, cols: number, rows: number): Cell[] {
-    const out: Cell[] = [];
-    for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-            if (grid[toIndex(x, y, cols)] === 1) continue;
-            if (!hasObstacleNeighbor8(grid, x, y, cols, rows)) {
-                out.push({ x, y });
-            }
-        }
-    }
-    return out;
-}
-
 function isNonClusteringCandidate(grid: Uint8Array, idx: number, cols: number, rows: number): boolean {
     if (grid[idx] === 1) return false;
     const x = idx % cols;
@@ -283,11 +268,12 @@ function updateCandidatePoolsAroundCell(
     grid: Uint8Array,
     cols: number,
     rows: number,
-    cellX: number,
-    cellY: number,
+    cellIdx: number,
     nonClusteringPool: CandidatePool,
     clusteringPool: CandidatePool,
 ): void {
+    const cellX = cellIdx % cols;
+    const cellY = Math.floor(cellIdx / cols);
     const minX = Math.max(0, cellX - 1);
     const maxX = Math.min(cols - 1, cellX + 1);
     const minY = Math.max(0, cellY - 1);
@@ -308,7 +294,7 @@ function pickFromNonClusteringPool(
     cols: number,
     rows: number,
     rng: () => number,
-): Cell | null {
+): number | null {
     const size = pool.size();
     if (size === 0) return null;
 
@@ -319,7 +305,7 @@ function pickFromNonClusteringPool(
             pool.remove(idx);
             continue;
         }
-        return { x: idx % cols, y: Math.floor(idx / cols) };
+        return idx;
     }
 
     return null;
@@ -333,7 +319,7 @@ function pickFromClusteringPool(
     visited: Uint8Array,
     queue: Uint32Array,
     rng: () => number,
-): Cell | null {
+): number | null {
     const size = pool.size();
     if (size === 0) return null;
 
@@ -345,9 +331,8 @@ function pickFromClusteringPool(
             continue;
         }
 
-        const cell = { x: idx % cols, y: Math.floor(idx / cols) };
-        if (!wouldCreatePocketByLocalConnectivity(grid, cell, cols, rows, visited, queue)) {
-            return cell;
+        if (!wouldCreatePocketByLocalConnectivity(grid, idx, cols, rows, visited, queue)) {
+            return idx;
         }
     }
 
@@ -356,13 +341,14 @@ function pickFromClusteringPool(
 
 function wouldCreatePocketByLocalConnectivity(
     grid: Uint8Array,
-    candidate: Cell,
+    candidateIdx: number,
     cols: number,
     rows: number,
     visited: Uint8Array,
     queue: Uint32Array,
 ): boolean {
-    const candidateIdx = toIndex(candidate.x, candidate.y, cols);
+    const candidateX = candidateIdx % cols;
+    const candidateY = Math.floor(candidateIdx / cols);
     let neighborCount = 0;
     let seed = -1;
     let n1 = -1;
@@ -370,8 +356,8 @@ function wouldCreatePocketByLocalConnectivity(
     let n3 = -1;
 
     for (const [dx, dy] of ORTHO_DIRS) {
-        const nx = candidate.x + dx;
-        const ny = candidate.y + dy;
+        const nx = candidateX + dx;
+        const ny = candidateY + dy;
         if (!isInBounds(nx, ny, cols, rows)) continue;
         const nIdx = toIndex(nx, ny, cols);
         if (grid[nIdx] !== 0) continue;
@@ -423,33 +409,6 @@ function wouldCreatePocketByLocalConnectivity(
     if (n2 >= 0 && visited[n2] === 0) return true;
     if (n3 >= 0 && visited[n3] === 0) return true;
     return false;
-}
-
-function getAvailableCellsForClusteringOptimized(
-    grid: Uint8Array,
-    cols: number,
-    rows: number,
-    visited: Uint8Array,
-    queue: Uint32Array,
-): Cell[] {
-    const out: Cell[] = [];
-    for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-            if (grid[toIndex(x, y, cols)] === 1) continue;
-            if (!hasObstacleNeighbor4(grid, x, y, cols, rows)) continue;
-            if (!diagonalNeighborHasOrthogonalBridge(grid, x, y, cols, rows)) continue;
-            if (!wouldCreatePocketByLocalConnectivity(grid, { x, y }, cols, rows, visited, queue)) {
-                out.push({ x, y });
-            }
-        }
-    }
-    return out;
-}
-
-function pickRandomCell(candidates: Cell[], rng: () => number): Cell | null {
-    if (candidates.length === 0) return null;
-    const idx = Math.floor(rng() * candidates.length);
-    return candidates[idx] ?? null;
 }
 
 function clampPct(value: number): number {
@@ -782,7 +741,7 @@ export function generateEnvironment({
             break;
         }
 
-        const pickedIdx = toIndex(picked.x, picked.y, cols);
+        const pickedIdx = picked;
         obstacleGrid[pickedIdx] = 1;
         nonClusteringPool.remove(pickedIdx);
         clusteringPool.remove(pickedIdx);
@@ -791,8 +750,7 @@ export function generateEnvironment({
             obstacleGrid,
             cols,
             rows,
-            picked.x,
-            picked.y,
+            pickedIdx,
             nonClusteringPool,
             clusteringPool,
         );
