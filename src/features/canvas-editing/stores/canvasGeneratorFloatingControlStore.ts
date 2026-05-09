@@ -4,7 +4,7 @@ interface CanvasGeneratorFloatingControlState {
     isOpen: boolean;
     width: string;
     height: string;
-    minPassageWidth: string;
+    cellSize: string;
     obstacleRatio: string;
     clustering: string;
     seed: string;
@@ -19,7 +19,7 @@ interface CanvasGeneratorFloatingControlState {
     setOpen: (open: boolean) => void;
     setWidth: (width: string) => void;
     setHeight: (height: string) => void;
-    setMinPassageWidth: (minPassageWidth: string) => void;
+    setCellSize: (cellSize: string) => void;
     setObstacleRatio: (obstacleRatio: string) => void;
     setClustering: (clustering: string) => void;
     setSeed: (seed: string) => void;
@@ -37,7 +37,7 @@ export const useCanvasGeneratorFloatingControlStore = create<CanvasGeneratorFloa
     isOpen: false,
     width: "1000",
     height: "1000",
-    minPassageWidth: "30",
+    cellSize: "30",
     obstacleRatio: "",
     clustering: "",
     seed: "",
@@ -52,7 +52,7 @@ export const useCanvasGeneratorFloatingControlStore = create<CanvasGeneratorFloa
     setOpen: (open) => set({ isOpen: open }),
     setWidth: (width) => set({ width }),
     setHeight: (height) => set({ height }),
-    setMinPassageWidth: (minPassageWidth) => set({ minPassageWidth }),
+    setCellSize: (cellSize) => set({ cellSize }),
     setObstacleRatio: (obstacleRatio) => set({ obstacleRatio }),
     setClustering: (clustering) => set({ clustering }),
     setSeed: (seed) => set({ seed }),

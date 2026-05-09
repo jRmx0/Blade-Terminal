@@ -33,7 +33,7 @@ interface CanvasGeneratorFloatingControlPrefs {
     values: {
         width: string;
         height: string;
-        minPassageWidth: string;
+        cellSize: string;
         obstacleRatio: string;
         clustering: string;
         seed: string;
@@ -45,7 +45,7 @@ export default function CanvasGeneratorFloatingControl() {
     const isOpen = useCanvasGeneratorFloatingControlStore((s) => s.isOpen);
     const width = useCanvasGeneratorFloatingControlStore((s) => s.width);
     const height = useCanvasGeneratorFloatingControlStore((s) => s.height);
-    const minPassageWidth = useCanvasGeneratorFloatingControlStore((s) => s.minPassageWidth);
+    const cellSize = useCanvasGeneratorFloatingControlStore((s) => s.cellSize);
     const obstacleRatio = useCanvasGeneratorFloatingControlStore((s) => s.obstacleRatio);
     const clustering = useCanvasGeneratorFloatingControlStore((s) => s.clustering);
     const seed = useCanvasGeneratorFloatingControlStore((s) => s.seed);
@@ -60,7 +60,7 @@ export default function CanvasGeneratorFloatingControl() {
     const setOpen = useCanvasGeneratorFloatingControlStore((s) => s.setOpen);
     const setWidth = useCanvasGeneratorFloatingControlStore((s) => s.setWidth);
     const setHeight = useCanvasGeneratorFloatingControlStore((s) => s.setHeight);
-    const setMinPassageWidth = useCanvasGeneratorFloatingControlStore((s) => s.setMinPassageWidth);
+    const setCellSize = useCanvasGeneratorFloatingControlStore((s) => s.setCellSize);
     const setObstacleRatio = useCanvasGeneratorFloatingControlStore((s) => s.setObstacleRatio);
     const setClustering = useCanvasGeneratorFloatingControlStore((s) => s.setClustering);
     const setSeed = useCanvasGeneratorFloatingControlStore((s) => s.setSeed);
@@ -131,7 +131,7 @@ export default function CanvasGeneratorFloatingControl() {
     } = useMemo(() => validateCanvasGeneratorInputs({
         width,
         height,
-        minPassageWidth,
+        cellSize,
         obstacleRatio,
         clustering,
         hasObsLeftField,
@@ -139,7 +139,7 @@ export default function CanvasGeneratorFloatingControl() {
     }), [
         width,
         height,
-        minPassageWidth,
+        cellSize,
         obstacleRatio,
         clustering,
         hasObsLeftField,
@@ -156,7 +156,7 @@ export default function CanvasGeneratorFloatingControl() {
                 values: {
                     width: "1000",
                     height: "1000",
-                    minPassageWidth: "30",
+                    cellSize: "30",
                     obstacleRatio: "",
                     clustering: "",
                     seed: "",
@@ -171,7 +171,7 @@ export default function CanvasGeneratorFloatingControl() {
             setControlPosition(saved.position);
             setWidth(saved.values.width);
             setHeight(saved.values.height);
-            setMinPassageWidth(saved.values.minPassageWidth);
+            setCellSize(saved.values.cellSize);
             setObstacleRatio(saved.values.obstacleRatio);
             setClustering(saved.values.clustering);
             setSeed(saved.values.seed);
@@ -195,7 +195,7 @@ export default function CanvasGeneratorFloatingControl() {
                 values: {
                     width,
                     height,
-                    minPassageWidth,
+                    cellSize,
                     obstacleRatio,
                     clustering,
                     seed,
@@ -211,7 +211,7 @@ export default function CanvasGeneratorFloatingControl() {
         controlPosition,
         width,
         height,
-        minPassageWidth,
+        cellSize,
         obstacleRatio,
         clustering,
         seed,
@@ -233,14 +233,14 @@ export default function CanvasGeneratorFloatingControl() {
 
         const w = parseFloat(width);
         const h = parseFloat(height);
-        const mpw = parseFloat(minPassageWidth);
+        const cs = parseFloat(cellSize);
         const obRatio = parseRangeFieldValue(obstacleRatio);
         const clusteringVal = parseRangeFieldValue(clustering);
 
         const snapshot = [...objects];
         snapshot.forEach((o) => deleteObject(o));
 
-        const env = generateEnvironment({ width: w, height: h, minPassageWidth: mpw, obstacleRatio: obRatio, clustering: clusteringVal, seed });
+        const env = generateEnvironment({ width: w, height: h, cellSize: cs, obstacleRatio: obRatio, clustering: clusteringVal, seed });
 
         // Update auto-hints so placeholders reflect the values actually used
         if (obRatio === undefined) setAutoObstacleRatioHint(env.usedObstacleRatioPct);
@@ -333,8 +333,8 @@ export default function CanvasGeneratorFloatingControl() {
                 <div className="relative flex-1 min-w-0">
                     <input
                         type="number"
-                        value={minPassageWidth}
-                        onChange={(e) => setMinPassageWidth(e.target.value)}
+                        value={cellSize}
+                        onChange={(e) => setCellSize(e.target.value)}
                         step={1}
                         min={0}
                         placeholder=""

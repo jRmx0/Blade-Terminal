@@ -95,7 +95,7 @@ export function validateRangeField(
 export interface CanvasGeneratorInputValidationParams {
     width: string;
     height: string;
-    minPassageWidth: string;
+    cellSize: string;
     obstacleRatio: string;
     clustering: string;
     hasObsLeftField: boolean;
@@ -123,7 +123,7 @@ export function validateCanvasGeneratorInputs(
     const {
         width,
         height,
-        minPassageWidth,
+        cellSize,
         obstacleRatio,
         clustering,
         hasObsLeftField,
@@ -132,7 +132,7 @@ export function validateCanvasGeneratorInputs(
 
     const w = parseFloat(width);
     const h = parseFloat(height);
-    const cs = parseFloat(minPassageWidth);
+    const cs = parseFloat(cellSize);
 
     const isRequiredFieldsValid = isFinite(w) && w > 0 && isFinite(h) && h > 0 && isFinite(cs) && cs > 0;
     const cellSizeFitError = validateCellSizeFit(w, h, cs);

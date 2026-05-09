@@ -23,7 +23,7 @@ describe("generateEnvironment - obstacle ratio calibration", () => {
             const env = generateEnvironment({
                 width,
                 height,
-                minPassageWidth: cellSize,
+                cellSize,
                 obstacleRatio,
                 clustering,
                 seed,
