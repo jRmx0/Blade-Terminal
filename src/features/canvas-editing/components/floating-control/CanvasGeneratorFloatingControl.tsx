@@ -14,9 +14,8 @@ import {
     generateEnvironment,
     computeResolvedObstacleRatioPct,
     computeResolvedClusteringPct,
-    validateCellSizeFit,
-    validateRangeField,
 } from "@/features/canvas-editing/utils/canvasGenerator";
+import { validateCanvasGeneratorInputs } from "@/features/canvas-editing/utils/canvasGeneratorInputValidation";
 import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useEnvStore } from "@/stores/envStore";
@@ -122,44 +121,30 @@ export default function CanvasGeneratorFloatingControl() {
         ? (lastPickedClustValue !== null ? String(lastPickedClustValue) : clustHintStr)
         : undefined;
 
-    // Check if width, height, and cell size are specified and valid
-    const isRequiredFieldsValid = useMemo(() => {
-        const w = parseFloat(width);
-        const h = parseFloat(height);
-        const cs = parseFloat(minPassageWidth);
-        return isFinite(w) && w > 0 && isFinite(h) && h > 0 && isFinite(cs) && cs > 0;
-    }, [width, height, minPassageWidth]);
-
-    // Cell size fit validation: runs whenever width, height, or cell size changes
-    const cellSizeFitError = useMemo(() => {
-        const w = parseFloat(width);
-        const h = parseFloat(height);
-        const cs = parseFloat(minPassageWidth);
-        return validateCellSizeFit(w, h, cs);
-    }, [width, height, minPassageWidth]);
-
-    function shouldHideIncompleteError(raw: string, hasLeftField: boolean): boolean {
-        const trimmed = raw.trim();
-        if (trimmed === "") return false;
-        return !hasLeftField && (trimmed.endsWith(".") || trimmed.endsWith(".."));
-    }
-
-    // Obstacle ratio field validation (incomplete format errors appear after leaving field)
-    const obstacleRatioError = useMemo(() => {
-        const err = validateRangeField(obstacleRatio, "Obstacle ratio", 0, 100);
-        if (err === null) return null;
-        return shouldHideIncompleteError(obstacleRatio, hasObsLeftField) ? null : err;
-    }, [obstacleRatio, hasObsLeftField]);
-
-    // Clustering field validation (incomplete format errors appear after leaving field)
-    const clusteringError = useMemo(() => {
-        const err = validateRangeField(clustering, "Clustering", 0, 100);
-        if (err === null) return null;
-        return shouldHideIncompleteError(clustering, hasClustLeftField) ? null : err;
-    }, [clustering, hasClustLeftField]);
-
-    // Combined error check for range fields
-    const hasAnyRangeFieldError = obstacleRatioError !== null || clusteringError !== null;
+    const {
+        isRequiredFieldsValid,
+        cellSizeFitError,
+        obstacleRatioError,
+        clusteringError,
+        hasAnyRangeFieldError,
+        canGenerate,
+    } = useMemo(() => validateCanvasGeneratorInputs({
+        width,
+        height,
+        minPassageWidth,
+        obstacleRatio,
+        clustering,
+        hasObsLeftField,
+        hasClustLeftField,
+    }), [
+        width,
+        height,
+        minPassageWidth,
+        obstacleRatio,
+        clustering,
+        hasObsLeftField,
+        hasClustLeftField,
+    ]);
 
     useEffect(() => {
         let isCancelled = false;
@@ -401,12 +386,12 @@ export default function CanvasGeneratorFloatingControl() {
             <FloatingControlButton
                 label="Generate"
                 onClick={handleGenerate}
-                disabled={!isRequiredFieldsValid || cellSizeFitError !== null || hasAnyRangeFieldError}
+                disabled={!canGenerate}
             />
             <FloatingControlMainButton
                 label="Generate and Run"
                 onClick={handleGenerateAndRun}
-                disabled={isComputeBusy || !isRequiredFieldsValid || cellSizeFitError !== null || hasAnyRangeFieldError}
+                disabled={isComputeBusy || !canGenerate}
             />
         </FloatingControl>
     );
