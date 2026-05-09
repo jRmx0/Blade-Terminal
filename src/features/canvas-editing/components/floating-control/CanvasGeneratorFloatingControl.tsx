@@ -10,7 +10,7 @@ import {
 } from "@/components/floating-control";
 import { useCanvasGeneratorFloatingControlStore } from "@/features/canvas-editing/stores/canvasGeneratorFloatingControlStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
-import { generateEnvironment, computeResolvedObstacleRatioPct, computeResolvedClusteringPct } from "@/features/canvas-editing/utils/canvasGenerator";
+import { generateEnvironment, computeResolvedObstacleRatioPct, computeResolvedClusteringPct, validateCellSizeFit } from "@/features/canvas-editing/utils/canvasGenerator";
 import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useEnvStore } from "@/stores/envStore";
@@ -65,7 +65,7 @@ export default function CanvasGeneratorFloatingControl() {
     const uomLabel = unitLabel(uom);
     const widthLabel = uomLabel ? `Width (${uomLabel})` : "Width";
     const heightLabel = uomLabel ? `Height (${uomLabel})` : "Height";
-    const minPassageWidthLabel = uomLabel ? `Min. passage width (${uomLabel})` : "Min. passage width";
+    const cellSizeLabel = uomLabel ? `Cell size (${uomLabel})` : "Cell size";
 
     // Seed-derived previews; recomputed when seed or field value changes
     const seedDerivedObsRatio = useMemo(() => {
@@ -94,6 +94,14 @@ export default function CanvasGeneratorFloatingControl() {
         : autoClusteringHint !== null ? String(autoClusteringHint) : "auto";
     const clustPlaceholder = clustIsAuto ? clustHintStr : undefined;
     const clustPreview = !clustIsAuto && seedDerivedClust !== null ? `~${seedDerivedClust}` : undefined;
+
+    // Cell size fit validation: runs whenever width, height, or cell size changes
+    const cellSizeFitError = useMemo(() => {
+        const w = parseFloat(width);
+        const h = parseFloat(height);
+        const cs = parseFloat(minPassageWidth);
+        return validateCellSizeFit(w, h, cs);
+    }, [width, height, minPassageWidth]);
 
     useEffect(() => {
         let isCancelled = false;
@@ -180,6 +188,7 @@ export default function CanvasGeneratorFloatingControl() {
         const h = parseFloat(height);
         const mpw = parseFloat(minPassageWidth);
         if (!isFinite(w) || w <= 0 || !isFinite(h) || h <= 0 || !isFinite(mpw) || mpw <= 0) return;
+        if (cellSizeFitError !== null) return;
 
         const obRatio = parseRangeFieldValue(obstacleRatio);
         const clusteringVal = parseRangeFieldValue(clustering);
@@ -202,6 +211,7 @@ export default function CanvasGeneratorFloatingControl() {
     }
 
     function handleGenerateAndRun() {
+        if (cellSizeFitError !== null) return;
         handleGenerate();
         executeComputeRequest().then((result) => {
             if (!result.ok) {
@@ -235,14 +245,21 @@ export default function CanvasGeneratorFloatingControl() {
                 min={0}
                 step={1}
             />
-            <FloatingControlNumberField
-                label={minPassageWidthLabel}
-                value={minPassageWidth}
-                onChange={setMinPassageWidth}
-                type="decimal"
-                min={0}
-                step={1}
-            />
+            <div>
+                <FloatingControlNumberField
+                    label={cellSizeLabel}
+                    value={minPassageWidth}
+                    onChange={setMinPassageWidth}
+                    type="decimal"
+                    min={0}
+                    step={1}
+                />
+                {cellSizeFitError && (
+                    <div className="mx-3 mt-1 text-xs text-red-600 whitespace-normal">
+                        {cellSizeFitError}
+                    </div>
+                )}
+            </div>
             <FloatingControlRangeField
                 label="Obstacle ratio (%)"
                 value={obstacleRatio}
@@ -275,11 +292,12 @@ export default function CanvasGeneratorFloatingControl() {
             <FloatingControlButton
                 label="Generate"
                 onClick={handleGenerate}
+                disabled={cellSizeFitError !== null}
             />
             <FloatingControlMainButton
                 label="Generate and Run"
                 onClick={handleGenerateAndRun}
-                disabled={isComputeBusy}
+                disabled={isComputeBusy || cellSizeFitError !== null}
             />
         </FloatingControl>
     );

@@ -34,6 +34,47 @@ export interface GeneratedEnvironment {
 }
 
 // ---------------------------------------------------------------------------
+// Cell size validation
+// ---------------------------------------------------------------------------
+
+const CELL_FIT_TOLERANCE = 1e-9;
+
+/**
+ * Validates that width and height fit perfectly into cell-size tiles with at least 2×2 grid.
+ *
+ * Returns an error message if invalid (divisibility or grid size fails), or null if valid.
+ * If width or height are not finite/positive, returns null (validation skipped until both are present).
+ */
+export function validateCellSizeFit(
+    width: number,
+    height: number,
+    cellSize: number,
+): string | null {
+    // Skip validation if dimensions not yet present
+    if (!isFinite(width) || width <= 0 || !isFinite(height) || height <= 0) return null;
+    if (!isFinite(cellSize) || cellSize <= 0) return null;
+
+    const colsExact = width / cellSize;
+    const rowsExact = height / cellSize;
+    const cols = Math.round(colsExact);
+    const rows = Math.round(rowsExact);
+
+    // Check divisibility: allow small floating-point error
+    const colsRemainder = Math.abs(colsExact - cols);
+    const rowsRemainder = Math.abs(rowsExact - rows);
+    if (colsRemainder > CELL_FIT_TOLERANCE || rowsRemainder > CELL_FIT_TOLERANCE) {
+        return `Cell size must divide Width and Height evenly (got ${cols}×${rows} + remainder).`;
+    }
+
+    // Check minimum grid size (2×2)
+    if (cols < 2 || rows < 2) {
+        return `Cell size too large: need at least 2×2 grid (got ${cols}×${rows}).`;
+    }
+
+    return null;
+}
+
+// ---------------------------------------------------------------------------
 // Seeded PRNG — mulberry32
 // ---------------------------------------------------------------------------
 
