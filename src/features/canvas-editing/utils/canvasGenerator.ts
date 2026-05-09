@@ -28,6 +28,13 @@ export interface GeneratedEnvironment {
      * Reflects the explicitly supplied value or the auto-derived random value when
      * `obstacleRatio` was omitted from GeneratorParams. */
     usedObstacleRatioPct: number;
+    /** The value randomly picked from the range when `obstacleRatio` was supplied as [lo, hi],
+     * or `null` when an explicit number (or auto) was used. Use this for displaying which
+     * value was selected from the user's range — not the calibrated final ratio. */
+    pickedObstacleRatioPct: number | null;
+    /** The value randomly picked from the range when `clustering` was supplied as [lo, hi],
+     * or `null` when an explicit number (or auto) was used. */
+    pickedClusteringPct: number | null;
     /** The resolved 32-bit seed expressed as a hex literal (e.g. `0x8A3F1C2D`).
      * Paste this back into the seed field to reproduce the exact same environment. */
     usedSeedHex: string;
@@ -69,6 +76,63 @@ export function validateCellSizeFit(
     // Check minimum grid size (2×2)
     if (cols < 2 || rows < 2) {
         return `Cell size too large: need at least 2×2 grid (got ${cols}×${rows}).`;
+    }
+
+    return null;
+}
+
+/**
+ * Validates a range field value (e.g., obstacle ratio, clustering).
+ * Accepts: empty string (auto), single integer N, or range N..M where both are in [min, max].
+ *
+ * Returns an error message if invalid format/range, or null if valid or empty.
+ * Empty fields (which trigger auto-derivation) never produce errors.
+ */
+export function validateRangeField(
+    raw: string,
+    fieldName: string,
+    min: number = 0,
+    max: number = 100,
+): string | null {
+    const trimmed = raw.trim();
+
+    // Empty is always valid (auto-derive from seed)
+    if (!trimmed) return null;
+
+    // Try range syntax: N..M
+    const rangeMatch = trimmed.match(/^(-?\d+)\.\.(-?\d+)$/);
+    if (rangeMatch) {
+        const a = parseInt(rangeMatch[1]!, 10);
+        const b = parseInt(rangeMatch[2]!, 10);
+        if (!isFinite(a) || !isFinite(b)) {
+            return `${fieldName}: invalid range format.`;
+        }
+        if (a < min || a > max) {
+            return `${fieldName}: first value must be between ${min} and ${max} (got ${a}).`;
+        }
+        if (b < min || b > max) {
+            return `${fieldName}: second value must be between ${min} and ${max} (got ${b}).`;
+        }
+        return null;
+    }
+
+    // Reject incomplete range syntax (ends with . or ..)
+    if (trimmed.endsWith(".") || trimmed.endsWith("..")) {
+        return `${fieldName}: incomplete range. Use format "N..M" for ranges.`;
+    }
+
+    // Reject multiple dots
+    if ((trimmed.match(/\./g) || []).length > 1) {
+        return `${fieldName}: invalid format. Use single value or "N..M" range.`;
+    }
+
+    // Try single integer (strict: reject decimals and mixed text like "50x")
+    if (!/^-?\d+$/.test(trimmed)) {
+        return `${fieldName}: must be a whole number or range (e.g., "50" or "30..70").`;
+    }
+    const n = parseInt(trimmed, 10);
+    if (n < min || n > max) {
+        return `${fieldName}: must be between ${min} and ${max} (got ${n}).`;
     }
 
     return null;
@@ -390,6 +454,22 @@ function findBestPoint(
 const AUTO_RATIO_MIN = 5;
 const AUTO_RATIO_RANGE = 55; // → [5, 60]%
 
+function pickWholeNumberInRange(draw: number, a: number, b: number): number {
+    const lo = Math.min(a, b);
+    const hi = Math.max(a, b);
+    const intLo = Math.ceil(lo);
+    const intHi = Math.floor(hi);
+
+    // Typical path (integer-capable interval): uniform inclusive integer pick.
+    if (intLo <= intHi) {
+        const span = intHi - intLo + 1;
+        return intLo + Math.floor(draw * span);
+    }
+
+    // Degenerate decimal interval with no integer points: pick nearest integer deterministically.
+    return Math.round(lo + draw * (hi - lo));
+}
+
 /**
  * Returns the obstacle ratio percentage that will be used for a given seed.
  *
@@ -399,15 +479,21 @@ const AUTO_RATIO_RANGE = 55; // → [5, 60]%
  * Returns `null` when `seed` is blank (value would change on every call because
  * seedNum falls back to Date.now()).
  */
+/**
+ * Returns the obstacle ratio percentage that will be used for a given seed.
+ *
+ * When `range` is provided, the return value is the deterministic pick from that
+ * range. When omitted, the full auto range [5, 60]% is used.
+ *
+ * Returns `null` when `seed` is blank (preview would be non-deterministic).
+ */
 export function computeResolvedObstacleRatioPct(seed: string, range?: [number, number]): number | null {
     if (!seed.trim()) return null;
     const draw = mulberry32(hashSeed(seed.trim()) ^ 0x9e3779b9)();
     if (range !== undefined) {
-        const lo = Math.min(range[0], range[1]);
-        const hi = Math.max(range[0], range[1]);
-        return Math.round(lo + draw * (hi - lo));
+        return pickWholeNumberInRange(draw, range[0], range[1]);
     }
-    return Math.round(AUTO_RATIO_MIN + draw * AUTO_RATIO_RANGE);
+    return pickWholeNumberInRange(draw, AUTO_RATIO_MIN, AUTO_RATIO_MIN + AUTO_RATIO_RANGE);
 }
 
 /**
@@ -416,18 +502,15 @@ export function computeResolvedObstacleRatioPct(seed: string, range?: [number, n
  * When `range` is provided the return value is the deterministic pick from that
  * range. When omitted the full auto range [0, 100]% is used.
  *
- * Returns `null` when `seed` is blank (the value would change on every call
- * because seedNum falls back to Date.now()).
+ * Returns `null` when `seed` is blank (preview would be non-deterministic).
  */
 export function computeResolvedClusteringPct(seed: string, range?: [number, number]): number | null {
     if (!seed.trim()) return null;
     const draw = mulberry32(hashSeed(seed.trim()))();
     if (range !== undefined) {
-        const lo = Math.min(range[0], range[1]);
-        const hi = Math.max(range[0], range[1]);
-        return Math.round(lo + draw * (hi - lo));
+        return pickWholeNumberInRange(draw, range[0], range[1]);
     }
-    return Math.round(draw * 100);
+    return pickWholeNumberInRange(draw, 0, 100);
 }
 
 /**
@@ -584,7 +667,7 @@ const MAX_GRID_CELLS = 40_000;
  */
 export function generateEnvironment({ width, height, minPassageWidth, obstacleRatio, clustering, seed }: GeneratorParams): GeneratedEnvironment {
     if (width <= 0 || height <= 0 || minPassageWidth <= 0) {
-        return { boundary: [], obstacles: [], startEndPoint: { x: 0, y: 0 }, usedClusteringPct: 0, usedObstacleRatioPct: 0, usedSeedHex: "0x00000000" };
+        return { boundary: [], obstacles: [], startEndPoint: { x: 0, y: 0 }, usedClusteringPct: 0, usedObstacleRatioPct: 0, pickedObstacleRatioPct: null, pickedClusteringPct: null, usedSeedHex: "0x00000000" };
     }
 
     // Scale up cell size if the raw grid would exceed the cell cap
@@ -605,22 +688,26 @@ export function generateEnvironment({ width, height, minPassageWidth, obstacleRa
 
     // Clustering: resolved from explicit value, range, or seed-derived random draw
     const clusterRandDraw = mulberry32(seedNum)();
-    const clusteringFrac = clustering === undefined
-        ? clusterRandDraw
+    const resolvedClusteringPct = clustering === undefined
+        ? pickWholeNumberInRange(clusterRandDraw, 0, 100)
         : Array.isArray(clustering)
-            ? Math.max(0, Math.min(1, (Math.min(clustering[0], clustering[1]) + clusterRandDraw * Math.abs(clustering[1] - clustering[0])) / 100))
-            : Math.max(0, Math.min(1, clustering / 100));
+            ? pickWholeNumberInRange(clusterRandDraw, clustering[0], clustering[1])
+            : Math.max(0, Math.min(100, clustering));
+    const pickedClusteringPct = Array.isArray(clustering) ? resolvedClusteringPct : null;
+    const clusteringFrac = Math.max(0, Math.min(1, resolvedClusteringPct / 100));
 
     const startC = Math.floor(cols / 2);
     const startR = Math.floor(rows / 2);
 
     // Obstacle ratio: resolved from explicit value, range, or seed-derived random draw
     const obsRandDraw = mulberry32(seedNum ^ 0x9e3779b9)();
-    const targetDensity = obstacleRatio === undefined
-        ? (AUTO_RATIO_MIN + obsRandDraw * AUTO_RATIO_RANGE) / 100
+    const resolvedTargetRatioPct = obstacleRatio === undefined
+        ? pickWholeNumberInRange(obsRandDraw, AUTO_RATIO_MIN, AUTO_RATIO_MIN + AUTO_RATIO_RANGE)
         : Array.isArray(obstacleRatio)
-            ? Math.max(0, Math.min(1, (Math.min(obstacleRatio[0], obstacleRatio[1]) + obsRandDraw * Math.abs(obstacleRatio[1] - obstacleRatio[0])) / 100))
-            : Math.max(0, Math.min(1, obstacleRatio / 100));
+            ? pickWholeNumberInRange(obsRandDraw, obstacleRatio[0], obstacleRatio[1])
+            : Math.max(0, Math.min(100, obstacleRatio));
+    const pickedObstacleRatioPct = Array.isArray(obstacleRatio) ? resolvedTargetRatioPct : null;
+    const targetDensity = Math.max(0, Math.min(1, resolvedTargetRatioPct / 100));
 
     // -----------------------------------------------------------------------
     // 1. Calibrate initial density to hit the target FINAL obstacle ratio.
@@ -705,5 +792,5 @@ export function generateEnvironment({ width, height, minPassageWidth, obstacleRa
     const usedObstacleRatioPct = Math.round((finalObstacleCount / (rows * cols)) * 100);
 
     const usedSeedHex = `0x${seedNum.toString(16).toUpperCase().padStart(8, "0")}`;
-    return { boundary, obstacles, startEndPoint, usedClusteringPct: Math.round(clusteringFrac * 100), usedObstacleRatioPct, usedSeedHex };
+    return { boundary, obstacles, startEndPoint, usedClusteringPct: Math.round(clusteringFrac * 100), usedObstacleRatioPct, pickedObstacleRatioPct, pickedClusteringPct, usedSeedHex };
 }

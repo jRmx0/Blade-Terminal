@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { generateEnvironment, validateCellSizeFit } from "@/features/canvas-editing/utils/canvasGenerator";
+import {
+    computeResolvedClusteringPct,
+    computeResolvedObstacleRatioPct,
+    generateEnvironment,
+    validateCellSizeFit,
+    validateRangeField,
+} from "@/features/canvas-editing/utils/canvasGenerator";
 import { mulberry32, computeActualObstacleRatioPct } from "./testUtils";
 
 describe("generateEnvironment - obstacle ratio calibration", () => {
@@ -117,4 +123,162 @@ describe("validateCellSizeFit - cell size fit validation", () => {
         expect(validateCellSizeFit(50, 50, 25)).toBeNull();
     });
 });
+
+
+describe("validateRangeField - range field validation", () => {
+    test("returns null for empty string (auto-derive)", () => {
+        expect(validateRangeField("", "Test field")).toBeNull();
+        expect(validateRangeField("  ", "Test field")).toBeNull();
+    });
+
+    test("returns null for valid single integer within range", () => {
+        expect(validateRangeField("0", "Obstacle ratio")).toBeNull();
+        expect(validateRangeField("50", "Clustering")).toBeNull();
+        expect(validateRangeField("100", "Obstacle ratio")).toBeNull();
+    });
+
+    test("returns null for valid range format N..M within bounds", () => {
+        expect(validateRangeField("30..70", "Obstacle ratio")).toBeNull();
+        expect(validateRangeField("0..100", "Clustering")).toBeNull();
+        expect(validateRangeField("10..20", "Test field")).toBeNull();
+    });
+
+    test("returns null for reversed range (min > max) — will be auto-swapped on blur", () => {
+        expect(validateRangeField("70..30", "Obstacle ratio")).toBeNull();
+        expect(validateRangeField("100..0", "Clustering")).toBeNull();
+    });
+
+    test("returns null for single value at boundaries", () => {
+        expect(validateRangeField("0", "Test")).toBeNull();
+        expect(validateRangeField("100", "Test")).toBeNull();
+    });
+
+    test("returns null for range with boundary values", () => {
+        expect(validateRangeField("0..0", "Test")).toBeNull();
+        expect(validateRangeField("100..100", "Test")).toBeNull();
+        expect(validateRangeField("0..100", "Test")).toBeNull();
+    });
+
+    test("returns error for single value below min", () => {
+        const err = validateRangeField("-1", "Obstacle ratio");
+        expect(err).toBeTruthy();
+        expect(err).toContain("between 0 and 100");
+    });
+
+    test("returns error for single value above max", () => {
+        const err = validateRangeField("101", "Clustering");
+        expect(err).toBeTruthy();
+        expect(err).toContain("between 0 and 100");
+    });
+
+    test("returns error for range with value below min", () => {
+        const err = validateRangeField("-5..50", "Obstacle ratio");
+        expect(err).toBeTruthy();
+        expect(err).toContain("first value");
+    });
+
+    test("returns error for range with value above max", () => {
+        const err = validateRangeField("50..150", "Clustering");
+        expect(err).toBeTruthy();
+        expect(err).toContain("second value");
+    });
+
+    test("returns error for incomplete range ending with dot", () => {
+        const err = validateRangeField("30.", "Test field");
+        expect(err).toBeTruthy();
+        expect(err).toContain("incomplete");
+    });
+
+    test("returns error for incomplete range ending with dots", () => {
+        const err = validateRangeField("30..", "Test field");
+        expect(err).toBeTruthy();
+        expect(err).toContain("incomplete");
+    });
+
+    test("returns error for leading dots without value", () => {
+        const err = validateRangeField("..50", "Test field");
+        expect(err).toBeTruthy();
+    });
+
+    test("returns error for multiple dot separators", () => {
+        const err = validateRangeField("30..50..70", "Obstacle ratio");
+        expect(err).toBeTruthy();
+        expect(err).toContain("invalid format");
+    });
+
+    test("returns error for decimal values", () => {
+        const err = validateRangeField("30.5", "Test field");
+        expect(err).toBeTruthy();
+        expect(err).toContain("whole number");
+    });
+
+    test("returns error for non-numeric input", () => {
+        const err = validateRangeField("abc", "Test field");
+        expect(err).toBeTruthy();
+        expect(err).toContain("whole number");
+    });
+
+    test("returns error for mixed numeric/text", () => {
+        const err = validateRangeField("50x", "Test field");
+        expect(err).toBeTruthy();
+    });
+
+    test("returns error for single dot", () => {
+        const err = validateRangeField(".", "Test field");
+        expect(err).toBeTruthy();
+    });
+
+    test("returns error for double dots only", () => {
+        const err = validateRangeField("..", "Test field");
+        expect(err).toBeTruthy();
+    });
+
+    test("includes field name in error messages", () => {
+        const err1 = validateRangeField("150", "Obstacle ratio");
+        expect(err1).toContain("Obstacle ratio");
+        const err2 = validateRangeField("999", "Clustering");
+        expect(err2).toContain("Clustering");
+    });
+
+    test("respects custom min/max bounds", () => {
+        expect(validateRangeField("5", "Custom", 10, 20)).toBeTruthy();
+        expect(validateRangeField("15", "Custom", 10, 20)).toBeNull();
+        expect(validateRangeField("25", "Custom", 10, 20)).toBeTruthy();
+    });
+
+    test("handles whitespace in range format", () => {
+        // Trimmed spaces should not affect single value parsing
+        expect(validateRangeField("  50  ", "Test")).toBeNull();
+        // But spaces within range format break it (not a valid match)
+        const err = validateRangeField("  30 .. 70  ", "Test");
+        expect(err).toBeTruthy();
+    });
+});
+
+describe("resolved random ratios are whole numbers", () => {
+    test("auto and range obstacle ratio picks are integers", () => {
+        for (let i = 0; i < 100; i++) {
+            const seed = `seed-obs-${i}`;
+            const auto = computeResolvedObstacleRatioPct(seed);
+            const range = computeResolvedObstacleRatioPct(seed, [17, 43]);
+            expect(auto).not.toBeNull();
+            expect(range).not.toBeNull();
+            expect(Number.isInteger(auto!)).toBeTrue();
+            expect(Number.isInteger(range!)).toBeTrue();
+        }
+    });
+
+    test("auto and range clustering picks are integers", () => {
+        for (let i = 0; i < 100; i++) {
+            const seed = `seed-clust-${i}`;
+            const auto = computeResolvedClusteringPct(seed);
+            const range = computeResolvedClusteringPct(seed, [8, 72]);
+            expect(auto).not.toBeNull();
+            expect(range).not.toBeNull();
+            expect(Number.isInteger(auto!)).toBeTrue();
+            expect(Number.isInteger(range!)).toBeTrue();
+        }
+    });
+});
+
 

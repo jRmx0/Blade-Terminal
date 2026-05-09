@@ -10,7 +10,13 @@ import {
 } from "@/components/floating-control";
 import { useCanvasGeneratorFloatingControlStore } from "@/features/canvas-editing/stores/canvasGeneratorFloatingControlStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
-import { generateEnvironment, computeResolvedObstacleRatioPct, computeResolvedClusteringPct, validateCellSizeFit } from "@/features/canvas-editing/utils/canvasGenerator";
+import {
+    generateEnvironment,
+    computeResolvedObstacleRatioPct,
+    computeResolvedClusteringPct,
+    validateCellSizeFit,
+    validateRangeField,
+} from "@/features/canvas-editing/utils/canvasGenerator";
 import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useEnvStore } from "@/stores/envStore";
@@ -60,6 +66,10 @@ export default function CanvasGeneratorFloatingControl() {
     const [autoClusteringHint, setAutoClusteringHint] = useState<number | null>(null);
     const [lastSeedHex, setLastSeedHex] = useState<string | null>(null);
     const [controlPosition, setControlPosition] = useState({ x: 16, y: 16 });
+    const [hasObsLeftField, setHasObsLeftField] = useState(false);
+    const [hasClustLeftField, setHasClustLeftField] = useState(false);
+    const [lastPickedObsValue, setLastPickedObsValue] = useState<number | null>(null);
+    const [lastPickedClustValue, setLastPickedClustValue] = useState<number | null>(null);
     const isHydratedRef = useRef(false);
 
     const uomLabel = unitLabel(uom);
@@ -84,16 +94,27 @@ export default function CanvasGeneratorFloatingControl() {
     const obsHintStr = seedDerivedObsRatio !== null
         ? String(seedDerivedObsRatio)
         : autoObstacleRatioHint !== null ? String(autoObstacleRatioHint) : "auto";
-    // Blank → show auto hint as placeholder; filled range → show ~X pick preview in label
-    const obsPlaceholder = obsIsAuto ? obsHintStr : undefined;
-    const obsPreview = !obsIsAuto && seedDerivedObsRatio !== null ? `~${seedDerivedObsRatio}` : undefined;
+    // Blank → show auto hint as placeholder; after Generate, replace hint with the actual picked value
+    const obsPlaceholder = obsIsAuto
+        ? (lastPickedObsValue !== null ? String(lastPickedObsValue) : obsHintStr)
+        : undefined;
 
     const clustIsAuto = clustering === "";
     const clustHintStr = seedDerivedClust !== null
         ? String(seedDerivedClust)
         : autoClusteringHint !== null ? String(autoClusteringHint) : "auto";
-    const clustPlaceholder = clustIsAuto ? clustHintStr : undefined;
-    const clustPreview = !clustIsAuto && seedDerivedClust !== null ? `~${seedDerivedClust}` : undefined;
+    // Same: after Generate, replace hint with actual picked value when field is blank
+    const clustPlaceholder = clustIsAuto
+        ? (lastPickedClustValue !== null ? String(lastPickedClustValue) : clustHintStr)
+        : undefined;
+
+    // Check if width, height, and cell size are specified and valid
+    const isRequiredFieldsValid = useMemo(() => {
+        const w = parseFloat(width);
+        const h = parseFloat(height);
+        const cs = parseFloat(minPassageWidth);
+        return isFinite(w) && w > 0 && isFinite(h) && h > 0 && isFinite(cs) && cs > 0;
+    }, [width, height, minPassageWidth]);
 
     // Cell size fit validation: runs whenever width, height, or cell size changes
     const cellSizeFitError = useMemo(() => {
@@ -102,6 +123,29 @@ export default function CanvasGeneratorFloatingControl() {
         const cs = parseFloat(minPassageWidth);
         return validateCellSizeFit(w, h, cs);
     }, [width, height, minPassageWidth]);
+
+    function shouldHideIncompleteError(raw: string, hasLeftField: boolean): boolean {
+        const trimmed = raw.trim();
+        if (trimmed === "") return false;
+        return !hasLeftField && (trimmed.endsWith(".") || trimmed.endsWith(".."));
+    }
+
+    // Obstacle ratio field validation (incomplete format errors appear after leaving field)
+    const obstacleRatioError = useMemo(() => {
+        const err = validateRangeField(obstacleRatio, "Obstacle ratio", 0, 100);
+        if (err === null) return null;
+        return shouldHideIncompleteError(obstacleRatio, hasObsLeftField) ? null : err;
+    }, [obstacleRatio, hasObsLeftField]);
+
+    // Clustering field validation (incomplete format errors appear after leaving field)
+    const clusteringError = useMemo(() => {
+        const err = validateRangeField(clustering, "Clustering", 0, 100);
+        if (err === null) return null;
+        return shouldHideIncompleteError(clustering, hasClustLeftField) ? null : err;
+    }, [clustering, hasClustLeftField]);
+
+    // Combined error check for range fields
+    const hasAnyRangeFieldError = obstacleRatioError !== null || clusteringError !== null;
 
     useEffect(() => {
         let isCancelled = false;
@@ -184,12 +228,13 @@ export default function CanvasGeneratorFloatingControl() {
     }
 
     function handleGenerate() {
+        if (!isRequiredFieldsValid) return;
+        if (cellSizeFitError !== null) return;
+        if (hasAnyRangeFieldError) return;
+
         const w = parseFloat(width);
         const h = parseFloat(height);
         const mpw = parseFloat(minPassageWidth);
-        if (!isFinite(w) || w <= 0 || !isFinite(h) || h <= 0 || !isFinite(mpw) || mpw <= 0) return;
-        if (cellSizeFitError !== null) return;
-
         const obRatio = parseRangeFieldValue(obstacleRatio);
         const clusteringVal = parseRangeFieldValue(clustering);
 
@@ -203,6 +248,32 @@ export default function CanvasGeneratorFloatingControl() {
         if (clusteringVal === undefined) setAutoClusteringHint(env.usedClusteringPct);
         setLastSeedHex(env.usedSeedHex);
 
+        // Capture the randomly picked values for inline display.
+        // Use env.pickedObstacleRatioPct / env.pickedClusteringPct (the value actually selected
+        // from the user's range) rather than the final achieved ratio, which can diverge from the
+        // requested range due to the percolation staircase behaviour.
+        const seedWasRandomlyGenerated = !seed.trim();
+
+        if (env.pickedObstacleRatioPct !== null) {
+            // Range mode: show the value picked from the range
+            setLastPickedObsValue(env.pickedObstacleRatioPct);
+        } else if (seedWasRandomlyGenerated && obRatio === undefined) {
+            // Auto mode with random seed: show the actual achieved ratio
+            setLastPickedObsValue(env.usedObstacleRatioPct);
+        } else {
+            setLastPickedObsValue(null);
+        }
+
+        if (env.pickedClusteringPct !== null) {
+            // Range mode: show the value picked from the range
+            setLastPickedClustValue(env.pickedClusteringPct);
+        } else if (seedWasRandomlyGenerated && clusteringVal === undefined) {
+            // Auto mode with random seed: show the actual achieved ratio
+            setLastPickedClustValue(env.usedClusteringPct);
+        } else {
+            setLastPickedClustValue(null);
+        }
+
         addObject(OBJECT_CATEGORY.ZONE, env.boundary, OBJECT_TYPE.EMPTY);
         for (const obs of env.obstacles) {
             addObject(OBJECT_CATEGORY.OBSTACLE, obs, OBJECT_TYPE.EMPTY);
@@ -211,7 +282,9 @@ export default function CanvasGeneratorFloatingControl() {
     }
 
     function handleGenerateAndRun() {
+        if (!isRequiredFieldsValid) return;
         if (cellSizeFitError !== null) return;
+        if (hasAnyRangeFieldError) return;
         handleGenerate();
         executeComputeRequest().then((result) => {
             if (!result.ok) {
@@ -273,20 +346,32 @@ export default function CanvasGeneratorFloatingControl() {
             <FloatingControlRangeField
                 label="Obstacle ratio (%)"
                 value={obstacleRatio}
-                onChange={setObstacleRatio}
+                onChange={(v) => {
+                    setObstacleRatio(v);
+                    setLastPickedObsValue(null);
+                }}
+                onFocus={() => setHasObsLeftField(false)}
+                onBlur={() => setHasObsLeftField(true)}
                 min={0}
                 max={100}
                 placeholder={obsPlaceholder}
-                preview={obsPreview}
+                pickedValue={obsIsAuto ? null : lastPickedObsValue}
+                error={obstacleRatioError}
             />
             <FloatingControlRangeField
                 label="Clustering (%)"
                 value={clustering}
-                onChange={setClustering}
+                onChange={(v) => {
+                    setClustering(v);
+                    setLastPickedClustValue(null);
+                }}
+                onFocus={() => setHasClustLeftField(false)}
+                onBlur={() => setHasClustLeftField(true)}
                 min={0}
                 max={100}
                 placeholder={clustPlaceholder}
-                preview={clustPreview}
+                pickedValue={clustIsAuto ? null : lastPickedClustValue}
+                error={clusteringError}
             />
             <FloatingControlTextField
                 label="Seed"
@@ -302,12 +387,12 @@ export default function CanvasGeneratorFloatingControl() {
             <FloatingControlButton
                 label="Generate"
                 onClick={handleGenerate}
-                disabled={cellSizeFitError !== null}
+                disabled={!isRequiredFieldsValid || cellSizeFitError !== null || hasAnyRangeFieldError}
             />
             <FloatingControlMainButton
                 label="Generate and Run"
                 onClick={handleGenerateAndRun}
-                disabled={isComputeBusy || cellSizeFitError !== null}
+                disabled={isComputeBusy || !isRequiredFieldsValid || cellSizeFitError !== null || hasAnyRangeFieldError}
             />
         </FloatingControl>
     );
