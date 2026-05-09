@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import {
     FloatingControl,
     FloatingControlNumberField,
@@ -44,7 +44,35 @@ interface CanvasGeneratorFloatingControlPrefs {
 
 export default function CanvasGeneratorFloatingControl() {
     const isOpen = useCanvasGeneratorFloatingControlStore((s) => s.isOpen);
+    const width = useCanvasGeneratorFloatingControlStore((s) => s.width);
+    const height = useCanvasGeneratorFloatingControlStore((s) => s.height);
+    const minPassageWidth = useCanvasGeneratorFloatingControlStore((s) => s.minPassageWidth);
+    const obstacleRatio = useCanvasGeneratorFloatingControlStore((s) => s.obstacleRatio);
+    const clustering = useCanvasGeneratorFloatingControlStore((s) => s.clustering);
+    const seed = useCanvasGeneratorFloatingControlStore((s) => s.seed);
+    const autoObstacleRatioHint = useCanvasGeneratorFloatingControlStore((s) => s.autoObstacleRatioHint);
+    const autoClusteringHint = useCanvasGeneratorFloatingControlStore((s) => s.autoClusteringHint);
+    const lastSeedHex = useCanvasGeneratorFloatingControlStore((s) => s.lastSeedHex);
+    const controlPosition = useCanvasGeneratorFloatingControlStore((s) => s.controlPosition);
+    const hasObsLeftField = useCanvasGeneratorFloatingControlStore((s) => s.hasObsLeftField);
+    const hasClustLeftField = useCanvasGeneratorFloatingControlStore((s) => s.hasClustLeftField);
+    const lastPickedObsValue = useCanvasGeneratorFloatingControlStore((s) => s.lastPickedObsValue);
+    const lastPickedClustValue = useCanvasGeneratorFloatingControlStore((s) => s.lastPickedClustValue);
     const setOpen = useCanvasGeneratorFloatingControlStore((s) => s.setOpen);
+    const setWidth = useCanvasGeneratorFloatingControlStore((s) => s.setWidth);
+    const setHeight = useCanvasGeneratorFloatingControlStore((s) => s.setHeight);
+    const setMinPassageWidth = useCanvasGeneratorFloatingControlStore((s) => s.setMinPassageWidth);
+    const setObstacleRatio = useCanvasGeneratorFloatingControlStore((s) => s.setObstacleRatio);
+    const setClustering = useCanvasGeneratorFloatingControlStore((s) => s.setClustering);
+    const setSeed = useCanvasGeneratorFloatingControlStore((s) => s.setSeed);
+    const setAutoObstacleRatioHint = useCanvasGeneratorFloatingControlStore((s) => s.setAutoObstacleRatioHint);
+    const setAutoClusteringHint = useCanvasGeneratorFloatingControlStore((s) => s.setAutoClusteringHint);
+    const setLastSeedHex = useCanvasGeneratorFloatingControlStore((s) => s.setLastSeedHex);
+    const setControlPosition = useCanvasGeneratorFloatingControlStore((s) => s.setControlPosition);
+    const setHasObsLeftField = useCanvasGeneratorFloatingControlStore((s) => s.setHasObsLeftField);
+    const setHasClustLeftField = useCanvasGeneratorFloatingControlStore((s) => s.setHasClustLeftField);
+    const setLastPickedObsValue = useCanvasGeneratorFloatingControlStore((s) => s.setLastPickedObsValue);
+    const setLastPickedClustValue = useCanvasGeneratorFloatingControlStore((s) => s.setLastPickedClustValue);
 
     const objects = useCanvasObjectStore((s) => s.objects);
     const deleteObject = useCanvasObjectStore((s) => s.deleteObject);
@@ -56,20 +84,6 @@ export default function CanvasGeneratorFloatingControl() {
     const computeStatus = useComputeResultStore((s) => s.status);
     const isComputeBusy = computeStatus === "submitting" || computeStatus === "polling";
 
-    const [width, setWidth] = useState("1000");
-    const [height, setHeight] = useState("1000");
-    const [minPassageWidth, setMinPassageWidth] = useState("30");
-    const [obstacleRatio, setObstacleRatio] = useState("");
-    const [clustering, setClustering] = useState("");
-    const [seed, setSeed] = useState("");
-    const [autoObstacleRatioHint, setAutoObstacleRatioHint] = useState<number | null>(null);
-    const [autoClusteringHint, setAutoClusteringHint] = useState<number | null>(null);
-    const [lastSeedHex, setLastSeedHex] = useState<string | null>(null);
-    const [controlPosition, setControlPosition] = useState({ x: 16, y: 16 });
-    const [hasObsLeftField, setHasObsLeftField] = useState(false);
-    const [hasClustLeftField, setHasClustLeftField] = useState(false);
-    const [lastPickedObsValue, setLastPickedObsValue] = useState<number | null>(null);
-    const [lastPickedClustValue, setLastPickedClustValue] = useState<number | null>(null);
     const isHydratedRef = useRef(false);
 
     const uomLabel = unitLabel(uom);
