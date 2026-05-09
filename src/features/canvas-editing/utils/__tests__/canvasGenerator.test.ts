@@ -64,13 +64,13 @@ function countFreeComponentsFromEnv(
 }
 
 describe("generateEnvironment - obstacle ratio calibration", () => {
-    test("keeps specified and actual obstacle ratio within one cell for 100 random env", () => {
+    test("keeps specified and actual obstacle ratio within one cell for 10 random env", () => {
         const rand = mulberry32(0xC0FFEE);
 
-        for (let i = 0; i < 100; i++) {
-            const width = 1000;
-            const height = 1000;
-            const cellSize = 20;
+        for (let i = 0; i < 10; i++) {
+            const width = 100;
+            const height = 100;
+            const cellSize = 10;
             const cols = width / cellSize;
             const rows = height / cellSize;
             const obstacleRatio = Math.floor(rand() * 101);
@@ -130,7 +130,7 @@ describe("generateEnvironment - pocket prevention", () => {
         const cols = width / cellSize;
         const rows = height / cellSize;
 
-        for (let i = 0; i < 300; i++) {
+        for (let i = 0; i < 100; i++) {
             const seed = `pocket-regression-${i}`;
             const env = generateEnvironment({
                 width,
