@@ -17,7 +17,7 @@ describe("generateEnvironment - obstacle ratio calibration", () => {
             const cols = width / cellSize;
             const rows = height / cellSize;
             const obstacleRatio = Math.floor(rand() * 101);
-            const clustering = Math.floor(rand() * 101);
+            const clusteringRatio = Math.floor(rand() * 101);
             const seed = "";
 
             const env = generateEnvironment({
@@ -25,7 +25,7 @@ describe("generateEnvironment - obstacle ratio calibration", () => {
                 height,
                 cellSize,
                 obstacleRatio,
-                clustering,
+                clusteringRatio,
                 seed,
             });
 

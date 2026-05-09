@@ -97,7 +97,7 @@ export interface CanvasGeneratorInputValidationParams {
     height: string;
     cellSize: string;
     obstacleRatio: string;
-    clustering: string;
+    clusteringRatio: string;
     hasObsLeftField: boolean;
     hasClustLeftField: boolean;
 }
@@ -125,7 +125,7 @@ export function validateCanvasGeneratorInputs(
         height,
         cellSize,
         obstacleRatio,
-        clustering,
+        clusteringRatio,
         hasObsLeftField,
         hasClustLeftField,
     } = params;
@@ -142,8 +142,8 @@ export function validateCanvasGeneratorInputs(
         ? null
         : obstacleErr;
 
-    const clusteringErr = validateRangeField(clustering, "Clustering", 0, 100);
-    const clusteringError = clusteringErr !== null && shouldHideIncompleteError(clustering, hasClustLeftField)
+    const clusteringErr = validateRangeField(clusteringRatio, "Clustering", 0, 100);
+    const clusteringError = clusteringErr !== null && shouldHideIncompleteError(clusteringRatio, hasClustLeftField)
         ? null
         : clusteringErr;
 
