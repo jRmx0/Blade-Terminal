@@ -24,22 +24,9 @@ import { unitLabel } from "@/utils/unitOfMeasure";
 import { getUiPreference, setUiPreference } from "@server/db/uiPreferences";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { executeComputeRequest } from "@/features/coverage-planning/data/computeService";
+import type { CanvasGeneratorFloatingControlPrefs } from "@/features/canvas-editing/types/canvasGeneratorPrefs";
 
 const UI_PREF_KEY = "floatingControl.canvas-generator";
-
-interface CanvasGeneratorFloatingControlPrefs {
-    isOpen: boolean;
-    position: { x: number; y: number };
-    values: {
-        width: string;
-        height: string;
-        cellSize: string;
-        obstacleRatio: string;
-        clusteringRatio: string;
-        seed: string;
-        lastSeedHex: string | null;
-    };
-}
 
 export default function CanvasGeneratorFloatingControl() {
     const isOpen = useCanvasGeneratorFloatingControlStore((s) => s.isOpen);
