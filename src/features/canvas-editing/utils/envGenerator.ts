@@ -188,19 +188,17 @@ function getAvailableCellsForNonClustering(grid: Uint8Array, cols: number, rows:
     return out;
 }
 
-function wouldCreatePocket(grid: Uint8Array, candidate: Cell, cols: number, rows: number): boolean {
-    const candidateIdx = toIndex(candidate.x, candidate.y, cols);
+function countFreeComponents(grid: Uint8Array, cols: number, rows: number, blockedIdx: number | null): number {
     const visited = new Uint8Array(cols * rows);
-    visited[candidateIdx] = 1;
-
     const queue: number[] = [];
+    let components = 0;
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
             const idx = toIndex(x, y, cols);
-            if (idx === candidateIdx || grid[idx] === 1 || visited[idx] === 1) continue;
+            if (idx === blockedIdx || grid[idx] === 1 || visited[idx] === 1) continue;
 
-            let touchesZoneEdge = false;
+            components += 1;
             visited[idx] = 1;
             queue.length = 0;
             queue.push(idx);
@@ -210,24 +208,27 @@ function wouldCreatePocket(grid: Uint8Array, candidate: Cell, cols: number, rows
                 const cx = cur % cols;
                 const cy = Math.floor(cur / cols);
 
-                if (isOnEdge(cx, cy, cols, rows)) touchesZoneEdge = true;
-
                 for (const [dx, dy] of ORTHO_DIRS) {
                     const nx = cx + dx;
                     const ny = cy + dy;
                     if (!isInBounds(nx, ny, cols, rows)) continue;
                     const nIdx = toIndex(nx, ny, cols);
-                    if (nIdx === candidateIdx || grid[nIdx] === 1 || visited[nIdx] === 1) continue;
+                    if (nIdx === blockedIdx || grid[nIdx] === 1 || visited[nIdx] === 1) continue;
                     visited[nIdx] = 1;
                     queue.push(nIdx);
                 }
             }
-
-            if (!touchesZoneEdge) return true;
         }
     }
 
-    return false;
+    return components;
+}
+
+function wouldCreatePocket(grid: Uint8Array, candidate: Cell, cols: number, rows: number): boolean {
+    const candidateIdx = toIndex(candidate.x, candidate.y, cols);
+    const componentsBefore = countFreeComponents(grid, cols, rows, null);
+    const componentsAfter = countFreeComponents(grid, cols, rows, candidateIdx);
+    return componentsAfter > componentsBefore;
 }
 
 function getAvailableCellsForClustering(grid: Uint8Array, cols: number, rows: number): Cell[] {
