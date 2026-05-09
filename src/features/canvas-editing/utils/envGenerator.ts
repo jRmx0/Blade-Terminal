@@ -62,6 +62,55 @@ function hashSeed(s: string): number {
 
 type Cell = { x: number; y: number };
 
+class CandidatePool {
+    private values: number[] = [];
+    private positionByIdx: Int32Array;
+
+    constructor(size: number) {
+        this.positionByIdx = new Int32Array(size);
+        this.positionByIdx.fill(-1);
+    }
+
+    size(): number {
+        return this.values.length;
+    }
+
+    has(idx: number): boolean {
+        return this.positionByIdx[idx] !== -1;
+    }
+
+    add(idx: number): void {
+        if (this.positionByIdx[idx] !== -1) return;
+        this.positionByIdx[idx] = this.values.length;
+        this.values.push(idx);
+    }
+
+    remove(idx: number): void {
+        const pos = this.positionByIdx[idx] as number;
+        if (pos === -1) return;
+        const lastPos = this.values.length - 1;
+        const lastIdx = this.values[lastPos] as number;
+
+        this.values[pos] = lastIdx;
+        this.positionByIdx[lastIdx] = pos;
+
+        this.values.pop();
+        this.positionByIdx[idx] = -1;
+    }
+
+    getAt(pos: number): number {
+        return this.values[pos] as number;
+    }
+
+    upsert(idx: number, shouldContain: boolean): void {
+        if (shouldContain) {
+            this.add(idx);
+            return;
+        }
+        this.remove(idx);
+    }
+}
+
 const ORTHO_DIRS: ReadonlyArray<readonly [number, number]> = [
     [1, 0],
     [-1, 0],
@@ -199,6 +248,110 @@ function getAvailableCellsForNonClustering(grid: Uint8Array, cols: number, rows:
         }
     }
     return out;
+}
+
+function isNonClusteringCandidate(grid: Uint8Array, idx: number, cols: number, rows: number): boolean {
+    if (grid[idx] === 1) return false;
+    const x = idx % cols;
+    const y = Math.floor(idx / cols);
+    return !hasObstacleNeighbor8(grid, x, y, cols, rows);
+}
+
+function isClusteringLocalCandidate(grid: Uint8Array, idx: number, cols: number, rows: number): boolean {
+    if (grid[idx] === 1) return false;
+    const x = idx % cols;
+    const y = Math.floor(idx / cols);
+    if (!hasObstacleNeighbor4(grid, x, y, cols, rows)) return false;
+    return diagonalNeighborHasOrthogonalBridge(grid, x, y, cols, rows);
+}
+
+function initializeCandidatePools(
+    grid: Uint8Array,
+    cols: number,
+    rows: number,
+    nonClusteringPool: CandidatePool,
+    clusteringPool: CandidatePool,
+): void {
+    const total = cols * rows;
+    for (let idx = 0; idx < total; idx++) {
+        nonClusteringPool.upsert(idx, isNonClusteringCandidate(grid, idx, cols, rows));
+        clusteringPool.upsert(idx, isClusteringLocalCandidate(grid, idx, cols, rows));
+    }
+}
+
+function updateCandidatePoolsAroundCell(
+    grid: Uint8Array,
+    cols: number,
+    rows: number,
+    cellX: number,
+    cellY: number,
+    nonClusteringPool: CandidatePool,
+    clusteringPool: CandidatePool,
+): void {
+    const minX = Math.max(0, cellX - 1);
+    const maxX = Math.min(cols - 1, cellX + 1);
+    const minY = Math.max(0, cellY - 1);
+    const maxY = Math.min(rows - 1, cellY + 1);
+
+    for (let y = minY; y <= maxY; y++) {
+        for (let x = minX; x <= maxX; x++) {
+            const idx = toIndex(x, y, cols);
+            nonClusteringPool.upsert(idx, isNonClusteringCandidate(grid, idx, cols, rows));
+            clusteringPool.upsert(idx, isClusteringLocalCandidate(grid, idx, cols, rows));
+        }
+    }
+}
+
+function pickFromNonClusteringPool(
+    pool: CandidatePool,
+    grid: Uint8Array,
+    cols: number,
+    rows: number,
+    rng: () => number,
+): Cell | null {
+    const size = pool.size();
+    if (size === 0) return null;
+
+    const start = Math.floor(rng() * size);
+    for (let step = 0; step < size; step++) {
+        const idx = pool.getAt((start + step) % size);
+        if (!isNonClusteringCandidate(grid, idx, cols, rows)) {
+            pool.remove(idx);
+            continue;
+        }
+        return { x: idx % cols, y: Math.floor(idx / cols) };
+    }
+
+    return null;
+}
+
+function pickFromClusteringPool(
+    pool: CandidatePool,
+    grid: Uint8Array,
+    cols: number,
+    rows: number,
+    visited: Uint8Array,
+    queue: Uint32Array,
+    rng: () => number,
+): Cell | null {
+    const size = pool.size();
+    if (size === 0) return null;
+
+    const start = Math.floor(rng() * size);
+    for (let step = 0; step < size; step++) {
+        const idx = pool.getAt((start + step) % size);
+        if (!isClusteringLocalCandidate(grid, idx, cols, rows)) {
+            pool.remove(idx);
+            continue;
+        }
+
+        const cell = { x: idx % cols, y: Math.floor(idx / cols) };
+        if (!wouldCreatePocketByLocalConnectivity(grid, cell, cols, rows, visited, queue)) {
+            return cell;
+        }
+    }
+
+    return null;
 }
 
 function wouldCreatePocketByLocalConnectivity(
@@ -607,32 +760,43 @@ export function generateEnvironment({
     let placedObstacleCells = 0;
     const pocketVisited = new Uint8Array(totalCells);
     const pocketQueue = new Uint32Array(totalCells);
+    const nonClusteringPool = new CandidatePool(totalCells);
+    const clusteringPool = new CandidatePool(totalCells);
+
+    initializeCandidatePools(obstacleGrid, cols, rows, nonClusteringPool, clusteringPool);
 
     for (let i = 0; i < targetObstacleCells; i++) {
         const preferClustering = rng() < usedClusteringPct / 100;
 
-        const nonClusteringCandidates = getAvailableCellsForNonClustering(obstacleGrid, cols, rows);
-        const clusteringCandidates = getAvailableCellsForClusteringOptimized(
-            obstacleGrid,
-            cols,
-            rows,
-            pocketVisited,
-            pocketQueue,
-        );
+        let picked = preferClustering
+            ? pickFromClusteringPool(clusteringPool, obstacleGrid, cols, rows, pocketVisited, pocketQueue, rng)
+            : pickFromNonClusteringPool(nonClusteringPool, obstacleGrid, cols, rows, rng);
 
-        const preferredCandidates = preferClustering ? clusteringCandidates : nonClusteringCandidates;
-        const fallbackCandidates = preferClustering ? nonClusteringCandidates : clusteringCandidates;
-
-        let picked = pickRandomCell(preferredCandidates, rng);
         if (picked === null) {
-            picked = pickRandomCell(fallbackCandidates, rng);
+            picked = preferClustering
+                ? pickFromNonClusteringPool(nonClusteringPool, obstacleGrid, cols, rows, rng)
+                : pickFromClusteringPool(clusteringPool, obstacleGrid, cols, rows, pocketVisited, pocketQueue, rng);
         }
 
         if (picked === null) {
             break;
         }
 
-        obstacleGrid[toIndex(picked.x, picked.y, cols)] = 1;
+        const pickedIdx = toIndex(picked.x, picked.y, cols);
+        obstacleGrid[pickedIdx] = 1;
+        nonClusteringPool.remove(pickedIdx);
+        clusteringPool.remove(pickedIdx);
+
+        updateCandidatePoolsAroundCell(
+            obstacleGrid,
+            cols,
+            rows,
+            picked.x,
+            picked.y,
+            nonClusteringPool,
+            clusteringPool,
+        );
+
         placedObstacleCells += 1;
     }
 
