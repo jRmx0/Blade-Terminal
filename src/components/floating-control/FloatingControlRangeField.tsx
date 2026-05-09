@@ -20,7 +20,8 @@ interface FloatingControlRangeFieldProps {
 
 /** Parse the raw string into a resolved value for external use.
  *  Returns [lo, hi] for ranges, a single number for exact values, or undefined when blank/invalid. */
-export function parseRangeFieldValue(raw: string): number | [number, number] | undefined {
+export function parseRangeFieldValue(raw: string | undefined): number | [number, number] | undefined {
+    if (!raw) return undefined;
     const trimmed = raw.trim();
     if (!trimmed) return undefined;
     const rangeMatch = trimmed.match(/^(-?\d+)\.\.(-?\d+)$/);

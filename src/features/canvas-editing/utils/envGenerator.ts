@@ -52,16 +52,203 @@ function hashSeed(s: string): number {
 // HELPER FUNCTIONS (PLACEHOLDER STUBS)
 // ============================================================================
 
-function traceZonePolygon(): Point[] {
-    return [];
+type Cell = { x: number; y: number };
+
+const ORTHO_DIRS: ReadonlyArray<readonly [number, number]> = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+];
+
+const DIAG_DIRS: ReadonlyArray<readonly [number, number]> = [
+    [1, 1],
+    [1, -1],
+    [-1, 1],
+    [-1, -1],
+];
+
+function traceZonePolygon(width: number, height: number): Point[] {
+    return [
+        { x: 0, y: 0 },
+        { x: width, y: 0 },
+        { x: width, y: height },
+        { x: 0, y: height },
+    ];
 }
 
-function traceComponentPolygon(): Point[] {
-    return [];
+function traceComponentPolygon(
+    cellX: number,
+    cellY: number,
+    cellSize: number,
+    width: number,
+    height: number,
+): Point[] {
+    const x0 = cellX * cellSize;
+    const y0 = cellY * cellSize;
+    const x1 = Math.min((cellX + 1) * cellSize, width);
+    const y1 = Math.min((cellY + 1) * cellSize, height);
+
+    return [
+        { x: x0, y: y0 },
+        { x: x1, y: y0 },
+        { x: x1, y: y1 },
+        { x: x0, y: y1 },
+    ];
 }
 
-function findBestPoint(): Point {
-    return { x: 0, y: 0 };
+function isInBounds(x: number, y: number, cols: number, rows: number): boolean {
+    return x >= 0 && y >= 0 && x < cols && y < rows;
+}
+
+function toIndex(x: number, y: number, cols: number): number {
+    return y * cols + x;
+}
+
+function isOnEdge(x: number, y: number, cols: number, rows: number): boolean {
+    return x === 0 || y === 0 || x === cols - 1 || y === rows - 1;
+}
+
+function hasObstacleNeighbor8(grid: Uint8Array, x: number, y: number, cols: number, rows: number): boolean {
+    for (const [dx, dy] of ORTHO_DIRS) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (isInBounds(nx, ny, cols, rows) && grid[toIndex(nx, ny, cols)] === 1) return true;
+    }
+    for (const [dx, dy] of DIAG_DIRS) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (isInBounds(nx, ny, cols, rows) && grid[toIndex(nx, ny, cols)] === 1) return true;
+    }
+    return false;
+}
+
+function hasObstacleNeighbor4(grid: Uint8Array, x: number, y: number, cols: number, rows: number): boolean {
+    for (const [dx, dy] of ORTHO_DIRS) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (isInBounds(nx, ny, cols, rows) && grid[toIndex(nx, ny, cols)] === 1) return true;
+    }
+    return false;
+}
+
+function getAvailableCellsForNonClustering(grid: Uint8Array, cols: number, rows: number): Cell[] {
+    const out: Cell[] = [];
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            if (grid[toIndex(x, y, cols)] === 1) continue;
+            if (!hasObstacleNeighbor8(grid, x, y, cols, rows)) {
+                out.push({ x, y });
+            }
+        }
+    }
+    return out;
+}
+
+function wouldCreatePocket(grid: Uint8Array, candidate: Cell, cols: number, rows: number): boolean {
+    const candidateIdx = toIndex(candidate.x, candidate.y, cols);
+    const visited = new Uint8Array(cols * rows);
+    visited[candidateIdx] = 1;
+
+    const queue: number[] = [];
+
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const idx = toIndex(x, y, cols);
+            if (idx === candidateIdx || grid[idx] === 1 || visited[idx] === 1) continue;
+
+            let touchesZoneEdge = false;
+            visited[idx] = 1;
+            queue.length = 0;
+            queue.push(idx);
+
+            for (let q = 0; q < queue.length; q++) {
+                const cur = queue[q]!;
+                const cx = cur % cols;
+                const cy = Math.floor(cur / cols);
+
+                if (isOnEdge(cx, cy, cols, rows)) touchesZoneEdge = true;
+
+                for (const [dx, dy] of ORTHO_DIRS) {
+                    const nx = cx + dx;
+                    const ny = cy + dy;
+                    if (!isInBounds(nx, ny, cols, rows)) continue;
+                    const nIdx = toIndex(nx, ny, cols);
+                    if (nIdx === candidateIdx || grid[nIdx] === 1 || visited[nIdx] === 1) continue;
+                    visited[nIdx] = 1;
+                    queue.push(nIdx);
+                }
+            }
+
+            if (!touchesZoneEdge) return true;
+        }
+    }
+
+    return false;
+}
+
+function getAvailableCellsForClustering(grid: Uint8Array, cols: number, rows: number): Cell[] {
+    const out: Cell[] = [];
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            if (grid[toIndex(x, y, cols)] === 1) continue;
+            if (!hasObstacleNeighbor4(grid, x, y, cols, rows)) continue;
+            if (!wouldCreatePocket(grid, { x, y }, cols, rows)) {
+                out.push({ x, y });
+            }
+        }
+    }
+    return out;
+}
+
+function pickRandomCell(candidates: Cell[], rng: () => number): Cell | null {
+    if (candidates.length === 0) return null;
+    const idx = Math.floor(rng() * candidates.length);
+    return candidates[idx] ?? null;
+}
+
+function clampPct(value: number): number {
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(0, Math.min(100, value));
+}
+
+function findBestPoint(
+    grid: Uint8Array,
+    cols: number,
+    rows: number,
+    cellSize: number,
+    width: number,
+    height: number,
+): Point {
+    const centerX = Math.floor(cols / 2);
+    const centerY = Math.floor(rows / 2);
+
+    let bestX = -1;
+    let bestY = -1;
+    let bestDist = Number.POSITIVE_INFINITY;
+
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            if (grid[toIndex(x, y, cols)] === 1) continue;
+            const dx = x - centerX;
+            const dy = y - centerY;
+            const dist = dx * dx + dy * dy;
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestX = x;
+                bestY = y;
+            }
+        }
+    }
+
+    if (bestX < 0 || bestY < 0) {
+        return { x: width / 2, y: height / 2 };
+    }
+
+    return {
+        x: Math.min((bestX + 0.5) * cellSize, width),
+        y: Math.min((bestY + 0.5) * cellSize, height),
+    };
 }
 
 // ============================================================================
@@ -283,9 +470,10 @@ export function generateEnvironment({
         : ((Date.now() ^ (Math.random() * 0x100000000 >>> 0)) >>> 0);
 
     const usedSeedHex = `0x${seedNum.toString(16).toUpperCase().padStart(8, "0")}`;
+    const rng = mulberry32(seedNum);
 
     // Resolve clustering percentage
-    const clusteringDraw = mulberry32(seedNum)();
+    const clusteringDraw = rng();
     const resolvedClusteringPct = clusteringRatio === undefined
         ? Math.round(clusteringDraw * 100)
         : Array.isArray(clusteringRatio)
@@ -304,28 +492,61 @@ export function generateEnvironment({
 
     const pickedObstaclePct = Array.isArray(obstacleRatio) ? resolvedObstaclePct : null;
 
-    // Placeholder: return minimal valid structure for UI/tests to work
-    // (TODO: replace with actual iterative placement algorithm)
-    const boundary: Point[] = [
-        { x: 0, y: 0 },
-        { x: width, y: 0 },
-        { x: width, y: height },
-        { x: 0, y: height },
-    ];
+    const usedClusteringPct = Math.round(clampPct(resolvedClusteringPct));
+    const requestedObstaclePct = clampPct(resolvedObstaclePct);
 
+    const cols = Math.max(1, Math.floor(width / cellSize));
+    const rows = Math.max(1, Math.floor(height / cellSize));
+    const totalCells = cols * rows;
+    const targetObstacleCells = Math.floor(totalCells * requestedObstaclePct / 100);
+
+    const obstacleGrid = new Uint8Array(totalCells);
+    let placedObstacleCells = 0;
+
+    for (let i = 0; i < targetObstacleCells; i++) {
+        const preferClustering = rng() < usedClusteringPct / 100;
+
+        const nonClusteringCandidates = getAvailableCellsForNonClustering(obstacleGrid, cols, rows);
+        const clusteringCandidates = getAvailableCellsForClustering(obstacleGrid, cols, rows);
+
+        const preferredCandidates = preferClustering ? clusteringCandidates : nonClusteringCandidates;
+        const fallbackCandidates = preferClustering ? nonClusteringCandidates : clusteringCandidates;
+
+        let picked = pickRandomCell(preferredCandidates, rng);
+        if (picked === null) {
+            picked = pickRandomCell(fallbackCandidates, rng);
+        }
+
+        if (picked === null) {
+            break;
+        }
+
+        obstacleGrid[toIndex(picked.x, picked.y, cols)] = 1;
+        placedObstacleCells += 1;
+    }
+
+    const boundary = traceZonePolygon(width, height);
     const obstacles: Point[][] = [];
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            if (obstacleGrid[toIndex(x, y, cols)] === 1) {
+                obstacles.push(traceComponentPolygon(x, y, cellSize, width, height));
+            }
+        }
+    }
 
-    const startEndPoint = {
-        x: width / 2,
-        y: height / 2,
-    };
+    const usedObstacleRatioPct = totalCells > 0
+        ? Math.round((placedObstacleCells / totalCells) * 100)
+        : 0;
+
+    const startEndPoint = findBestPoint(obstacleGrid, cols, rows, cellSize, width, height);
 
     return {
         boundary,
         obstacles,
         startEndPoint,
-        usedClusteringPct: Math.round(resolvedClusteringPct),
-        usedObstacleRatioPct: Math.round(resolvedObstaclePct),
+        usedClusteringPct,
+        usedObstacleRatioPct,
         pickedObstacleRatioPct: pickedObstaclePct,
         pickedClusteringPct: pickedClusteringPct,
         usedSeedHex,

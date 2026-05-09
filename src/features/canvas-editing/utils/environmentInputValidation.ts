@@ -43,11 +43,12 @@ export function validateCellSizeFit(
  * Empty fields (which trigger auto-derivation) never produce errors.
  */
 export function validateRangeField(
-    raw: string,
+    raw: string | undefined,
     fieldName: string,
     min: number = 0,
     max: number = 100,
 ): string | null {
+    if (!raw) return null;
     const trimmed = raw.trim();
 
     // Empty is always valid (auto-derive from seed)
