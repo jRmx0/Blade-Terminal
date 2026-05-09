@@ -245,20 +245,30 @@ export default function CanvasGeneratorFloatingControl() {
                 min={0}
                 step={1}
             />
-            <div>
-                <FloatingControlNumberField
-                    label={cellSizeLabel}
-                    value={minPassageWidth}
-                    onChange={setMinPassageWidth}
-                    type="decimal"
-                    min={0}
-                    step={1}
-                />
-                {cellSizeFitError && (
-                    <div className="mx-3 mt-1 text-xs text-red-600 whitespace-normal">
-                        {cellSizeFitError}
-                    </div>
-                )}
+            <div className="flex items-center gap-2 px-3 h-8">
+                <div className="w-29/50 shrink-0 flex items-center gap-1 min-w-0">
+                    <span className="text-xs text-gray-500 truncate select-none">{cellSizeLabel}</span>
+                    <span className="flex-1 min-w-0 h-1 bg-[radial-gradient(circle,#d1d5db_1.5px,transparent_1.5px)] bg-size-[10px_10px] bg-repeat-x bg-center" />
+                    {cellSizeFitError && (
+                        <span
+                            className="shrink-0 flex items-center cursor-default transition-colors text-red-500 hover:text-red-600"
+                            title={cellSizeFitError}
+                        >
+                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>error</span>
+                        </span>
+                    )}
+                </div>
+                <div className="relative flex-1 min-w-0">
+                    <input
+                        type="number"
+                        value={minPassageWidth}
+                        onChange={(e) => setMinPassageWidth(e.target.value)}
+                        step={1}
+                        min={0}
+                        placeholder=""
+                        className="w-full border rounded bg-white text-xs px-2 h-6 focus:outline-none transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-gray-400 placeholder:italic border-gray-300 text-gray-900"
+                    />
+                </div>
             </div>
             <FloatingControlRangeField
                 label="Obstacle ratio (%)"
