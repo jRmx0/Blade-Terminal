@@ -3,7 +3,7 @@ import {
     computeResolvedClusteringPct,
     computeResolvedObstacleRatioPct,
     generateEnvironment,
-} from "@/features/canvas-editing/utils/canvasGenerator";
+} from "@/features/canvas-editing/utils/envGenerator";
 import { mulberry32, computeActualObstacleRatioPct } from "./testUtils";
 
 function countFreeComponentsFromEnv(
