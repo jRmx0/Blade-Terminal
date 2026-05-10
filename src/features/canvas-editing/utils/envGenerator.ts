@@ -722,6 +722,80 @@ function clampPct(value: number): number {
     return Math.max(0, Math.min(100, value));
 }
 
+function classifyObstacleComponents(
+    grid: Uint8Array,
+    cols: number,
+    rows: number,
+): { boundaryGrid: Uint8Array; interiorGrid: Uint8Array } {
+    const totalCells = cols * rows;
+    const visited = new Uint8Array(totalCells);
+    const queue = new Uint32Array(totalCells);
+    const boundaryGrid = new Uint8Array(totalCells);
+    const interiorGrid = new Uint8Array(totalCells);
+
+    for (let idx = 0; idx < totalCells; idx++) {
+        if (grid[idx] !== 1 || visited[idx] === 1) continue;
+
+        visited[idx] = 1;
+        const componentCells: number[] = [idx];
+        let touchesBoundary = false;
+
+        let head = 0;
+        let tail = 1;
+        queue[0] = idx;
+
+        while (head < tail) {
+            const current = queue[head++] as number;
+            const x = current % cols;
+            const y = Math.floor(current / cols);
+
+            if (isOnEdge(x, y, cols, rows)) {
+                touchesBoundary = true;
+            }
+
+            if (x > 0) {
+                const left = current - 1;
+                if (grid[left] === 1 && visited[left] === 0) {
+                    visited[left] = 1;
+                    componentCells.push(left);
+                    queue[tail++] = left;
+                }
+            }
+            if (x + 1 < cols) {
+                const right = current + 1;
+                if (grid[right] === 1 && visited[right] === 0) {
+                    visited[right] = 1;
+                    componentCells.push(right);
+                    queue[tail++] = right;
+                }
+            }
+            if (y > 0) {
+                const up = current - cols;
+                if (grid[up] === 1 && visited[up] === 0) {
+                    visited[up] = 1;
+                    componentCells.push(up);
+                    queue[tail++] = up;
+                }
+            }
+            if (y + 1 < rows) {
+                const down = current + cols;
+                if (grid[down] === 1 && visited[down] === 0) {
+                    visited[down] = 1;
+                    componentCells.push(down);
+                    queue[tail++] = down;
+                }
+            }
+        }
+
+        const targetGrid = touchesBoundary ? boundaryGrid : interiorGrid;
+        for (const cellIdx of componentCells) {
+            targetGrid[cellIdx] = 1;
+        }
+    }
+
+    return { boundaryGrid, interiorGrid };
+}
+
 function findBestPoint(
     grid: Uint8Array,
     cols: number,
@@ -1090,8 +1164,45 @@ export function generateEnvironment({
         placedObstacleCells += 1;
     }
 
-    const boundary = traceZonePolygon(width, height);
-    const obstacles = traceMergedObstaclePolygons(obstacleGrid, cols, rows, cellSize, width, height);
+    // Classify obstacles into boundary-touching vs interior components
+    const { boundaryGrid, interiorGrid } = classifyObstacleComponents(obstacleGrid, cols, rows);
+
+    // Compute interior obstacles (fully non-edge-touching)
+    const interiorObstacles = traceMergedObstaclePolygons(interiorGrid, cols, rows, cellSize, width, height);
+
+    // Compute new boundary by subtracting boundary-touching obstacles
+    let boundary: Point[];
+    const boundaryObstacles = traceMergedObstaclePolygons(boundaryGrid, cols, rows, cellSize, width, height);
+
+    if (boundaryObstacles.length === 0) {
+        // No boundary-touching obstacles; boundary is still a rectangle
+        boundary = traceZonePolygon(width, height);
+    } else {
+        // Zone rectangle as a polygon (with outer ring only)
+        const rectPolygon: Array<Array<[number, number]>> = [[
+            [0, 0],
+            [width, 0],
+            [width, height],
+            [0, height],
+            [0, 0],
+        ]];
+
+        // Convert boundary obstacles to polygon-clipping format
+        const boundaryObstaclePolygons = boundaryObstacles.map((poly) => [
+            [...poly.map(p => [p.x, p.y] as [number, number]), [poly[0]!.x, poly[0]!.y] as [number, number]],
+        ]);
+
+        // Subtract boundary obstacles from the rectangle
+        const diff = polygonClipping.difference(rectPolygon, ...boundaryObstaclePolygons);
+
+        // Extract the outer ring from the result (diff[0]![0] is the outer boundary)
+        if (diff.length > 0 && diff[0] && diff[0][0]) {
+            boundary = ringToPoints(diff[0][0]!);
+        } else {
+            // Fallback to rectangular boundary if subtraction fails
+            boundary = traceZonePolygon(width, height);
+        }
+    }
 
     const usedObstacleRatioPct = totalCells > 0
         ? Math.round((placedObstacleCells / totalCells) * 100)
@@ -1101,7 +1212,7 @@ export function generateEnvironment({
 
     return {
         boundary,
-        obstacles,
+        obstacles: interiorObstacles,
         startEndPoint,
         usedClusteringPct,
         usedObstacleRatioPct,
