@@ -9,8 +9,7 @@ import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useHeadlandSystemStore } from "@/stores/headlandSystemStore";
 import {
     computeHeadlandDerivedGeometry,
-    resolveHeadlandWidth,
-    resolvePathWidthForSelection,
+    parseHeadlandWidth,
     SYSTEM_HEADLAND_PROVIDER_PARAM_NAMES,
 } from "@/features/coverage-planning/utils/headlandGeometry";
 import type { AlgoParamType, ComputeJobState, ComputeJobStateCompleted } from "@/types/serviceTypes";
@@ -142,15 +141,7 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
     const resolvedEnd = endPoint ?? startEndPoint!;
 
     const { enabled: headlandEnabled, width: headlandWidthRaw } = useHeadlandSystemStore.getState();
-    const resolvedPathWidth = resolvePathWidthForSelection({
-        algorithmId: selectedAlgorithmId,
-        providerId: selectedProviderId,
-        environmentId: useEnvStore.getState().env.id,
-        catalogParams,
-        parameterValues,
-        fallback: 20,
-    });
-    const headlandWidth = resolveHeadlandWidth(headlandWidthRaw, resolvedPathWidth);
+    const headlandWidth = parseHeadlandWidth(headlandWidthRaw);
 
     const derivedHeadland = computeHeadlandDerivedGeometry({
         objects,

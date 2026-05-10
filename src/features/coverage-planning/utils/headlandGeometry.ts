@@ -101,25 +101,25 @@ export function resolvePathWidthForSelection(input: {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-export function resolveHeadlandWidth(rawWidth: string, pathWidth: number): number {
+export function parseHeadlandWidth(rawWidth: string): number | null {
     const trimmed = rawWidth.trim();
-    if (trimmed === "") return Math.max(0, pathWidth / 2);
+    if (trimmed === "") return null;
     const parsed = parseFloat(trimmed);
-    if (!Number.isFinite(parsed)) return Math.max(0, pathWidth / 2);
+    if (!Number.isFinite(parsed)) return null;
     return Math.max(0, parsed);
 }
 
 export function computeHeadlandDerivedGeometry(input: {
     objects: CanvasObject[];
     headlandEnabled: boolean;
-    headlandWidth: number;
+    headlandWidth: number | null;
 }): {
     shrunkenZones: CanvasPolygonItem[];
     expandedObstacles: CanvasPolygonItem[];
 } {
     const { objects, headlandEnabled, headlandWidth } = input;
 
-    if (!headlandEnabled) {
+    if (!headlandEnabled || headlandWidth === null) {
         return {
             shrunkenZones: [],
             expandedObstacles: [],

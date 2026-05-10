@@ -30,6 +30,8 @@ export interface ControlsPanelSectionInputProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
   disabled?: boolean;
   placeholder?: string;
   type?: string;

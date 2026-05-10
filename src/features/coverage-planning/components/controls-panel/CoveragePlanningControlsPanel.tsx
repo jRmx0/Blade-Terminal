@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ControlsPanelSection from "@/components/controls-panel/ControlsPanelSection";
 import ControlsPanelSeparator from "@/components/controls-panel/ControlsPanelSeparator";
 import ControlsPanelSectionCheckbox from "@/components/controls-panel/ControlsPanelSectionCheckbox";
@@ -32,8 +32,7 @@ import type { AlgorithmParameter, AppEnumValue } from "@/types/serviceTypes";
 import type { ComputationAlgorithmParameter } from "@/types/schemaTypes";
 import {
     SYSTEM_HEADLAND_PROVIDER_PARAM_NAMES,
-    resolveHeadlandWidth,
-    resolvePathWidthForSelection,
+    parseHeadlandWidth,
 } from "@/features/coverage-planning/utils/headlandGeometry";
 import {
     type UnitOfMeasure,
@@ -202,6 +201,8 @@ export default function CoveragePlanningControlsPanel() {
     const headlandWidth = useHeadlandSystemStore((state) => state.width);
     const setHeadlandEnabled = useHeadlandSystemStore((state) => state.setEnabled);
     const setHeadlandWidth = useHeadlandSystemStore((state) => state.setWidth);
+    const [headlandWidthDraft, setHeadlandWidthDraft] = useState(headlandWidth);
+    const [headlandWidthFocused, setHeadlandWidthFocused] = useState(false);
 
     const parameterValues = useMemo(() => {
         if (computation.selectedProviderId === null || computation.selectedAlgorithmId === null) return [];
@@ -396,22 +397,14 @@ export default function CoveragePlanningControlsPanel() {
     );
     const parameterSections = useMemo(() => groupParametersBySection(nonEnvParameters), [nonEnvParameters]);
 
-    const resolvedPathWidth = useMemo(() => {
-        if (computation.selectedAlgorithmId === null || computation.selectedProviderId === null) return 20;
-        return resolvePathWidthForSelection({
-            algorithmId: computation.selectedAlgorithmId,
-            providerId: computation.selectedProviderId,
-            environmentId: envId,
-            catalogParams: allParameters,
-            parameterValues: allParameterValues,
-            fallback: 20,
-        });
-    }, [computation.selectedAlgorithmId, computation.selectedProviderId, envId, allParameters, allParameterValues]);
+    useEffect(() => {
+        if (!headlandWidthFocused) {
+            setHeadlandWidthDraft(headlandWidth);
+        }
+    }, [headlandWidth, headlandWidthFocused]);
 
-    const headlandWidthPlaceholder = useMemo(() => {
-        const auto = resolveHeadlandWidth("", resolvedPathWidth);
-        return Number.isFinite(auto) ? String(auto) : "10";
-    }, [resolvedPathWidth]);
+    const uom = unitLabel(selectedUnitOfMeasure);
+    const headlandWidthLabel = uom ? `Headland Width (${uom})` : "Headland Width";
 
     useEffect(() => {
         const shrunkenZonesPK = { id: LAYER_ID.SHRUNKEN_ZONES, algorithmId: 0, providerId: 0 };
@@ -520,12 +513,21 @@ export default function CoveragePlanningControlsPanel() {
                 />
                 {headlandEnabled && (
                     <ControlsPanelSectionInput
-                        label="Headland Width"
-                        value={headlandWidth}
-                        onChange={setHeadlandWidth}
+                        label={headlandWidthLabel}
+                        value={headlandWidthDraft}
+                        onChange={setHeadlandWidthDraft}
+                        onFocus={() => setHeadlandWidthFocused(true)}
+                        onBlur={() => {
+                            setHeadlandWidthFocused(false);
+                            const parsed = parseHeadlandWidth(headlandWidthDraft);
+                            if (parsed === null) {
+                                setHeadlandWidth("");
+                                return;
+                            }
+                            setHeadlandWidth(String(parsed));
+                        }}
                         type="number"
                         min={0}
-                        placeholder={headlandWidthPlaceholder}
                     />
                 )}
             </ControlsPanelSection>

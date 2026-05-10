@@ -5,6 +5,8 @@ export default function ControlsPanelSectionInput({
   label,
   value,
   onChange,
+  onFocus,
+  onBlur,
   disabled = false,
   placeholder,
   type = "text",
@@ -39,7 +41,10 @@ export default function ControlsPanelSectionInput({
         placeholder={isFocused ? placeholder : undefined}
         min={min}
         max={max}
-        onFocus={() => setIsFocused(true)}
+        onFocus={() => {
+          setIsFocused(true);
+          onFocus?.();
+        }}
         onBlur={() => {
           setIsFocused(false);
           if (type === "number" && value !== "") {
@@ -52,6 +57,7 @@ export default function ControlsPanelSectionInput({
               }
             }
           }
+          onBlur?.();
         }}
         disabled={disabled}
         className={`w-full border rounded bg-white text-sm px-3 focus:outline-none transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${isFloated ? "pt-5 pb-1" : "py-1.5"

@@ -14,7 +14,7 @@ interface HeadlandSystemState {
  */
 export const useHeadlandSystemStore = create<HeadlandSystemState>((set) => ({
     enabled: true,
-    width: "",
+    width: "10",
     setEnabled: (enabled) => set({ enabled }),
     setWidth: (width) => set({ width }),
 }));

@@ -40,8 +40,7 @@ import { extractLayerData, getProviderLayersForResult } from "@/features/canvas-
 import { useHeadlandSystemStore } from "@/stores/headlandSystemStore";
 import {
   computeHeadlandDerivedGeometry,
-  resolveHeadlandWidth,
-  resolvePathWidthForSelection,
+  parseHeadlandWidth,
 } from "@/features/coverage-planning/utils/headlandGeometry";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
@@ -66,10 +65,6 @@ export default function CanvasEditor() {
   const providerLayers = useProviderLayerStore((s) => s.layers);
   const headlandEnabled = useHeadlandSystemStore((s) => s.enabled);
   const headlandWidthRaw = useHeadlandSystemStore((s) => s.width);
-  const allCatalogParams = useComputationCatalogStore((s) => s.parameters);
-  const allParameterValues = useParameterValuesStore((s) => s.parameterValues);
-  const selectedProviderId = useEnvStore((s) => s.computation.selectedProviderId);
-  const selectedAlgorithmId = useEnvStore((s) => s.computation.selectedAlgorithmId);
   const {
     objects,
     addObject,
@@ -200,22 +195,7 @@ export default function CanvasEditor() {
   const expandedObstaclesZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.EXPANDED_OBSTACLES, LAYER_PARAM_KEY.Z_INDEX) ?? "35", 10);
   const envPointsZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.ENV_POINTS, LAYER_PARAM_KEY.Z_INDEX) ?? "40", 10);
 
-  const resolvedPathWidth = useMemo(() => {
-    if (selectedAlgorithmId === null || selectedProviderId === null) return 20;
-    return resolvePathWidthForSelection({
-      algorithmId: selectedAlgorithmId,
-      providerId: selectedProviderId,
-      environmentId: envId,
-      catalogParams: allCatalogParams,
-      parameterValues: allParameterValues,
-      fallback: 20,
-    });
-  }, [selectedAlgorithmId, selectedProviderId, envId, allCatalogParams, allParameterValues]);
-
-  const headlandWidth = useMemo(
-    () => resolveHeadlandWidth(headlandWidthRaw, resolvedPathWidth),
-    [headlandWidthRaw, resolvedPathWidth],
-  );
+  const headlandWidth = useMemo(() => parseHeadlandWidth(headlandWidthRaw), [headlandWidthRaw]);
 
   const { shrunkenZones, expandedObstacles } = useMemo(
     () => computeHeadlandDerivedGeometry({ objects, headlandEnabled, headlandWidth }),
