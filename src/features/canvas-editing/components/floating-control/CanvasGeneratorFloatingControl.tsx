@@ -345,7 +345,7 @@ export default function CanvasGeneratorFloatingControl() {
                 error={obstacleRatioError}
             />
             <FloatingControlRangeField
-                label="Clustering (%)"
+                label="Clustering prob. (%)"
                 value={clusteringRatio}
                 onChange={(v) => {
                     setClusteringRatio(v);
