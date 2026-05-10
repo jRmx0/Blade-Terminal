@@ -58,7 +58,7 @@ function hashSeed(s: string): number {
 }
 
 // ============================================================================
-// HELPER FUNCTIONS (PLACEHOLDER STUBS)
+// CORE HELPERS
 // ============================================================================
 
 class CandidatePool {
@@ -914,12 +914,10 @@ function findBestPoint(
 //   end
 // end
 //
-// Output contract (important)
-// ---------------------------
-// - No obstacle merging.
-// - Every obstacle cell is emitted as standalone obstacle geometry.
-// - Border-touching obstacle cells are NOT absorbed into zone boundary;
-//   they are emitted as normal obstacle cells.
+// Output contract:
+// - `boundary`: rectangular zone polygon.
+// - `obstacles`: one or more polygons per connected obstacle component.
+// - Returned obstacle polygons do not encode holes.
 
 // ============================================================================
 // PUBLIC API - RATIO/CLUSTERING RESOLUTION HELPERS
@@ -951,19 +949,12 @@ export function computeResolvedClusteringPct(seed: string, range?: [number, numb
 }
 
 // ============================================================================
-// MAIN GENERATOR (PLACEHOLDER IMPLEMENTATION)
+// MAIN GENERATOR
 // ============================================================================
 
 /**
- * Placeholder implementation of the new iterative generator.
- * 
- * TODO:
- * 1. Implement grid initialization and scaling logic
- * 2. Implement AvailableCellsForNonClustering candidate detection
- * 3. Implement AvailableCellsForClustering candidate detection
- * 4. Implement pocket-prevention filter
- * 5. Implement iterative placement with Bernoulli operation selection
- * 6. Implement polygon tracing for boundary and obstacles
+ * Generates a rectangular environment with obstacle geometry and center-biased
+ * start/end point selection.
  */
 export function generateEnvironment({
     width,
