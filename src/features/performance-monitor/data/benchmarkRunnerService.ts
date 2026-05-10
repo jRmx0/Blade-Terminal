@@ -3,6 +3,7 @@ import { buildComputationProviderEndpointUrl } from "@/features/computation-prov
 import { ENV_FORMAT_OPTIONS, ENV_TYPE_OPTIONS, OBJECT_CATEGORY, OBJECT_TYPE } from "@/config/db-ops/enums";
 import { parseHeadlandWidth } from "@/features/coverage-planning/utils/headlandGeometry";
 import { resolveRequestGeometry } from "@/features/coverage-planning/utils/requestGeometry";
+import { computeNetArea } from "@/features/canvas-editing/utils/canvasGeometry";
 import {
     calculateAggregateMetrics,
     type BenchmarkAggregatedMetrics,
@@ -17,7 +18,14 @@ import {
     type BenchmarkStepResult,
 } from "@/features/performance-monitor/stores/parameterBenchmarkModalStore";
 import type { Object as CanvasObject } from "@/types/schemaTypes";
-import { computeNumberOfTurns, computePathLength } from "@/utils/coverageGrid";
+import {
+    buildCoverageVisitMap,
+    computeCoverageRatio,
+    computeEfficiency,
+    computeNumberOfTurns,
+    computeOverlapRatio,
+    computePathLength,
+} from "@/utils/coverageGrid";
 import type {
     AlgoParamType,
     AlgorithmMetric,
@@ -315,15 +323,43 @@ function findMetricValueByName(
 function extractRunMetrics(
     completed: ComputeJobStateCompleted,
     algorithmMetrics: AlgorithmMetric[],
+    fallbackInput: {
+        objects: CanvasObject[];
+        cellSize: number;
+        pathWidth: number;
+    },
 ): BenchmarkMetricsValues {
     const resultMetrics = completed.result.performance?.metrics;
+    const segments = completed.result.coveragePathPlan.segments;
 
-    const turnsFallback = computeNumberOfTurns(completed.result.coveragePathPlan.segments);
-    const pathLengthFallback = computePathLength(completed.result.coveragePathPlan.segments);
+    const turnsFallback = computeNumberOfTurns(segments);
+    const pathLengthFallback = computePathLength(segments);
+    const { visitMap } = buildCoverageVisitMap({
+        segments,
+        cellSize: fallbackInput.cellSize,
+        pathWidth: fallbackInput.pathWidth,
+    });
 
-    const coverage = findMetricValueByName(algorithmMetrics, resultMetrics, ["coverage ratio", "coverage"]);
-    const overlap = findMetricValueByName(algorithmMetrics, resultMetrics, ["overlap ratio", "overlap"]);
-    const efficiency = findMetricValueByName(algorithmMetrics, resultMetrics, ["efficiency"]);
+    const coverageFallback = computeCoverageRatio({
+        visitMap,
+        cellSize: fallbackInput.cellSize,
+        objects: fallbackInput.objects,
+    });
+    const overlapFallback = computeOverlapRatio(visitMap);
+
+    const totalNetArea = fallbackInput.objects.reduce((sum, object) => {
+        const net = computeNetArea(object, fallbackInput.objects);
+        return sum + (net ?? 0);
+    }, 0);
+    const coveredArea = coverageFallback !== null ? totalNetArea * coverageFallback : 0;
+    const efficiencyFallback = computeEfficiency(coveredArea, fallbackInput.pathWidth, pathLengthFallback);
+
+    const coverage =
+        findMetricValueByName(algorithmMetrics, resultMetrics, ["coverage ratio", "coverage"]) ?? coverageFallback;
+    const overlap =
+        findMetricValueByName(algorithmMetrics, resultMetrics, ["overlap ratio", "overlap"]) ?? overlapFallback;
+    const efficiency =
+        findMetricValueByName(algorithmMetrics, resultMetrics, ["efficiency"]) ?? efficiencyFallback;
 
     const turns =
         findMetricValueByName(algorithmMetrics, resultMetrics, ["number of turns", "turns", "turn"]) ?? turnsFallback;
@@ -528,7 +564,43 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 }
 
                 const completed = state as ComputeJobStateCompleted;
-                const metrics = extractRunMetrics(completed, algorithmMetrics);
+                const pathWidthRaw = parameters["Path Width"];
+                const pathWidth =
+                    typeof pathWidthRaw === "number"
+                        ? pathWidthRaw
+                        : typeof pathWidthRaw === "string"
+                            ? Number(pathWidthRaw)
+                            : NaN;
+
+                const coverageObjects: CanvasObject[] = [
+                    ...resolvedGeometry.zones.map((zone, index) => ({
+                        id: index + 1,
+                        environmentId: 0,
+                        category: OBJECT_CATEGORY.ZONE,
+                        type: OBJECT_TYPE.OFFLINE,
+                        vertexCount: zone.vertices.length,
+                        area: computePolygonArea(zone.vertices),
+                        vertices: zone.vertices.map((v) => ({ x: v.x, y: v.y })),
+                    })),
+                    ...resolvedGeometry.obstacles.map((obstacle, index) => ({
+                        id: resolvedGeometry.zones.length + index + 1,
+                        environmentId: 0,
+                        category: OBJECT_CATEGORY.OBSTACLE,
+                        type: OBJECT_TYPE.OFFLINE,
+                        vertexCount: obstacle.vertices.length,
+                        area: computePolygonArea(obstacle.vertices),
+                        vertices: obstacle.vertices.map((v) => ({ x: v.x, y: v.y })),
+                    })),
+                ];
+
+                const metrics = extractRunMetrics(completed, algorithmMetrics, {
+                    objects: coverageObjects,
+                    cellSize: environmentSetup.cellSize,
+                    pathWidth:
+                        Number.isFinite(pathWidth) && pathWidth > 0
+                            ? pathWidth
+                            : environmentSetup.cellSize,
+                });
 
                 const filteredMetrics: BenchmarkMetricsValues = {
                     coverage: selectedMetrics.has("coverage") ? metrics.coverage : null,

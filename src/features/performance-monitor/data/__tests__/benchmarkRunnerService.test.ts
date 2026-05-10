@@ -128,7 +128,19 @@ function makeMetrics(): AlgorithmMetric[] {
     ];
 }
 
-function makeCompletedState(coverageValue: number) {
+function makeCompletedState(
+    coverageValue: number,
+    options?: {
+        includePerformanceMetrics?: boolean;
+        path?: Array<{ id: number; point: { x: number; y: number } }>;
+    },
+) {
+    const includePerformanceMetrics = options?.includePerformanceMetrics ?? true;
+    const path = options?.path ?? [
+        { id: 1, point: { x: 0, y: 0 } },
+        { id: 2, point: { x: 10, y: 0 } },
+    ];
+
     return {
         jobId: "job-1",
         status: "completed",
@@ -141,15 +153,12 @@ function makeCompletedState(coverageValue: number) {
                     {
                         id: 1,
                         type: "coverage",
-                        path: [
-                            { id: 1, point: { x: 0, y: 0 } },
-                            { id: 2, point: { x: 10, y: 0 } },
-                        ],
+                        path,
                     },
                 ],
             },
             performance: {
-                metrics: [{ id: 900, value: coverageValue }],
+                metrics: includePerformanceMetrics ? [{ id: 900, value: coverageValue }] : [],
             },
         },
     };
@@ -380,5 +389,72 @@ describe("runBenchmark", () => {
         expect(results[0]?.rawRuns).toHaveLength(1);
         expect(results[0]?.rawRuns[0]?.status).toBe("skipped");
         expect(results[0]?.rawRuns[0]?.error).toContain("Headland Width");
+    });
+
+    test("falls back to locally computed coverage/overlap/efficiency when provider metrics are absent", async () => {
+        const { runBenchmark } = await import("@/features/performance-monitor/data/benchmarkRunnerService");
+
+        let submitBody: Record<string, any> | null = null;
+
+        const fetchMock = async (input: string | URL, init?: RequestInit): Promise<Response> => {
+            const url = String(input);
+
+            if (url.endsWith("/compute")) {
+                submitBody = JSON.parse(String(init?.body ?? "{}"));
+                return new Response(
+                    JSON.stringify({
+                        jobId: "job-fallback",
+                        pollUrl: "http://localhost:8080/compute/job-fallback",
+                    }),
+                    { status: 202 },
+                );
+            }
+
+            const startPoint = submitBody?.environment?.startPoint ?? { x: 5, y: 5 };
+            const path = [
+                { id: 1, point: { x: startPoint.x, y: startPoint.y } },
+                { id: 2, point: { x: startPoint.x + 20, y: startPoint.y } },
+                { id: 3, point: { x: startPoint.x + 20, y: startPoint.y + 20 } },
+            ];
+
+            return new Response(
+                JSON.stringify(
+                    makeCompletedState(0, {
+                        includePerformanceMetrics: false,
+                        path,
+                    }),
+                ),
+                { status: 200 },
+            );
+        };
+
+        globalThis.fetch = fetchMock as typeof fetch;
+
+        const selectedMetrics = new Set<
+            "coverage" | "overlap" | "efficiency" | "turns" | "pathLength"
+        >(["coverage", "overlap", "efficiency", "turns", "pathLength"]);
+
+        const results = await runBenchmark({
+            provider: makeProvider(),
+            algorithm: makeAlgorithm(),
+            algorithmParameters: makeParams(),
+            algorithmMetrics: makeMetrics(),
+            targetParameterSetup: makeTargetSetup(),
+            fixedParameters: [] as BenchmarkFixedParameter[],
+            environmentSetup: makeEnvironmentSetup(),
+            systemEnvironmentSetup: makeSystemEnvironmentSetup(),
+            multipleRunsSetup: makeMultipleRunsSetup(1),
+            selectedMetrics,
+        });
+
+        expect(results).toHaveLength(1);
+        expect(results[0]?.runsCompleted).toBe(1);
+
+        const metrics = results[0]?.rawRuns[0]?.metrics;
+        expect(typeof metrics?.coverage).toBe("number");
+        expect(typeof metrics?.overlap).toBe("number");
+        expect(typeof metrics?.efficiency).toBe("number");
+        expect(typeof metrics?.turns).toBe("number");
+        expect(typeof metrics?.pathLength).toBe("number");
     });
 });
