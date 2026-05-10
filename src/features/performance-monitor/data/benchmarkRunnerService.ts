@@ -1,5 +1,6 @@
 import { generateEnvironment } from "@/features/canvas-editing/utils/envGenerator";
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
+import { ENV_FORMAT_OPTIONS, ENV_TYPE_OPTIONS } from "@/config/db-ops/enums";
 import {
     calculateAggregateMetrics,
     type BenchmarkAggregatedMetrics,
@@ -10,6 +11,7 @@ import {
     type BenchmarkMultipleRunsSetup,
     type BenchmarkParameterSetup,
     type BenchmarkRun,
+    type BenchmarkSystemEnvironmentSetup,
     type BenchmarkStepResult,
 } from "@/features/performance-monitor/stores/parameterBenchmarkModalStore";
 import { computeNumberOfTurns, computePathLength } from "@/utils/coverageGrid";
@@ -41,6 +43,7 @@ export interface RunBenchmarkConfig {
     targetParameterSetup: BenchmarkParameterSetup;
     fixedParameters: BenchmarkFixedParameter[];
     environmentSetup: BenchmarkEnvironmentSetup;
+    systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
     multipleRunsSetup: BenchmarkMultipleRunsSetup;
     selectedMetrics: Set<BenchmarkMetricType>;
     signal?: AbortSignal;
@@ -140,6 +143,26 @@ function buildParametersForStep(
     }
 
     return parameters;
+}
+
+function formatToMetadataValue(format: string): string {
+    const matchingOption = ENV_FORMAT_OPTIONS.find((option) => option.value === format);
+    return matchingOption?.label ?? format;
+}
+
+function typeToMetadataValue(type: string): string {
+    const matchingOption = ENV_TYPE_OPTIONS.find((option) => option.value === type);
+    return matchingOption?.label ?? type;
+}
+
+function getSystemEnvironmentParameters(systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup): Record<string, string | boolean> {
+    return {
+        "Format": formatToMetadataValue(systemEnvironmentSetup.format),
+        "Type": typeToMetadataValue(systemEnvironmentSetup.type),
+        "Coordinate System": systemEnvironmentSetup.coordinateSystem,
+        "Headland": systemEnvironmentSetup.headland,
+        "Headland Width": systemEnvironmentSetup.headlandWidth,
+    };
 }
 
 async function submitComputeRequest(
@@ -294,6 +317,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
         targetParameterSetup,
         fixedParameters,
         environmentSetup,
+        systemEnvironmentSetup,
         multipleRunsSetup,
         selectedMetrics,
         signal,
@@ -360,6 +384,11 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 targetParameterSetup,
                 stepValue,
             );
+
+            const systemEnvironmentParameters = getSystemEnvironmentParameters(systemEnvironmentSetup);
+            for (const [key, value] of Object.entries(systemEnvironmentParameters)) {
+                parameters[key] = value;
+            }
 
             const run: BenchmarkRun = {
                 stepValue,

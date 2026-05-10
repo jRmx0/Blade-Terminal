@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+    COORD_SYSTEM_OPTIONS,
+    ENV_FORMAT_OPTIONS,
+    ENV_TYPE_OPTIONS,
+} from "@/config/db-ops/enums";
+import {
     useParameterBenchmarkModalStore,
     type BenchmarkEnvironmentSetup,
     type BenchmarkExecutionState,
@@ -7,6 +12,7 @@ import {
     type BenchmarkMetricType,
     type BenchmarkMultipleRunsSetup,
     type BenchmarkParameterSetup,
+    type BenchmarkSystemEnvironmentSetup,
 } from "@/features/performance-monitor/stores/parameterBenchmarkModalStore";
 import { runBenchmark as runBenchmarkService } from "@/features/performance-monitor/data/benchmarkRunnerService";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
@@ -25,6 +31,7 @@ export default function ParameterBenchmarkModal() {
         targetParameterSetup,
         fixedParameters,
         environmentSetup,
+        systemEnvironmentSetup,
         multipleRunsSetup,
         metricsConfig,
         isRunning,
@@ -37,6 +44,7 @@ export default function ParameterBenchmarkModal() {
         setFixedParameter,
         removeFixedParameter,
         setEnvironmentSetup,
+        setSystemEnvironmentSetup,
         setMultipleRunsSetup,
         toggleMetric,
         executionState,
@@ -167,6 +175,7 @@ export default function ParameterBenchmarkModal() {
                 targetParameterSetup,
                 fixedParameters,
                 environmentSetup,
+                systemEnvironmentSetup,
                 multipleRunsSetup,
                 selectedMetrics: metricsConfig.selectedMetrics,
                 signal: controller.signal,
@@ -209,6 +218,7 @@ export default function ParameterBenchmarkModal() {
         algorithmMetrics,
         fixedParameters,
         environmentSetup,
+        systemEnvironmentSetup,
         multipleRunsSetup,
         metricsConfig.selectedMetrics,
         addStepResult,
@@ -283,6 +293,8 @@ export default function ParameterBenchmarkModal() {
                             onRemoveFixedParameter={removeFixedParameter}
                             environmentSetup={environmentSetup}
                             onSetEnvironmentSetup={setEnvironmentSetup}
+                            systemEnvironmentSetup={systemEnvironmentSetup}
+                            onSetSystemEnvironmentSetup={setSystemEnvironmentSetup}
                             multipleRunsSetup={multipleRunsSetup}
                             onSetMultipleRunsSetup={setMultipleRunsSetup}
                             metricsConfig={metricsConfig}
@@ -296,6 +308,7 @@ export default function ParameterBenchmarkModal() {
                             targetParameterName={selectedTargetParameter?.name ?? "Parameter"}
                             fixedParameters={fixedParameters}
                             environmentSetup={environmentSetup}
+                            systemEnvironmentSetup={systemEnvironmentSetup}
                             multipleRunsSetup={multipleRunsSetup}
                             metricsConfig={metricsConfig}
                             isRunning={isRunning}
@@ -334,6 +347,8 @@ interface SetupTabContentProps {
     onRemoveFixedParameter: (paramId: number) => void;
     environmentSetup: any;
     onSetEnvironmentSetup: (setup: any) => void;
+    systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
+    onSetSystemEnvironmentSetup: (setup: Partial<BenchmarkSystemEnvironmentSetup>) => void;
     multipleRunsSetup: any;
     onSetMultipleRunsSetup: (setup: any) => void;
     metricsConfig: any;
@@ -356,6 +371,8 @@ function SetupTabContent({
     onRemoveFixedParameter,
     environmentSetup,
     onSetEnvironmentSetup,
+    systemEnvironmentSetup,
+    onSetSystemEnvironmentSetup,
     multipleRunsSetup,
     onSetMultipleRunsSetup,
     metricsConfig,
@@ -378,6 +395,72 @@ function SetupTabContent({
                         </option>
                     ))}
                 </select>
+            </div>
+
+            {/* System Environment Parameters */}
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded flex flex-col gap-3">
+                <div className="text-sm font-medium text-amber-900">System Environment Parameters</div>
+
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-gray-600">Format</label>
+                        <select
+                            value={systemEnvironmentSetup.format}
+                            onChange={(e) => onSetSystemEnvironmentSetup({ format: e.target.value })}
+                            className="px-2 py-1 border border-gray-300 rounded text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        >
+                            {ENV_FORMAT_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-gray-600">Type</label>
+                        <select
+                            value={systemEnvironmentSetup.type}
+                            onChange={(e) => onSetSystemEnvironmentSetup({ type: e.target.value })}
+                            className="px-2 py-1 border border-gray-300 rounded text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        >
+                            {ENV_TYPE_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-gray-600">Coordinate System</label>
+                        <select
+                            value={systemEnvironmentSetup.coordinateSystem}
+                            onChange={(e) => onSetSystemEnvironmentSetup({ coordinateSystem: e.target.value })}
+                            className="px-2 py-1 border border-gray-300 rounded text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        >
+                            {COORD_SYSTEM_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-gray-600">Headland Width</label>
+                        <input
+                            type="text"
+                            value={systemEnvironmentSetup.headlandWidth}
+                            onChange={(e) => onSetSystemEnvironmentSetup({ headlandWidth: e.target.value })}
+                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        />
+                    </div>
+                </div>
+
+                <label className="flex items-center gap-2 cursor-pointer w-fit">
+                    <input
+                        type="checkbox"
+                        checked={systemEnvironmentSetup.headland}
+                        onChange={(e) => onSetSystemEnvironmentSetup({ headland: e.target.checked })}
+                        className="w-4 h-4 border-gray-300 rounded focus:ring-2 focus:ring-teal-500"
+                    />
+                    <span className="text-sm text-gray-700">Headland Enabled</span>
+                </label>
             </div>
 
             {/* Algorithm Selection */}
@@ -700,6 +783,7 @@ interface RunTabContentProps {
     targetParameterName: string;
     fixedParameters: BenchmarkFixedParameter[];
     environmentSetup: BenchmarkEnvironmentSetup;
+    systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
     multipleRunsSetup: BenchmarkMultipleRunsSetup;
     metricsConfig: { selectedMetrics: Set<BenchmarkMetricType> };
     isRunning: boolean;
@@ -716,6 +800,7 @@ function RunTabContent({
     targetParameterName,
     fixedParameters,
     environmentSetup,
+    systemEnvironmentSetup,
     multipleRunsSetup,
     metricsConfig,
     isRunning,
@@ -765,6 +850,11 @@ function RunTabContent({
                     <div><strong>Environment:</strong> {environmentSetup.width}×{environmentSetup.height} cells, {environmentSetup.cellSize} cell size</div>
                     <div><strong>Runs per Step:</strong> {multipleRunsSetup.runsPerStep}</div>
                     <div><strong>Aggregate Method:</strong> {multipleRunsSetup.stepValueCalculation}</div>
+                    <div><strong>Format:</strong> {ENV_FORMAT_OPTIONS.find((x) => x.value === systemEnvironmentSetup.format)?.label ?? systemEnvironmentSetup.format}</div>
+                    <div><strong>Type:</strong> {ENV_TYPE_OPTIONS.find((x) => x.value === systemEnvironmentSetup.type)?.label ?? systemEnvironmentSetup.type}</div>
+                    <div><strong>Coordinate System:</strong> {systemEnvironmentSetup.coordinateSystem}</div>
+                    <div><strong>Headland:</strong> {systemEnvironmentSetup.headland ? "Enabled" : "Disabled"}</div>
+                    <div><strong>Headland Width:</strong> {systemEnvironmentSetup.headlandWidth}</div>
                     <div>
                         <strong>Tracked Metrics:</strong> {
                             selectedMetrics

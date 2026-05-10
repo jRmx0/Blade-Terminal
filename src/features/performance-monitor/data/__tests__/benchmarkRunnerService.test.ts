@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { runBenchmark } from "@/features/performance-monitor/data/benchmarkRunnerService";
 import type {
     BenchmarkEnvironmentSetup,
     BenchmarkFixedParameter,
     BenchmarkMultipleRunsSetup,
     BenchmarkParameterSetup,
+    BenchmarkSystemEnvironmentSetup,
 } from "@/features/performance-monitor/stores/parameterBenchmarkModalStore";
 import type {
     AlgorithmMetric,
@@ -14,6 +14,32 @@ import type {
 } from "@/types/serviceTypes";
 
 const originalFetch = globalThis.fetch;
+
+if (!("localStorage" in globalThis)) {
+    const storage = new Map<string, string>();
+    const localStorageMock = {
+        getItem: (key: string) => storage.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+            storage.set(key, value);
+        },
+        removeItem: (key: string) => {
+            storage.delete(key);
+        },
+        clear: () => {
+            storage.clear();
+        },
+        key: (index: number) => Array.from(storage.keys())[index] ?? null,
+        get length() {
+            return storage.size;
+        },
+    } satisfies Storage;
+
+    Object.defineProperty(globalThis, "localStorage", {
+        configurable: true,
+        writable: true,
+        value: localStorageMock,
+    });
+}
 
 afterEach(() => {
     globalThis.fetch = originalFetch;
@@ -55,6 +81,16 @@ function makeEnvironmentSetup(): BenchmarkEnvironmentSetup {
         obstacleRatio: 20,
         clusteringProb: 50,
         seed: "benchmark-test-seed",
+    };
+}
+
+function makeSystemEnvironmentSetup(): BenchmarkSystemEnvironmentSetup {
+    return {
+        format: "polygon",
+        type: "any_offline",
+        coordinateSystem: "Cartesian",
+        headland: true,
+        headlandWidth: "10",
     };
 }
 
@@ -119,14 +155,31 @@ function makeCompletedState(coverageValue: number) {
     };
 }
 
+async function resetSystemEnvParameters() {
+    const { useEnvStore } = await import("@/stores/envStore");
+    const env = useEnvStore.getState().env;
+
+    useEnvStore.getState().setEnv({
+        ...env,
+        format: "polygon",
+        type: "any_offline",
+        coordSystem: "Cartesian",
+        headlandEnabled: true,
+        headlandWidth: "10",
+    });
+}
+
 describe("runBenchmark", () => {
     test("executes one step and aggregates selected metric", async () => {
+        const { runBenchmark } = await import("@/features/performance-monitor/data/benchmarkRunnerService");
+        await resetSystemEnvParameters();
+
+        let submittedBody: Record<string, any> | null = null;
+
         const fetchMock = async (input: string | URL, init?: RequestInit): Promise<Response> => {
             const url = String(input);
             if (url.endsWith("/compute")) {
-                const body = JSON.parse(String(init?.body ?? "{}"));
-                expect(body.algorithmId).toBe(1);
-                expect(body.parameters["Path Width"]).toBe(1);
+                submittedBody = JSON.parse(String(init?.body ?? "{}"));
                 return new Response(
                     JSON.stringify({
                         jobId: "job-1",
@@ -149,6 +202,7 @@ describe("runBenchmark", () => {
             targetParameterSetup: makeTargetSetup(),
             fixedParameters: [] as BenchmarkFixedParameter[],
             environmentSetup: makeEnvironmentSetup(),
+            systemEnvironmentSetup: makeSystemEnvironmentSetup(),
             multipleRunsSetup: makeMultipleRunsSetup(1),
             selectedMetrics: new Set(["coverage"]),
         });
@@ -159,9 +213,25 @@ describe("runBenchmark", () => {
         expect(results[0]?.aggregatedMetrics.coverage.median).toBe(0.75);
         expect(results[0]?.aggregatedMetrics.coverage.average).toBe(0.75);
         expect(results[0]?.aggregatedMetrics.turns.median).toBeNull();
+
+        if (!submittedBody) {
+            throw new Error("Expected benchmark request body to be captured.");
+        }
+
+        const body = submittedBody as Record<string, any>;
+        expect(body.algorithmId).toBe(1);
+        expect(body.parameters?.["Path Width"]).toBe(1);
+        expect(body.parameters?.["Format"]).toBe("Polygon");
+        expect(body.parameters?.["Type"]).toBe("Any (default: Off-Line)");
+        expect(body.parameters?.["Coordinate System"]).toBe("Cartesian");
+        expect(body.parameters?.["Headland"]).toBeTrue();
+        expect(body.parameters?.["Headland Width"]).toBe("10");
     });
 
     test("continues to next run when one run fails", async () => {
+        const { runBenchmark } = await import("@/features/performance-monitor/data/benchmarkRunnerService");
+        await resetSystemEnvParameters();
+
         let call = 0;
 
         const fetchMock = async (input: string | URL): Promise<Response> => {
@@ -204,6 +274,7 @@ describe("runBenchmark", () => {
             targetParameterSetup: makeTargetSetup(),
             fixedParameters: [] as BenchmarkFixedParameter[],
             environmentSetup: makeEnvironmentSetup(),
+            systemEnvironmentSetup: makeSystemEnvironmentSetup(),
             multipleRunsSetup: makeMultipleRunsSetup(2),
             selectedMetrics: new Set(["coverage"]),
         });

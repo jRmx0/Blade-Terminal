@@ -31,6 +31,19 @@ export interface BenchmarkEnvironmentSetup {
     seed: string;
 }
 
+export interface BenchmarkSystemEnvironmentSetup {
+    /** Environment format value */
+    format: string;
+    /** Environment type value */
+    type: string;
+    /** Coordinate system value */
+    coordinateSystem: string;
+    /** Whether headland is enabled */
+    headland: boolean;
+    /** Headland width sent to provider */
+    headlandWidth: string;
+}
+
 export type BenchmarkStepValueCalculation = "median" | "average";
 
 export type BenchmarkMetricType = "coverage" | "overlap" | "efficiency" | "turns" | "pathLength";
@@ -135,6 +148,7 @@ interface ParameterBenchmarkModalState {
     targetParameterSetup: BenchmarkParameterSetup | null;
     fixedParameters: BenchmarkFixedParameter[];
     environmentSetup: BenchmarkEnvironmentSetup;
+    systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
     multipleRunsSetup: BenchmarkMultipleRunsSetup;
     metricsConfig: BenchmarkMetricsConfig;
     isRunning: boolean;
@@ -151,6 +165,7 @@ interface ParameterBenchmarkModalState {
     setFixedParameter: (paramId: number, value: string) => void;
     removeFixedParameter: (paramId: number) => void;
     setEnvironmentSetup: (setup: Partial<BenchmarkEnvironmentSetup>) => void;
+    setSystemEnvironmentSetup: (setup: Partial<BenchmarkSystemEnvironmentSetup>) => void;
     setMultipleRunsSetup: (setup: Partial<BenchmarkMultipleRunsSetup>) => void;
     toggleMetric: (metric: BenchmarkMetricType) => void;
     setMetrics: (metrics: BenchmarkMetricType[]) => void;
@@ -203,6 +218,7 @@ const INITIAL_STATE: Omit<ParameterBenchmarkModalState, keyof {
     setFixedParameter: () => void;
     removeFixedParameter: () => void;
     setEnvironmentSetup: () => void;
+    setSystemEnvironmentSetup: () => void;
     setMultipleRunsSetup: () => void;
     toggleMetric: () => void;
     setMetrics: () => void;
@@ -227,6 +243,13 @@ const INITIAL_STATE: Omit<ParameterBenchmarkModalState, keyof {
         obstacleRatio: 25,
         clusteringProb: 50,
         seed: "",
+    },
+    systemEnvironmentSetup: {
+        format: "polygon",
+        type: "any_offline",
+        coordinateSystem: "Cartesian",
+        headland: true,
+        headlandWidth: "10",
     },
     multipleRunsSetup: {
         runsPerStep: 3,
@@ -278,6 +301,12 @@ export const useParameterBenchmarkModalStore = create<ParameterBenchmarkModalSta
     setEnvironmentSetup: (setup) => {
         set((state) => ({
             environmentSetup: { ...state.environmentSetup, ...setup },
+        }));
+    },
+
+    setSystemEnvironmentSetup: (setup) => {
+        set((state) => ({
+            systemEnvironmentSetup: { ...state.systemEnvironmentSetup, ...setup },
         }));
     },
 
