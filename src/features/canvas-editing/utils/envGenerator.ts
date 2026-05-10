@@ -796,6 +796,101 @@ function classifyObstacleComponents(
     return { boundaryGrid, interiorGrid };
 }
 
+function computeDistanceToNearestObstacle(
+    grid: Uint8Array,
+    cols: number,
+    rows: number,
+): Uint32Array {
+    const totalCells = cols * rows;
+    const distanceGrid = new Uint32Array(totalCells);
+    const queue = new Uint32Array(totalCells);
+
+    // Initialize: distance 0 for obstacles and boundary cells
+    let queueTail = 0;
+    for (let idx = 0; idx < totalCells; idx++) {
+        if (grid[idx] === 1) {
+            distanceGrid[idx] = 0;
+            queue[queueTail++] = idx;
+        }
+    }
+
+    // Add boundary edge cells
+    for (let x = 0; x < cols; x++) {
+        for (let y = 0; y < rows; y++) {
+            if (isOnEdge(x, y, cols, rows) && grid[toIndex(x, y, cols)] === 0) {
+                const idx = toIndex(x, y, cols);
+                distanceGrid[idx] = 0;
+                queue[queueTail++] = idx;
+            }
+        }
+    }
+
+    // Multi-source BFS: expand from all obstacles and boundary
+    let queueHead = 0;
+    while (queueHead < queueTail) {
+        const current = queue[queueHead++] as number;
+        const x = current % cols;
+        const y = Math.floor(current / cols);
+        const currentDist = distanceGrid[current] as number;
+
+        // Check all 4-neighbors
+        const neighbors = [
+            x > 0 ? current - 1 : -1,
+            x + 1 < cols ? current + 1 : -1,
+            y > 0 ? current - cols : -1,
+            y + 1 < rows ? current + cols : -1,
+        ];
+
+        for (const neighbor of neighbors) {
+            if (neighbor < 0) continue;
+            if (distanceGrid[neighbor] !== 0) continue; // Already visited (distance > 0 or uninitialized)
+
+            distanceGrid[neighbor] = currentDist + 1;
+            queue[queueTail++] = neighbor;
+        }
+    }
+
+    return distanceGrid;
+}
+
+function findLoneliesPoint(
+    grid: Uint8Array,
+    cols: number,
+    rows: number,
+    cellSize: number,
+    width: number,
+    height: number,
+): Point {
+    const distanceGrid = computeDistanceToNearestObstacle(grid, cols, rows);
+
+    let bestX = -1;
+    let bestY = -1;
+    let bestDist = -1;
+
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const idx = toIndex(x, y, cols);
+            if (grid[idx] === 1) continue; // Skip obstacles
+
+            const dist = distanceGrid[idx] as number;
+            if (dist > bestDist) {
+                bestDist = dist;
+                bestX = x;
+                bestY = y;
+            }
+        }
+    }
+
+    if (bestX < 0 || bestY < 0) {
+        return { x: width / 2, y: height / 2 };
+    }
+
+    return {
+        x: Math.min((bestX + 0.5) * cellSize, width),
+        y: Math.min((bestY + 0.5) * cellSize, height),
+    };
+}
+
 function findBestPoint(
     grid: Uint8Array,
     cols: number,
@@ -1027,8 +1122,8 @@ export function computeResolvedClusteringPct(seed: string, range?: [number, numb
 // ============================================================================
 
 /**
- * Generates a rectangular environment with obstacle geometry and center-biased
- * start/end point selection.
+ * Generates a rectangular environment with obstacle geometry and "loneliest island"
+ * start/end point selection (furthest point from boundaries and obstacles).
  */
 export function generateEnvironment({
     width,
@@ -1208,7 +1303,7 @@ export function generateEnvironment({
         ? Math.round((placedObstacleCells / totalCells) * 100)
         : 0;
 
-    const startEndPoint = findBestPoint(obstacleGrid, cols, rows, cellSize, width, height);
+    const startEndPoint = findLoneliesPoint(obstacleGrid, cols, rows, cellSize, width, height);
 
     return {
         boundary,
