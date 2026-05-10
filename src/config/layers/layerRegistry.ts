@@ -5,6 +5,8 @@ export const LAYER_NAME = {
     COVERAGE_GRID: "Coverage Grid",
     ZONES: "Zones",
     OBSTACLES: "Obstacles",
+    SHRUNKEN_ZONES: "Shrunken Zones",
+    EXPANDED_OBSTACLES: "Expanded Obstacles",
     ENV_POINTS: "Env Points",
     SATELLITE_MAP: "Satellite Map",
 } as const;
@@ -18,13 +20,17 @@ export const LAYER_ID = {
     ENV_POINTS: 4,
     COVERAGE_GRID: 5,
     SATELLITE_MAP: 6,
+    SHRUNKEN_ZONES: 7,
+    EXPANDED_OBSTACLES: 8,
 } as const;
 
 export const LAYER_REGISTRY: LayerDefinition[] = [
     { id: LAYER_ID.GRID, name: LAYER_NAME.GRID, type: "Grid" },
     { id: LAYER_ID.COVERAGE_GRID, name: LAYER_NAME.COVERAGE_GRID, type: "Grid" },
     { id: LAYER_ID.ZONES, name: LAYER_NAME.ZONES, type: "Polygon" },
+    { id: LAYER_ID.SHRUNKEN_ZONES, name: LAYER_NAME.SHRUNKEN_ZONES, type: "Polygon" },
     { id: LAYER_ID.OBSTACLES, name: LAYER_NAME.OBSTACLES, type: "Polygon" },
+    { id: LAYER_ID.EXPANDED_OBSTACLES, name: LAYER_NAME.EXPANDED_OBSTACLES, type: "Polygon" },
     { id: LAYER_ID.ENV_POINTS, name: LAYER_NAME.ENV_POINTS, type: "EnvPoints" },
     { id: LAYER_ID.SATELLITE_MAP, name: LAYER_NAME.SATELLITE_MAP, type: "Map" },
 ];
@@ -128,6 +134,24 @@ export const LAYER_SETTINGS_SETUP_DEFAULTS: LayerSettingsSetup[] = [
     { id: 61, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH, styleType: "Pixels", styleGroup: "polygon", defaultValue: "1.5" },
     // rgba(239,68,68,0.23) ≈ #ef44443b
     { id: 80, layerId: LAYER_ID.OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_FILL_COLOR, styleType: "Color", styleGroup: "polygon", defaultValue: "#ef44443b" },
+
+    // ── Shrunken Zones (Polygon) ─────────────────────────────────────────────
+    { id: 1, layerId: LAYER_ID.SHRUNKEN_ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "false" },
+    { id: 2, layerId: LAYER_ID.SHRUNKEN_ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.SHOW_VERTEX_IDS, styleType: "Boolean", defaultValue: "false" },
+    { id: 5, layerId: LAYER_ID.SHRUNKEN_ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "general", defaultValue: "25" },
+    { id: 60, layerId: LAYER_ID.SHRUNKEN_ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_COLOR, styleType: "Color", styleGroup: "polygon", defaultValue: "#22c55e" },
+    { id: 61, layerId: LAYER_ID.SHRUNKEN_ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH, styleType: "Pixels", styleGroup: "polygon", defaultValue: "2" },
+    { id: 62, layerId: LAYER_ID.SHRUNKEN_ZONES, algorithmId: 0, providerId: 0, key: "Polygon Edge Style", styleType: "StrokeStyleEnum", styleGroup: "polygon", defaultValue: "dotted" },
+    { id: 80, layerId: LAYER_ID.SHRUNKEN_ZONES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_FILL_COLOR, styleType: "Color", styleGroup: "polygon", defaultValue: "" },
+
+    // ── Expanded Obstacles (Polygon) ─────────────────────────────────────────
+    { id: 1, layerId: LAYER_ID.EXPANDED_OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "false" },
+    { id: 2, layerId: LAYER_ID.EXPANDED_OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.SHOW_VERTEX_IDS, styleType: "Boolean", defaultValue: "false" },
+    { id: 5, layerId: LAYER_ID.EXPANDED_OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "general", defaultValue: "35" },
+    { id: 60, layerId: LAYER_ID.EXPANDED_OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_COLOR, styleType: "Color", styleGroup: "polygon", defaultValue: "#ef4444" },
+    { id: 61, layerId: LAYER_ID.EXPANDED_OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH, styleType: "Pixels", styleGroup: "polygon", defaultValue: "2" },
+    { id: 62, layerId: LAYER_ID.EXPANDED_OBSTACLES, algorithmId: 0, providerId: 0, key: "Polygon Edge Style", styleType: "StrokeStyleEnum", styleGroup: "polygon", defaultValue: "dotted" },
+    { id: 80, layerId: LAYER_ID.EXPANDED_OBSTACLES, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.POLYGON_FILL_COLOR, styleType: "Color", styleGroup: "polygon", defaultValue: "" },
 
     // ── Env Points ───────────────────────────────────────────────────────────
     { id: 1, layerId: LAYER_ID.ENV_POINTS, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "true" },

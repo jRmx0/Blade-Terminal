@@ -1,7 +1,8 @@
 import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
 import { useEnvStore } from "@/stores/envStore";
-import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
+import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import LayerRow from "@/features/inspector/components/calc-layers-section/LayerRow";
+import { useHeadlandSystemStore } from "@/stores/headlandSystemStore";
 import type { LayerPK } from "@/types/layerTypes";
 
 function toLayerPK(layer: { id: number; algorithmId: number; providerId: number }): LayerPK {
@@ -15,6 +16,7 @@ export default function LayersTab() {
     const reorderLayers = useLayerSettingsStore((s) => s.reorderLayers);
     const selectedProviderId = useEnvStore((s) => s.computation.selectedProviderId);
     const selectedAlgorithmId = useEnvStore((s) => s.computation.selectedAlgorithmId);
+    const headlandEnabled = useHeadlandSystemStore((s) => s.enabled);
 
     if (layers.length === 0) {
         return (
@@ -28,6 +30,12 @@ export default function LayersTab() {
     //    provider and algorithm are selected and match.
     const visible = layers.filter((item) => {
         const { algorithmId, providerId } = item.layer;
+        if (
+            !headlandEnabled &&
+            (item.layer.id === LAYER_ID.SHRUNKEN_ZONES || item.layer.id === LAYER_ID.EXPANDED_OBSTACLES)
+        ) {
+            return false;
+        }
         if (algorithmId === 0 && providerId === 0) return true;
         return (
             selectedProviderId !== null &&

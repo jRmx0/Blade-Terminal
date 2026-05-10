@@ -6,6 +6,13 @@ import { useEnvStore } from "@/stores/envStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
+import { useHeadlandSystemStore } from "@/stores/headlandSystemStore";
+import {
+    computeHeadlandDerivedGeometry,
+    resolveHeadlandWidth,
+    resolvePathWidthForSelection,
+    SYSTEM_HEADLAND_PROVIDER_PARAM_NAMES,
+} from "@/features/coverage-planning/utils/headlandGeometry";
 import type { AlgoParamType, ComputeJobState, ComputeJobStateCompleted } from "@/types/serviceTypes";
 import type { ComputeResultRecord } from "@/types/schemaTypes";
 
@@ -86,11 +93,12 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
     const algoParams = catalogParameters.filter(
         (p) => p.algorithmId === selectedAlgorithmId && p.computationProviderId === selectedProviderId,
     );
+    const providerParams = algoParams.filter((p) => !SYSTEM_HEADLAND_PROVIDER_PARAM_NAMES.has(p.name));
 
     const { parameterValues } = useParameterValuesStore.getState();
 
     const parameters: Record<string, number | boolean | string | null> = {};
-    for (const param of algoParams) {
+    for (const param of providerParams) {
         const pv = parameterValues.find(
             (v) =>
                 v.id === param.id &&
@@ -133,10 +141,27 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
     const resolvedStart = startPoint ?? startEndPoint!;
     const resolvedEnd = endPoint ?? startEndPoint!;
 
-    const zones = zoneObjects.map((o) => ({
+    const { enabled: headlandEnabled, width: headlandWidthRaw } = useHeadlandSystemStore.getState();
+    const resolvedPathWidth = resolvePathWidthForSelection({
+        algorithmId: selectedAlgorithmId,
+        providerId: selectedProviderId,
+        environmentId: useEnvStore.getState().env.id,
+        catalogParams,
+        parameterValues,
+        fallback: 20,
+    });
+    const headlandWidth = resolveHeadlandWidth(headlandWidthRaw, resolvedPathWidth);
+
+    const derivedHeadland = computeHeadlandDerivedGeometry({
+        objects,
+        headlandEnabled,
+        headlandWidth,
+    });
+
+    const zones = (headlandEnabled ? derivedHeadland.shrunkenZones : zoneObjects).map((o) => ({
         vertices: o.vertices.map(({ x, y }) => ({ x, y })),
     }));
-    const obstacles = obstacleObjects.map((o) => ({
+    const obstacles = (headlandEnabled ? derivedHeadland.expandedObstacles : obstacleObjects).map((o) => ({
         vertices: o.vertices.map(({ x, y }) => ({ x, y })),
     }));
 

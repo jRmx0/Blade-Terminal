@@ -6,6 +6,7 @@ export default function ControlsPanelSectionInput({
   value,
   onChange,
   disabled = false,
+  placeholder,
   type = "text",
   min,
   max,
@@ -35,6 +36,7 @@ export default function ControlsPanelSectionInput({
         type={type}
         value={displayValue}
         onChange={(e) => onChange(e.target.value)}
+        placeholder={isFocused ? placeholder : undefined}
         min={min}
         max={max}
         onFocus={() => setIsFocused(true)}

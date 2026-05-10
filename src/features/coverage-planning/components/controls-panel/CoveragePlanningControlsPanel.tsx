@@ -25,8 +25,16 @@ import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
+import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
+import { useHeadlandSystemStore } from "@/stores/headlandSystemStore";
+import { LAYER_ID } from "@/config/layers/layerRegistry";
 import type { AlgorithmParameter, AppEnumValue } from "@/types/serviceTypes";
 import type { ComputationAlgorithmParameter } from "@/types/schemaTypes";
+import {
+    SYSTEM_HEADLAND_PROVIDER_PARAM_NAMES,
+    resolveHeadlandWidth,
+    resolvePathWidthForSelection,
+} from "@/features/coverage-planning/utils/headlandGeometry";
 import {
     type UnitOfMeasure,
     unitLabel,
@@ -189,6 +197,11 @@ export default function CoveragePlanningControlsPanel() {
 
     const allParameterValues = useParameterValuesStore((state) => state.parameterValues);
     const setParameterValueInStore = useParameterValuesStore((state) => state.setParameterValue);
+    const setLayerVisible = useLayerSettingsStore((state) => state.setVisible);
+    const headlandEnabled = useHeadlandSystemStore((state) => state.enabled);
+    const headlandWidth = useHeadlandSystemStore((state) => state.width);
+    const setHeadlandEnabled = useHeadlandSystemStore((state) => state.setEnabled);
+    const setHeadlandWidth = useHeadlandSystemStore((state) => state.setWidth);
 
     const parameterValues = useMemo(() => {
         if (computation.selectedProviderId === null || computation.selectedAlgorithmId === null) return [];
@@ -376,11 +389,36 @@ export default function CoveragePlanningControlsPanel() {
             (p) =>
                 p.appHandler !== APP_PARAMETER_HANDLER.ENVIRONMENT_FORMAT &&
                 p.appHandler !== APP_PARAMETER_HANDLER.ENVIRONMENT_TYPE &&
-                p.appHandler !== APP_PARAMETER_HANDLER.ENVIRONMENT_COORDSYSTEM,
+                p.appHandler !== APP_PARAMETER_HANDLER.ENVIRONMENT_COORDSYSTEM &&
+                !SYSTEM_HEADLAND_PROVIDER_PARAM_NAMES.has(p.name),
         ),
         [parameters],
     );
     const parameterSections = useMemo(() => groupParametersBySection(nonEnvParameters), [nonEnvParameters]);
+
+    const resolvedPathWidth = useMemo(() => {
+        if (computation.selectedAlgorithmId === null || computation.selectedProviderId === null) return 20;
+        return resolvePathWidthForSelection({
+            algorithmId: computation.selectedAlgorithmId,
+            providerId: computation.selectedProviderId,
+            environmentId: envId,
+            catalogParams: allParameters,
+            parameterValues: allParameterValues,
+            fallback: 20,
+        });
+    }, [computation.selectedAlgorithmId, computation.selectedProviderId, envId, allParameters, allParameterValues]);
+
+    const headlandWidthPlaceholder = useMemo(() => {
+        const auto = resolveHeadlandWidth("", resolvedPathWidth);
+        return Number.isFinite(auto) ? String(auto) : "10";
+    }, [resolvedPathWidth]);
+
+    useEffect(() => {
+        const shrunkenZonesPK = { id: LAYER_ID.SHRUNKEN_ZONES, algorithmId: 0, providerId: 0 };
+        const expandedObstaclesPK = { id: LAYER_ID.EXPANDED_OBSTACLES, algorithmId: 0, providerId: 0 };
+        setLayerVisible(shrunkenZonesPK, headlandEnabled);
+        setLayerVisible(expandedObstaclesPK, headlandEnabled);
+    }, [headlandEnabled, setLayerVisible]);
 
     // Seed defaults for any parameter not yet written to the store.
     // ENVIRONMENT_FORMAT, ENVIRONMENT_TYPE, and ENVIRONMENT_COORDSYSTEM are skipped —
@@ -394,7 +432,8 @@ export default function CoveragePlanningControlsPanel() {
             if (
                 parameter.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_FORMAT ||
                 parameter.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_TYPE ||
-                parameter.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_COORDSYSTEM
+                parameter.appHandler === APP_PARAMETER_HANDLER.ENVIRONMENT_COORDSYSTEM ||
+                SYSTEM_HEADLAND_PROVIDER_PARAM_NAMES.has(parameter.name)
             ) {
                 continue;
             }
@@ -469,6 +508,26 @@ export default function CoveragePlanningControlsPanel() {
                     parameterName={envCoordParam?.name}
                     enumValues={envCoordParam?.enumValues}
                 />
+            </ControlsPanelSection>
+
+            <ControlsPanelSeparator />
+
+            <ControlsPanelSection sectionId="headland-system" title="Headland">
+                <ControlsPanelSectionCheckbox
+                    label="Headland"
+                    checked={headlandEnabled}
+                    onChange={setHeadlandEnabled}
+                />
+                {headlandEnabled && (
+                    <ControlsPanelSectionInput
+                        label="Headland Width"
+                        value={headlandWidth}
+                        onChange={setHeadlandWidth}
+                        type="number"
+                        min={0}
+                        placeholder={headlandWidthPlaceholder}
+                    />
+                )}
             </ControlsPanelSection>
 
             {parameterSections.length > 0 && (

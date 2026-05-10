@@ -29,6 +29,7 @@ import { CanvasDrawingPreviewLayer } from "@/features/canvas-editing/components/
 import { CanvasDynamicLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasDynamicLayer";
 import { CanvasEnvPointsLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasEnvPointsLayer";
 import { CanvasMapTileLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasMapTileLayer";
+import { CanvasSystemPolygonResultLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasSystemPolygonResultLayer";
 import CanvasModifierFloatingControl from "@/features/canvas-editing/components/floating-control/CanvasModifierFloatingControl";
 import CanvasGeneratorFloatingControl from "@/features/canvas-editing/components/floating-control/CanvasGeneratorFloatingControl";
 import { useEnvPointStore } from "@/stores/envPointStore";
@@ -36,6 +37,14 @@ import { useEnvStore } from "@/stores/envStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useProviderLayerStore } from "@/stores/providerLayerStore";
 import { extractLayerData, getProviderLayersForResult } from "@/features/canvas-editing/utils/layerDataUtils";
+import { useHeadlandSystemStore } from "@/stores/headlandSystemStore";
+import {
+  computeHeadlandDerivedGeometry,
+  resolveHeadlandWidth,
+  resolvePathWidthForSelection,
+} from "@/features/coverage-planning/utils/headlandGeometry";
+import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
+import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 
 export default function CanvasEditor() {
   const stageRef = useRef<Konva.Stage>(null);
@@ -55,6 +64,12 @@ export default function CanvasEditor() {
   const layerSettings = useLayerSettingsStore((s) => s.layers);
   const result = useComputeResultStore((s) => s.result);
   const providerLayers = useProviderLayerStore((s) => s.layers);
+  const headlandEnabled = useHeadlandSystemStore((s) => s.enabled);
+  const headlandWidthRaw = useHeadlandSystemStore((s) => s.width);
+  const allCatalogParams = useComputationCatalogStore((s) => s.parameters);
+  const allParameterValues = useParameterValuesStore((s) => s.parameterValues);
+  const selectedProviderId = useEnvStore((s) => s.computation.selectedProviderId);
+  const selectedAlgorithmId = useEnvStore((s) => s.computation.selectedAlgorithmId);
   const {
     objects,
     addObject,
@@ -180,8 +195,32 @@ export default function CanvasEditor() {
   const gridZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.GRID, LAYER_PARAM_KEY.Z_INDEX) ?? "10", 10);
   const coverageGridZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.COVERAGE_GRID, LAYER_PARAM_KEY.Z_INDEX) ?? "15", 10);
   const zoneZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.ZONES, LAYER_PARAM_KEY.Z_INDEX) ?? "20", 10);
+  const shrunkenZonesZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.SHRUNKEN_ZONES, LAYER_PARAM_KEY.Z_INDEX) ?? "25", 10);
   const obstacleZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.OBSTACLES, LAYER_PARAM_KEY.Z_INDEX) ?? "30", 10);
+  const expandedObstaclesZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.EXPANDED_OBSTACLES, LAYER_PARAM_KEY.Z_INDEX) ?? "35", 10);
   const envPointsZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.ENV_POINTS, LAYER_PARAM_KEY.Z_INDEX) ?? "40", 10);
+
+  const resolvedPathWidth = useMemo(() => {
+    if (selectedAlgorithmId === null || selectedProviderId === null) return 20;
+    return resolvePathWidthForSelection({
+      algorithmId: selectedAlgorithmId,
+      providerId: selectedProviderId,
+      environmentId: envId,
+      catalogParams: allCatalogParams,
+      parameterValues: allParameterValues,
+      fallback: 20,
+    });
+  }, [selectedAlgorithmId, selectedProviderId, envId, allCatalogParams, allParameterValues]);
+
+  const headlandWidth = useMemo(
+    () => resolveHeadlandWidth(headlandWidthRaw, resolvedPathWidth),
+    [headlandWidthRaw, resolvedPathWidth],
+  );
+
+  const { shrunkenZones, expandedObstacles } = useMemo(
+    () => computeHeadlandDerivedGeometry({ objects, headlandEnabled, headlandWidth }),
+    [objects, headlandEnabled, headlandWidth],
+  );
 
   // Memoize provider layers active for the current compute result.
   const activeProviderLayers = useMemo(
@@ -214,7 +253,9 @@ export default function CanvasEditor() {
     { kind: "system" as const, id: "grid" as const, zIndex: gridZIndex },
     { kind: "system" as const, id: "coverageGrid" as const, zIndex: coverageGridZIndex },
     { kind: "system" as const, id: "zones" as const, zIndex: zoneZIndex },
+    { kind: "system" as const, id: "shrunkenZones" as const, zIndex: shrunkenZonesZIndex },
     { kind: "system" as const, id: "obstacles" as const, zIndex: obstacleZIndex },
+    { kind: "system" as const, id: "expandedObstacles" as const, zIndex: expandedObstaclesZIndex },
     { kind: "system" as const, id: "envPoints" as const, zIndex: envPointsZIndex },
     ...dynamicEntries,
   ].sort((a, b) => a.zIndex - b.zIndex);
@@ -381,6 +422,15 @@ export default function CanvasEditor() {
               />
             );
           }
+          if (entry.id === "shrunkenZones") {
+            return (
+              <CanvasSystemPolygonResultLayer
+                key="shrunkenZones"
+                layerId={LAYER_ID.SHRUNKEN_ZONES}
+                items={shrunkenZones}
+              />
+            );
+          }
           if (entry.id === "obstacles") {
             return (
               <CanvasPolygonObjectsLayer
@@ -397,6 +447,15 @@ export default function CanvasEditor() {
                 onObjectHoverChange={setIsHoveringObject}
                 onObjectDragStart={handleObjectDragStart}
                 onObjectDragEnd={handleObjectDragEnd}
+              />
+            );
+          }
+          if (entry.id === "expandedObstacles") {
+            return (
+              <CanvasSystemPolygonResultLayer
+                key="expandedObstacles"
+                layerId={LAYER_ID.EXPANDED_OBSTACLES}
+                items={expandedObstacles}
               />
             );
           }
