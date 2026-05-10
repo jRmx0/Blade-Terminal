@@ -3,6 +3,7 @@ import {
     computeResolvedClusteringPct,
     computeResolvedObstacleRatioPct,
     generateEnvironment,
+    pickWeightedClusteringPriority,
 } from "@/features/canvas-editing/utils/envGenerator";
 import { mulberry32, computeActualObstacleRatioPct } from "./testUtils";
 
@@ -144,6 +145,54 @@ describe("generateEnvironment - pocket prevention", () => {
             const freeComponents = countFreeComponentsFromEnv(env, cols, rows, cellSize);
             expect(freeComponents).toBeLessThanOrEqual(1);
         }
+    });
+});
+
+describe("clustering priority weighted distribution", () => {
+    test("favors higher priorities when all priority buckets are available", () => {
+        const rng = mulberry32(0xBADC0DE);
+        const counts: [number, number, number] = [0, 0, 0];
+        const draws = 60000;
+
+        for (let i = 0; i < draws; i++) {
+            const picked = pickWeightedClusteringPriority(rng, [1, 2, 3]);
+            expect(picked).not.toBeNull();
+            counts[(picked! - 1) as 0 | 1 | 2] += 1;
+        }
+
+        const p1 = counts[0] / draws;
+        const p2 = counts[1] / draws;
+        const p3 = counts[2] / draws;
+
+        // Expect strict ordering with weights 1:2:3.
+        expect(p3).toBeGreaterThan(p2);
+        expect(p2).toBeGreaterThan(p1);
+
+        // Theoretical probabilities are [1/6, 2/6, 3/6].
+        expect(Math.abs(p1 - 1 / 6)).toBeLessThan(0.02);
+        expect(Math.abs(p2 - 2 / 6)).toBeLessThan(0.02);
+        expect(Math.abs(p3 - 3 / 6)).toBeLessThan(0.02);
+    });
+
+    test("respects reduced availability subsets", () => {
+        const rng = mulberry32(0xFEED123);
+        const counts: [number, number] = [0, 0];
+        const draws = 40000;
+
+        for (let i = 0; i < draws; i++) {
+            const picked = pickWeightedClusteringPriority(rng, [1, 3]);
+            expect(picked === 1 || picked === 3).toBeTrue();
+            if (picked === 1) counts[0] += 1;
+            if (picked === 3) counts[1] += 1;
+        }
+
+        const p1 = counts[0] / draws;
+        const p3 = counts[1] / draws;
+
+        // With weights 1 and 3, expected probabilities are 1/4 and 3/4.
+        expect(p3).toBeGreaterThan(p1);
+        expect(Math.abs(p1 - 0.25)).toBeLessThan(0.02);
+        expect(Math.abs(p3 - 0.75)).toBeLessThan(0.02);
     });
 });
 

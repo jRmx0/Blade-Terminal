@@ -123,6 +123,31 @@ const DIAG_DIRS: ReadonlyArray<readonly [number, number]> = [
     [-1, -1],
 ];
 
+const CLUSTERING_PRIORITY_WEIGHTS: ReadonlyArray<number> = [1, 2, 3];
+
+export function pickWeightedClusteringPriority(
+    rng: () => number,
+    availablePriorities: ReadonlyArray<1 | 2 | 3>,
+): 1 | 2 | 3 | null {
+    if (availablePriorities.length === 0) return null;
+
+    let totalWeight = 0;
+    for (const priority of availablePriorities) {
+        totalWeight += CLUSTERING_PRIORITY_WEIGHTS[priority - 1] as number;
+    }
+
+    if (totalWeight <= 0) return null;
+
+    let draw = rng() * totalWeight;
+    for (const priority of availablePriorities) {
+        const weight = CLUSTERING_PRIORITY_WEIGHTS[priority - 1] as number;
+        if (draw < weight) return priority;
+        draw -= weight;
+    }
+
+    return availablePriorities[availablePriorities.length - 1] ?? null;
+}
+
 function traceZonePolygon(width: number, height: number): Point[] {
     return [
         { x: 0, y: 0 },
@@ -187,6 +212,18 @@ function hasObstacleNeighbor4(grid: Uint8Array, x: number, y: number, cols: numb
     return false;
 }
 
+function countObstacleNeighbor4(grid: Uint8Array, x: number, y: number, cols: number, rows: number): number {
+    let count = 0;
+    for (const [dx, dy] of ORTHO_DIRS) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (isInBounds(nx, ny, cols, rows) && grid[toIndex(nx, ny, cols)] === 1) {
+            count += 1;
+        }
+    }
+    return count;
+}
+
 function diagonalNeighborHasOrthogonalBridge(
     grid: Uint8Array,
     x: number,
@@ -242,12 +279,47 @@ function isNonClusteringCandidate(grid: Uint8Array, idx: number, cols: number, r
     return !hasObstacleNeighbor8(grid, x, y, cols, rows);
 }
 
-function isClusteringLocalCandidate(grid: Uint8Array, idx: number, cols: number, rows: number): boolean {
-    if (grid[idx] === 1) return false;
+function getClusteringPriorityForIdx(grid: Uint8Array, idx: number, cols: number, rows: number): 0 | 1 | 2 | 3 {
+    if (grid[idx] === 1) return 0;
     const x = idx % cols;
     const y = Math.floor(idx / cols);
-    if (!hasObstacleNeighbor4(grid, x, y, cols, rows)) return false;
-    return diagonalNeighborHasOrthogonalBridge(grid, x, y, cols, rows);
+    if (!hasObstacleNeighbor4(grid, x, y, cols, rows)) return 0;
+    if (!diagonalNeighborHasOrthogonalBridge(grid, x, y, cols, rows)) return 0;
+
+    const orthogonalObstacleCount = countObstacleNeighbor4(grid, x, y, cols, rows);
+    if (orthogonalObstacleCount <= 0) return 0;
+    if (orthogonalObstacleCount >= 3) return 3;
+    return orthogonalObstacleCount as 1 | 2;
+}
+
+function getPriorityPool(
+    clusteringPoolsByPriority: [CandidatePool, CandidatePool, CandidatePool],
+    priority: 1 | 2 | 3,
+): CandidatePool {
+    if (priority === 1) return clusteringPoolsByPriority[0];
+    if (priority === 2) return clusteringPoolsByPriority[1];
+    return clusteringPoolsByPriority[2];
+}
+
+function updateClusteringPriorityBucketForIdx(
+    grid: Uint8Array,
+    idx: number,
+    cols: number,
+    rows: number,
+    clusteringPoolsByPriority: [CandidatePool, CandidatePool, CandidatePool],
+    clusteringPriorityByIdx: Int8Array,
+): void {
+    const previousPriority = clusteringPriorityByIdx[idx] as 0 | 1 | 2 | 3;
+    if (previousPriority > 0) {
+        getPriorityPool(clusteringPoolsByPriority, previousPriority as 1 | 2 | 3).remove(idx);
+        clusteringPriorityByIdx[idx] = 0;
+    }
+
+    const nextPriority = getClusteringPriorityForIdx(grid, idx, cols, rows);
+    if (nextPriority > 0) {
+        getPriorityPool(clusteringPoolsByPriority, nextPriority as 1 | 2 | 3).add(idx);
+        clusteringPriorityByIdx[idx] = nextPriority;
+    }
 }
 
 function initializeCandidatePools(
@@ -255,12 +327,20 @@ function initializeCandidatePools(
     cols: number,
     rows: number,
     nonClusteringPool: CandidatePool,
-    clusteringPool: CandidatePool,
+    clusteringPoolsByPriority: [CandidatePool, CandidatePool, CandidatePool],
+    clusteringPriorityByIdx: Int8Array,
 ): void {
     const total = cols * rows;
     for (let idx = 0; idx < total; idx++) {
         nonClusteringPool.upsert(idx, isNonClusteringCandidate(grid, idx, cols, rows));
-        clusteringPool.upsert(idx, isClusteringLocalCandidate(grid, idx, cols, rows));
+        updateClusteringPriorityBucketForIdx(
+            grid,
+            idx,
+            cols,
+            rows,
+            clusteringPoolsByPriority,
+            clusteringPriorityByIdx,
+        );
     }
 }
 
@@ -270,7 +350,8 @@ function updateCandidatePoolsAroundCell(
     rows: number,
     cellIdx: number,
     nonClusteringPool: CandidatePool,
-    clusteringPool: CandidatePool,
+    clusteringPoolsByPriority: [CandidatePool, CandidatePool, CandidatePool],
+    clusteringPriorityByIdx: Int8Array,
 ): void {
     const cellX = cellIdx % cols;
     const cellY = Math.floor(cellIdx / cols);
@@ -283,7 +364,14 @@ function updateCandidatePoolsAroundCell(
         for (let x = minX; x <= maxX; x++) {
             const idx = toIndex(x, y, cols);
             nonClusteringPool.upsert(idx, isNonClusteringCandidate(grid, idx, cols, rows));
-            clusteringPool.upsert(idx, isClusteringLocalCandidate(grid, idx, cols, rows));
+            updateClusteringPriorityBucketForIdx(
+                grid,
+                idx,
+                cols,
+                rows,
+                clusteringPoolsByPriority,
+                clusteringPriorityByIdx,
+            );
         }
     }
 }
@@ -311,11 +399,14 @@ function pickFromNonClusteringPool(
     return null;
 }
 
-function pickFromClusteringPool(
+function pickFromClusteringPriorityPool(
     pool: CandidatePool,
+    priority: 1 | 2 | 3,
     grid: Uint8Array,
     cols: number,
     rows: number,
+    clusteringPoolsByPriority: [CandidatePool, CandidatePool, CandidatePool],
+    clusteringPriorityByIdx: Int8Array,
     visited: Uint8Array,
     queue: Uint32Array,
     rng: () => number,
@@ -326,14 +417,72 @@ function pickFromClusteringPool(
     const start = Math.floor(rng() * size);
     for (let step = 0; step < size; step++) {
         const idx = pool.getAt((start + step) % size);
-        if (!isClusteringLocalCandidate(grid, idx, cols, rows)) {
+        if ((clusteringPriorityByIdx[idx] as 0 | 1 | 2 | 3) !== priority) {
             pool.remove(idx);
+            continue;
+        }
+
+        const actualPriority = getClusteringPriorityForIdx(grid, idx, cols, rows);
+        if (actualPriority !== priority) {
+            updateClusteringPriorityBucketForIdx(
+                grid,
+                idx,
+                cols,
+                rows,
+                clusteringPoolsByPriority,
+                clusteringPriorityByIdx,
+            );
             continue;
         }
 
         if (!wouldCreatePocketByLocalConnectivity(grid, idx, cols, rows, visited, queue)) {
             return idx;
         }
+    }
+
+    return null;
+}
+
+function pickFromWeightedClusteringPriorityPools(
+    clusteringPoolsByPriority: [CandidatePool, CandidatePool, CandidatePool],
+    grid: Uint8Array,
+    cols: number,
+    rows: number,
+    clusteringPriorityByIdx: Int8Array,
+    visited: Uint8Array,
+    queue: Uint32Array,
+    rng: () => number,
+): number | null {
+    const remaining: Record<1 | 2 | 3, boolean> = { 1: true, 2: true, 3: true };
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        const availablePriorities: Array<1 | 2 | 3> = [];
+
+        for (const priority of [1, 2, 3] as const) {
+            if (!remaining[priority]) continue;
+            const pool = getPriorityPool(clusteringPoolsByPriority, priority);
+            if (pool.size() === 0) continue;
+            availablePriorities.push(priority);
+        }
+
+        const chosenPriority = pickWeightedClusteringPriority(rng, availablePriorities);
+        if (chosenPriority === null) return null;
+
+        const picked = pickFromClusteringPriorityPool(
+            getPriorityPool(clusteringPoolsByPriority, chosenPriority),
+            chosenPriority,
+            grid,
+            cols,
+            rows,
+            clusteringPoolsByPriority,
+            clusteringPriorityByIdx,
+            visited,
+            queue,
+            rng,
+        );
+
+        if (picked !== null) return picked;
+        remaining[chosenPriority] = false;
     }
 
     return null;
@@ -720,21 +869,51 @@ export function generateEnvironment({
     const pocketVisited = new Uint8Array(totalCells);
     const pocketQueue = new Uint32Array(totalCells);
     const nonClusteringPool = new CandidatePool(totalCells);
-    const clusteringPool = new CandidatePool(totalCells);
+    const clusteringPoolsByPriority: [CandidatePool, CandidatePool, CandidatePool] = [
+        new CandidatePool(totalCells),
+        new CandidatePool(totalCells),
+        new CandidatePool(totalCells),
+    ];
+    const clusteringPriorityByIdx = new Int8Array(totalCells);
 
-    initializeCandidatePools(obstacleGrid, cols, rows, nonClusteringPool, clusteringPool);
+    initializeCandidatePools(
+        obstacleGrid,
+        cols,
+        rows,
+        nonClusteringPool,
+        clusteringPoolsByPriority,
+        clusteringPriorityByIdx,
+    );
 
     for (let i = 0; i < targetObstacleCells; i++) {
         const preferClustering = rng() < usedClusteringPct / 100;
 
         let picked = preferClustering
-            ? pickFromClusteringPool(clusteringPool, obstacleGrid, cols, rows, pocketVisited, pocketQueue, rng)
+            ? pickFromWeightedClusteringPriorityPools(
+                clusteringPoolsByPriority,
+                obstacleGrid,
+                cols,
+                rows,
+                clusteringPriorityByIdx,
+                pocketVisited,
+                pocketQueue,
+                rng,
+            )
             : pickFromNonClusteringPool(nonClusteringPool, obstacleGrid, cols, rows, rng);
 
         if (picked === null) {
             picked = preferClustering
                 ? pickFromNonClusteringPool(nonClusteringPool, obstacleGrid, cols, rows, rng)
-                : pickFromClusteringPool(clusteringPool, obstacleGrid, cols, rows, pocketVisited, pocketQueue, rng);
+                : pickFromWeightedClusteringPriorityPools(
+                    clusteringPoolsByPriority,
+                    obstacleGrid,
+                    cols,
+                    rows,
+                    clusteringPriorityByIdx,
+                    pocketVisited,
+                    pocketQueue,
+                    rng,
+                );
         }
 
         if (picked === null) {
@@ -744,7 +923,11 @@ export function generateEnvironment({
         const pickedIdx = picked;
         obstacleGrid[pickedIdx] = 1;
         nonClusteringPool.remove(pickedIdx);
-        clusteringPool.remove(pickedIdx);
+        const previousPriority = clusteringPriorityByIdx[pickedIdx] as 0 | 1 | 2 | 3;
+        if (previousPriority > 0) {
+            getPriorityPool(clusteringPoolsByPriority, previousPriority as 1 | 2 | 3).remove(pickedIdx);
+            clusteringPriorityByIdx[pickedIdx] = 0;
+        }
 
         updateCandidatePoolsAroundCell(
             obstacleGrid,
@@ -752,7 +935,8 @@ export function generateEnvironment({
             rows,
             pickedIdx,
             nonClusteringPool,
-            clusteringPool,
+            clusteringPoolsByPriority,
+            clusteringPriorityByIdx,
         );
 
         placedObstacleCells += 1;
