@@ -14,6 +14,7 @@ import { useModalLifecycle } from "@/hooks/modals/useModalLifecycle";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import type { AlgorithmMetric, AlgorithmParameter, ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
+import TimeSeriesMetricCard from "@/features/performance-monitor/components/internal/TimeSeriesMetricCard";
 
 export default function ParameterBenchmarkModal() {
     const {
@@ -98,6 +99,11 @@ export default function ParameterBenchmarkModal() {
 
     const nonTargetParameters = useMemo(
         () => algorithmParameters.filter((p) => p.id !== targetParameterSetup?.targetParamId),
+        [algorithmParameters, targetParameterSetup],
+    );
+
+    const selectedTargetParameter = useMemo(
+        () => algorithmParameters.find((p) => p.id === targetParameterSetup?.targetParamId),
         [algorithmParameters, targetParameterSetup],
     );
 
@@ -287,6 +293,7 @@ export default function ParameterBenchmarkModal() {
                             selectedProvider={selectedProvider}
                             selectedAlgorithm={selectedAlgorithm}
                             targetParameterSetup={targetParameterSetup}
+                            targetParameterName={selectedTargetParameter?.name ?? "Parameter"}
                             fixedParameters={fixedParameters}
                             environmentSetup={environmentSetup}
                             multipleRunsSetup={multipleRunsSetup}
@@ -690,6 +697,7 @@ interface RunTabContentProps {
     selectedProvider: ComputationProvider | undefined;
     selectedAlgorithm: ComputationAlgorithm | undefined;
     targetParameterSetup: BenchmarkParameterSetup | null;
+    targetParameterName: string;
     fixedParameters: BenchmarkFixedParameter[];
     environmentSetup: BenchmarkEnvironmentSetup;
     multipleRunsSetup: BenchmarkMultipleRunsSetup;
@@ -705,6 +713,7 @@ function RunTabContent({
     selectedProvider,
     selectedAlgorithm,
     targetParameterSetup,
+    targetParameterName,
     fixedParameters,
     environmentSetup,
     multipleRunsSetup,
@@ -725,6 +734,24 @@ function RunTabContent({
 
     const selectedMetrics = Array.from(metricsConfig.selectedMetrics);
     const aggregateKey = multipleRunsSetup.stepValueCalculation;
+
+    const chartSeries = useMemo(() => {
+        const sorted = [...executionState.results].sort((a, b) => a.stepValue - b.stepValue);
+        const metricLabels: Record<BenchmarkMetricType, string> = {
+            coverage: "Coverage Ratio",
+            overlap: "Overlap Ratio",
+            efficiency: "Efficiency",
+            turns: "Number of Turns",
+            pathLength: "Path Length",
+        };
+
+        return selectedMetrics.map((metric, idx) => ({
+            metric,
+            metricId: 10000 + idx,
+            name: `${metricLabels[metric]} vs ${targetParameterName}`,
+            data: sorted.map((result) => result.aggregatedMetrics[metric][aggregateKey] ?? Number.NaN),
+        }));
+    }, [executionState.results, selectedMetrics, aggregateKey, targetParameterName]);
 
     return (
         <div className="p-4 flex flex-col gap-4">
@@ -855,6 +882,31 @@ function RunTabContent({
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                )}
+            </div>
+
+            {/* Charts */}
+            <div className="border border-gray-300 rounded bg-white overflow-hidden">
+                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 text-sm font-medium text-gray-700">
+                    Benchmark Trend Charts
+                </div>
+                {chartSeries.length === 0 || executionState.results.length === 0 ? (
+                    <div className="text-center text-sm text-gray-500 py-8">
+                        Complete at least one benchmark step to render charts.
+                    </div>
+                ) : (
+                    <div className="p-3 flex flex-col gap-3 max-h-112 overflow-y-auto">
+                        {chartSeries.map((series) => (
+                            <TimeSeriesMetricCard
+                                key={series.metric}
+                                metricId={series.metricId}
+                                name={series.name}
+                                data={series.data}
+                                xAxisLabel={targetParameterName}
+                                yAxisLabel={series.name.split(" vs ")[0]}
+                            />
+                        ))}
                     </div>
                 )}
             </div>
