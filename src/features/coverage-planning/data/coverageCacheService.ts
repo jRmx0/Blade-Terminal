@@ -59,14 +59,6 @@ function resolveNumericMetricValueByName(
     return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-function toCoveragePct(metricValue: number | null, fallbackRatio: number | null): number | null {
-    if (metricValue !== null) {
-        return metricValue <= 1 ? metricValue * 100 : metricValue;
-    }
-    if (fallbackRatio === null || !Number.isFinite(fallbackRatio)) return null;
-    return fallbackRatio * 100;
-}
-
 function toOverlapPct(metricValue: number | null, fallbackPct: number | null): number | null {
     if (metricValue !== null) {
         return metricValue < 10 ? metricValue * 100 : metricValue;
@@ -158,14 +150,14 @@ export async function hydrateCoverageCacheForCurrentResult(): Promise<void> {
     const fallbackPathLength = computePathLength(result.result.coveragePathPlan.segments);
 
     const totalNetArea = objects.reduce((sum, o) => sum + (computeNetArea(o, objects) ?? 0), 0);
-
-    const coverageMetricValue = resolveNumericMetricValueByName("coverage ratio");
     const overlapMetricValue = resolveNumericMetricValueByName("overlap ratio");
     const turnsMetricValue = resolveNumericMetricValueByName("number of turns");
     const pathLengthMetricValue = resolveNumericMetricValueByName("path length");
 
     const resolvedPathLength = toPathLength(pathLengthMetricValue, fallbackPathLength);
-    const resolvedCoverageRatioPct = toCoveragePct(coverageMetricValue, fallbackCoverageRatio);
+    const resolvedCoverageRatioPct = fallbackCoverageRatio !== null && Number.isFinite(fallbackCoverageRatio)
+        ? fallbackCoverageRatio * 100
+        : null;
     const coveredArea =
         resolvedCoverageRatioPct !== null
             ? totalNetArea * (resolvedCoverageRatioPct / 100)
