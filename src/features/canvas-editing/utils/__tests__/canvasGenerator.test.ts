@@ -4,8 +4,9 @@ import {
     computeResolvedObstacleRatioPct,
     generateEnvironment,
     pickWeightedClusteringPriority,
+    traceMergedObstaclePolygons,
 } from "@/features/canvas-editing/utils/envGenerator";
-import { mulberry32, computeActualObstacleRatioPct } from "./testUtils";
+import { computeActualObstacleRatioPct, computePolygonArea, isPointInPolygon, mulberry32 } from "./testUtils";
 
 function countFreeComponentsFromEnv(
     env: ReturnType<typeof generateEnvironment>,
@@ -15,13 +16,17 @@ function countFreeComponentsFromEnv(
 ): number {
     const grid = new Uint8Array(cols * rows);
 
-    for (const polygon of env.obstacles) {
-        if (polygon.length === 0) continue;
-        const anchor = polygon[0]!;
-        const x = Math.floor(anchor.x / cellSize);
-        const y = Math.floor(anchor.y / cellSize);
-        if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
-        grid[y * cols + x] = 1;
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const point = {
+                x: (x + 0.5) * cellSize,
+                y: (y + 0.5) * cellSize,
+            };
+
+            if (env.obstacles.some((polygon) => isPointInPolygon(point, polygon))) {
+                grid[y * cols + x] = 1;
+            }
+        }
     }
 
     const visited = new Uint8Array(cols * rows);
@@ -193,6 +198,43 @@ describe("clustering priority weighted distribution", () => {
         expect(p3).toBeGreaterThan(p1);
         expect(Math.abs(p1 - 0.25)).toBeLessThan(0.02);
         expect(Math.abs(p3 - 0.75)).toBeLessThan(0.02);
+    });
+});
+
+describe("traceMergedObstaclePolygons", () => {
+    test("merges orthogonally connected cells into a single polygon", () => {
+        const cols = 3;
+        const rows = 2;
+        const cellSize = 10;
+        const grid = new Uint8Array([
+            1, 1, 0,
+            1, 0, 0,
+        ]);
+
+        const polygons = traceMergedObstaclePolygons(grid, cols, rows, cellSize, cols * cellSize, rows * cellSize);
+
+        expect(polygons).toHaveLength(1);
+        expect(computePolygonArea(polygons[0]!)).toBe(300);
+
+        expect(isPointInPolygon({ x: 5, y: 5 }, polygons[0]!)).toBeTrue();
+        expect(isPointInPolygon({ x: 15, y: 5 }, polygons[0]!)).toBeTrue();
+        expect(isPointInPolygon({ x: 5, y: 15 }, polygons[0]!)).toBeTrue();
+        expect(isPointInPolygon({ x: 15, y: 15 }, polygons[0]!)).toBeFalse();
+    });
+
+    test("keeps diagonally touching cells as separate polygons", () => {
+        const cols = 2;
+        const rows = 2;
+        const cellSize = 10;
+        const grid = new Uint8Array([
+            1, 0,
+            0, 1,
+        ]);
+
+        const polygons = traceMergedObstaclePolygons(grid, cols, rows, cellSize, cols * cellSize, rows * cellSize);
+
+        expect(polygons).toHaveLength(2);
+        expect(polygons.map((polygon) => computePolygonArea(polygon)).sort((a, b) => a - b)).toEqual([100, 100]);
     });
 });
 

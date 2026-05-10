@@ -1,3 +1,4 @@
+import polygonClipping from "polygon-clipping";
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 
 // ============================================================================
@@ -157,17 +158,45 @@ function traceZonePolygon(width: number, height: number): Point[] {
     ];
 }
 
-function traceComponentPolygon(
-    cellX: number,
-    cellY: number,
+function toCellRing(
+    idx: number,
+    cols: number,
+    cellSize: number,
+    width: number,
+    height: number,
+): [number, number][] {
+    const x = idx % cols;
+    const y = Math.floor(idx / cols);
+    const x0 = Math.min(x * cellSize, width);
+    const y0 = Math.min(y * cellSize, height);
+    const x1 = Math.min((x + 1) * cellSize, width);
+    const y1 = Math.min((y + 1) * cellSize, height);
+
+    return [
+        [x0, y0],
+        [x1, y0],
+        [x1, y1],
+        [x0, y1],
+        [x0, y0],
+    ];
+}
+
+function ringToPoints(ring: [number, number][]): Point[] {
+    return ring.slice(0, -1).map(([x, y]) => ({ x, y }));
+}
+
+function buildRectanglePolygon(
+    startX: number,
+    endXExclusive: number,
+    y: number,
     cellSize: number,
     width: number,
     height: number,
 ): Point[] {
-    const x0 = cellX * cellSize;
-    const y0 = cellY * cellSize;
-    const x1 = Math.min((cellX + 1) * cellSize, width);
-    const y1 = Math.min((cellY + 1) * cellSize, height);
+    const x0 = Math.min(startX * cellSize, width);
+    const x1 = Math.min(endXExclusive * cellSize, width);
+    const y0 = Math.min(y * cellSize, height);
+    const y1 = Math.min((y + 1) * cellSize, height);
 
     return [
         { x: x0, y: y0 },
@@ -175,6 +204,134 @@ function traceComponentPolygon(
         { x: x1, y: y1 },
         { x: x0, y: y1 },
     ];
+}
+
+function buildHoleSafeRunPolygons(
+    componentCells: readonly number[],
+    cols: number,
+    cellSize: number,
+    width: number,
+    height: number,
+): Point[][] {
+    const sortedCells = [...componentCells].sort((a, b) => a - b);
+    const polygons: Point[][] = [];
+
+    let i = 0;
+    while (i < sortedCells.length) {
+        const startIdx = sortedCells[i] as number;
+        const y = Math.floor(startIdx / cols);
+        let startX = startIdx % cols;
+        let endXExclusive = startX + 1;
+        i += 1;
+
+        while (i < sortedCells.length) {
+            const nextIdx = sortedCells[i] as number;
+            const nextY = Math.floor(nextIdx / cols);
+            const nextX = nextIdx % cols;
+            if (nextY !== y || nextX !== endXExclusive) break;
+            endXExclusive += 1;
+            i += 1;
+        }
+
+        polygons.push(buildRectanglePolygon(startX, endXExclusive, y, cellSize, width, height));
+    }
+
+    return polygons;
+}
+
+function mergeComponentCellsToPolygons(
+    componentCells: readonly number[],
+    cols: number,
+    cellSize: number,
+    width: number,
+    height: number,
+): Point[][] {
+    if (componentCells.length === 0) return [];
+
+    const componentPolygons = componentCells.map((idx) => [toCellRing(idx, cols, cellSize, width, height)]);
+    let merged = polygonClipping.union(componentPolygons[0]!);
+
+    for (let i = 1; i < componentPolygons.length; i++) {
+        merged = polygonClipping.union(merged, componentPolygons[i]!);
+    }
+
+    if (merged.some((polygon) => polygon.length > 1)) {
+        return buildHoleSafeRunPolygons(componentCells, cols, cellSize, width, height);
+    }
+
+    return merged.map((polygon) => ringToPoints(polygon[0] as [number, number][]));
+}
+
+export function traceMergedObstaclePolygons(
+    grid: Uint8Array,
+    cols: number,
+    rows: number,
+    cellSize: number,
+    width: number,
+    height: number,
+): Point[][] {
+    const totalCells = cols * rows;
+    const visited = new Uint8Array(totalCells);
+    const queue = new Uint32Array(totalCells);
+    const componentCells: number[] = [];
+    const polygons: Point[][] = [];
+
+    for (let idx = 0; idx < totalCells; idx++) {
+        if (grid[idx] !== 1 || visited[idx] === 1) continue;
+
+        visited[idx] = 1;
+        componentCells.length = 0;
+
+        let head = 0;
+        let tail = 0;
+        queue[tail++] = idx;
+
+        while (head < tail) {
+            const current = queue[head++] as number;
+            componentCells.push(current);
+
+            const x = current % cols;
+            const y = Math.floor(current / cols);
+
+            if (x > 0) {
+                const left = current - 1;
+                if (grid[left] === 1 && visited[left] === 0) {
+                    visited[left] = 1;
+                    queue[tail++] = left;
+                }
+            }
+            if (x + 1 < cols) {
+                const right = current + 1;
+                if (grid[right] === 1 && visited[right] === 0) {
+                    visited[right] = 1;
+                    queue[tail++] = right;
+                }
+            }
+            if (y > 0) {
+                const up = current - cols;
+                if (grid[up] === 1 && visited[up] === 0) {
+                    visited[up] = 1;
+                    queue[tail++] = up;
+                }
+            }
+            if (y + 1 < rows) {
+                const down = current + cols;
+                if (grid[down] === 1 && visited[down] === 0) {
+                    visited[down] = 1;
+                    queue[tail++] = down;
+                }
+            }
+        }
+
+        const mergedPolygons = mergeComponentCellsToPolygons(componentCells, cols, cellSize, width, height);
+        for (const polygon of mergedPolygons) {
+            if (polygon.length > 0) {
+                polygons.push(polygon);
+            }
+        }
+    }
+
+    return polygons;
 }
 
 function isInBounds(x: number, y: number, cols: number, rows: number): boolean {
@@ -943,14 +1100,7 @@ export function generateEnvironment({
     }
 
     const boundary = traceZonePolygon(width, height);
-    const obstacles: Point[][] = [];
-    for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-            if (obstacleGrid[toIndex(x, y, cols)] === 1) {
-                obstacles.push(traceComponentPolygon(x, y, cellSize, width, height));
-            }
-        }
-    }
+    const obstacles = traceMergedObstaclePolygons(obstacleGrid, cols, rows, cellSize, width, height);
 
     const usedObstacleRatioPct = totalCells > 0
         ? Math.round((placedObstacleCells / totalCells) * 100)
