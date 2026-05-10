@@ -345,6 +345,8 @@ export const useParameterBenchmarkModalStore = create<ParameterBenchmarkModalSta
 
     updateRunProgress: (stepValue, runIndex, updates) => {
         set((state) => {
+            let shouldIncrementCompletedRuns = false;
+
             const nextResults = state.executionState.results.map((stepResult) => {
                 if (stepResult.stepValue !== stepValue) return stepResult;
 
@@ -354,10 +356,17 @@ export const useParameterBenchmarkModalStore = create<ParameterBenchmarkModalSta
                 const baseRun = nextRawRuns[runIndex];
                 if (!baseRun) return stepResult;
 
+                const nextStatus = updates.status ?? baseRun.status;
+                const wasTerminal = baseRun.status === "completed" || baseRun.status === "failed" || baseRun.status === "skipped";
+                const isTerminal = nextStatus === "completed" || nextStatus === "failed" || nextStatus === "skipped";
+                if (!wasTerminal && isTerminal) {
+                    shouldIncrementCompletedRuns = true;
+                }
+
                 nextRawRuns[runIndex] = {
                     stepValue: baseRun.stepValue,
                     runIndex: baseRun.runIndex,
-                    status: updates.status ?? baseRun.status,
+                    status: nextStatus,
                     metrics: updates.metrics ?? baseRun.metrics,
                     jobId: updates.jobId ?? baseRun.jobId,
                     error: updates.error ?? baseRun.error,
@@ -376,10 +385,12 @@ export const useParameterBenchmarkModalStore = create<ParameterBenchmarkModalSta
                     results: nextResults,
                     progress: {
                         ...state.executionState.progress,
-                        completedRuns: Math.min(
-                            state.executionState.progress.totalRuns,
-                            state.executionState.progress.completedRuns + 1,
-                        ),
+                        completedRuns: shouldIncrementCompletedRuns
+                            ? Math.min(
+                                state.executionState.progress.totalRuns,
+                                state.executionState.progress.completedRuns + 1,
+                            )
+                            : state.executionState.progress.completedRuns,
                     },
                 },
             };
@@ -398,13 +409,12 @@ export const useParameterBenchmarkModalStore = create<ParameterBenchmarkModalSta
     },
 
     resetResults: () => {
-        set((state) => ({
+        set(() => ({
             executionState: {
                 ...INITIAL_EXECUTION_STATE,
                 results: [],
             },
             error: null,
-            isRunning: state.isRunning,
         }));
     },
 }));
