@@ -7,10 +7,10 @@ import { useEnvPointStore } from "@/stores/envPointStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import {
-    computeHeadlandDerivedGeometry,
     parseHeadlandWidth,
     SYSTEM_HEADLAND_PROVIDER_PARAM_NAMES,
 } from "@/features/coverage-planning/utils/headlandGeometry";
+import { resolveRequestGeometry } from "@/features/coverage-planning/utils/requestGeometry";
 import type { AlgoParamType, ComputeJobState, ComputeJobStateCompleted } from "@/types/serviceTypes";
 import type { ComputeResultRecord } from "@/types/schemaTypes";
 
@@ -124,8 +124,6 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
     const { objects } = useCanvasObjectStore.getState();
 
     const zoneObjects = objects.filter((o) => o.category === OBJECT_CATEGORY.ZONE);
-    const obstacleObjects = objects.filter((o) => o.category === OBJECT_CATEGORY.OBSTACLE);
-
     if (zoneObjects.length === 0) {
         return { ok: false, error: "No zone drawn on canvas." };
     }
@@ -144,18 +142,16 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
     const headlandWidthRaw = env.headlandWidth;
     const headlandWidth = parseHeadlandWidth(headlandWidthRaw);
 
-    const derivedHeadland = computeHeadlandDerivedGeometry({
+    const resolvedGeometry = resolveRequestGeometry({
         objects,
         headlandEnabled,
         headlandWidth,
     });
+    if (!resolvedGeometry.ok) {
+        return resolvedGeometry;
+    }
 
-    const zones = (headlandEnabled ? derivedHeadland.shrunkenZones : zoneObjects).map((o) => ({
-        vertices: o.vertices.map(({ x, y }) => ({ x, y })),
-    }));
-    const obstacles = (headlandEnabled ? derivedHeadland.expandedObstacles : obstacleObjects).map((o) => ({
-        vertices: o.vertices.map(({ x, y }) => ({ x, y })),
-    }));
+    const { zones, obstacles } = resolvedGeometry;
 
     const requestBody = {
         algorithmId: selectedAlgorithmId,
