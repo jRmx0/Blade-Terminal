@@ -20,6 +20,8 @@ export function buildExportXml(env: Environment, objects: Object[], envPoints: E
     lines.push(`    <format>${escapeXmlText(env.format)}</format>`);
     lines.push(`    <type>${escapeXmlText(env.type)}</type>`);
     lines.push(`    <coordSystem>${escapeXmlText(env.coordSystem)}</coordSystem>`);
+    lines.push(`    <headlandEnabled>${env.headlandEnabled}</headlandEnabled>`);
+    lines.push(`    <headlandWidth>${escapeXmlText(env.headlandWidth)}</headlandWidth>`);
     lines.push("  </environment>");
 
     lines.push("  <objects>");

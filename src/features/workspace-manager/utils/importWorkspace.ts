@@ -28,6 +28,8 @@ export interface ImportedWorkspaceData {
     format: EnvFormat;
     type: EnvType;
     coordSystem: CoordSystemType;
+    headlandEnabled: boolean;
+    headlandWidth: string;
     objects: ParsedObject[];
     envPoints: ParsedEnvPoint[];
     geoAnchor?: GeoAnchor;
@@ -118,7 +120,7 @@ export function parseImportXml(xml: string): ImportedWorkspaceData | ImportParse
 
     const envAttrErr = checkNoAttributes(envEl, "<workspace>");
     if (envAttrErr) return envAttrErr;
-    const envChildErr = checkChildren(envEl, ["name", "format", "type", "coordSystem"], "<environment>");
+    const envChildErr = checkChildren(envEl, ["name", "format", "type", "coordSystem", "headlandEnabled", "headlandWidth"], "<environment>");
     if (envChildErr) return envChildErr;
 
     const nameResult = requireText(envEl, "name", "<environment>");
@@ -145,6 +147,17 @@ export function parseImportXml(xml: string): ImportedWorkspaceData | ImportParse
         return { error: `Invalid <coordSystem> value "${coordResult}". Expected one of: ${VALID_COORD_SYSTEMS.join(", ")}.` };
     }
     const coordSystem = coordResult as CoordSystemType;
+
+    const headlandEnabledText = textContent(envEl, "headlandEnabled");
+    let headlandEnabled = true;
+    if (headlandEnabledText !== null) {
+        if (headlandEnabledText !== "true" && headlandEnabledText !== "false") {
+            return { error: `Invalid <headlandEnabled> value "${headlandEnabledText}". Expected "true" or "false".` };
+        }
+        headlandEnabled = headlandEnabledText === "true";
+    }
+
+    const headlandWidth = textContent(envEl, "headlandWidth") ?? "10";
 
     // --- <objects> ---
     const objectsEl = root.querySelector(":scope > objects");
@@ -301,5 +314,5 @@ export function parseImportXml(xml: string): ImportedWorkspaceData | ImportParse
         geoAnchor = { lat, lon };
     }
 
-    return { name, format, type, coordSystem, objects, envPoints, geoAnchor };
+    return { name, format, type, coordSystem, headlandEnabled, headlandWidth, objects, envPoints, geoAnchor };
 }

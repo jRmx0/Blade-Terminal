@@ -200,8 +200,8 @@ export async function importWorkspace(data: ImportedWorkspaceData): Promise<void
         format: data.format,
         type: data.type,
         coordSystem: data.coordSystem,
-        headlandEnabled: true,
-        headlandWidth: "10",
+        headlandEnabled: data.headlandEnabled,
+        headlandWidth: data.headlandWidth,
         zoneCount,
         obstacleCount,
     };
