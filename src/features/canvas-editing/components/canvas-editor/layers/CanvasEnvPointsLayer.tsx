@@ -5,6 +5,7 @@ import { useEnvStore } from "@/stores/envStore";
 import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 import { useCanvasToolStore } from "@/features/canvas-editing/stores/canvasToolStore";
+import { useCanvasViewStore } from "@/features/canvas-editing/stores/canvasViewStore";
 import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import type { EnvPointType } from "@/types/schemaTypes";
 
@@ -21,6 +22,7 @@ export const CanvasEnvPointsLayer = memo(function CanvasEnvPointsLayer({
     const envId = useEnvStore((s) => s.env.id);
     const layerSettings = useLayerSettingsStore((s) => s.layers);
     const { activeTool } = useCanvasToolStore();
+    const scale = useCanvasViewStore((s) => s.scale);
     const selectedEnvPointType = useCanvasSelectionStore((s) => s.selectedEnvPointType);
     const selectEnvPoint = useCanvasSelectionStore((s) => s.selectEnvPoint);
 
@@ -46,6 +48,10 @@ export const CanvasEnvPointsLayer = memo(function CanvasEnvPointsLayer({
     const startActive = selectedEnvPointType === "start" || draggingType === "start";
     const endActive = selectedEnvPointType === "end" || draggingType === "end";
     const startEndActive = selectedEnvPointType === "start_end" || draggingType === "start_end";
+    const pointStrokeWidth = 1.5 / scale;
+    const pointHitStrokeWidth = 10 / scale;
+    const pointShadowBlur = 12 / scale;
+    const pointShadowOffsetY = 3 / scale;
 
     return (
         <Layer>
@@ -53,15 +59,16 @@ export const CanvasEnvPointsLayer = memo(function CanvasEnvPointsLayer({
                 <Circle
                     x={startPoint.point.x}
                     y={startPoint.point.y}
-                    radius={startActive ? startRadius * 1.4 : startRadius}
+                    radius={(startActive ? startRadius * 1.4 : startRadius) / scale}
                     fill={startFill}
                     stroke={startStroke}
-                    strokeWidth={1.5}
+                    strokeWidth={pointStrokeWidth}
+                    hitStrokeWidth={pointHitStrokeWidth}
                     shadowEnabled={startActive}
                     shadowColor="rgba(0,0,0,0.6)"
-                    shadowBlur={12}
+                    shadowBlur={pointShadowBlur}
                     shadowOffsetX={0}
-                    shadowOffsetY={3}
+                    shadowOffsetY={pointShadowOffsetY}
                     listening={isSelectMode}
                     draggable={isSelectMode}
                     perfectDrawEnabled={startActive}
@@ -89,15 +96,16 @@ export const CanvasEnvPointsLayer = memo(function CanvasEnvPointsLayer({
                 <Circle
                     x={endPoint.point.x}
                     y={endPoint.point.y}
-                    radius={endActive ? endRadius * 1.4 : endRadius}
+                    radius={(endActive ? endRadius * 1.4 : endRadius) / scale}
                     fill={endFill}
                     stroke={endStroke}
-                    strokeWidth={1.5}
+                    strokeWidth={pointStrokeWidth}
+                    hitStrokeWidth={pointHitStrokeWidth}
                     shadowEnabled={endActive}
                     shadowColor="rgba(0,0,0,0.6)"
-                    shadowBlur={12}
+                    shadowBlur={pointShadowBlur}
                     shadowOffsetX={0}
-                    shadowOffsetY={3}
+                    shadowOffsetY={pointShadowOffsetY}
                     listening={isSelectMode}
                     draggable={isSelectMode}
                     perfectDrawEnabled={endActive}
@@ -125,15 +133,16 @@ export const CanvasEnvPointsLayer = memo(function CanvasEnvPointsLayer({
                 <Circle
                     x={startEndPoint.point.x}
                     y={startEndPoint.point.y}
-                    radius={startEndActive ? startEndRadius * 1.4 : startEndRadius}
+                    radius={(startEndActive ? startEndRadius * 1.4 : startEndRadius) / scale}
                     fill={startEndFill}
                     stroke={startEndStroke}
-                    strokeWidth={1.5}
+                    strokeWidth={pointStrokeWidth}
+                    hitStrokeWidth={pointHitStrokeWidth}
                     shadowEnabled={startEndActive}
                     shadowColor="rgba(0,0,0,0.6)"
-                    shadowBlur={12}
+                    shadowBlur={pointShadowBlur}
                     shadowOffsetX={0}
-                    shadowOffsetY={3}
+                    shadowOffsetY={pointShadowOffsetY}
                     listening={isSelectMode}
                     draggable={isSelectMode}
                     perfectDrawEnabled={startEndActive}
