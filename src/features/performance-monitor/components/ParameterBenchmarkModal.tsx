@@ -1,10 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
-import { useParameterBenchmarkModalStore, type BenchmarkMetricType, type BenchmarkParameterSetup } from "@/features/performance-monitor/stores/parameterBenchmarkModalStore";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+    useParameterBenchmarkModalStore,
+    type BenchmarkEnvironmentSetup,
+    type BenchmarkExecutionState,
+    type BenchmarkFixedParameter,
+    type BenchmarkMetricType,
+    type BenchmarkMultipleRunsSetup,
+    type BenchmarkParameterSetup,
+} from "@/features/performance-monitor/stores/parameterBenchmarkModalStore";
+import { runBenchmark as runBenchmarkService } from "@/features/performance-monitor/data/benchmarkRunnerService";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useModalLifecycle } from "@/hooks/modals/useModalLifecycle";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
-import type { AlgorithmParameter, ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
+import type { AlgorithmMetric, AlgorithmParameter, ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
 
 export default function ParameterBenchmarkModal() {
     const {
@@ -19,6 +28,8 @@ export default function ParameterBenchmarkModal() {
         metricsConfig,
         isRunning,
         error,
+        setIsRunning,
+        setError,
         setSelectedProvider,
         setSelectedAlgorithm,
         setTargetParameterSetup,
@@ -27,9 +38,15 @@ export default function ParameterBenchmarkModal() {
         setEnvironmentSetup,
         setMultipleRunsSetup,
         toggleMetric,
+        executionState,
+        setBenchmarkExecutionState,
+        addStepResult,
+        resetResults,
+        cancelBenchmark,
+        reset,
     } = useParameterBenchmarkModalStore();
 
-    const { providers, algorithms, parameters: catalogParameters } = useComputationCatalogStore();
+    const { providers, algorithms, parameters: catalogParameters, metrics: catalogMetrics } = useComputationCatalogStore();
     const { handleBackdropMouseDown } = useModalLifecycle({
         isOpen,
         shortcutToken: "parameter-benchmark-modal",
@@ -69,6 +86,16 @@ export default function ParameterBenchmarkModal() {
         [algorithmParameters],
     );
 
+    const algorithmMetrics = useMemo(
+        () =>
+            selectedAlgorithmId && selectedProviderId
+                ? catalogMetrics.filter(
+                    (m) => m.algorithmId === selectedAlgorithmId && m.computationProviderId === selectedProviderId,
+                )
+                : [],
+        [catalogMetrics, selectedAlgorithmId, selectedProviderId],
+    );
+
     const nonTargetParameters = useMemo(
         () => algorithmParameters.filter((p) => p.id !== targetParameterSetup?.targetParamId),
         [algorithmParameters, targetParameterSetup],
@@ -88,6 +115,108 @@ export default function ParameterBenchmarkModal() {
     useEffect(() => {
         if (!isOpen) setActiveTab("setup");
     }, [isOpen]);
+
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    const handleStartBenchmark = useCallback(async () => {
+        if (!selectedProvider || !selectedAlgorithm || !targetParameterSetup) {
+            return;
+        }
+
+        const start = Number(targetParameterSetup.startValue);
+        const end = Number(targetParameterSetup.endValue);
+        const step = Number(targetParameterSetup.stepValue);
+        const estimatedStepCount =
+            Number.isFinite(start) && Number.isFinite(end) && Number.isFinite(step) && step > 0
+                ? Math.floor((end - start) / step) + 1
+                : 0;
+        const totalSteps = Math.max(estimatedStepCount, 0);
+
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        setIsRunning(true);
+        setError(null);
+        resetResults();
+
+        setBenchmarkExecutionState({
+            status: "running",
+            progress: {
+                totalSteps,
+                completedSteps: 0,
+                totalRuns: totalSteps * multipleRunsSetup.runsPerStep,
+                completedRuns: 0,
+            },
+            results: [],
+            abortSignal: controller.signal,
+            error: undefined,
+        });
+
+        try {
+            const results = await runBenchmarkService({
+                provider: selectedProvider,
+                algorithm: selectedAlgorithm,
+                algorithmParameters,
+                algorithmMetrics,
+                targetParameterSetup,
+                fixedParameters,
+                environmentSetup,
+                multipleRunsSetup,
+                selectedMetrics: metricsConfig.selectedMetrics,
+                signal: controller.signal,
+                onProgress: (progress) => setBenchmarkExecutionState({ progress }),
+                onStepCompleted: (result) => addStepResult(result),
+            });
+
+            setBenchmarkExecutionState({
+                status: controller.signal.aborted ? "cancelled" : "completed",
+                results,
+                abortSignal: undefined,
+            });
+        } catch (runError) {
+            const message = runError instanceof Error ? runError.message : String(runError);
+
+            if (controller.signal.aborted) {
+                setBenchmarkExecutionState({ status: "cancelled", abortSignal: undefined });
+            } else {
+                setError(message);
+                setBenchmarkExecutionState({
+                    status: "error",
+                    error: message,
+                    abortSignal: undefined,
+                });
+            }
+        } finally {
+            setIsRunning(false);
+            abortControllerRef.current = null;
+        }
+    }, [
+        selectedProvider,
+        selectedAlgorithm,
+        targetParameterSetup,
+        setIsRunning,
+        setError,
+        resetResults,
+        setBenchmarkExecutionState,
+        multipleRunsSetup.runsPerStep,
+        algorithmParameters,
+        algorithmMetrics,
+        fixedParameters,
+        environmentSetup,
+        multipleRunsSetup,
+        metricsConfig.selectedMetrics,
+        addStepResult,
+    ]);
+
+    const handleCancelBenchmark = useCallback(() => {
+        abortControllerRef.current?.abort();
+        cancelBenchmark();
+    }, [cancelBenchmark]);
+
+    const handleCloseModal = useCallback(() => {
+        abortControllerRef.current?.abort();
+        reset();
+    }, [reset]);
 
     if (!isOpen) return null;
 
@@ -164,13 +293,16 @@ export default function ParameterBenchmarkModal() {
                             metricsConfig={metricsConfig}
                             isRunning={isRunning}
                             error={error}
+                            executionState={executionState}
+                            onStartBenchmark={handleStartBenchmark}
+                            onCancelBenchmark={handleCancelBenchmark}
                         />
                     )}
                 </div>
 
                 {/* Footer */}
                 <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200 shrink-0">
-                    <ModalFooterButton onClick={close}>Close</ModalFooterButton>
+                    <ModalFooterButton onClick={handleCloseModal}>Close</ModalFooterButton>
                 </div>
             </div>
         </div>
@@ -558,12 +690,15 @@ interface RunTabContentProps {
     selectedProvider: ComputationProvider | undefined;
     selectedAlgorithm: ComputationAlgorithm | undefined;
     targetParameterSetup: BenchmarkParameterSetup | null;
-    fixedParameters: any[];
-    environmentSetup: any;
-    multipleRunsSetup: any;
-    metricsConfig: any;
+    fixedParameters: BenchmarkFixedParameter[];
+    environmentSetup: BenchmarkEnvironmentSetup;
+    multipleRunsSetup: BenchmarkMultipleRunsSetup;
+    metricsConfig: { selectedMetrics: Set<BenchmarkMetricType> };
     isRunning: boolean;
     error: string | null;
+    executionState: BenchmarkExecutionState;
+    onStartBenchmark: () => void;
+    onCancelBenchmark: () => void;
 }
 
 function RunTabContent({
@@ -576,8 +711,20 @@ function RunTabContent({
     metricsConfig,
     isRunning,
     error,
+    executionState,
+    onStartBenchmark,
+    onCancelBenchmark,
 }: RunTabContentProps) {
-    const { setIsRunning, setError } = useParameterBenchmarkModalStore();
+    const metricLabels: Record<BenchmarkMetricType, string> = {
+        coverage: "Coverage Ratio",
+        overlap: "Overlap Ratio",
+        efficiency: "Efficiency",
+        turns: "Number of Turns",
+        pathLength: "Path Length",
+    };
+
+    const selectedMetrics = Array.from(metricsConfig.selectedMetrics);
+    const aggregateKey = multipleRunsSetup.stepValueCalculation;
 
     return (
         <div className="p-4 flex flex-col gap-4">
@@ -593,21 +740,37 @@ function RunTabContent({
                     <div><strong>Aggregate Method:</strong> {multipleRunsSetup.stepValueCalculation}</div>
                     <div>
                         <strong>Tracked Metrics:</strong> {
-                            Array.from(metricsConfig.selectedMetrics as Set<BenchmarkMetricType>)
-                                .map((metric: BenchmarkMetricType) => {
-                                    const labels: Record<BenchmarkMetricType, string> = {
-                                        coverage: "Coverage Ratio",
-                                        overlap: "Overlap Ratio",
-                                        efficiency: "Efficiency",
-                                        turns: "Number of Turns",
-                                        pathLength: "Path Length",
-                                    };
-                                    return labels[metric];
-                                })
+                            selectedMetrics
+                                .map((metric) => metricLabels[metric])
                                 .join(", ")
                         }
                     </div>
                 </div>
+            </div>
+
+            {/* Progress */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs text-slate-700">
+                    <span>
+                        Progress: {executionState.progress.completedSteps}/{executionState.progress.totalSteps} steps • {executionState.progress.completedRuns}/{executionState.progress.totalRuns} runs
+                    </span>
+                    <span className="font-medium uppercase tracking-wide">{executionState.status}</span>
+                </div>
+                <div className="w-full h-2 bg-slate-200 rounded overflow-hidden">
+                    <div
+                        className="h-full bg-teal-500 transition-all"
+                        style={{
+                            width: `${executionState.progress.totalRuns > 0
+                                ? (executionState.progress.completedRuns / executionState.progress.totalRuns) * 100
+                                : 0}%`,
+                        }}
+                    />
+                </div>
+                {typeof executionState.progress.currentStepValue === "number" && typeof executionState.progress.currentRunIndex === "number" && (
+                    <div className="text-xs text-slate-600">
+                        Running step value <strong>{executionState.progress.currentStepValue}</strong>, run {executionState.progress.currentRunIndex + 1}/{multipleRunsSetup.runsPerStep}
+                    </div>
+                )}
             </div>
 
             {/* Status */}
@@ -625,66 +788,76 @@ function RunTabContent({
                 </div>
             )}
 
-            {/* Run Button */}
-            <button
-                type="button"
-                onClick={() => runBenchmark(selectedProvider, selectedAlgorithm, targetParameterSetup, fixedParameters, environmentSetup, setIsRunning, setError)}
-                disabled={isRunning}
-                className={`px-4 py-2 rounded text-sm font-medium text-white transition-colors ${isRunning
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-teal-600 hover:bg-teal-700 active:bg-teal-800"
-                    }`}
-            >
-                {isRunning ? "Running..." : "Start Benchmark"}
-            </button>
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+                <button
+                    type="button"
+                    onClick={onStartBenchmark}
+                    disabled={isRunning}
+                    className={`px-4 py-2 rounded text-sm font-medium text-white transition-colors ${isRunning
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-teal-600 hover:bg-teal-700 active:bg-teal-800"
+                        }`}
+                >
+                    {isRunning ? "Running..." : "Start Benchmark"}
+                </button>
 
-            {/* Results Placeholder */}
-            <div className="text-center text-sm text-gray-500 py-8">
-                Benchmark results will appear here
+                <button
+                    type="button"
+                    onClick={onCancelBenchmark}
+                    disabled={!isRunning}
+                    className={`px-4 py-2 rounded text-sm font-medium text-white transition-colors ${!isRunning
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-rose-600 hover:bg-rose-700 active:bg-rose-800"
+                        }`}
+                >
+                    Cancel Benchmark
+                </button>
+            </div>
+
+            {/* Live Results */}
+            <div className="border border-gray-300 rounded bg-white overflow-hidden">
+                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 text-sm font-medium text-gray-700">
+                    Live Results
+                </div>
+                {executionState.results.length === 0 ? (
+                    <div className="text-center text-sm text-gray-500 py-8">
+                        Benchmark results will appear here
+                    </div>
+                ) : (
+                    <div className="max-h-80 overflow-auto">
+                        <table className="w-full text-xs">
+                            <thead className="bg-gray-100 text-gray-700 sticky top-0">
+                                <tr>
+                                    <th className="px-2 py-2 text-left">Step</th>
+                                    <th className="px-2 py-2 text-left">Runs</th>
+                                    {selectedMetrics.map((metric) => (
+                                        <th key={metric} className="px-2 py-2 text-left">{metricLabels[metric]}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {executionState.results.map((stepResult) => (
+                                    <tr key={stepResult.stepValue} className="border-t border-gray-100">
+                                        <td className="px-2 py-2 font-medium text-gray-800">{stepResult.stepValue}</td>
+                                        <td className="px-2 py-2 text-gray-600">
+                                            {stepResult.runsCompleted} ok / {stepResult.runsFailed} failed
+                                        </td>
+                                        {selectedMetrics.map((metric) => {
+                                            const aggregate = stepResult.aggregatedMetrics[metric][aggregateKey];
+                                            return (
+                                                <td key={metric} className="px-2 py-2 text-gray-700">
+                                                    {typeof aggregate === "number" ? aggregate.toFixed(3) : "—"}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );
-}
-
-// ─── Benchmark Runner ─────────────────────────────────────────────────────────
-
-async function runBenchmark(
-    selectedProvider: ComputationProvider | undefined,
-    selectedAlgorithm: ComputationAlgorithm | undefined,
-    targetParameterSetup: any,
-    fixedParameters: any[],
-    environmentSetup: any,
-    setIsRunning: any,
-    setError: any,
-) {
-    if (!selectedProvider || !selectedAlgorithm || !targetParameterSetup) return;
-
-    setIsRunning(true);
-    setError(null);
-
-    try {
-        // TODO: Implement actual benchmark execution
-        // This will involve:
-        // 1. Generating environments
-        // 2. Running computations with varying parameters
-        // 3. Collecting metrics
-        // 4. Plotting results
-
-        console.log("Benchmark started", {
-            provider: selectedProvider,
-            algorithm: selectedAlgorithm,
-            targetParameter: targetParameterSetup,
-            fixedParameters,
-            environmentSetup,
-        });
-
-        // Simulate delay
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        setError("Benchmark runner not yet fully implemented");
-    } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-        setIsRunning(false);
-    }
 }
