@@ -20,8 +20,11 @@ export function normalizeComputationSelection(
 }
 
 export function normalizeEnvironment(env: Environment): Environment {
+    const maybeHeadland = env as Environment & { headlandEnabled?: boolean; headlandWidth?: string };
     return {
         ...env,
         coordSystem: (env as Environment & { coordSystem?: string }).coordSystem ?? COORD_SYSTEM.CARTESIAN,
+        headlandEnabled: maybeHeadland.headlandEnabled ?? true,
+        headlandWidth: maybeHeadland.headlandWidth ?? "10",
     };
 }

@@ -33,6 +33,8 @@ export interface Environment {
     format: EnvFormat;
     type: EnvType;
     coordSystem: CoordSystemType;
+    headlandEnabled: boolean;
+    headlandWidth: string;
     zoneCount: number;
     obstacleCount: number;
 }

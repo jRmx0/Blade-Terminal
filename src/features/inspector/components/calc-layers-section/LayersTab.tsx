@@ -2,7 +2,6 @@ import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
 import { useEnvStore } from "@/stores/envStore";
 import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import LayerRow from "@/features/inspector/components/calc-layers-section/LayerRow";
-import { useHeadlandSystemStore } from "@/stores/headlandSystemStore";
 import type { LayerPK } from "@/types/layerTypes";
 
 function toLayerPK(layer: { id: number; algorithmId: number; providerId: number }): LayerPK {
@@ -16,7 +15,7 @@ export default function LayersTab() {
     const reorderLayers = useLayerSettingsStore((s) => s.reorderLayers);
     const selectedProviderId = useEnvStore((s) => s.computation.selectedProviderId);
     const selectedAlgorithmId = useEnvStore((s) => s.computation.selectedAlgorithmId);
-    const headlandEnabled = useHeadlandSystemStore((s) => s.enabled);
+    const headlandEnabled = useEnvStore((s) => s.env.headlandEnabled);
 
     if (layers.length === 0) {
         return (

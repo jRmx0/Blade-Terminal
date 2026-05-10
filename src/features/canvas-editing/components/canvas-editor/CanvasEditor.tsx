@@ -37,13 +37,10 @@ import { useEnvStore } from "@/stores/envStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useProviderLayerStore } from "@/stores/providerLayerStore";
 import { extractLayerData, getProviderLayersForResult } from "@/features/canvas-editing/utils/layerDataUtils";
-import { useHeadlandSystemStore } from "@/stores/headlandSystemStore";
 import {
   computeHeadlandDerivedGeometry,
   parseHeadlandWidth,
 } from "@/features/coverage-planning/utils/headlandGeometry";
-import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
-import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 
 export default function CanvasEditor() {
   const stageRef = useRef<Konva.Stage>(null);
@@ -63,8 +60,8 @@ export default function CanvasEditor() {
   const layerSettings = useLayerSettingsStore((s) => s.layers);
   const result = useComputeResultStore((s) => s.result);
   const providerLayers = useProviderLayerStore((s) => s.layers);
-  const headlandEnabled = useHeadlandSystemStore((s) => s.enabled);
-  const headlandWidthRaw = useHeadlandSystemStore((s) => s.width);
+  const headlandEnabled = useEnvStore((s) => s.env.headlandEnabled);
+  const headlandWidthRaw = useEnvStore((s) => s.env.headlandWidth);
   const {
     objects,
     addObject,

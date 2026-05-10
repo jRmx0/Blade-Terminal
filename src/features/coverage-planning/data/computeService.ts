@@ -6,7 +6,6 @@ import { useEnvStore } from "@/stores/envStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useParameterValuesStore } from "@/stores/parameterValuesStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
-import { useHeadlandSystemStore } from "@/stores/headlandSystemStore";
 import {
     computeHeadlandDerivedGeometry,
     parseHeadlandWidth,
@@ -140,7 +139,9 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
     const resolvedStart = startPoint ?? startEndPoint!;
     const resolvedEnd = endPoint ?? startEndPoint!;
 
-    const { enabled: headlandEnabled, width: headlandWidthRaw } = useHeadlandSystemStore.getState();
+    const { env } = useEnvStore.getState();
+    const headlandEnabled = env.headlandEnabled;
+    const headlandWidthRaw = env.headlandWidth;
     const headlandWidth = parseHeadlandWidth(headlandWidthRaw);
 
     const derivedHeadland = computeHeadlandDerivedGeometry({

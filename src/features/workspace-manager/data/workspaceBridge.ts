@@ -28,6 +28,8 @@ const BLANK_ENV: Omit<Environment, "id"> = {
     format: ENV_FORMAT.POLYGON,
     type: ENV_TYPE.ANY_OFFLINE,
     coordSystem: COORD_SYSTEM.CARTESIAN,
+    headlandEnabled: true,
+    headlandWidth: "10",
     zoneCount: 0,
     obstacleCount: 0,
 };
@@ -198,6 +200,8 @@ export async function importWorkspace(data: ImportedWorkspaceData): Promise<void
         format: data.format,
         type: data.type,
         coordSystem: data.coordSystem,
+        headlandEnabled: true,
+        headlandWidth: "10",
         zoneCount,
         obstacleCount,
     };

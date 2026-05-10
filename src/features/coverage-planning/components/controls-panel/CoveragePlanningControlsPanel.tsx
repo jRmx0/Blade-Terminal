@@ -26,7 +26,6 @@ import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
-import { useHeadlandSystemStore } from "@/stores/headlandSystemStore";
 import { LAYER_ID } from "@/config/layers/layerRegistry";
 import type { AlgorithmParameter, AppEnumValue } from "@/types/serviceTypes";
 import type { ComputationAlgorithmParameter } from "@/types/schemaTypes";
@@ -197,10 +196,10 @@ export default function CoveragePlanningControlsPanel() {
     const allParameterValues = useParameterValuesStore((state) => state.parameterValues);
     const setParameterValueInStore = useParameterValuesStore((state) => state.setParameterValue);
     const setLayerVisible = useLayerSettingsStore((state) => state.setVisible);
-    const headlandEnabled = useHeadlandSystemStore((state) => state.enabled);
-    const headlandWidth = useHeadlandSystemStore((state) => state.width);
-    const setHeadlandEnabled = useHeadlandSystemStore((state) => state.setEnabled);
-    const setHeadlandWidth = useHeadlandSystemStore((state) => state.setWidth);
+    const headlandEnabled = useEnvStore((state) => state.env.headlandEnabled);
+    const headlandWidth = useEnvStore((state) => state.env.headlandWidth);
+    const setHeadlandEnabled = useEnvStore((state) => state.setHeadlandEnabled);
+    const setHeadlandWidth = useEnvStore((state) => state.setHeadlandWidth);
     const [headlandWidthDraft, setHeadlandWidthDraft] = useState(headlandWidth);
     const [headlandWidthFocused, setHeadlandWidthFocused] = useState(false);
 

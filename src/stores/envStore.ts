@@ -27,6 +27,10 @@ interface EnvState {
     setType: (type: EnvType) => void;
     /** Updates the environment coordinate system and marks the record as dirty. Triggers autosave when mode is "autosave". */
     setCoordSystem: (coordSystem: CoordSystemType) => void;
+    /** Updates system headland enabled flag on the environment and marks dirty. */
+    setHeadlandEnabled: (enabled: boolean) => void;
+    /** Updates system headland width on the environment and marks dirty. */
+    setHeadlandWidth: (width: string) => void;
     /** Updates the active computation provider and clears the active algorithm selection. */
     setComputationProviderId: (providerId: number | null) => void;
     /** Updates the active computation algorithm within the selected provider. */
@@ -41,6 +45,8 @@ const INITIAL_ENV: Environment = {
     format: ENV_FORMAT.POLYGON,
     type: ENV_TYPE.ANY_OFFLINE,
     coordSystem: COORD_SYSTEM.CARTESIAN,
+    headlandEnabled: true,
+    headlandWidth: "10",
     zoneCount: 0,
     obstacleCount: 0,
 };
@@ -78,6 +84,10 @@ export const useEnvStore = create<EnvState>()((set) => ({
     setType: (type) => markEnvDirty(set, (env) => ({ ...env, type })),
 
     setCoordSystem: (coordSystem) => markEnvDirty(set, (env) => ({ ...env, coordSystem })),
+
+    setHeadlandEnabled: (enabled) => markEnvDirty(set, (env) => ({ ...env, headlandEnabled: enabled })),
+
+    setHeadlandWidth: (width) => markEnvDirty(set, (env) => ({ ...env, headlandWidth: width })),
 
     setComputationProviderId: (providerId) => {
         set((state) => {
