@@ -6,7 +6,7 @@ interface CanvasGeneratorFloatingControlState {
     height: string;
     cellSize: string;
     obstacleRatio: string;
-    clusteringRatio: string;
+    clusteringProb: string;
     seed: string;
     autoObstacleRatioHint: number | null;
     autoClusteringHint: number | null;
@@ -21,7 +21,7 @@ interface CanvasGeneratorFloatingControlState {
     setHeight: (height: string) => void;
     setCellSize: (cellSize: string) => void;
     setObstacleRatio: (obstacleRatio: string) => void;
-    setClusteringRatio: (clusteringRatio: string) => void;
+    setClusteringProb: (clusteringProb: string) => void;
     setSeed: (seed: string) => void;
     setAutoObstacleRatioHint: (autoObstacleRatioHint: number | null) => void;
     setAutoClusteringHint: (autoClusteringHint: number | null) => void;
@@ -39,7 +39,7 @@ export const useCanvasGeneratorFloatingControlStore = create<CanvasGeneratorFloa
     height: "1000",
     cellSize: "30",
     obstacleRatio: "",
-    clusteringRatio: "",
+    clusteringProb: "",
     seed: "",
     autoObstacleRatioHint: null,
     autoClusteringHint: null,
@@ -54,7 +54,7 @@ export const useCanvasGeneratorFloatingControlStore = create<CanvasGeneratorFloa
     setHeight: (height) => set({ height }),
     setCellSize: (cellSize) => set({ cellSize }),
     setObstacleRatio: (obstacleRatio) => set({ obstacleRatio }),
-    setClusteringRatio: (clusteringRatio) => set({ clusteringRatio }),
+    setClusteringProb: (clusteringProb) => set({ clusteringProb }),
     setSeed: (seed) => set({ seed }),
     setAutoObstacleRatioHint: (autoObstacleRatioHint) => set({ autoObstacleRatioHint }),
     setAutoClusteringHint: (autoClusteringHint) => set({ autoClusteringHint }),

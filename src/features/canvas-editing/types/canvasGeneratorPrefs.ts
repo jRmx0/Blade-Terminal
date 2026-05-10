@@ -10,7 +10,7 @@ export interface CanvasGeneratorFloatingControlPrefs {
         height: string;
         cellSize: string;
         obstacleRatio: string;
-        clusteringRatio: string;
+        clusteringProb: string;
         seed: string;
         lastSeedHex: string | null;
     };

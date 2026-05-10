@@ -18,7 +18,7 @@ export interface GeneratorParams {
     height: number;
     cellSize: number;
     obstacleRatio?: number | [number, number];
-    clusteringRatio?: number | [number, number];
+    clusteringProb?: number | [number, number];
     seed: string;
 }
 
@@ -1035,7 +1035,7 @@ export function generateEnvironment({
     height,
     cellSize,
     obstacleRatio,
-    clusteringRatio,
+    clusteringProb,
     seed,
 }: GeneratorParams): GeneratedEnvironment {
     if (width <= 0 || height <= 0 || cellSize <= 0) {
@@ -1060,13 +1060,13 @@ export function generateEnvironment({
 
     // Resolve clustering percentage
     const clusteringDraw = rng();
-    const resolvedClusteringPct = clusteringRatio === undefined
+    const resolvedClusteringPct = clusteringProb === undefined
         ? Math.round(clusteringDraw * 100)
-        : Array.isArray(clusteringRatio)
-            ? Math.round(Math.min(clusteringRatio[0], clusteringRatio[1]) + clusteringDraw * Math.abs(clusteringRatio[1] - clusteringRatio[0]))
-            : clusteringRatio;
+        : Array.isArray(clusteringProb)
+            ? Math.round(Math.min(clusteringProb[0], clusteringProb[1]) + clusteringDraw * Math.abs(clusteringProb[1] - clusteringProb[0]))
+            : clusteringProb;
 
-    const pickedClusteringPct = Array.isArray(clusteringRatio) ? resolvedClusteringPct : null;
+    const pickedClusteringPct = Array.isArray(clusteringProb) ? resolvedClusteringPct : null;
 
     // Resolve obstacle ratio percentage
     const obstacleDraw = mulberry32(seedNum ^ 0x9e3779b9)();

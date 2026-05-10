@@ -80,7 +80,7 @@ describe("generateEnvironment - obstacle ratio calibration", () => {
             const cols = width / cellSize;
             const rows = height / cellSize;
             const obstacleRatio = Math.floor(rand() * 101);
-            const clusteringRatio = Math.floor(rand() * 101);
+            const clusteringProb = Math.floor(rand() * 101);
             const seed = "";
 
             const env = generateEnvironment({
@@ -88,7 +88,7 @@ describe("generateEnvironment - obstacle ratio calibration", () => {
                 height,
                 cellSize,
                 obstacleRatio,
-                clusteringRatio,
+                clusteringProb,
                 seed,
             });
 
@@ -143,7 +143,7 @@ describe("generateEnvironment - pocket prevention", () => {
                 height,
                 cellSize,
                 obstacleRatio: 45,
-                clusteringRatio: 100,
+                clusteringProb: 100,
                 seed,
             });
 

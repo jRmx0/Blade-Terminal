@@ -34,7 +34,7 @@ export default function CanvasGeneratorFloatingControl() {
     const height = useCanvasGeneratorFloatingControlStore((s) => s.height);
     const cellSize = useCanvasGeneratorFloatingControlStore((s) => s.cellSize);
     const obstacleRatio = useCanvasGeneratorFloatingControlStore((s) => s.obstacleRatio);
-    const clusteringRatio = useCanvasGeneratorFloatingControlStore((s) => s.clusteringRatio);
+    const clusteringProb = useCanvasGeneratorFloatingControlStore((s) => s.clusteringProb);
     const seed = useCanvasGeneratorFloatingControlStore((s) => s.seed);
     const autoObstacleRatioHint = useCanvasGeneratorFloatingControlStore((s) => s.autoObstacleRatioHint);
     const autoClusteringHint = useCanvasGeneratorFloatingControlStore((s) => s.autoClusteringHint);
@@ -49,7 +49,7 @@ export default function CanvasGeneratorFloatingControl() {
     const setHeight = useCanvasGeneratorFloatingControlStore((s) => s.setHeight);
     const setCellSize = useCanvasGeneratorFloatingControlStore((s) => s.setCellSize);
     const setObstacleRatio = useCanvasGeneratorFloatingControlStore((s) => s.setObstacleRatio);
-    const setClusteringRatio = useCanvasGeneratorFloatingControlStore((s) => s.setClusteringRatio);
+    const setClusteringProb = useCanvasGeneratorFloatingControlStore((s) => s.setClusteringProb);
     const setSeed = useCanvasGeneratorFloatingControlStore((s) => s.setSeed);
     const setAutoObstacleRatioHint = useCanvasGeneratorFloatingControlStore((s) => s.setAutoObstacleRatioHint);
     const setAutoClusteringHint = useCanvasGeneratorFloatingControlStore((s) => s.setAutoClusteringHint);
@@ -85,10 +85,10 @@ export default function CanvasGeneratorFloatingControl() {
     }, [seed, obstacleRatio]);
 
     const seedDerivedClust = useMemo(() => {
-        const parsed = parseRangeFieldValue(clusteringRatio);
+        const parsed = parseRangeFieldValue(clusteringProb);
         const range = Array.isArray(parsed) ? parsed : undefined;
         return computeResolvedClusteringPct(seed, range);
-    }, [seed, clusteringRatio]);
+    }, [seed, clusteringProb]);
 
     const obsIsAuto = obstacleRatio === "";
     const obsHintStr = seedDerivedObsRatio !== null
@@ -99,7 +99,7 @@ export default function CanvasGeneratorFloatingControl() {
         ? (lastPickedObsValue !== null ? String(lastPickedObsValue) : obsHintStr)
         : undefined;
 
-    const clustIsAuto = clusteringRatio === "";
+    const clustIsAuto = clusteringProb === "";
     const clustHintStr = seedDerivedClust !== null
         ? String(seedDerivedClust)
         : autoClusteringHint !== null ? String(autoClusteringHint) : "auto";
@@ -120,7 +120,7 @@ export default function CanvasGeneratorFloatingControl() {
         height,
         cellSize,
         obstacleRatio,
-        clusteringRatio,
+        clusteringProb,
         hasObsLeftField,
         hasClustLeftField,
     }), [
@@ -128,7 +128,7 @@ export default function CanvasGeneratorFloatingControl() {
         height,
         cellSize,
         obstacleRatio,
-        clusteringRatio,
+        clusteringProb,
         hasObsLeftField,
         hasClustLeftField,
     ]);
@@ -145,7 +145,7 @@ export default function CanvasGeneratorFloatingControl() {
                     height: "1000",
                     cellSize: "30",
                     obstacleRatio: "",
-                    clusteringRatio: "",
+                    clusteringProb: "",
                     seed: "",
                     lastSeedHex: null,
                 },
@@ -160,7 +160,7 @@ export default function CanvasGeneratorFloatingControl() {
             setHeight(saved.values.height);
             setCellSize(saved.values.cellSize);
             setObstacleRatio(saved.values.obstacleRatio);
-            setClusteringRatio(saved.values.clusteringRatio);
+            setClusteringProb(saved.values.clusteringProb);
             setSeed(saved.values.seed);
             setLastSeedHex(saved.values.lastSeedHex);
             isHydratedRef.current = true;
@@ -184,7 +184,7 @@ export default function CanvasGeneratorFloatingControl() {
                     height,
                     cellSize,
                     obstacleRatio,
-                    clusteringRatio,
+                    clusteringProb,
                     seed,
                     lastSeedHex,
                 },
@@ -200,7 +200,7 @@ export default function CanvasGeneratorFloatingControl() {
         height,
         cellSize,
         obstacleRatio,
-        clusteringRatio,
+        clusteringProb,
         seed,
         lastSeedHex,
     ]);
@@ -222,16 +222,16 @@ export default function CanvasGeneratorFloatingControl() {
         const h = parseFloat(height);
         const cs = parseFloat(cellSize);
         const obRatio = parseRangeFieldValue(obstacleRatio);
-        const clusteringVal = parseRangeFieldValue(clusteringRatio);
+        const clusteringProbVal = parseRangeFieldValue(clusteringProb);
 
         const snapshot = [...objects];
         snapshot.forEach((o) => deleteObject(o));
 
-        const env = generateEnvironment({ width: w, height: h, cellSize: cs, obstacleRatio: obRatio, clusteringRatio: clusteringVal, seed });
+        const env = generateEnvironment({ width: w, height: h, cellSize: cs, obstacleRatio: obRatio, clusteringProb: clusteringProbVal, seed });
 
         // Update auto-hints so placeholders reflect the values actually used
         if (obRatio === undefined) setAutoObstacleRatioHint(env.usedObstacleRatioPct);
-        if (clusteringVal === undefined) setAutoClusteringHint(env.usedClusteringPct);
+        if (clusteringProbVal === undefined) setAutoClusteringHint(env.usedClusteringPct);
         setLastSeedHex(env.usedSeedHex);
 
         // Capture the randomly picked values for inline display.
@@ -253,7 +253,7 @@ export default function CanvasGeneratorFloatingControl() {
         if (env.pickedClusteringPct !== null) {
             // Range mode: show the value picked from the range
             setLastPickedClustValue(env.pickedClusteringPct);
-        } else if (seedWasRandomlyGenerated && clusteringVal === undefined) {
+        } else if (seedWasRandomlyGenerated && clusteringProbVal === undefined) {
             // Auto mode with random seed: show the actual achieved ratio
             setLastPickedClustValue(env.usedClusteringPct);
         } else {
@@ -346,9 +346,9 @@ export default function CanvasGeneratorFloatingControl() {
             />
             <FloatingControlRangeField
                 label="Clustering prob. (%)"
-                value={clusteringRatio}
+                value={clusteringProb}
                 onChange={(v) => {
-                    setClusteringRatio(v);
+                    setClusteringProb(v);
                     setLastPickedClustValue(null);
                 }}
                 onFocus={() => setHasClustLeftField(false)}

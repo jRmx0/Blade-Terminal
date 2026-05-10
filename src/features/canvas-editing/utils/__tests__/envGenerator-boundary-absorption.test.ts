@@ -87,7 +87,7 @@ describe("generateEnvironment - boundary absorption", () => {
                 height: 200,
                 cellSize: 10,
                 obstacleRatio: 20 + i * 10, // Vary obstacle ratio
-                clusteringRatio: 30 + i * 15, // Vary clustering ratio
+                clusteringProb: 30 + i * 15, // Vary clustering ratio
                 seed: `boundary-validity-${i}`,
             });
 
@@ -111,7 +111,7 @@ describe("generateEnvironment - boundary absorption", () => {
             height: 100,
             cellSize: 10,
             obstacleRatio: 50,
-            clusteringRatio: 80,
+            clusteringProb: 80,
             seed: "boundary-touching-obstacles",
         });
 
@@ -140,7 +140,7 @@ describe("generateEnvironment - boundary absorption", () => {
             height,
             cellSize,
             obstacleRatio: 40,
-            clusteringRatio: 75,
+            clusteringProb: 75,
             seed: "boundary-indent-test",
         });
 
@@ -164,7 +164,7 @@ describe("generateEnvironment - boundary absorption", () => {
             height: 200,
             cellSize: 20,
             obstacleRatio: 35,
-            clusteringRatio: 50,
+            clusteringProb: 50,
             seed: "interior-obstacles-separation",
         });
 
@@ -192,7 +192,7 @@ describe("generateEnvironment - boundary absorption", () => {
             height: 100,
             cellSize: 10,
             obstacleRatio: 45,
-            clusteringRatio: 70,
+            clusteringProb: 70,
             seed: "boundary-non-degenerate",
         });
 
@@ -219,7 +219,7 @@ describe("generateEnvironment - boundary absorption", () => {
             height: 200,
             cellSize: 10,
             obstacleRatio: 40,
-            clusteringRatio: 60,
+            clusteringProb: 60,
             seed: "ratio-invariant",
         });
 
@@ -234,7 +234,7 @@ describe("generateEnvironment - boundary absorption", () => {
             height: 150,
             cellSize: 15,
             obstacleRatio: 38,
-            clusteringRatio: 65,
+            clusteringProb: 65,
             seed: "start-point-valid",
         });
 
@@ -261,7 +261,7 @@ describe("generateEnvironment - boundary absorption", () => {
             height: 120,
             cellSize: 12,
             obstacleRatio: 33,
-            clusteringRatio: 55,
+            clusteringProb: 55,
             seed: "deterministic-geometry",
         };
 
@@ -292,7 +292,7 @@ describe("generateEnvironment - boundary absorption", () => {
             height: 160,
             cellSize: 16,
             obstacleRatio: 55,
-            clusteringRatio: 90,
+            clusteringProb: 90,
             seed: "complex-boundary",
         });
 
@@ -312,7 +312,7 @@ describe("generateEnvironment - boundary absorption", () => {
             height: 100,
             cellSize: 10,
             obstacleRatio: 0,
-            clusteringRatio: 50,
+            clusteringProb: 50,
             seed: "zero-obstacles",
         });
 
@@ -330,7 +330,7 @@ describe("generateEnvironment - boundary absorption", () => {
             height: 30,
             cellSize: 10,
             obstacleRatio: 50,
-            clusteringRatio: 60,
+            clusteringProb: 60,
             seed: "small-grid",
         });
 
