@@ -124,6 +124,7 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
     const { objects } = useCanvasObjectStore.getState();
 
     const zoneObjects = objects.filter((o) => o.category === OBJECT_CATEGORY.ZONE);
+    const obstacleObjects = objects.filter((o) => o.category === OBJECT_CATEGORY.OBSTACLE);
     if (zoneObjects.length === 0) {
         return { ok: false, error: "No zone drawn on canvas." };
     }
@@ -161,6 +162,18 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
             startPoint: { x: resolvedStart.point.x, y: resolvedStart.point.y },
             endPoint: { x: resolvedEnd.point.x, y: resolvedEnd.point.y },
         },
+        ...(headlandEnabled
+            ? {
+                realworld: {
+                    zones: zoneObjects.map((o) => ({
+                        vertices: o.vertices.map(({ x, y }) => ({ x, y })),
+                    })),
+                    obstacles: obstacleObjects.map((o) => ({
+                        vertices: o.vertices.map(({ x, y }) => ({ x, y })),
+                    })),
+                },
+            }
+            : {}),
         parameters,
     };
 

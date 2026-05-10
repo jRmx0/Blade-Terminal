@@ -70,6 +70,24 @@ Polls the status of a previously submitted job. blade-terminal polls this endpoi
     "startPoint": { "x": 0, "y": 0 },
     "endPoint": { "x": 0, "y": 0 }
   },
+  "realworld": {
+    "zones": [
+      [
+        { "x": 0, "y": 0 },
+        { "x": 100, "y": 0 },
+        { "x": 100, "y": 100 },
+        { "x": 0, "y": 100 }
+      ]
+    ],
+    "obstacles": [
+      [
+        { "x": 20, "y": 20 },
+        { "x": 40, "y": 20 },
+        { "x": 40, "y": 40 },
+        { "x": 20, "y": 40 }
+      ]
+    ]
+  },
   "parameters": {
     "<parameter name>": "<value>",
     "...": "..."
@@ -88,6 +106,9 @@ Polls the status of a previously submitted job. blade-terminal polls this endpoi
 | `environment.obstacles` | `Point[][]` | no | Zero or more obstacle polygons. Each polygon ≥ 3 vertices. **Counter-clockwise winding** in screen coordinates. |
 | `environment.startPoint` | `Point` | yes | Starting position for the coverage path. Always present — when the user places a "Start & End" point, both `startPoint` and `endPoint` carry the same coordinates. |
 | `environment.endPoint` | `Point` | yes | Ending position for the coverage path. Always present — coordinates may be identical to `startPoint` for loop-back coverage. |
+| `realworld` | `object` | no | Optional original geometry snapshot. Present when blade-terminal sends transformed `environment` geometry (e.g., headland-adjusted polygons). Algorithms may ignore it. |
+| `realworld.zones` | `Point[][]` | no | Original zone polygons before terminal-side transformations. Same winding/shape contract as `environment.zones`. |
+| `realworld.obstacles` | `Point[][]` | no | Original obstacle polygons before terminal-side transformations. Same winding/shape contract as `environment.obstacles`. |
 | `parameters` | `object` | yes | Key = `parameter.name` from metadata. Values must conform to `paramType` (see below). |
 
 `Point` is `{ "x": number, "y": number }`.
