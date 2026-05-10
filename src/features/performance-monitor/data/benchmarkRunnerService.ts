@@ -1,6 +1,8 @@
 import { generateEnvironment } from "@/features/canvas-editing/utils/envGenerator";
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
-import { ENV_FORMAT_OPTIONS, ENV_TYPE_OPTIONS } from "@/config/db-ops/enums";
+import { ENV_FORMAT_OPTIONS, ENV_TYPE_OPTIONS, OBJECT_CATEGORY, OBJECT_TYPE } from "@/config/db-ops/enums";
+import { parseHeadlandWidth } from "@/features/coverage-planning/utils/headlandGeometry";
+import { resolveRequestGeometry } from "@/features/coverage-planning/utils/requestGeometry";
 import {
     calculateAggregateMetrics,
     type BenchmarkAggregatedMetrics,
@@ -14,6 +16,7 @@ import {
     type BenchmarkSystemEnvironmentSetup,
     type BenchmarkStepResult,
 } from "@/features/performance-monitor/stores/parameterBenchmarkModalStore";
+import type { Object as CanvasObject } from "@/types/schemaTypes";
 import { computeNumberOfTurns, computePathLength } from "@/utils/coverageGrid";
 import type {
     AlgoParamType,
@@ -113,6 +116,53 @@ function buildStepValues(setup: BenchmarkParameterSetup): number[] {
     }
 
     return values;
+}
+
+function computePolygonArea(vertices: Array<{ x: number; y: number }>): number {
+    if (vertices.length < 3) return 0;
+
+    let sum = 0;
+    for (let i = 0; i < vertices.length; i += 1) {
+        const current = vertices[i]!;
+        const next = vertices[(i + 1) % vertices.length]!;
+        sum += current.x * next.y - next.x * current.y;
+    }
+
+    return Math.abs(sum / 2);
+}
+
+function toCanvasObjects(generated: ReturnType<typeof generateEnvironment>): {
+    objects: CanvasObject[];
+    zoneObjects: CanvasObject[];
+    obstacleObjects: CanvasObject[];
+} {
+    const zoneObjects: CanvasObject[] = [
+        {
+            id: 1,
+            environmentId: 0,
+            category: OBJECT_CATEGORY.ZONE,
+            type: OBJECT_TYPE.OFFLINE,
+            vertexCount: generated.boundary.length,
+            area: computePolygonArea(generated.boundary),
+            vertices: generated.boundary.map((v) => ({ x: v.x, y: v.y })),
+        },
+    ];
+
+    const obstacleObjects: CanvasObject[] = generated.obstacles.map((vertices, index) => ({
+        id: index + 2,
+        environmentId: 0,
+        category: OBJECT_CATEGORY.OBSTACLE,
+        type: OBJECT_TYPE.OFFLINE,
+        vertexCount: vertices.length,
+        area: computePolygonArea(vertices),
+        vertices: vertices.map((v) => ({ x: v.x, y: v.y })),
+    }));
+
+    return {
+        objects: [...zoneObjects, ...obstacleObjects],
+        zoneObjects,
+        obstacleObjects,
+    };
 }
 
 function buildParametersForStep(
@@ -378,6 +428,17 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 seed: runSeed,
             });
 
+            const run: BenchmarkRun = {
+                stepValue,
+                runIndex,
+                status: "running",
+            };
+            runs.push(run);
+
+            onRunUpdate?.(stepValue, runIndex, { status: "running" });
+
+            const { objects, zoneObjects, obstacleObjects } = toCanvasObjects(generated);
+
             const parameters = buildParametersForStep(
                 algorithmParameters,
                 fixedParameters,
@@ -390,27 +451,50 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 parameters[key] = value;
             }
 
-            const run: BenchmarkRun = {
-                stepValue,
-                runIndex,
-                status: "running",
-            };
-            runs.push(run);
+            const headlandEnabled = systemEnvironmentSetup.headland;
+            const headlandWidth = parseHeadlandWidth(systemEnvironmentSetup.headlandWidth);
+            const resolvedGeometry = resolveRequestGeometry({
+                objects,
+                headlandEnabled,
+                headlandWidth,
+            });
 
-            onRunUpdate?.(stepValue, runIndex, { status: "running" });
+            if (!resolvedGeometry.ok) {
+                completedRuns += 1;
+                run.status = "skipped";
+                run.error = resolvedGeometry.error;
+                onRunUpdate?.(stepValue, runIndex, {
+                    status: "skipped",
+                    error: resolvedGeometry.error,
+                });
+                continue;
+            }
+
+            const requestBody: Record<string, unknown> = {
+                environment: {
+                    zones: resolvedGeometry.zones,
+                    obstacles: resolvedGeometry.obstacles,
+                    startPoint: generated.startEndPoint,
+                    endPoint: generated.startEndPoint,
+                },
+                parameters,
+            };
+
+            if (headlandEnabled) {
+                requestBody.realworld = {
+                    zones: zoneObjects.map((o) => ({
+                        vertices: o.vertices.map(({ x, y }) => ({ x, y })),
+                    })),
+                    obstacles: obstacleObjects.map((o) => ({
+                        vertices: o.vertices.map(({ x, y }) => ({ x, y })),
+                    })),
+                };
+            }
 
             const submitResult = await submitComputeRequest(
                 provider,
                 algorithm.id,
-                {
-                    environment: {
-                        zones: [generated.boundary],
-                        obstacles: generated.obstacles,
-                        startPoint: generated.startEndPoint,
-                        endPoint: generated.startEndPoint,
-                    },
-                    parameters,
-                },
+                requestBody,
                 signal,
             );
 

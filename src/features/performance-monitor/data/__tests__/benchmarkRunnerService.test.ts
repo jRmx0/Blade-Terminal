@@ -220,12 +220,16 @@ describe("runBenchmark", () => {
 
         const body = submittedBody as Record<string, any>;
         expect(body.algorithmId).toBe(1);
+        expect(body.environment).toBeDefined();
         expect(body.parameters?.["Path Width"]).toBe(1);
         expect(body.parameters?.["Format"]).toBe("Polygon");
         expect(body.parameters?.["Type"]).toBe("Any (default: Off-Line)");
         expect(body.parameters?.["Coordinate System"]).toBe("Cartesian");
         expect(body.parameters?.["Headland"]).toBeTrue();
         expect(body.parameters?.["Headland Width"]).toBe("10");
+        expect(body.realworld).toBeDefined();
+        expect(Array.isArray(body.realworld?.zones)).toBeTrue();
+        expect(Array.isArray(body.realworld?.obstacles)).toBeTrue();
     });
 
     test("continues to next run when one run fails", async () => {
@@ -286,5 +290,95 @@ describe("runBenchmark", () => {
         expect(results[0]?.rawRuns).toHaveLength(2);
         expect(results[0]?.rawRuns.some((run) => run.status === "failed")).toBeTrue();
         expect(results[0]?.rawRuns.some((run) => run.status === "completed")).toBeTrue();
+    });
+
+    test("omits realworld when headland is disabled", async () => {
+        const { runBenchmark } = await import("@/features/performance-monitor/data/benchmarkRunnerService");
+
+        let submittedBody: Record<string, any> | null = null;
+
+        const fetchMock = async (input: string | URL, init?: RequestInit): Promise<Response> => {
+            const url = String(input);
+            if (url.endsWith("/compute")) {
+                submittedBody = JSON.parse(String(init?.body ?? "{}"));
+                return new Response(
+                    JSON.stringify({
+                        jobId: "job-headland-off",
+                        pollUrl: "http://localhost:8080/compute/job-headland-off",
+                    }),
+                    { status: 202 },
+                );
+            }
+
+            return new Response(JSON.stringify(makeCompletedState(0.66)), { status: 200 });
+        };
+
+        globalThis.fetch = fetchMock as typeof fetch;
+
+        const systemEnvironmentSetup = makeSystemEnvironmentSetup();
+        systemEnvironmentSetup.headland = false;
+
+        const results = await runBenchmark({
+            provider: makeProvider(),
+            algorithm: makeAlgorithm(),
+            algorithmParameters: makeParams(),
+            algorithmMetrics: makeMetrics(),
+            targetParameterSetup: makeTargetSetup(),
+            fixedParameters: [] as BenchmarkFixedParameter[],
+            environmentSetup: makeEnvironmentSetup(),
+            systemEnvironmentSetup,
+            multipleRunsSetup: makeMultipleRunsSetup(1),
+            selectedMetrics: new Set(["coverage"]),
+        });
+
+        expect(results).toHaveLength(1);
+        expect(results[0]?.runsCompleted).toBe(1);
+
+        if (!submittedBody) {
+            throw new Error("Expected benchmark request body to be captured.");
+        }
+
+        const body = submittedBody as Record<string, any>;
+        expect(body.environment).toBeDefined();
+        expect(body.parameters?.["Headland"]).toBeFalse();
+        expect(body.realworld).toBeUndefined();
+    });
+
+    test("skips run before submit when headland width is invalid", async () => {
+        const { runBenchmark } = await import("@/features/performance-monitor/data/benchmarkRunnerService");
+
+        const requestedUrls: string[] = [];
+
+        const fetchMock = async (input: string | URL): Promise<Response> => {
+            requestedUrls.push(String(input));
+            return new Response(JSON.stringify({}), { status: 500 });
+        };
+
+        globalThis.fetch = fetchMock as typeof fetch;
+
+        const systemEnvironmentSetup = makeSystemEnvironmentSetup();
+        systemEnvironmentSetup.headland = true;
+        systemEnvironmentSetup.headlandWidth = "";
+
+        const results = await runBenchmark({
+            provider: makeProvider(),
+            algorithm: makeAlgorithm(),
+            algorithmParameters: makeParams(),
+            algorithmMetrics: makeMetrics(),
+            targetParameterSetup: makeTargetSetup(),
+            fixedParameters: [] as BenchmarkFixedParameter[],
+            environmentSetup: makeEnvironmentSetup(),
+            systemEnvironmentSetup,
+            multipleRunsSetup: makeMultipleRunsSetup(1),
+            selectedMetrics: new Set(["coverage"]),
+        });
+
+        expect(requestedUrls.some((url) => url.endsWith("/compute"))).toBeFalse();
+        expect(results).toHaveLength(1);
+        expect(results[0]?.runsCompleted).toBe(0);
+        expect(results[0]?.runsFailed).toBe(1);
+        expect(results[0]?.rawRuns).toHaveLength(1);
+        expect(results[0]?.rawRuns[0]?.status).toBe("skipped");
+        expect(results[0]?.rawRuns[0]?.error).toContain("Headland Width");
     });
 });
