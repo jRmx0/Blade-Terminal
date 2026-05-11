@@ -45,7 +45,7 @@ const borderBoxPlugin: Plugin<"line"> = {
 interface TimeSeriesMetricCardProps {
     metricId: number;
     name: string;
-    data: number[];
+    data: Array<number | { x: number; y: number }>;
     stages?: PerformanceMetricStage[];
     xAxisLabel?: string;
     yAxisLabel?: string;
@@ -84,8 +84,25 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
         chartRef.current?.update();
     }, [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel]);
 
-    const min = useMemo(() => (data.length > 0 ? Math.min(...data) : null), [data]);
-    const max = useMemo(() => (data.length > 0 ? Math.max(...data) : null), [data]);
+    const normalizedPoints = useMemo(
+        () =>
+            data.map((item, index) =>
+                typeof item === "number"
+                    ? { x: index, y: item }
+                    : { x: item.x, y: item.y },
+            ),
+        [data],
+    );
+
+    const isXYData = useMemo(() => data.some((item) => typeof item !== "number"), [data]);
+
+    const yValues = useMemo(
+        () => normalizedPoints.map((point) => point.y).filter((value) => Number.isFinite(value)),
+        [normalizedPoints],
+    );
+
+    const min = useMemo(() => (yValues.length > 0 ? Math.min(...yValues) : null), [yValues]);
+    const max = useMemo(() => (yValues.length > 0 ? Math.max(...yValues) : null), [yValues]);
     const showDots = data.length <= 20;
 
     const axisNumberFormatter = useMemo(
@@ -106,11 +123,11 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
         () => (stages ?? [])
             .map((stage, index) => ({
                 label: stage.label,
-                sampleIndex: Math.max(0, Math.min(data.length - 1, Math.round(stage.sampleIndex))),
+                sampleIndex: Math.max(0, Math.min(normalizedPoints.length - 1, Math.round(stage.sampleIndex))),
                 color: STAGE_COLORS[index % STAGE_COLORS.length] ?? "#9ca3af",
             }))
             .sort((a, b) => a.sampleIndex - b.sampleIndex),
-        [data.length, stages],
+        [normalizedPoints.length, stages],
     );
 
     const titlePlugin = useMemo<Plugin<"line">>(
@@ -142,7 +159,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
         () => ({
             id: `stageMarkers-${metricId}`,
             afterDatasetsDraw(chart) {
-                if (normalizedStages.length === 0 || data.length === 0) return;
+                if (normalizedStages.length === 0 || normalizedPoints.length === 0) return;
 
                 const xScale = chart.scales.x as { getPixelForValue: (value: number) => number } | undefined;
                 if (!xScale) return;
@@ -154,7 +171,8 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                 ctx.lineWidth = 2;
 
                 for (const stage of normalizedStages) {
-                    const x = xScale.getPixelForValue(stage.sampleIndex);
+                    const stageXValue = normalizedPoints[stage.sampleIndex]?.x ?? stage.sampleIndex;
+                    const x = xScale.getPixelForValue(stageXValue);
                     if (!Number.isFinite(x) || x < left || x > right) continue;
 
                     ctx.strokeStyle = stage.color;
@@ -167,7 +185,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                 ctx.restore();
             },
         }),
-        [data.length, metricId, normalizedStages],
+        [metricId, normalizedPoints, normalizedStages],
     );
 
     const { chartSizes, setChartSize, persistChartSizes } = usePerformanceMonitorModalStore();
@@ -328,7 +346,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
 
     const handleCsvExport = useCallback(async () => {
         const header = `${effectiveXAxisLabel},${effectiveYAxisLabel}`;
-        const rows = data.map((v, i) => `${i},${v}`);
+        const rows = normalizedPoints.map((point) => `${point.x},${point.y}`);
         const csv = [header, ...rows].join("\n");
         const blob = new Blob([csv], { type: "text/csv" });
         let fileHandle: FileSystemFileHandle;
@@ -349,25 +367,35 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
         } catch (err) {
             console.error("[TimeSeriesMetricCard] CSV write failed:", err);
         }
-    }, [data, effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel]);
+    }, [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel, normalizedPoints]);
 
     const chartData = useMemo(
-        () => ({
-            labels: data.map((_, i) => i),
-            datasets: [
-                {
-                    data,
-                    borderColor: "#0d9488",
-                    borderWidth: 1.5,
-                    spanGaps: true,
-                    pointRadius: showDots ? 2 : 0,
-                    pointHoverRadius: 4,
-                    pointBackgroundColor: "#0d9488",
-                    tension: 0,
-                },
-            ],
-        }),
-        [data, showDots],
+        () => {
+            const dataset = {
+                data: isXYData
+                    ? normalizedPoints.map((point) => ({ x: point.x, y: point.y }))
+                    : normalizedPoints.map((point) => point.y),
+                borderColor: "#0d9488",
+                borderWidth: 1.5,
+                spanGaps: true,
+                pointRadius: showDots ? 2 : 0,
+                pointHoverRadius: 4,
+                pointBackgroundColor: "#0d9488",
+                tension: 0,
+            };
+
+            if (isXYData) {
+                return {
+                    datasets: [dataset],
+                };
+            }
+
+            return {
+                labels: normalizedPoints.map((_, i) => i),
+                datasets: [dataset],
+            };
+        },
+        [isXYData, normalizedPoints, showDots],
     );
 
     const options = useMemo<ChartOptions<"line">>(
@@ -380,13 +408,22 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        title: (items) => `${effectiveXAxisLabel}: ${items[0]?.label ?? ""}`,
-                        label: (item) => `${effectiveTitle}: ${item.raw}`,
+                        title: (items) => {
+                            const item = items[0];
+                            if (!item) return `${effectiveXAxisLabel}: `;
+                            const xValue = typeof item.parsed?.x === "number" ? item.parsed.x : Number(item.label);
+                            return `${effectiveXAxisLabel}: ${formatAxisTick(xValue)}`;
+                        },
+                        label: (item) => {
+                            const yValue = typeof item.parsed?.y === "number" ? item.parsed.y : Number(item.raw);
+                            return `${effectiveTitle}: ${formatAxisTick(yValue)}`;
+                        },
                     },
                 },
             },
             scales: {
                 x: {
+                    type: isXYData ? "linear" : "category",
                     title: { display: true, text: effectiveXAxisLabel, font: { size: 14, weight: "bold" }, color: "#4b5563" },
                     ticks: {
                         font: { size: 14, weight: "bold" },
@@ -406,7 +443,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                 },
             },
         }),
-        [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel, formatAxisTick],
+        [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel, formatAxisTick, isXYData],
     );
 
     return (

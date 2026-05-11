@@ -343,7 +343,7 @@ export interface AlgorithmDebug {
 
 export interface PerformanceMetric {
     id: number;
-    value: number | number[];
+    value: number | number[] | Array<{ x: number; y: number }>;
     stages?: PerformanceMetricStage[];
 }
 

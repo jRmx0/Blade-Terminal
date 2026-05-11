@@ -297,7 +297,15 @@ function performanceMetricToNumber(metric: PerformanceMetric | undefined): numbe
 
     if (Array.isArray(metric.value)) {
         const last = metric.value[metric.value.length - 1];
-        return typeof last === "number" && Number.isFinite(last) ? last : null;
+        if (typeof last === "number") {
+            return Number.isFinite(last) ? last : null;
+        }
+
+        if (last && typeof last === "object" && "y" in last && typeof last.y === "number") {
+            return Number.isFinite(last.y) ? last.y : null;
+        }
+
+        return null;
     }
 
     return null;

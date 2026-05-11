@@ -37,7 +37,7 @@ export default function PerformanceMonitorModal() {
 
         // Group — preserving first-appearance order
         const groupOrder: string[] = [];
-        const byGroup = new Map<string, { id: number; name: string; type: string; value: number | number[] | undefined; stages?: PerformanceMetricStage[]; style?: { xAxisLabel?: string; yAxisLabel?: string } }[]>();
+        const byGroup = new Map<string, { id: number; name: string; type: string; value: PerformanceMetric["value"] | undefined; stages?: PerformanceMetricStage[]; style?: { xAxisLabel?: string; yAxisLabel?: string } }[]>();
 
         for (const meta of metaMapped) {
             const group = meta.group ?? "General";
@@ -124,7 +124,7 @@ export default function PerformanceMonitorModal() {
                 {/* Metrics list */}
                 <div className="flex-1 overflow-y-auto">
                     <div className="px-4 py-2 flex flex-col gap-2">
-                        {activeMetrics.map((metric: { id: number; name: string; type: string; value: number | number[] | undefined; stages?: PerformanceMetricStage[]; style?: { xAxisLabel?: string; yAxisLabel?: string } }) => {
+                        {activeMetrics.map((metric: { id: number; name: string; type: string; value: PerformanceMetric["value"] | undefined; stages?: PerformanceMetricStage[]; style?: { xAxisLabel?: string; yAxisLabel?: string } }) => {
                             if (metric.type === "Time-series") {
                                 const data = Array.isArray(metric.value) ? metric.value : [];
                                 return (
