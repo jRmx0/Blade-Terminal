@@ -89,7 +89,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
     const showDots = data.length <= 20;
 
     const axisNumberFormatter = useMemo(
-        () => new Intl.NumberFormat("fr-FR", { useGrouping: true, maximumFractionDigits: 20 }),
+        () => new Intl.NumberFormat("fr-FR", { useGrouping: true, maximumFractionDigits: 2 }),
         [],
     );
 
