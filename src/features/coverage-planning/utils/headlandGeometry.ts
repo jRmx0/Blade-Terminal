@@ -9,7 +9,7 @@ const MITER_LIMIT_MULTIPLIER = 4;
 
 export const SYSTEM_HEADLAND_PROVIDER_PARAM_NAMES = new Set([
     "Headland",
-    "Headland Coverage Offset",
+    "Headland Width",
 ]);
 
 function edgeOffsetNormal(

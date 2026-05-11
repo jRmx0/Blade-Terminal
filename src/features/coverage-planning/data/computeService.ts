@@ -91,12 +91,25 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
     const algoParams = catalogParameters.filter(
         (p) => p.algorithmId === selectedAlgorithmId && p.computationProviderId === selectedProviderId,
     );
-    const providerParams = algoParams.filter((p) => !SYSTEM_HEADLAND_PROVIDER_PARAM_NAMES.has(p.name));
+
+    const { env } = useEnvStore.getState();
+    const headlandEnabled = env.headlandEnabled;
+    const headlandWidth = parseHeadlandWidth(env.headlandWidth);
+
+    const systemParamValues: Record<string, number | boolean> = {
+        "Headland": headlandEnabled,
+        "Headland Width": headlandWidth ?? 0,
+    };
 
     const { parameterValues } = useParameterValuesStore.getState();
 
     const parameters: Record<string, number | boolean | string | null> = {};
-    for (const param of providerParams) {
+    for (const param of algoParams) {
+        if (SYSTEM_HEADLAND_PROVIDER_PARAM_NAMES.has(param.name)) {
+            parameters[param.name] = systemParamValues[param.name] ?? null;
+            continue;
+        }
+
         const pv = parameterValues.find(
             (v) =>
                 v.id === param.id &&
@@ -137,11 +150,6 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
 
     const resolvedStart = startPoint ?? startEndPoint!;
     const resolvedEnd = endPoint ?? startEndPoint!;
-
-    const { env } = useEnvStore.getState();
-    const headlandEnabled = env.headlandEnabled;
-    const headlandWidthRaw = env.headlandWidth;
-    const headlandWidth = parseHeadlandWidth(headlandWidthRaw);
 
     const resolvedGeometry = resolveRequestGeometry({
         objects,
