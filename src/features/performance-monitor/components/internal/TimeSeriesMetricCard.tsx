@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -54,6 +54,35 @@ interface TimeSeriesMetricCardProps {
 export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAxisLabel, yAxisLabel }: TimeSeriesMetricCardProps) {
     const chartRef = useRef<ChartJS<"line"> | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
+    const effectiveTitleRef = useRef(name);
+    const [isLabelEditorOpen, setIsLabelEditorOpen] = useState(false);
+    const [titleOverride, setTitleOverride] = useState(name);
+    const [xAxisLabelOverride, setXAxisLabelOverride] = useState(xAxisLabel ?? "Index");
+    const [yAxisLabelOverride, setYAxisLabelOverride] = useState(yAxisLabel ?? "Value");
+
+    useEffect(() => {
+        setTitleOverride(name);
+    }, [name]);
+
+    useEffect(() => {
+        setXAxisLabelOverride(xAxisLabel ?? "Index");
+    }, [xAxisLabel]);
+
+    useEffect(() => {
+        setYAxisLabelOverride(yAxisLabel ?? "Value");
+    }, [yAxisLabel]);
+
+    const effectiveTitle = titleOverride.trim() || name;
+    const effectiveXAxisLabel = xAxisLabelOverride.trim() || (xAxisLabel ?? "Index");
+    const effectiveYAxisLabel = yAxisLabelOverride.trim() || (yAxisLabel ?? "Value");
+
+    useEffect(() => {
+        effectiveTitleRef.current = effectiveTitle;
+    }, [effectiveTitle]);
+
+    useEffect(() => {
+        chartRef.current?.update();
+    }, [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel]);
 
     const min = useMemo(() => (data.length > 0 ? Math.min(...data) : null), [data]);
     const max = useMemo(() => (data.length > 0 ? Math.max(...data) : null), [data]);
@@ -72,7 +101,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
 
     const titlePlugin = useMemo<Plugin<"line">>(
         () => ({
-            id: "centerTitle",
+            id: `centerTitle-${metricId}`,
             beforeDraw(chart) {
                 const { ctx, chartArea: { left, right, top } } = chart;
                 ctx.save();
@@ -81,7 +110,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                 ctx.textAlign = "center";
                 ctx.textBaseline = "bottom";
                 const maxWidth = right - left;
-                let label = name;
+                let label = effectiveTitleRef.current;
                 if (ctx.measureText(label).width > maxWidth) {
                     while (label.length > 0 && ctx.measureText(label + "…").width > maxWidth) {
                         label = label.slice(0, -1);
@@ -92,7 +121,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                 ctx.restore();
             },
         }),
-        [name],
+        [metricId],
     );
 
     const stageMarkersPlugin = useMemo<Plugin<"line">>(
@@ -266,7 +295,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
         let fileHandle: FileSystemFileHandle;
         try {
             fileHandle = await window.showSaveFilePicker({
-                suggestedName: `${name}.png`,
+                suggestedName: `${effectiveTitle}.png`,
                 types: [{ description: "PNG image", accept: { "image/png": [".png"] } }],
             });
         } catch (err) {
@@ -281,17 +310,17 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
         } catch (err) {
             console.error("[TimeSeriesMetricCard] File write failed:", err);
         }
-    }, [name, chartRef, normalizedStages]);
+    }, [chartRef, effectiveTitle, normalizedStages]);
 
     const handleCsvExport = useCallback(async () => {
-        const header = `${xAxisLabel ?? "Index"},${yAxisLabel ?? "Value"}`;
+        const header = `${effectiveXAxisLabel},${effectiveYAxisLabel}`;
         const rows = data.map((v, i) => `${i},${v}`);
         const csv = [header, ...rows].join("\n");
         const blob = new Blob([csv], { type: "text/csv" });
         let fileHandle: FileSystemFileHandle;
         try {
             fileHandle = await window.showSaveFilePicker({
-                suggestedName: `${name}.csv`,
+                suggestedName: `${effectiveTitle}.csv`,
                 types: [{ description: "CSV file", accept: { "text/csv": [".csv"] } }],
             });
         } catch (err) {
@@ -306,7 +335,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
         } catch (err) {
             console.error("[TimeSeriesMetricCard] CSV write failed:", err);
         }
-    }, [name, data, xAxisLabel, yAxisLabel]);
+    }, [data, effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel]);
 
     const chartData = useMemo(
         () => ({
@@ -336,27 +365,27 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        title: (items) => `${xAxisLabel ?? "Index"}: ${items[0]?.label ?? ""}`,
-                        label: (item) => `${name}: ${item.raw}`,
+                        title: (items) => `${effectiveXAxisLabel}: ${items[0]?.label ?? ""}`,
+                        label: (item) => `${effectiveTitle}: ${item.raw}`,
                     },
                 },
             },
             scales: {
                 x: {
-                    title: { display: true, text: xAxisLabel ?? "Index", font: { size: 14, weight: "bold" }, color: "#4b5563" },
+                    title: { display: true, text: effectiveXAxisLabel, font: { size: 14, weight: "bold" }, color: "#4b5563" },
                     ticks: { font: { size: 14, weight: "bold" }, color: "#4b5563", autoSkipPadding: 20, maxRotation: 0 },
                     grid: { color: "#e5e7eb" },
                     border: { color: "#9ca3af" },
                 },
                 y: {
-                    title: { display: true, text: yAxisLabel ?? "Value", font: { size: 14, weight: "bold" }, color: "#4b5563" },
+                    title: { display: true, text: effectiveYAxisLabel, font: { size: 14, weight: "bold" }, color: "#4b5563" },
                     ticks: { font: { size: 14, weight: "bold" }, color: "#4b5563" },
                     grid: { color: "#e5e7eb" },
                     border: { color: "#9ca3af" },
                 },
             },
         }),
-        [name, xAxisLabel, yAxisLabel],
+        [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel],
     );
 
     return (
@@ -371,7 +400,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                 <span
                     onClick={handleCsvExport}
                     title="Export CSV"
-                    className="material-symbols-outlined absolute bottom-0 right-10 cursor-pointer select-none leading-none z-10 text-gray-300 hover:text-gray-600"
+                    className="material-symbols-outlined absolute bottom-0 right-15 cursor-pointer select-none leading-none z-10 text-gray-300 hover:text-gray-600"
                     style={{ fontSize: 16 }}
                 >
                     table_chart
@@ -379,10 +408,18 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                 <span
                     onClick={handleDownload}
                     title="Export PNG"
-                    className="material-symbols-outlined absolute bottom-0 right-5 cursor-pointer select-none leading-none z-10 text-gray-300 hover:text-gray-600"
+                    className="material-symbols-outlined absolute bottom-0 right-10 cursor-pointer select-none leading-none z-10 text-gray-300 hover:text-gray-600"
                     style={{ fontSize: 16 }}
                 >
                     download
+                </span>
+                <span
+                    onClick={() => setIsLabelEditorOpen((prev) => !prev)}
+                    title="Edit labels"
+                    className={`material-symbols-outlined absolute bottom-0 right-5 cursor-pointer select-none leading-none z-10 ${isLabelEditorOpen ? "text-gray-600" : "text-gray-300 hover:text-gray-600"}`}
+                    style={{ fontSize: 16 }}
+                >
+                    edit_note
                 </span>
                 <span
                     onPointerDown={handleResizePointerDown}
@@ -393,6 +430,62 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                     resize_window
                 </span>
             </div>
+            {isLabelEditorOpen && (
+                <div className="mx-auto mt-2 rounded border border-gray-200 bg-white px-3 py-2" style={{ width: chartWidth }}>
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                        <label className="flex flex-col gap-1 text-xs font-medium text-gray-700">
+                            Title
+                            <input
+                                type="text"
+                                value={titleOverride}
+                                onChange={(e) => setTitleOverride(e.target.value)}
+                                className="h-8 rounded border border-gray-300 px-2 text-xs text-gray-800 outline-none focus:border-teal-500"
+                                placeholder={name}
+                            />
+                        </label>
+                        <label className="flex flex-col gap-1 text-xs font-medium text-gray-700">
+                            X axis label
+                            <input
+                                type="text"
+                                value={xAxisLabelOverride}
+                                onChange={(e) => setXAxisLabelOverride(e.target.value)}
+                                className="h-8 rounded border border-gray-300 px-2 text-xs text-gray-800 outline-none focus:border-teal-500"
+                                placeholder={xAxisLabel ?? "Index"}
+                            />
+                        </label>
+                        <label className="flex flex-col gap-1 text-xs font-medium text-gray-700">
+                            Y axis label
+                            <input
+                                type="text"
+                                value={yAxisLabelOverride}
+                                onChange={(e) => setYAxisLabelOverride(e.target.value)}
+                                className="h-8 rounded border border-gray-300 px-2 text-xs text-gray-800 outline-none focus:border-teal-500"
+                                placeholder={yAxisLabel ?? "Value"}
+                            />
+                        </label>
+                    </div>
+                    <div className="mt-2 flex items-center justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setTitleOverride(name);
+                                setXAxisLabelOverride(xAxisLabel ?? "Index");
+                                setYAxisLabelOverride(yAxisLabel ?? "Value");
+                            }}
+                            className="rounded border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100"
+                        >
+                            Reset
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsLabelEditorOpen(false)}
+                            className="rounded border border-teal-600 bg-teal-600 px-2 py-1 text-xs font-semibold text-white hover:bg-teal-700"
+                        >
+                            Done
+                        </button>
+                    </div>
+                </div>
+            )}
             {normalizedStages.length > 0 && (
                 <div className="mx-auto mt-2 inline-flex w-fit flex-col items-center rounded border border-gray-200 px-3 py-2">
                     {/* <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">Stage legend</div> */}
