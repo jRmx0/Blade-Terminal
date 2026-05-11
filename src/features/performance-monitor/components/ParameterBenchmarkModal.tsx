@@ -834,7 +834,10 @@ function RunTabContent({
             metric,
             metricId: 10000 + idx,
             name: `${metricLabels[metric]} vs ${targetParameterName}`,
-            data: sorted.map((result) => result.aggregatedMetrics[metric][aggregateKey] ?? Number.NaN),
+            data: sorted.map((result) => ({
+                x: result.stepValue,
+                y: result.aggregatedMetrics[metric][aggregateKey] ?? Number.NaN,
+            })),
         }));
     }, [executionState.results, selectedMetrics, aggregateKey, targetParameterName]);
 
