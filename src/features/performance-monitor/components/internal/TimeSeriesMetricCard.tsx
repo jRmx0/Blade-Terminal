@@ -457,7 +457,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
 
     return (
         <div className="px-4 py-3 border-b border-gray-200 last:border-b-0">
-            <div className="relative mx-auto" ref={containerRef} style={{ width: chartWidth, height: chartHeight }}>
+            <div className="relative mx-auto mb-7" ref={containerRef} style={{ width: chartWidth, height: chartHeight }}>
                 <Line
                     ref={chartRef}
                     data={chartData}
@@ -467,32 +467,32 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                 <span
                     onClick={handleCsvExport}
                     title="Export CSV"
-                    className="material-symbols-outlined absolute bottom-0 right-15 cursor-pointer select-none leading-none z-10 text-gray-300 hover:text-gray-600"
-                    style={{ fontSize: 16 }}
+                    className="material-symbols-outlined absolute right-15 cursor-pointer select-none leading-none z-10 text-gray-300 hover:text-gray-600"
+                    style={{ fontSize: 16, bottom: '-12px' }}
                 >
                     table_chart
                 </span>
                 <span
                     onClick={handleDownload}
                     title="Export PNG"
-                    className="material-symbols-outlined absolute bottom-0 right-10 cursor-pointer select-none leading-none z-10 text-gray-300 hover:text-gray-600"
-                    style={{ fontSize: 16 }}
+                    className="material-symbols-outlined absolute right-10 cursor-pointer select-none leading-none z-10 text-gray-300 hover:text-gray-600"
+                    style={{ fontSize: 16, bottom: '-12px' }}
                 >
                     download
                 </span>
                 <span
                     onClick={() => setIsLabelEditorOpen((prev) => !prev)}
                     title="Edit labels"
-                    className={`material-symbols-outlined absolute bottom-0 right-5 cursor-pointer select-none leading-none z-10 ${isLabelEditorOpen ? "text-gray-600" : "text-gray-300 hover:text-gray-600"}`}
-                    style={{ fontSize: 16 }}
+                    className={`material-symbols-outlined absolute right-5 cursor-pointer select-none leading-none z-10 ${isLabelEditorOpen ? "text-gray-600" : "text-gray-300 hover:text-gray-600"}`}
+                    style={{ fontSize: 16, bottom: '-12px' }}
                 >
                     edit_note
                 </span>
                 <span
                     onPointerDown={handleResizePointerDown}
                     title="Resize"
-                    className={`material-symbols-outlined absolute bottom-0 right-0 cursor-se-resize select-none leading-none rotate-270 z-10 ${isDragging ? "text-gray-600" : "text-gray-300 hover:text-gray-600"}`}
-                    style={{ fontSize: 16 }}
+                    className={`material-symbols-outlined absolute right-0 cursor-se-resize select-none leading-none rotate-270 z-10 ${isDragging ? "text-gray-600" : "text-gray-300 hover:text-gray-600"}`}
+                    style={{ fontSize: 16, bottom: '-12px' }}
                 >
                     resize_window
                 </span>
