@@ -29,7 +29,6 @@ import {
     areFetchedComputationMetadataEqual,
     EMPTY_COMPUTATION_PROVIDER_FORM,
     normalizeComputationProviderForm,
-    sleep,
     toComputationProviderFormState,
     type ComputationProviderForm,
     withMinimumLoadingTime,
@@ -337,7 +336,6 @@ export function useComputationProviderCardController() {
     const requestClose = useCallback(async () => {
         if (savePromiseRef.current !== null) {
             await savePromiseRef.current;
-            await sleep(0);
         }
 
         if (!isDirtyRef.current) {
