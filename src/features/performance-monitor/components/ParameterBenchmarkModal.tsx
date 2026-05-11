@@ -20,7 +20,7 @@ import { useModalLifecycle } from "@/hooks/modals/useModalLifecycle";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import type { AlgorithmMetric, AlgorithmParameter, ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
-import TimeSeriesMetricCard from "@/features/performance-monitor/components/internal/TimeSeriesMetricCard";
+import ChartCard from "@/features/performance-monitor/components/internal/ChartCard";
 
 export default function ParameterBenchmarkModal() {
     const {
@@ -991,7 +991,7 @@ function RunTabContent({
                 ) : (
                     <div className="p-3 flex flex-col gap-3 max-h-112 overflow-y-auto">
                         {chartSeries.map((series) => (
-                            <TimeSeriesMetricCard
+                            <ChartCard
                                 key={series.metric}
                                 metricId={series.metricId}
                                 name={series.name}

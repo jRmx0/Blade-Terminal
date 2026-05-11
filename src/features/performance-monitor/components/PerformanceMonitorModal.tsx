@@ -10,7 +10,7 @@ import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
 import type { PerformanceMetric, PerformanceMetricStage } from "@/types/serviceTypes";
-import TimeSeriesMetricCard from "./internal/TimeSeriesMetricCard";
+import ChartCard from "./internal/ChartCard";
 
 export default function PerformanceMonitorModal() {
     const { isOpen, close, chartSizes, initChartSizes } = usePerformanceMonitorModalStore();
@@ -128,7 +128,7 @@ export default function PerformanceMonitorModal() {
                             if (metric.type === "Time-series") {
                                 const data = Array.isArray(metric.value) ? metric.value : [];
                                 return (
-                                    <TimeSeriesMetricCard
+                                    <ChartCard
                                         key={metric.id}
                                         metricId={metric.id}
                                         name={metric.name}
