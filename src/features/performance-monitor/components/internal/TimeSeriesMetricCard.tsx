@@ -88,6 +88,20 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
     const max = useMemo(() => (data.length > 0 ? Math.max(...data) : null), [data]);
     const showDots = data.length <= 20;
 
+    const axisNumberFormatter = useMemo(
+        () => new Intl.NumberFormat("fr-FR", { useGrouping: true, maximumFractionDigits: 20 }),
+        [],
+    );
+
+    const formatAxisTick = useCallback(
+        (value: string | number) => {
+            const numericValue = typeof value === "number" ? value : Number(value);
+            if (!Number.isFinite(numericValue)) return String(value);
+            return axisNumberFormatter.format(numericValue).replace(/[\u00A0\u202F]/g, " ");
+        },
+        [axisNumberFormatter],
+    );
+
     const normalizedStages = useMemo(
         () => (stages ?? [])
             .map((stage, index) => ({
@@ -373,19 +387,25 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
             scales: {
                 x: {
                     title: { display: true, text: effectiveXAxisLabel, font: { size: 14, weight: "bold" }, color: "#4b5563" },
-                    ticks: { font: { size: 14, weight: "bold" }, color: "#4b5563", autoSkipPadding: 20, maxRotation: 0 },
+                    ticks: {
+                        font: { size: 14, weight: "bold" },
+                        color: "#4b5563",
+                        autoSkipPadding: 20,
+                        maxRotation: 0,
+                        callback: (value) => formatAxisTick(value),
+                    },
                     grid: { color: "#e5e7eb" },
                     border: { color: "#9ca3af" },
                 },
                 y: {
                     title: { display: true, text: effectiveYAxisLabel, font: { size: 14, weight: "bold" }, color: "#4b5563" },
-                    ticks: { font: { size: 14, weight: "bold" }, color: "#4b5563" },
+                    ticks: { font: { size: 14, weight: "bold" }, color: "#4b5563", callback: (value) => formatAxisTick(value) },
                     grid: { color: "#e5e7eb" },
                     border: { color: "#9ca3af" },
                 },
             },
         }),
-        [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel],
+        [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel, formatAxisTick],
     );
 
     return (
