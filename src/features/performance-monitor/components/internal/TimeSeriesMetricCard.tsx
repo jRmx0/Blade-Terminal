@@ -359,6 +359,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                     data,
                     borderColor: "#0d9488",
                     borderWidth: 1.5,
+                    spanGaps: true,
                     pointRadius: showDots ? 2 : 0,
                     pointHoverRadius: 4,
                     pointBackgroundColor: "#0d9488",
