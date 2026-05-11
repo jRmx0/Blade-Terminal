@@ -213,7 +213,7 @@ export default function CanvasGeneratorFloatingControl() {
         deletePoint(envId, "end");
     }
 
-    function handleGenerate() {
+    async function handleGenerate() {
         if (!isRequiredFieldsValid) return;
         if (cellSizeFitError !== null) return;
         if (hasAnyRangeFieldError) return;
@@ -264,14 +264,14 @@ export default function CanvasGeneratorFloatingControl() {
         for (const obs of env.obstacles) {
             addObject(OBJECT_CATEGORY.OBSTACLE, obs, OBJECT_TYPE.EMPTY);
         }
-        upsertPoint(envId, "start_end", env.startEndPoint);
+        await upsertPoint(envId, "start_end", env.startEndPoint);
     }
 
-    function handleGenerateAndRun() {
+    async function handleGenerateAndRun() {
         if (!isRequiredFieldsValid) return;
         if (cellSizeFitError !== null) return;
         if (hasAnyRangeFieldError) return;
-        handleGenerate();
+        await handleGenerate();
         executeComputeRequest().then((result) => {
             if (!result.ok) {
                 console.error("[GenerateAndRun] compute error:", result.error);
