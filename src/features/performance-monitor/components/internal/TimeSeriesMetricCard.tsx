@@ -101,6 +101,14 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
         [normalizedPoints],
     );
 
+    const xValues = useMemo(
+        () => normalizedPoints.map((point) => point.x).filter((value) => Number.isFinite(value)),
+        [normalizedPoints],
+    );
+
+    const xMin = useMemo(() => (xValues.length > 0 ? Math.min(...xValues) : undefined), [xValues]);
+    const xMax = useMemo(() => (xValues.length > 0 ? Math.max(...xValues) : undefined), [xValues]);
+
     const min = useMemo(() => (yValues.length > 0 ? Math.min(...yValues) : null), [yValues]);
     const max = useMemo(() => (yValues.length > 0 ? Math.max(...yValues) : null), [yValues]);
     const showDots = data.length <= 20;
@@ -424,6 +432,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
             scales: {
                 x: {
                     type: isXYData ? "linear" : "category",
+                    ...(isXYData && xMin !== undefined && xMax !== undefined ? { min: xMin, max: xMax } : {}),
                     title: { display: true, text: effectiveXAxisLabel, font: { size: 14, weight: "bold" }, color: "#4b5563" },
                     ticks: {
                         font: { size: 14, weight: "bold" },
@@ -443,7 +452,7 @@ export default function TimeSeriesMetricCard({ metricId, name, data, stages, xAx
                 },
             },
         }),
-        [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel, formatAxisTick, isXYData],
+        [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel, formatAxisTick, isXYData, xMin, xMax],
     );
 
     return (
