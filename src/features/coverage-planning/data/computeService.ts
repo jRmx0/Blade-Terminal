@@ -24,9 +24,13 @@ export type ComputeExecuteResult =
     | { ok: true; record: ComputeResultRecord }
     | { ok: false; error: string };
 
+export type BuildRequestBodyResult =
+    | { ok: true; body: Record<string, unknown>; provider: { url: string; apiKey: string } }
+    | { ok: false; error: string };
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function buildHeaders(apiKey: string): HeadersInit {
+export function buildHeaders(apiKey: string): HeadersInit {
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
     };
@@ -56,9 +60,9 @@ function isNullableParameter(paramName: string, paramType: AlgoParamType): boole
     return paramType === "String" && paramName === "Seed";
 }
 
-// ─── Service ─────────────────────────────────────────────────────────────────
+// ─── Shared request body builder ─────────────────────────────────────────────
 
-export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
+export function buildComputeRequestBody(): BuildRequestBodyResult {
     const { computation } = useEnvStore.getState();
     const { selectedProviderId, selectedAlgorithmId } = computation;
 
@@ -74,11 +78,6 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
     const provider = providers.find((p) => p.id === selectedProviderId);
     if (!provider) {
         return { ok: false, error: "Selected provider not found in catalog." };
-    }
-
-    const builtUrl = buildComputationProviderEndpointUrl(provider.url, "/compute");
-    if (!builtUrl.ok) {
-        return { ok: false, error: `Provider URL is invalid: ${builtUrl.error}` };
     }
 
     const algorithm = algorithms.find(
@@ -162,7 +161,7 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
 
     const { zones, obstacles } = resolvedGeometry;
 
-    const requestBody = {
+    const body: Record<string, unknown> = {
         algorithmId: selectedAlgorithmId,
         environment: {
             zones,
@@ -185,11 +184,25 @@ export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
         parameters,
     };
 
+    return { ok: true, body, provider: { url: provider.url, apiKey: provider.apiKey } };
+}
+
+// ─── Service ─────────────────────────────────────────────────────────────────
+
+export async function submitComputeRequest(): Promise<ComputeSubmitResult> {
+    const bodyResult = buildComputeRequestBody();
+    if (!bodyResult.ok) return bodyResult;
+
+    const builtUrl = buildComputationProviderEndpointUrl(bodyResult.provider.url, "/compute");
+    if (!builtUrl.ok) {
+        return { ok: false, error: `Provider URL is invalid: ${builtUrl.error}` };
+    }
+
     try {
         const response = await fetch(builtUrl.url, {
             method: "POST",
-            headers: buildHeaders(provider.apiKey),
-            body: JSON.stringify(requestBody),
+            headers: buildHeaders(bodyResult.provider.apiKey),
+            body: JSON.stringify(bodyResult.body),
         });
 
         const data = await response.json() as Record<string, unknown>;

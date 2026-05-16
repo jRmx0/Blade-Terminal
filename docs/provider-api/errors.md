@@ -33,6 +33,8 @@ All HTTP-layer errors must use this structure:
 | `invalid_json` | 400 | Request body is not valid JSON |
 | `not_found` | 404 | Route does not exist |
 | `job_not_found` | 404 | No compute job found for the given ID |
+| `session_not_found` | 404 | No debug session found for the given session ID |
+| `session_not_found_or_exhausted` | 404 | No debug session found, or all steps have already been revealed |
 | `method_not_allowed` | 405 | HTTP method not allowed for this route |
 
 ### Compute job errors (appear in `job.error.code`)

@@ -30,6 +30,10 @@ All responses must carry open CORS headers (`Access-Control-Allow-Origin: *`). P
 | `GET` | `/metadata` | Algorithm metadata & parameter schemas | [endpoint-metadata.md](./endpoint-metadata.md) |
 | `POST` | `/compute` | Submit a compute job | [endpoint-compute.md](./endpoint-compute.md) |
 | `GET` | `/compute/:jobId` | Poll a compute job | [endpoint-compute.md](./endpoint-compute.md) |
+| `POST` | `/compute/debug` | Start a debug session (run-ahead + step-reveal) | [endpoint-compute-debug.md](./endpoint-compute-debug.md) |
+| `POST` | `/compute/debug/:sessionId/step` | Reveal the next segment | [endpoint-compute-debug.md](./endpoint-compute-debug.md) |
+| `POST` | `/compute/debug/:sessionId/restart` | Reset step pointer to 0 | [endpoint-compute-debug.md](./endpoint-compute-debug.md) |
+| `DELETE` | `/compute/debug/:sessionId` | Stop and free the debug session | [endpoint-compute-debug.md](./endpoint-compute-debug.md) |
 
 For error response shape and all error codes see [errors.md](./errors.md).  
 For layer style attributes see [layer-styles.md](./layer-styles.md).

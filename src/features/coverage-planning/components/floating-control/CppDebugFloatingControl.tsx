@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useFloatingControlZStore } from "@/components/floating-control/floatingControlZStore";
 import { useCppDebugStore } from "@/features/coverage-planning/stores/cppDebugStore";
+import { stepDebugSession, restartDebugSession, stopDebugSession } from "@/features/coverage-planning/data/debugService";
 
 const CONTROL_ID = "cpp-debug";
 
@@ -10,7 +11,6 @@ export default function CppDebugFloatingControl() {
     const isOpen = useCppDebugStore((s) => s.isOpen);
     const controlPosition = useCppDebugStore((s) => s.controlPosition);
     const setControlPosition = useCppDebugStore((s) => s.setControlPosition);
-    const stopDebug = useCppDebugStore((s) => s.stopDebug);
 
     const [pos, setPos] = useState(controlPosition);
 
@@ -127,7 +127,7 @@ export default function CppDebugFloatingControl() {
                 <button
                     type="button"
                     title="Step Over"
-                    onClick={() => { }}
+                    onClick={() => { void stepDebugSession(); }}
                     className="flex items-center justify-center w-8 h-8 rounded text-sky-500 hover:text-sky-700 hover:bg-gray-200 active:bg-gray-300 cursor-pointer transition-colors focus:outline-none"
                 >
                     <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
@@ -139,7 +139,7 @@ export default function CppDebugFloatingControl() {
                 <button
                     type="button"
                     title="Restart"
-                    onClick={() => { }}
+                    onClick={() => { void restartDebugSession(); }}
                     className="flex items-center justify-center w-8 h-8 rounded text-emerald-500 hover:text-emerald-700 hover:bg-gray-200 active:bg-gray-300 cursor-pointer transition-colors focus:outline-none"
                 >
                     <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
@@ -151,7 +151,7 @@ export default function CppDebugFloatingControl() {
                 <button
                     type="button"
                     title="Stop"
-                    onClick={stopDebug}
+                    onClick={() => { void stopDebugSession(); }}
                     className="flex items-center justify-center w-8 h-8 rounded text-red-500 hover:text-red-700 hover:bg-red-100 active:bg-red-200 cursor-pointer transition-colors focus:outline-none"
                 >
                     <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
