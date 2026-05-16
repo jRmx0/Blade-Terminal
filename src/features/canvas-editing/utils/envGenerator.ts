@@ -1,5 +1,11 @@
 import polygonClipping from "polygon-clipping";
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
+import {
+    COORD_SYSTEM,
+    ENV_FORMAT,
+    type CoordSystemType,
+    type EnvFormat,
+} from "@/config/db-ops/enums";
 
 // ============================================================================
 // PERFORMANCE NOTES
@@ -31,6 +37,36 @@ export interface GeneratedEnvironment {
     pickedObstacleRatioPct: number | null;
     pickedClusteringPct: number | null;
     usedSeedHex: string;
+}
+
+export interface GeneratorSystemParams {
+    format: EnvFormat;
+    coordSystem: CoordSystemType;
+}
+
+export interface GeneratorSystemValidationResult {
+    ok: boolean;
+    error: string | null;
+}
+
+export function validateGeneratorSystemParams(
+    params: GeneratorSystemParams,
+): GeneratorSystemValidationResult {
+    if (params.format !== ENV_FORMAT.POLYGON) {
+        return {
+            ok: false,
+            error: "Generator currently supports only Polygon environment format.",
+        };
+    }
+
+    if (params.coordSystem !== COORD_SYSTEM.CARTESIAN) {
+        return {
+            ok: false,
+            error: "Generator currently supports only Cartesian coordinate system.",
+        };
+    }
+
+    return { ok: true, error: null };
 }
 
 // ============================================================================

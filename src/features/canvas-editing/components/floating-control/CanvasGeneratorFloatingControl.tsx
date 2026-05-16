@@ -14,12 +14,18 @@ import {
     generateEnvironment,
     computeResolvedObstacleRatioPct,
     computeResolvedClusteringPct,
+    validateGeneratorSystemParams,
 } from "@/features/canvas-editing/utils/envGenerator";
 import { validateCanvasGeneratorInputs } from "@/features/canvas-editing/utils/environmentInputValidation";
 import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useEnvStore } from "@/stores/envStore";
-import { OBJECT_CATEGORY, OBJECT_TYPE } from "@/config/db-ops/enums";
+import {
+    OBJECT_CATEGORY,
+    defaultObjectTypeForEnv,
+    ENV_FORMAT_OPTIONS,
+    COORD_SYSTEM_OPTIONS,
+} from "@/config/db-ops/enums";
 import { unitLabel } from "@/utils/unitOfMeasure";
 import { getUiPreference, setUiPreference } from "@server/db/uiPreferences";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
@@ -66,6 +72,7 @@ export default function CanvasGeneratorFloatingControl() {
     const upsertPoint = useEnvPointStore((s) => s.upsertPoint);
     const deletePoint = useEnvPointStore((s) => s.deletePoint);
     const envId = useEnvStore((s) => s.env.id);
+    const env = useEnvStore((s) => s.env);
     const uom = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
     const computeStatus = useComputeResultStore((s) => s.status);
     const isComputeBusy = computeStatus === "submitting" || computeStatus === "polling";
@@ -132,6 +139,14 @@ export default function CanvasGeneratorFloatingControl() {
         hasObsLeftField,
         hasClustLeftField,
     ]);
+
+    const generatorSystemValidation = useMemo(() => validateGeneratorSystemParams({
+        format: env.format,
+        coordSystem: env.coordSystem,
+    }), [env.format, env.coordSystem]);
+
+    const systemParamsError = generatorSystemValidation.error;
+    const isSystemParamsCompatible = generatorSystemValidation.ok;
 
     useEffect(() => {
         let isCancelled = false;
@@ -217,6 +232,7 @@ export default function CanvasGeneratorFloatingControl() {
         if (!isRequiredFieldsValid) return;
         if (cellSizeFitError !== null) return;
         if (hasAnyRangeFieldError) return;
+        if (!isSystemParamsCompatible) return;
 
         const w = parseFloat(width);
         const h = parseFloat(height);
@@ -227,12 +243,13 @@ export default function CanvasGeneratorFloatingControl() {
         const snapshot = [...objects];
         snapshot.forEach((o) => deleteObject(o));
 
-        const env = generateEnvironment({ width: w, height: h, cellSize: cs, obstacleRatio: obRatio, clusteringProb: clusteringProbVal, seed });
+        const generatedEnv = generateEnvironment({ width: w, height: h, cellSize: cs, obstacleRatio: obRatio, clusteringProb: clusteringProbVal, seed });
+        const generatedObjectType = defaultObjectTypeForEnv(env.type);
 
         // Update auto-hints so placeholders reflect the values actually used
-        if (obRatio === undefined) setAutoObstacleRatioHint(env.usedObstacleRatioPct);
-        if (clusteringProbVal === undefined) setAutoClusteringHint(env.usedClusteringPct);
-        setLastSeedHex(env.usedSeedHex);
+        if (obRatio === undefined) setAutoObstacleRatioHint(generatedEnv.usedObstacleRatioPct);
+        if (clusteringProbVal === undefined) setAutoClusteringHint(generatedEnv.usedClusteringPct);
+        setLastSeedHex(generatedEnv.usedSeedHex);
 
         // Capture the randomly picked values for inline display.
         // Use env.pickedObstacleRatioPct / env.pickedClusteringPct (the value actually selected
@@ -240,37 +257,38 @@ export default function CanvasGeneratorFloatingControl() {
         // requested range due to the percolation staircase behaviour.
         const seedWasRandomlyGenerated = !seed.trim();
 
-        if (env.pickedObstacleRatioPct !== null) {
+        if (generatedEnv.pickedObstacleRatioPct !== null) {
             // Range mode: show the value picked from the range
-            setLastPickedObsValue(env.pickedObstacleRatioPct);
+            setLastPickedObsValue(generatedEnv.pickedObstacleRatioPct);
         } else if (seedWasRandomlyGenerated && obRatio === undefined) {
             // Auto mode with random seed: show the actual achieved ratio
-            setLastPickedObsValue(env.usedObstacleRatioPct);
+            setLastPickedObsValue(generatedEnv.usedObstacleRatioPct);
         } else {
             setLastPickedObsValue(null);
         }
 
-        if (env.pickedClusteringPct !== null) {
+        if (generatedEnv.pickedClusteringPct !== null) {
             // Range mode: show the value picked from the range
-            setLastPickedClustValue(env.pickedClusteringPct);
+            setLastPickedClustValue(generatedEnv.pickedClusteringPct);
         } else if (seedWasRandomlyGenerated && clusteringProbVal === undefined) {
             // Auto mode with random seed: show the actual achieved ratio
-            setLastPickedClustValue(env.usedClusteringPct);
+            setLastPickedClustValue(generatedEnv.usedClusteringPct);
         } else {
             setLastPickedClustValue(null);
         }
 
-        addObject(OBJECT_CATEGORY.ZONE, env.boundary, OBJECT_TYPE.EMPTY);
-        for (const obs of env.obstacles) {
-            addObject(OBJECT_CATEGORY.OBSTACLE, obs, OBJECT_TYPE.EMPTY);
+        addObject(OBJECT_CATEGORY.ZONE, generatedEnv.boundary, generatedObjectType);
+        for (const obs of generatedEnv.obstacles) {
+            addObject(OBJECT_CATEGORY.OBSTACLE, obs, generatedObjectType);
         }
-        await upsertPoint(envId, "start_end", env.startEndPoint);
+        await upsertPoint(envId, "start_end", generatedEnv.startEndPoint);
     }
 
     async function handleGenerateAndRun() {
         if (!isRequiredFieldsValid) return;
         if (cellSizeFitError !== null) return;
         if (hasAnyRangeFieldError) return;
+        if (!isSystemParamsCompatible) return;
         await handleGenerate();
         executeComputeRequest().then((result) => {
             if (!result.ok) {
@@ -366,6 +384,11 @@ export default function CanvasGeneratorFloatingControl() {
                 placeholder={lastSeedHex ?? undefined}
             />
             <div className="mx-3 my-1 border-t border-gray-300" />
+            {systemParamsError && (
+                <div className="mx-3 mb-2 rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-700">
+                    {systemParamsError} Current values: Format = {ENV_FORMAT_OPTIONS.find((opt) => opt.value === env.format)?.label ?? env.format}, Coordinate System = {COORD_SYSTEM_OPTIONS.find((opt) => opt.value === env.coordSystem)?.label ?? env.coordSystem}.
+                </div>
+            )}
             <FloatingControlButton
                 label="Clear Environment"
                 onClick={handleClearEnvironment}
@@ -373,12 +396,12 @@ export default function CanvasGeneratorFloatingControl() {
             <FloatingControlButton
                 label="Generate"
                 onClick={handleGenerate}
-                disabled={!canGenerate}
+                disabled={!canGenerate || !isSystemParamsCompatible}
             />
             <FloatingControlMainButton
                 label="Generate and Run"
                 onClick={handleGenerateAndRun}
-                disabled={isComputeBusy || !canGenerate}
+                disabled={isComputeBusy || !canGenerate || !isSystemParamsCompatible}
             />
         </FloatingControl>
     );
