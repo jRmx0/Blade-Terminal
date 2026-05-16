@@ -30,6 +30,7 @@ import { CanvasDynamicLayer } from "@/features/canvas-editing/components/canvas-
 import { CanvasEnvPointsLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasEnvPointsLayer";
 import { CanvasMapTileLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasMapTileLayer";
 import { CanvasSystemPolygonResultLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasSystemPolygonResultLayer";
+import { CppDebugResultLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CppDebugResultLayer";
 import CanvasModifierFloatingControl from "@/features/canvas-editing/components/floating-control/CanvasModifierFloatingControl";
 import CanvasGeneratorFloatingControl from "@/features/canvas-editing/components/floating-control/CanvasGeneratorFloatingControl";
 import CppDebugFloatingControl from "@/features/coverage-planning/components/floating-control/CppDebugFloatingControl";
@@ -464,6 +465,8 @@ export default function CanvasEditor() {
           mousePos={mousePos}
           scale={scale}
         />
+
+        <CppDebugResultLayer />
       </Stage>
       <CanvasModifierFloatingControl />
       <CanvasGeneratorFloatingControl />

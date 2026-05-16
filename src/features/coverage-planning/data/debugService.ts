@@ -1,26 +1,46 @@
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import { buildComputeRequestBody, buildHeaders } from "./computeService";
 import { useCppDebugStore } from "@/features/coverage-planning/stores/cppDebugStore";
+import { useEnvStore } from "@/stores/envStore";
+import type { ComputeResult, CoveragePathPlan, AlgorithmDebug, AlgorithmPerformance } from "@/types/serviceTypes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-export type DebugSegment = {
-    id: number;
-    type: string;
-    path: unknown[];
-};
 
 export type StartDebugResult =
     | { ok: true; sessionId: string; totalSteps: number }
     | { ok: false; error: string };
 
+/**
+ * A step result carries the full partial compute result (snapshot).
+ * `result` is identical in shape to a normal compute response but with
+ * `coveragePathPlan.segments` containing only the segments revealed so far.
+ */
 export type StepDebugResult =
-    | { ok: true; stepIndex: number; totalSteps: number; done: boolean; segment: DebugSegment }
+    | { ok: true; stepIndex: number; totalSteps: number; done: boolean; result: ComputeResult }
     | { ok: false; error: string };
 
 export type RestartDebugResult =
     | { ok: true; sessionId: string; totalSteps: number; stepIndex: number }
     | { ok: false; error: string };
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function extractDebugMeta(data: Record<string, unknown>) {
+    const meta = data["_debug"] as Record<string, unknown> | undefined;
+    return {
+        stepIndex: meta?.["stepIndex"] as number,
+        totalSteps: meta?.["totalSteps"] as number,
+        done: meta?.["done"] as boolean,
+    };
+}
+
+function extractComputeResult(data: Record<string, unknown>): ComputeResult {
+    return {
+        coveragePathPlan: data["coveragePathPlan"] as CoveragePathPlan,
+        debug: data["debug"] as AlgorithmDebug | undefined,
+        performance: data["performance"] as AlgorithmPerformance | undefined,
+    };
+}
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
@@ -54,6 +74,13 @@ export async function startDebugSession(): Promise<StartDebugResult> {
         store.setSessionId(sessionId);
         store.setTotalSteps(totalSteps);
         store.setCurrentStep(0);
+
+        // Capture algorithm + provider context so the debug layer can filter provider layers.
+        const { computation } = useEnvStore.getState();
+        if (computation.selectedAlgorithmId !== null && computation.selectedProviderId !== null) {
+            store.setSessionContext(computation.selectedAlgorithmId, computation.selectedProviderId);
+        }
+
         store.startDebug();
 
         return { ok: true, sessionId, totalSteps };
@@ -63,7 +90,7 @@ export async function startDebugSession(): Promise<StartDebugResult> {
 }
 
 export async function stepDebugSession(): Promise<StepDebugResult> {
-    const { sessionId, currentStep } = useCppDebugStore.getState();
+    const { sessionId } = useCppDebugStore.getState();
     if (!sessionId) {
         return { ok: false, error: "No active debug session." };
     }
@@ -82,6 +109,7 @@ export async function stepDebugSession(): Promise<StepDebugResult> {
             headers: buildHeaders(bodyResult.provider.apiKey),
         });
 
+        // The step response IS a full compute result snapshot with _debug metadata merged in.
         const data = await response.json() as Record<string, unknown>;
 
         if (!response.ok) {
@@ -89,13 +117,14 @@ export async function stepDebugSession(): Promise<StepDebugResult> {
             return { ok: false, error: typeof message === "string" ? message : `Server error ${response.status}` };
         }
 
-        const stepIndex = data["stepIndex"] as number;
-        const done = data["done"] as boolean;
-        const segment = data["segment"] as DebugSegment;
+        const { stepIndex, totalSteps, done } = extractDebugMeta(data);
+        const computeResult = extractComputeResult(data);
 
-        useCppDebugStore.getState().setCurrentStep(currentStep + 1);
+        const store = useCppDebugStore.getState();
+        store.setCurrentStep(stepIndex);
+        store.setCurrentResult(computeResult);
 
-        return { ok: true, stepIndex, totalSteps: data["totalSteps"] as number, done, segment };
+        return { ok: true, stepIndex, totalSteps, done, result: computeResult };
     } catch (err) {
         return { ok: false, error: err instanceof Error ? err.message : "Network error" };
     }
@@ -128,7 +157,7 @@ export async function restartDebugSession(): Promise<RestartDebugResult> {
             return { ok: false, error: typeof message === "string" ? message : `Server error ${response.status}` };
         }
 
-        useCppDebugStore.getState().setCurrentStep(0);
+        useCppDebugStore.getState().clearCurrentResult();
 
         return {
             ok: true,
@@ -141,6 +170,38 @@ export async function restartDebugSession(): Promise<RestartDebugResult> {
     }
 }
 
+export async function fastForwardDebugSession(): Promise<void> {
+    const { sessionId } = useCppDebugStore.getState();
+    if (!sessionId) return;
+
+    const bodyResult = buildComputeRequestBody();
+    if (!bodyResult.ok) return;
+
+    const builtUrl = buildComputationProviderEndpointUrl(
+        bodyResult.provider.url,
+        `/compute/debug/${encodeURIComponent(sessionId)}/fast-forward`,
+    );
+    if (!builtUrl.ok) return;
+
+    try {
+        const response = await fetch(builtUrl.url, {
+            method: "POST",
+            headers: buildHeaders(bodyResult.provider.apiKey),
+        });
+        if (!response.ok) return;
+
+        const data = await response.json() as Record<string, unknown>;
+        const { stepIndex } = extractDebugMeta(data);
+        const computeResult = extractComputeResult(data);
+
+        const store = useCppDebugStore.getState();
+        store.setCurrentStep(stepIndex);
+        store.setCurrentResult(computeResult);
+    } catch {
+        // silent — session is transient
+    }
+}
+
 export async function stopDebugSession(): Promise<void> {
     const { sessionId } = useCppDebugStore.getState();
     // Always reset store state, even if the server call fails
@@ -148,8 +209,6 @@ export async function stopDebugSession(): Promise<void> {
 
     if (!sessionId) return;
 
-    // We don't have a provider URL here without calling buildComputeRequestBody.
-    // Use it for the URL only; failures are silent since session is ephemeral.
     const bodyResult = buildComputeRequestBody();
     if (!bodyResult.ok) return;
 
@@ -165,3 +224,4 @@ export async function stopDebugSession(): Promise<void> {
         // Silent — session is transient, no need to surface this error
     }
 }
+

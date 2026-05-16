@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useFloatingControlZStore } from "@/components/floating-control/floatingControlZStore";
 import { useCppDebugStore } from "@/features/coverage-planning/stores/cppDebugStore";
-import { stepDebugSession, restartDebugSession, stopDebugSession } from "@/features/coverage-planning/data/debugService";
+import { fastForwardDebugSession, stepDebugSession, restartDebugSession, stopDebugSession } from "@/features/coverage-planning/data/debugService";
 
 const CONTROL_ID = "cpp-debug";
 
@@ -11,8 +11,15 @@ export default function CppDebugFloatingControl() {
     const isOpen = useCppDebugStore((s) => s.isOpen);
     const controlPosition = useCppDebugStore((s) => s.controlPosition);
     const setControlPosition = useCppDebugStore((s) => s.setControlPosition);
+    const currentStep = useCppDebugStore((s) => s.currentStep);
+    const totalSteps = useCppDebugStore((s) => s.totalSteps);
 
     const [pos, setPos] = useState(controlPosition);
+    const [isRunning, setIsRunning] = useState(false);
+    const [isAutoStepping, setIsAutoStepping] = useState(false);
+    const isAutoSteppingRef = useRef(false);
+
+    const isDone = totalSteps > 0 && currentStep >= totalSteps;
 
     const register = useFloatingControlZStore((s) => s.register);
     const bringToFront = useFloatingControlZStore((s) => s.bringToFront);
@@ -60,6 +67,26 @@ export default function CppDebugFloatingControl() {
         return () => observer.disconnect();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
+
+    async function handleResumePause() {
+        if (isAutoStepping) {
+            isAutoSteppingRef.current = false;
+            setIsAutoStepping(false);
+            return;
+        }
+
+        isAutoSteppingRef.current = true;
+        setIsAutoStepping(true);
+
+        while (isAutoSteppingRef.current) {
+            const result = await stepDebugSession();
+            if (!result.ok || result.done) {
+                isAutoSteppingRef.current = false;
+                setIsAutoStepping(false);
+                break;
+            }
+        }
+    }
 
     function handleDragMouseDown(e: React.MouseEvent<HTMLDivElement>) {
         e.preventDefault();
@@ -123,12 +150,42 @@ export default function CppDebugFloatingControl() {
 
             {/* Action buttons */}
             <div className="flex items-center gap-0.5">
+                {/* Continue */}
+                <button
+                    type="button"
+                    title="Fast Forward"
+                    disabled={isDone || isRunning || isAutoStepping}
+                    onClick={() => {
+                        setIsRunning(true);
+                        void fastForwardDebugSession().finally(() => setIsRunning(false));
+                    }}
+                    className="flex items-center justify-center w-8 h-8 rounded text-sky-500 hover:text-sky-700 hover:bg-gray-200 active:bg-gray-300 cursor-pointer transition-colors focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-sky-500"
+                >
+                    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                        fast_forward
+                    </span>
+                </button>
+
+                {/* Resume / Pause */}
+                <button
+                    type="button"
+                    title={isAutoStepping ? "Pause" : "Resume"}
+                    disabled={(isDone && !isAutoStepping) || isRunning}
+                    onClick={() => { void handleResumePause(); }}
+                    className="flex items-center justify-center w-8 h-8 rounded text-sky-500 hover:text-sky-700 hover:bg-gray-200 active:bg-gray-300 cursor-pointer transition-colors focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-sky-500"
+                >
+                    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                        {isAutoStepping ? "pause" : "play_arrow"}
+                    </span>
+                </button>
+
                 {/* Step Over */}
                 <button
                     type="button"
                     title="Step Over"
+                    disabled={isDone || isRunning || isAutoStepping}
                     onClick={() => { void stepDebugSession(); }}
-                    className="flex items-center justify-center w-8 h-8 rounded text-sky-500 hover:text-sky-700 hover:bg-gray-200 active:bg-gray-300 cursor-pointer transition-colors focus:outline-none"
+                    className="flex items-center justify-center w-8 h-8 rounded text-sky-500 hover:text-sky-700 hover:bg-gray-200 active:bg-gray-300 cursor-pointer transition-colors focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-sky-500"
                 >
                     <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                         step_over
@@ -139,8 +196,9 @@ export default function CppDebugFloatingControl() {
                 <button
                     type="button"
                     title="Restart"
+                    disabled={isRunning || isAutoStepping}
                     onClick={() => { void restartDebugSession(); }}
-                    className="flex items-center justify-center w-8 h-8 rounded text-emerald-500 hover:text-emerald-700 hover:bg-gray-200 active:bg-gray-300 cursor-pointer transition-colors focus:outline-none"
+                    className="flex items-center justify-center w-8 h-8 rounded text-emerald-500 hover:text-emerald-700 hover:bg-gray-200 active:bg-gray-300 cursor-pointer transition-colors focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-emerald-500"
                 >
                     <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                         restart_alt
