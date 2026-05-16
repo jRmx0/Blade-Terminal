@@ -11,7 +11,7 @@ import {
 import { useCanvasGeneratorFloatingControlStore } from "@/features/canvas-editing/stores/canvasGeneratorFloatingControlStore";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import {
-    generateEnvironment,
+    generateCompliantEnvironment,
     computeResolvedObstacleRatioPct,
     computeResolvedClusteringPct,
     validateGeneratorSystemParams,
@@ -22,7 +22,6 @@ import { useEnvPointStore } from "@/stores/envPointStore";
 import { useEnvStore } from "@/stores/envStore";
 import {
     OBJECT_CATEGORY,
-    defaultObjectTypeForEnv,
     ENV_FORMAT_OPTIONS,
     COORD_SYSTEM_OPTIONS,
 } from "@/config/db-ops/enums";
@@ -228,11 +227,11 @@ export default function CanvasGeneratorFloatingControl() {
         deletePoint(envId, "end");
     }
 
-    async function handleGenerate() {
-        if (!isRequiredFieldsValid) return;
-        if (cellSizeFitError !== null) return;
-        if (hasAnyRangeFieldError) return;
-        if (!isSystemParamsCompatible) return;
+    async function handleGenerate(): Promise<boolean> {
+        if (!isRequiredFieldsValid) return false;
+        if (cellSizeFitError !== null) return false;
+        if (hasAnyRangeFieldError) return false;
+        if (!isSystemParamsCompatible) return false;
 
         const w = parseFloat(width);
         const h = parseFloat(height);
@@ -243,8 +242,24 @@ export default function CanvasGeneratorFloatingControl() {
         const snapshot = [...objects];
         snapshot.forEach((o) => deleteObject(o));
 
-        const generatedEnv = generateEnvironment({ width: w, height: h, cellSize: cs, obstacleRatio: obRatio, clusteringProb: clusteringProbVal, seed });
-        const generatedObjectType = defaultObjectTypeForEnv(env.type);
+        const compliantResult = generateCompliantEnvironment({
+            width: w,
+            height: h,
+            cellSize: cs,
+            obstacleRatio: obRatio,
+            clusteringProb: clusteringProbVal,
+            seed,
+            systemParams: {
+                format: env.format,
+                type: env.type,
+                coordSystem: env.coordSystem,
+            },
+        });
+
+        if (!compliantResult.ok) return false;
+
+        const generatedEnv = compliantResult.value.environment;
+        const generatedObjectType = compliantResult.value.objectType;
 
         // Update auto-hints so placeholders reflect the values actually used
         if (obRatio === undefined) setAutoObstacleRatioHint(generatedEnv.usedObstacleRatioPct);
@@ -282,14 +297,12 @@ export default function CanvasGeneratorFloatingControl() {
             addObject(OBJECT_CATEGORY.OBSTACLE, obs, generatedObjectType);
         }
         await upsertPoint(envId, "start_end", generatedEnv.startEndPoint);
+        return true;
     }
 
     async function handleGenerateAndRun() {
-        if (!isRequiredFieldsValid) return;
-        if (cellSizeFitError !== null) return;
-        if (hasAnyRangeFieldError) return;
-        if (!isSystemParamsCompatible) return;
-        await handleGenerate();
+        const generated = await handleGenerate();
+        if (!generated) return;
         executeComputeRequest().then((result) => {
             if (!result.ok) {
                 console.error("[GenerateAndRun] compute error:", result.error);

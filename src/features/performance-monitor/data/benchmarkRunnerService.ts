@@ -1,6 +1,16 @@
-import { generateEnvironment } from "@/features/canvas-editing/utils/envGenerator";
+import {
+    generateCompliantEnvironment,
+    validateGeneratorSystemParams,
+    type GeneratorSystemParams,
+    type GeneratedEnvironment,
+} from "@/features/canvas-editing/utils/envGenerator";
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
-import { ENV_FORMAT_OPTIONS, ENV_TYPE_OPTIONS, OBJECT_CATEGORY, OBJECT_TYPE } from "@/config/db-ops/enums";
+import {
+    COORD_SYSTEM_OPTIONS,
+    ENV_FORMAT_OPTIONS,
+    ENV_TYPE_OPTIONS,
+    OBJECT_CATEGORY,
+} from "@/config/db-ops/enums";
 import { parseHeadlandWidth } from "@/features/coverage-planning/utils/headlandGeometry";
 import { resolveRequestGeometry } from "@/features/coverage-planning/utils/requestGeometry";
 import { computeNetArea } from "@/features/canvas-editing/utils/canvasGeometry";
@@ -139,7 +149,10 @@ function computePolygonArea(vertices: Array<{ x: number; y: number }>): number {
     return Math.abs(sum / 2);
 }
 
-function toCanvasObjects(generated: ReturnType<typeof generateEnvironment>): {
+function toCanvasObjects(
+    generated: GeneratedEnvironment,
+    objectType: CanvasObject["type"],
+): {
     objects: CanvasObject[];
     zoneObjects: CanvasObject[];
     obstacleObjects: CanvasObject[];
@@ -149,7 +162,7 @@ function toCanvasObjects(generated: ReturnType<typeof generateEnvironment>): {
             id: 1,
             environmentId: 0,
             category: OBJECT_CATEGORY.ZONE,
-            type: OBJECT_TYPE.OFFLINE,
+            type: objectType,
             vertexCount: generated.boundary.length,
             area: computePolygonArea(generated.boundary),
             vertices: generated.boundary.map((v) => ({ x: v.x, y: v.y })),
@@ -160,7 +173,7 @@ function toCanvasObjects(generated: ReturnType<typeof generateEnvironment>): {
         id: index + 2,
         environmentId: 0,
         category: OBJECT_CATEGORY.OBSTACLE,
-        type: OBJECT_TYPE.OFFLINE,
+        type: objectType,
         vertexCount: vertices.length,
         area: computePolygonArea(vertices),
         vertices: vertices.map((v) => ({ x: v.x, y: v.y })),
@@ -220,6 +233,24 @@ function getSystemEnvironmentParameters(systemEnvironmentSetup: BenchmarkSystemE
         "Coordinate System": systemEnvironmentSetup.coordinateSystem,
         "Headland": systemEnvironmentSetup.headland,
         "Headland Width": systemEnvironmentSetup.headlandWidth,
+    };
+}
+
+function resolveGeneratorSystemParams(
+    systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup,
+): GeneratorSystemParams | null {
+    const format = ENV_FORMAT_OPTIONS.find((option) => option.value === systemEnvironmentSetup.format)?.value;
+    const type = ENV_TYPE_OPTIONS.find((option) => option.value === systemEnvironmentSetup.type)?.value;
+    const coordSystem = COORD_SYSTEM_OPTIONS.find((option) => option.value === systemEnvironmentSetup.coordinateSystem)?.value;
+
+    if (!format || !type || !coordSystem) {
+        return null;
+    }
+
+    return {
+        format,
+        type,
+        coordSystem,
     };
 }
 
@@ -420,6 +451,19 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
         onStepCompleted,
     } = config;
 
+    const generatorSystemParams = resolveGeneratorSystemParams(systemEnvironmentSetup);
+    if (generatorSystemParams === null) {
+        throw new Error("Invalid benchmark system environment setup for generator.");
+    }
+
+    const systemValidation = validateGeneratorSystemParams({
+        format: generatorSystemParams.format,
+        coordSystem: generatorSystemParams.coordSystem,
+    });
+    if (!systemValidation.ok) {
+        throw new Error(systemValidation.error ?? "Unsupported benchmark system environment setup for generator.");
+    }
+
     const stepValues = buildStepValues(targetParameterSetup);
     if (stepValues.length === 0) {
         throw new Error("Invalid target parameter range. No benchmark steps could be generated.");
@@ -463,14 +507,22 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 ? `${environmentSetup.seed.trim()}-step-${stepValue}-run-${runIndex}`
                 : "";
 
-            const generated = generateEnvironment({
+            const compliantGeneration = generateCompliantEnvironment({
                 width: environmentSetup.width,
                 height: environmentSetup.height,
                 cellSize: environmentSetup.cellSize,
                 obstacleRatio: environmentSetup.obstacleRatio,
                 clusteringProb: environmentSetup.clusteringProb,
                 seed: runSeed,
+                systemParams: generatorSystemParams,
             });
+
+            if (!compliantGeneration.ok) {
+                throw new Error(compliantGeneration.error);
+            }
+
+            const generated = compliantGeneration.value.environment;
+            const benchmarkObjectType = compliantGeneration.value.objectType;
 
             const run: BenchmarkRun = {
                 stepValue,
@@ -481,7 +533,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
 
             onRunUpdate?.(stepValue, runIndex, { status: "running" });
 
-            const { objects, zoneObjects, obstacleObjects } = toCanvasObjects(generated);
+            const { objects, zoneObjects, obstacleObjects } = toCanvasObjects(generated, benchmarkObjectType);
 
             const parameters = buildParametersForStep(
                 algorithmParameters,
@@ -585,7 +637,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                         id: index + 1,
                         environmentId: 0,
                         category: OBJECT_CATEGORY.ZONE,
-                        type: OBJECT_TYPE.OFFLINE,
+                        type: benchmarkObjectType,
                         vertexCount: zone.vertices.length,
                         area: computePolygonArea(zone.vertices),
                         vertices: zone.vertices.map((v) => ({ x: v.x, y: v.y })),
@@ -594,7 +646,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                         id: resolvedGeometry.zones.length + index + 1,
                         environmentId: 0,
                         category: OBJECT_CATEGORY.OBSTACLE,
-                        type: OBJECT_TYPE.OFFLINE,
+                        type: benchmarkObjectType,
                         vertexCount: obstacle.vertices.length,
                         area: computePolygonArea(obstacle.vertices),
                         vertices: obstacle.vertices.map((v) => ({ x: v.x, y: v.y })),

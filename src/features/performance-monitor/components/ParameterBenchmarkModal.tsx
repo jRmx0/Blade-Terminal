@@ -4,6 +4,7 @@ import {
     ENV_FORMAT_OPTIONS,
     ENV_TYPE_OPTIONS,
 } from "@/config/db-ops/enums";
+import { validateGeneratorSystemParams } from "@/features/canvas-editing/utils/envGenerator";
 import {
     useParameterBenchmarkModalStore,
     type BenchmarkEnvironmentSetup,
@@ -125,6 +126,11 @@ export default function ParameterBenchmarkModal() {
         return !isNaN(start) && !isNaN(end) && !isNaN(step) && step > 0 && start <= end;
     }, [selectedProvider, selectedAlgorithm, targetParameterSetup]);
 
+    const generatorSystemValidation = useMemo(() => validateGeneratorSystemParams({
+        format: systemEnvironmentSetup.format,
+        coordSystem: systemEnvironmentSetup.coordinateSystem,
+    }), [systemEnvironmentSetup.format, systemEnvironmentSetup.coordinateSystem]);
+
     // Reset tab when modal closes
     useEffect(() => {
         if (!isOpen) setActiveTab("setup");
@@ -134,6 +140,11 @@ export default function ParameterBenchmarkModal() {
 
     const handleStartBenchmark = useCallback(async () => {
         if (!selectedProvider || !selectedAlgorithm || !targetParameterSetup) {
+            return;
+        }
+
+        if (!generatorSystemValidation.ok) {
+            setError(generatorSystemValidation.error ?? "Unsupported system environment setup for benchmark generation.");
             return;
         }
 
@@ -222,6 +233,8 @@ export default function ParameterBenchmarkModal() {
         multipleRunsSetup,
         metricsConfig.selectedMetrics,
         addStepResult,
+        generatorSystemValidation.error,
+        generatorSystemValidation.ok,
     ]);
 
     const handleCancelBenchmark = useCallback(() => {
@@ -316,6 +329,8 @@ export default function ParameterBenchmarkModal() {
                             executionState={executionState}
                             onStartBenchmark={handleStartBenchmark}
                             onCancelBenchmark={handleCancelBenchmark}
+                            canStartBenchmark={generatorSystemValidation.ok}
+                            systemParamsError={generatorSystemValidation.error}
                         />
                     )}
                 </div>
@@ -791,6 +806,8 @@ interface RunTabContentProps {
     executionState: BenchmarkExecutionState;
     onStartBenchmark: () => void;
     onCancelBenchmark: () => void;
+    canStartBenchmark: boolean;
+    systemParamsError: string | null;
 }
 
 function RunTabContent({
@@ -808,6 +825,8 @@ function RunTabContent({
     executionState,
     onStartBenchmark,
     onCancelBenchmark,
+    canStartBenchmark,
+    systemParamsError,
 }: RunTabContentProps) {
     const metricLabels: Record<BenchmarkMetricType, string> = {
         coverage: "Coverage Ratio",
@@ -901,6 +920,13 @@ function RunTabContent({
                 </div>
             )}
 
+            {systemParamsError && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded">
+                    <div className="text-sm font-medium text-amber-900">Generator Compatibility</div>
+                    <div className="text-xs text-amber-800 mt-1">{systemParamsError}</div>
+                </div>
+            )}
+
             {isRunning && (
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded flex items-center gap-2">
                     <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
@@ -913,7 +939,7 @@ function RunTabContent({
                 <button
                     type="button"
                     onClick={onStartBenchmark}
-                    disabled={isRunning}
+                    disabled={isRunning || !canStartBenchmark}
                     className={`px-4 py-2 rounded text-sm font-medium text-white transition-colors ${isRunning
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-teal-600 hover:bg-teal-700 active:bg-teal-800"

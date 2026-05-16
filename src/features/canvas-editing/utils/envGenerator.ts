@@ -3,8 +3,11 @@ import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import {
     COORD_SYSTEM,
     ENV_FORMAT,
+    defaultObjectTypeForEnv,
     type CoordSystemType,
     type EnvFormat,
+    type EnvType,
+    type ObjectType,
 } from "@/config/db-ops/enums";
 
 // ============================================================================
@@ -41,6 +44,7 @@ export interface GeneratedEnvironment {
 
 export interface GeneratorSystemParams {
     format: EnvFormat;
+    type: EnvType;
     coordSystem: CoordSystemType;
 }
 
@@ -50,7 +54,7 @@ export interface GeneratorSystemValidationResult {
 }
 
 export function validateGeneratorSystemParams(
-    params: GeneratorSystemParams,
+    params: Pick<GeneratorSystemParams, "format" | "coordSystem">,
 ): GeneratorSystemValidationResult {
     if (params.format !== ENV_FORMAT.POLYGON) {
         return {
@@ -67,6 +71,48 @@ export function validateGeneratorSystemParams(
     }
 
     return { ok: true, error: null };
+}
+
+export interface CompliantGeneratorParams extends GeneratorParams {
+    systemParams: GeneratorSystemParams;
+}
+
+export interface CompliantGeneratedEnvironment {
+    environment: GeneratedEnvironment;
+    objectType: ObjectType;
+}
+
+export type CompliantGenerationResult =
+    | { ok: true; value: CompliantGeneratedEnvironment }
+    | { ok: false; error: string };
+
+export function generateCompliantEnvironment(
+    params: CompliantGeneratorParams,
+): CompliantGenerationResult {
+    const { systemParams, ...generatorParams } = params;
+
+    const validation = validateGeneratorSystemParams({
+        format: systemParams.format,
+        coordSystem: systemParams.coordSystem,
+    });
+
+    if (!validation.ok) {
+        return {
+            ok: false,
+            error: validation.error ?? "Unsupported system environment setup for generator.",
+        };
+    }
+
+    const environment = generateEnvironment(generatorParams);
+    const objectType = defaultObjectTypeForEnv(systemParams.type);
+
+    return {
+        ok: true,
+        value: {
+            environment,
+            objectType,
+        },
+    };
 }
 
 // ============================================================================
