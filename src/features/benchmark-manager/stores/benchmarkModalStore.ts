@@ -27,8 +27,13 @@ export interface BenchmarkEnvironmentSetup {
     obstacleRatio: number;
     /** Clustering probability (0-100) */
     clusteringProb: number;
-    /** Random seed (empty = randomize each time) */
-    seed: string;
+}
+
+export interface BenchmarkEnvironmentSetSetup {
+    /** Number of environments to create in the set */
+    count: number;
+    /** Base seed used to derive a unique seed for each environment (empty = randomize) */
+    baseSeed: string;
 }
 
 export interface BenchmarkSystemEnvironmentSetup {
@@ -148,6 +153,7 @@ interface BenchmarkModalState {
     targetParameterSetup: BenchmarkParameterSetup | null;
     fixedParameters: BenchmarkFixedParameter[];
     environmentSetup: BenchmarkEnvironmentSetup;
+    environmentSetSetup: BenchmarkEnvironmentSetSetup;
     systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
     multipleRunsSetup: BenchmarkMultipleRunsSetup;
     metricsConfig: BenchmarkMetricsConfig;
@@ -165,6 +171,7 @@ interface BenchmarkModalState {
     setFixedParameter: (paramId: number, value: string) => void;
     removeFixedParameter: (paramId: number) => void;
     setEnvironmentSetup: (setup: Partial<BenchmarkEnvironmentSetup>) => void;
+    setEnvironmentSetSetup: (setup: Partial<BenchmarkEnvironmentSetSetup>) => void;
     setSystemEnvironmentSetup: (setup: Partial<BenchmarkSystemEnvironmentSetup>) => void;
     setMultipleRunsSetup: (setup: Partial<BenchmarkMultipleRunsSetup>) => void;
     toggleMetric: (metric: BenchmarkMetricType) => void;
@@ -218,6 +225,7 @@ const INITIAL_STATE: Omit<BenchmarkModalState, keyof {
     setFixedParameter: () => void;
     removeFixedParameter: () => void;
     setEnvironmentSetup: () => void;
+    setEnvironmentSetSetup: () => void;
     setSystemEnvironmentSetup: () => void;
     setMultipleRunsSetup: () => void;
     toggleMetric: () => void;
@@ -242,7 +250,10 @@ const INITIAL_STATE: Omit<BenchmarkModalState, keyof {
         cellSize: 5,
         obstacleRatio: 25,
         clusteringProb: 50,
-        seed: "",
+    },
+    environmentSetSetup: {
+        count: 1,
+        baseSeed: "",
     },
     systemEnvironmentSetup: {
         format: "polygon",
@@ -301,6 +312,12 @@ export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) =
     setEnvironmentSetup: (setup) => {
         set((state) => ({
             environmentSetup: { ...state.environmentSetup, ...setup },
+        }));
+    },
+
+    setEnvironmentSetSetup: (setup) => {
+        set((state) => ({
+            environmentSetSetup: { ...state.environmentSetSetup, ...setup },
         }));
     },
 

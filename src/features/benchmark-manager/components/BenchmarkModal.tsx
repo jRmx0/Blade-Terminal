@@ -9,6 +9,7 @@ import type { CoordSystemType, EnvFormat } from "@/config/db-ops/enums";
 import { APP_PARAMETER_HANDLER } from "@/config/computation/appParameterHandlers";
 import {
     useBenchmarkModalStore,
+    type BenchmarkEnvironmentSetSetup,
     type BenchmarkEnvironmentSetup,
     type BenchmarkExecutionState,
     type BenchmarkFixedParameter,
@@ -42,6 +43,7 @@ export default function BenchmarkModal() {
         targetParameterSetup,
         fixedParameters,
         environmentSetup,
+        environmentSetSetup,
         systemEnvironmentSetup,
         multipleRunsSetup,
         metricsConfig,
@@ -55,6 +57,7 @@ export default function BenchmarkModal() {
         setFixedParameter,
         removeFixedParameter,
         setEnvironmentSetup,
+        setEnvironmentSetSetup,
         setSystemEnvironmentSetup,
         setMultipleRunsSetup,
         toggleMetric,
@@ -198,6 +201,7 @@ export default function BenchmarkModal() {
                 targetParameterSetup,
                 fixedParameters,
                 environmentSetup,
+                environmentSetSetup,
                 systemEnvironmentSetup,
                 multipleRunsSetup,
                 selectedMetrics: metricsConfig.selectedMetrics,
@@ -241,6 +245,7 @@ export default function BenchmarkModal() {
         algorithmMetrics,
         fixedParameters,
         environmentSetup,
+        environmentSetSetup,
         systemEnvironmentSetup,
         multipleRunsSetup,
         metricsConfig.selectedMetrics,
@@ -337,6 +342,8 @@ export default function BenchmarkModal() {
                         <EnvSetupTabContent
                             environmentSetup={environmentSetup}
                             onSetEnvironmentSetup={setEnvironmentSetup}
+                            environmentSetSetup={environmentSetSetup}
+                            onSetEnvironmentSetSetup={setEnvironmentSetSetup}
                             systemEnvironmentSetup={systemEnvironmentSetup}
                             onSetSystemEnvironmentSetup={setSystemEnvironmentSetup}
                         />
@@ -618,6 +625,8 @@ function SetupTabContent({
 interface EnvSetupTabContentProps {
     environmentSetup: BenchmarkEnvironmentSetup;
     onSetEnvironmentSetup: (setup: Partial<BenchmarkEnvironmentSetup>) => void;
+    environmentSetSetup: BenchmarkEnvironmentSetSetup;
+    onSetEnvironmentSetSetup: (setup: Partial<BenchmarkEnvironmentSetSetup>) => void;
     systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
     onSetSystemEnvironmentSetup: (setup: Partial<BenchmarkSystemEnvironmentSetup>) => void;
 }
@@ -625,14 +634,39 @@ interface EnvSetupTabContentProps {
 function EnvSetupTabContent({
     environmentSetup,
     onSetEnvironmentSetup,
+    environmentSetSetup,
+    onSetEnvironmentSetSetup,
     systemEnvironmentSetup,
     onSetSystemEnvironmentSetup,
 }: EnvSetupTabContentProps) {
     const [systemExpanded, setSystemExpanded] = useState(true);
     const [generatorExpanded, setGeneratorExpanded] = useState(true);
+    const [setExpanded, setSetExpanded] = useState(true);
 
     return (
         <div className="p-4 flex flex-col gap-4">
+            {/* Set */}
+            <InternalCardModalFastTab
+                title="Set"
+                expanded={setExpanded}
+                onToggle={() => setSetExpanded((x) => !x)}
+            >
+                <CardModalField
+                    id="env-set-count"
+                    label="Environment Count"
+                    type="number"
+                    value={String(environmentSetSetup.count)}
+                    onChange={(v) => onSetEnvironmentSetSetup({ count: Math.max(1, Number(v)) })}
+                />
+                <CardModalField
+                    id="env-set-base-seed"
+                    label="Base Seed"
+                    type="text"
+                    value={environmentSetSetup.baseSeed}
+                    onChange={(v) => onSetEnvironmentSetSetup({ baseSeed: v })}
+                />
+            </InternalCardModalFastTab>
+            
             {/* System Environment */}
             <InternalCardModalFastTab
                 title="Environment"
@@ -726,13 +760,6 @@ function EnvSetupTabContent({
                     type="number"
                     value={String(environmentSetup.clusteringProb)}
                     onChange={(v) => onSetEnvironmentSetup({ clusteringProb: Number(v) })}
-                />
-                <CardModalField
-                    id="gen-seed"
-                    label="Seed"
-                    type="text"
-                    value={String(environmentSetup.seed)}
-                    onChange={(v) => onSetEnvironmentSetup({ seed: v })}
                 />
             </InternalCardModalFastTab>
         </div>

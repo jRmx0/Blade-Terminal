@@ -17,6 +17,7 @@ import { computeNetArea } from "@/features/canvas-editing/utils/canvasGeometry";
 import {
     calculateAggregateMetrics,
     type BenchmarkAggregatedMetrics,
+    type BenchmarkEnvironmentSetSetup,
     type BenchmarkEnvironmentSetup,
     type BenchmarkFixedParameter,
     type BenchmarkMetricType,
@@ -64,6 +65,7 @@ export interface RunBenchmarkConfig {
     targetParameterSetup: BenchmarkParameterSetup;
     fixedParameters: BenchmarkFixedParameter[];
     environmentSetup: BenchmarkEnvironmentSetup;
+    environmentSetSetup: BenchmarkEnvironmentSetSetup;
     systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
     multipleRunsSetup: BenchmarkMultipleRunsSetup;
     selectedMetrics: Set<BenchmarkMetricType>;
@@ -503,8 +505,8 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 currentRunIndex: runIndex,
             });
 
-            const runSeed = environmentSetup.seed.trim()
-                ? `${environmentSetup.seed.trim()}-step-${stepValue}-run-${runIndex}`
+            const runSeed = environmentSetSetup.baseSeed.trim()
+                ? `${environmentSetSetup.baseSeed.trim()}-step-${stepValue}-run-${runIndex}`
                 : "";
 
             const compliantGeneration = generateCompliantEnvironment({
