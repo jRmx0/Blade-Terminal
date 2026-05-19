@@ -21,6 +21,7 @@ export interface BenchmarkEnvSetupTabProps {
     onSetEnvironmentSetSetup: (setup: Partial<BenchmarkEnvironmentSetSetup>) => void;
     systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
     onSetSystemEnvironmentSetup: (setup: Partial<BenchmarkSystemEnvironmentSetup>) => void;
+    generatedEnvironmentsCount: number;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -32,10 +33,12 @@ export default function BenchmarkEnvSetupTab({
     onSetEnvironmentSetSetup,
     systemEnvironmentSetup,
     onSetSystemEnvironmentSetup,
+    generatedEnvironmentsCount,
 }: BenchmarkEnvSetupTabProps) {
     const [systemExpanded, setSystemExpanded] = useState(true);
     const [generatorExpanded, setGeneratorExpanded] = useState(true);
     const [setExpanded, setSetExpanded] = useState(true);
+    const [previewExpanded, setPreviewExpanded] = useState(true);
 
     return (
         <div className="p-4 flex flex-col gap-4">
@@ -154,6 +157,21 @@ export default function BenchmarkEnvSetupTab({
                     type="number"
                     value={String(environmentSetup.clusteringProb)}
                     onChange={(v) => onSetEnvironmentSetup({ clusteringProb: Number(v) })}
+                />
+            </InternalCardModalFastTab>
+
+            {/* Preview */}
+            <InternalCardModalFastTab
+                title="Preview"
+                expanded={previewExpanded}
+                onToggle={() => setPreviewExpanded((x) => !x)}
+            >
+                <CardModalField
+                    id="preview-generated-count"
+                    label="Generated Env. Count"
+                    type="text"
+                    value={String(generatedEnvironmentsCount)}
+                    disabled
                 />
             </InternalCardModalFastTab>
         </div>
