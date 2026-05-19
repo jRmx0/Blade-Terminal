@@ -1,5 +1,7 @@
 import { forwardRef, useState } from "react";
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
+import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
+import { unitLabel } from "@/utils/unitOfMeasure";
 
 export type CardModalTextFieldHintState = "info" | "warning" | "error";
 
@@ -13,6 +15,7 @@ interface CardModalFieldBase {
     id: string;
     label: string;
     unit?: string;
+    unitType?: string;
     disabled?: boolean;
     hint?: string;
     hintState?: CardModalTextFieldHintState;
@@ -53,8 +56,14 @@ function isInputVariant(config: CardModalFieldConfig): config is CardModalInputC
 
 const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props, ref) => {
     const { label, disabled = false, hint, hintState = "info" } = props;
+    const unitOfMeasure = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
     const isNumericType = props.type === "number" || props.type === "Integer" || props.type === "Decimal";
-    const effectiveUnit = props.unit && isNumericType ? props.unit : undefined;
+    const resolvedUnit =
+        props.unitType === "uom" ? unitLabel(unitOfMeasure) :
+        props.unitType === "ratio" ? "%" :
+        props.unitType !== undefined ? "" :
+        (props.unit ?? "");
+    const effectiveUnit = resolvedUnit && isNumericType ? resolvedUnit : undefined;
     const displayLabel = effectiveUnit ? `${label} (${effectiveUnit})` : label;
     const hs = HINT_STYLE[hintState];
     const showRequiredMarker =

@@ -18,12 +18,10 @@ import {
 } from "@/features/benchmark-manager/stores/benchmarkModalStore";
 import { runBenchmark as runBenchmarkService } from "@/features/benchmark-manager/data/benchmarkRunnerService";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
-import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { useModalLifecycle } from "@/hooks/modals/useModalLifecycle";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import type { AlgorithmMetric, AlgorithmParameter, ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
-import { unitLabel } from "@/utils/unitOfMeasure";
 import ChartCard from "@/components/chart/ChartCard";
 import InternalCardModalFastTab from "@/components/modals/card-modal/internal/InternalCardModalFastTab";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
@@ -68,7 +66,7 @@ export default function BenchmarkModal() {
         onClose: close,
     });
 
-    const [activeTab, setActiveTab] = useState<"setup" | "run">("setup");
+    const [activeTab, setActiveTab] = useState<"setup" | "env-setup" | "run">("setup");
 
     // Filtered data
     const selectedProvider = useMemo(
@@ -269,6 +267,17 @@ export default function BenchmarkModal() {
                 <div className="flex shrink-0 border-b border-gray-300 bg-gray-100">
                     <button
                         type="button"
+                        onClick={() => setActiveTab("env-setup")}
+                        className={`px-4 py-2 text-sm font-medium transition-colors focus:outline-none border-b-2 -mb-px
+                                ${activeTab === "env-setup"
+                                ? "border-teal-600 text-teal-700"
+                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                            }`}
+                    >
+                        Env Setup
+                    </button>
+                    <button
+                        type="button"
                         onClick={() => setActiveTab("setup")}
                         className={`px-4 py-2 text-sm font-medium transition-colors focus:outline-none border-b-2 -mb-px
                             ${activeTab === "setup"
@@ -294,7 +303,7 @@ export default function BenchmarkModal() {
 
                 {/* Body */}
                 <div className="flex-1 overflow-y-auto">
-                    {activeTab === "setup" ? (
+                    {activeTab === "setup" && (
                         <SetupTabContent
                             providers={providers}
                             selectedProviderId={selectedProviderId}
@@ -309,14 +318,21 @@ export default function BenchmarkModal() {
                             fixedParameters={fixedParameters}
                             onSetFixedParameter={setFixedParameter}
                             onRemoveFixedParameter={removeFixedParameter}
-                            environmentSetup={environmentSetup}
-                            onSetEnvironmentSetup={setEnvironmentSetup}
                             multipleRunsSetup={multipleRunsSetup}
                             onSetMultipleRunsSetup={setMultipleRunsSetup}
                             metricsConfig={metricsConfig}
                             onToggleMetric={toggleMetric}
                         />
-                    ) : (
+                    )}
+                    {activeTab === "env-setup" && (
+                        <EnvSetupTabContent
+                            environmentSetup={environmentSetup}
+                            onSetEnvironmentSetup={setEnvironmentSetup}
+                            systemEnvironmentSetup={systemEnvironmentSetup}
+                            onSetSystemEnvironmentSetup={setSystemEnvironmentSetup}
+                        />
+                    )}
+                    {activeTab === "run" && (
                         <RunTabContent
                             selectedProvider={selectedProvider}
                             selectedAlgorithm={selectedAlgorithm}
@@ -363,8 +379,6 @@ interface SetupTabContentProps {
     fixedParameters: any[];
     onSetFixedParameter: (paramId: number, value: string) => void;
     onRemoveFixedParameter: (paramId: number) => void;
-    environmentSetup: any;
-    onSetEnvironmentSetup: (setup: any) => void;
     multipleRunsSetup: any;
     onSetMultipleRunsSetup: (setup: any) => void;
     metricsConfig: any;
@@ -385,8 +399,6 @@ function SetupTabContent({
     fixedParameters,
     onSetFixedParameter,
     onRemoveFixedParameter,
-    environmentSetup,
-    onSetEnvironmentSetup,
     multipleRunsSetup,
     onSetMultipleRunsSetup,
     metricsConfig,
@@ -395,19 +407,10 @@ function SetupTabContent({
     const [computationExpanded, setComputationExpanded] = useState(true);
     const [targetParamExpanded, setTargetParamExpanded] = useState(true);
     const [fixedParamsExpanded, setFixedParamsExpanded] = useState(true);
-    const [generatorExpanded, setGeneratorExpanded] = useState(true);
     const [multipleRunsExpanded, setMultipleRunsExpanded] = useState(true);
     const [metricsExpanded, setMetricsExpanded] = useState(true);
 
-    const unitOfMeasure = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
-    const getNumericParamUnit = (param: AlgorithmParameter): string => {
-        if (param.unitType === "ratio") return "%";
-        if (param.unitType === "unitless") return "";
-        return unitLabel(unitOfMeasure);
-    };
-
     const targetParam = numericParameters.find((p) => p.id === targetParameterSetup?.targetParamId);
-    const targetParamUnit = targetParam ? getNumericParamUnit(targetParam) || undefined : undefined;
 
     const targetParamDisabled = numericParameters.length === 0;
     const fixedParamsDisabled = nonTargetParameters.length === 0;
@@ -478,7 +481,7 @@ function SetupTabContent({
                 <CardModalField
                     id="target-start"
                     label="Start"
-                    unit={targetParamUnit}
+                    unitType={targetParam?.unitType}
                     type="number"
                     disabled={!targetParameterSetup}
                     value={targetParameterSetup?.startValue ?? ""}
@@ -487,7 +490,7 @@ function SetupTabContent({
                 <CardModalField
                     id="target-end"
                     label="End"
-                    unit={targetParamUnit}
+                    unitType={targetParam?.unitType}
                     type="number"
                     disabled={!targetParameterSetup}
                     value={targetParameterSetup?.endValue ?? ""}
@@ -496,7 +499,7 @@ function SetupTabContent({
                 <CardModalField
                     id="target-step"
                     label="Step"
-                    unit={targetParamUnit}
+                    unitType={targetParam?.unitType}
                     type="number"
                     disabled={!targetParameterSetup}
                     value={targetParameterSetup?.stepValue ?? ""}
@@ -547,7 +550,7 @@ function SetupTabContent({
                             key={param.id}
                             id={`fixed-param-${param.id}`}
                             label={param.name}
-                            unit={getNumericParamUnit(param) || undefined}
+                            unitType={param.unitType}
                             type={param.paramType as "Integer" | "Decimal" | "String"}
                             value={rawValue}
                             min={param.minValue}
@@ -557,60 +560,6 @@ function SetupTabContent({
                         />
                     );
                 })}
-            </InternalCardModalFastTab>
-
-            <InternalCardModalFastTab
-                title="Generator"
-                expanded={generatorExpanded}
-                onToggle={() => setGeneratorExpanded((x) => !x)}
-            >
-                <CardModalField
-                    id="gen-width"
-                    label="Width"
-                    unit={unitLabel(unitOfMeasure) || undefined}
-                    type="number"
-                    value={String(environmentSetup.width)}
-                    onChange={(v) => onSetEnvironmentSetup({ width: Number(v) })}
-                />
-                <CardModalField
-                    id="gen-height"
-                    label="Height"
-                    unit={unitLabel(unitOfMeasure) || undefined}
-                    type="number"
-                    value={String(environmentSetup.height)}
-                    onChange={(v) => onSetEnvironmentSetup({ height: Number(v) })}
-                />
-                <CardModalField
-                    id="gen-cell-size"
-                    label="Cell Size"
-                    unit={unitLabel(unitOfMeasure) || undefined}
-                    type="number"
-                    value={String(environmentSetup.cellSize)}
-                    onChange={(v) => onSetEnvironmentSetup({ cellSize: Number(v) })}
-                />
-                <CardModalField
-                    id="gen-obstacle-ratio"
-                    label="Obstacle Ratio"
-                    unit="%"
-                    type="number"
-                    value={String(environmentSetup.obstacleRatio)}
-                    onChange={(v) => onSetEnvironmentSetup({ obstacleRatio: Number(v) })}
-                />
-                <CardModalField
-                    id="gen-clustering-prob"
-                    label="Clustering Prob"
-                    unit="%"
-                    type="number"
-                    value={String(environmentSetup.clusteringProb)}
-                    onChange={(v) => onSetEnvironmentSetup({ clusteringProb: Number(v) })}
-                />
-                <CardModalField
-                    id="gen-seed"
-                    label="Seed"
-                    type="text"
-                    value={String(environmentSetup.seed)}
-                    onChange={(v) => onSetEnvironmentSetup({ seed: v })}
-                />
             </InternalCardModalFastTab>
 
             {/* Multiple Runs */}
@@ -655,7 +604,133 @@ function SetupTabContent({
     );
 }
 
-// ΓöÇΓöÇΓöÇ Run Tab ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Env Setup Tab ────────────────────────────────────────────────────────────
+
+interface EnvSetupTabContentProps {
+    environmentSetup: BenchmarkEnvironmentSetup;
+    onSetEnvironmentSetup: (setup: Partial<BenchmarkEnvironmentSetup>) => void;
+    systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
+    onSetSystemEnvironmentSetup: (setup: Partial<BenchmarkSystemEnvironmentSetup>) => void;
+}
+
+function EnvSetupTabContent({
+    environmentSetup,
+    onSetEnvironmentSetup,
+    systemEnvironmentSetup,
+    onSetSystemEnvironmentSetup,
+}: EnvSetupTabContentProps) {
+    const [systemExpanded, setSystemExpanded] = useState(true);
+    const [generatorExpanded, setGeneratorExpanded] = useState(true);
+
+    return (
+        <div className="p-4 flex flex-col gap-4">
+            {/* System Environment */}
+            <InternalCardModalFastTab
+                title="Environment"
+                expanded={systemExpanded}
+                onToggle={() => setSystemExpanded((x) => !x)}
+            >
+                <CardModalField
+                    id="gen-format"
+                    label="Format"
+                    type="select"
+                    value={systemEnvironmentSetup.format}
+                    options={ENV_FORMAT_OPTIONS}
+                    onChange={(v) => onSetSystemEnvironmentSetup({ format: v })}
+                />
+                <CardModalField
+                    id="gen-type"
+                    label="Type"
+                    type="select"
+                    value={systemEnvironmentSetup.type}
+                    options={ENV_TYPE_OPTIONS}
+                    onChange={(v) => onSetSystemEnvironmentSetup({ type: v })}
+                />
+                <CardModalField
+                    id="gen-coord-system"
+                    label="Coordinate System"
+                    type="select"
+                    value={systemEnvironmentSetup.coordinateSystem}
+                    options={COORD_SYSTEM_OPTIONS}
+                    onChange={(v) => onSetSystemEnvironmentSetup({ coordinateSystem: v })}
+                />
+                <CardModalField
+                    id="gen-headland"
+                    label="Headland"
+                    type="checkbox"
+                    checked={systemEnvironmentSetup.headland}
+                    onChange={(v) => onSetSystemEnvironmentSetup({ headland: Boolean(v) })}
+                />
+                <CardModalField
+                    id="gen-headland-width"
+                    label="Headland Width"
+                    unitType="uom"
+                    type="number"
+                    disabled={!systemEnvironmentSetup.headland}
+                    value={systemEnvironmentSetup.headlandWidth}
+                    onChange={(v) => onSetSystemEnvironmentSetup({ headlandWidth: v })}
+                />
+            </InternalCardModalFastTab>
+
+            {/* Generator */}
+            <InternalCardModalFastTab
+                title="Generator"
+                expanded={generatorExpanded}
+                onToggle={() => setGeneratorExpanded((x) => !x)}
+            >
+                <CardModalField
+                    id="gen-width"
+                    label="Width"
+                    unitType="uom"
+                    type="number"
+                    value={String(environmentSetup.width)}
+                    onChange={(v) => onSetEnvironmentSetup({ width: Number(v) })}
+                />
+                <CardModalField
+                    id="gen-height"
+                    label="Height"
+                    unitType="uom"
+                    type="number"
+                    value={String(environmentSetup.height)}
+                    onChange={(v) => onSetEnvironmentSetup({ height: Number(v) })}
+                />
+                <CardModalField
+                    id="gen-cell-size"
+                    label="Cell Size"
+                    unitType="uom"
+                    type="number"
+                    value={String(environmentSetup.cellSize)}
+                    onChange={(v) => onSetEnvironmentSetup({ cellSize: Number(v) })}
+                />
+                <CardModalField
+                    id="gen-obstacle-ratio"
+                    label="Obstacle Ratio"
+                    unit="%"
+                    type="number"
+                    value={String(environmentSetup.obstacleRatio)}
+                    onChange={(v) => onSetEnvironmentSetup({ obstacleRatio: Number(v) })}
+                />
+                <CardModalField
+                    id="gen-clustering-prob"
+                    label="Clustering Prob"
+                    unit="%"
+                    type="number"
+                    value={String(environmentSetup.clusteringProb)}
+                    onChange={(v) => onSetEnvironmentSetup({ clusteringProb: Number(v) })}
+                />
+                <CardModalField
+                    id="gen-seed"
+                    label="Seed"
+                    type="text"
+                    value={String(environmentSetup.seed)}
+                    onChange={(v) => onSetEnvironmentSetup({ seed: v })}
+                />
+            </InternalCardModalFastTab>
+        </div>
+    );
+}
+
+// ─── Run Tab ─────────────────────────────────────────────────────────────────
 
 interface RunTabContentProps {
     selectedProvider: ComputationProvider | undefined;

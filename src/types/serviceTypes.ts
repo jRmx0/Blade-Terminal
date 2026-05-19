@@ -55,7 +55,7 @@ export interface AlgorithmParameter {
     /** Maximum allowed numeric value. Only meaningful for Integer and Decimal params. */
     maxValue?: number;
     /** Numeric unit behavior for UI labels (e.g., ratio => %, unitless => no unit). */
-    unitType?: "ratio" | "unitless" | (string & {});
+    unitType?: "ratio" | "unitless" | "uom" | (string & {});
     section?: MetadataParamSection;
     /** Optional application-level behavior handler for enum params. */
     appHandler: SupportedAppParameterHandler | null;
@@ -131,7 +131,7 @@ export interface MetadataParamResponse {
     defaultValue?: string;
     minValue?: number;
     maxValue?: number;
-    unitType?: "ratio" | "unitless" | (string & {});
+    unitType?: "ratio" | "unitless" | "uom" | (string & {});
     section?: MetadataParamSection;
     appHandler?: SupportedAppParameterHandler;
 }
