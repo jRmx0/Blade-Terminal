@@ -1,0 +1,159 @@
+import { useState } from "react";
+import InternalCardModalFastTab from "@/components/modals/card-modal/internal/InternalCardModalFastTab";
+import CardModalField from "@/components/modals/card-modal/CardModalField";
+import {
+    type BenchmarkJobSetup,
+    type BenchmarkJobAlgorithm,
+    type BenchmarkJobType,
+} from "@/features/benchmark-manager/stores/benchmarkModalStore";
+import type { ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function makeEmptySlot(): BenchmarkJobAlgorithm {
+    return { providerId: null, algorithmId: null };
+}
+
+function resizeAlgorithms(current: BenchmarkJobAlgorithm[], count: number): BenchmarkJobAlgorithm[] {
+    if (count <= current.length) return current.slice(0, count);
+    return [...current, ...Array.from({ length: count - current.length }, makeEmptySlot)];
+}
+
+// ─── Props ───────────────────────────────────────────────────────────────────
+
+export interface BenchmarkJobSetupTabProps {
+    providers: ComputationProvider[];
+    allAlgorithms: ComputationAlgorithm[];
+    jobSetup: BenchmarkJobSetup;
+    onSetJobSetup: (setup: Partial<BenchmarkJobSetup>) => void;
+    onSetJobAlgorithm: (index: number, update: Partial<BenchmarkJobAlgorithm>) => void;
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
+export default function BenchmarkJobSetupTab({
+    providers,
+    allAlgorithms,
+    jobSetup,
+    onSetJobSetup,
+    onSetJobAlgorithm,
+}: BenchmarkJobSetupTabProps) {
+    const [jobExpanded, setJobExpanded] = useState(true);
+    const [algorithmsExpanded, setAlgorithmsExpanded] = useState(true);
+
+    const algorithmsDisabled = jobSetup.type === "";
+
+    // ── Handlers ──────────────────────────────────────────────────────────────
+
+    function handleTypeChange(raw: string) {
+        const type = raw as BenchmarkJobType;
+
+        if (type === "") {
+            onSetJobSetup({ type: "", algorithmsCount: 1, algorithms: [] });
+            return;
+        }
+
+        const count = type === "parameter-eval" ? 1 : jobSetup.algorithmsCount || 1;
+        const algorithms = resizeAlgorithms(jobSetup.algorithms, count);
+        onSetJobSetup({ type, algorithmsCount: count, algorithms });
+    }
+
+    function handleCountChange(raw: string) {
+        const count = Math.max(1, Number(raw) || 1);
+        const algorithms = resizeAlgorithms(jobSetup.algorithms, count);
+        onSetJobSetup({ algorithmsCount: count, algorithms });
+    }
+
+    function handleProviderChange(index: number, raw: string) {
+        const providerId = raw ? Number(raw) : null;
+        onSetJobAlgorithm(index, { providerId, algorithmId: null });
+    }
+
+    function handleAlgorithmChange(index: number, raw: string) {
+        const algorithmId = raw ? Number(raw) : null;
+        onSetJobAlgorithm(index, { algorithmId });
+    }
+
+    // ── Derived values ────────────────────────────────────────────────────────
+
+    const countValue =
+        jobSetup.type === "" ? "" :
+        String(jobSetup.algorithmsCount);
+
+    const countDisabled = jobSetup.type !== "algorithm-eval";
+
+    return (
+        <div className="p-4 flex flex-col gap-4">
+            {/* Job */}
+            <InternalCardModalFastTab
+                title="Job"
+                expanded={jobExpanded}
+                onToggle={() => setJobExpanded((x) => !x)}
+            >
+                <CardModalField
+                    id="job-type"
+                    label="Type"
+                    type="select"
+                    value={jobSetup.type}
+                    options={[
+                        { value: "", label: "" },
+                        { value: "parameter-eval", label: "Parameter Eval." },
+                        { value: "algorithm-eval", label: "Algorithm Eval." },
+                    ]}
+                    onChange={handleTypeChange}
+                />
+                <CardModalField
+                    id="job-algorithms-count"
+                    label="Algorithms Count"
+                    type="number"
+                    disabled={countDisabled}
+                    value={countValue}
+                    min={1}
+                    onChange={handleCountChange}
+                />
+            </InternalCardModalFastTab>
+
+            {/* Algorithms */}
+            <InternalCardModalFastTab
+                title="Algorithms"
+                expanded={algorithmsDisabled ? false : algorithmsExpanded}
+                onToggle={algorithmsDisabled ? () => {} : () => setAlgorithmsExpanded((x) => !x)}
+                disabled={algorithmsDisabled}
+            >
+                {jobSetup.algorithms.map((slot, i) => {
+                    const slotAlgorithms = slot.providerId !== null
+                        ? allAlgorithms.filter((a) => a.computationProviderId === slot.providerId)
+                        : [];
+
+                    return (
+                        <div key={i} className="contents">
+                            <CardModalField
+                                id={`job-provider-${i}`}
+                                label={`#${i + 1} Provider`}
+                                type="select"
+                                value={slot.providerId !== null ? String(slot.providerId) : ""}
+                                options={[
+                                    { value: "", label: "" },
+                                    ...providers.map((p) => ({ value: String(p.id), label: p.name })),
+                                ]}
+                                onChange={(v) => handleProviderChange(i, v)}
+                            />
+                            <CardModalField
+                                id={`job-algorithm-${i}`}
+                                label={`#${i + 1} Algorithm`}
+                                type="select"
+                                disabled={slot.providerId === null}
+                                value={slot.algorithmId !== null ? String(slot.algorithmId) : ""}
+                                options={[
+                                    { value: "", label: "" },
+                                    ...slotAlgorithms.map((a) => ({ value: String(a.id), label: a.name })),
+                                ]}
+                                onChange={(v) => handleAlgorithmChange(i, v)}
+                            />
+                        </div>
+                    );
+                })}
+            </InternalCardModalFastTab>
+        </div>
+    );
+}

@@ -7,6 +7,8 @@ import {
     type BenchmarkEnvironmentSetSetup,
     type BenchmarkEnvironmentSetup,
     type BenchmarkGeneratedEnvironment,
+    type BenchmarkJobSetup,
+    type BenchmarkJobAlgorithm,
 } from "@/features/benchmark-manager/stores/benchmarkModalStore";
 import { runBenchmark as runBenchmarkService } from "@/features/benchmark-manager/data/benchmarkRunnerService";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
@@ -17,6 +19,7 @@ import ModalActionBar, { type ModalActionBarItem } from "@/components/modal/moda
 import type { ModalActionStatus } from "@/components/modal/modal-action-bar/ModalActionBarAction";
 import BenchmarkSetupTab from "@/features/benchmark-manager/components/BenchmarkSetupTab";
 import BenchmarkEnvSetupTab from "@/features/benchmark-manager/components/BenchmarkEnvSetupTab";
+import BenchmarkJobSetupTab from "@/features/benchmark-manager/components/BenchmarkJobSetupTab";
 import BenchmarkRunTab from "@/features/benchmark-manager/components/BenchmarkRunTab";
 
 const SYSTEM_ENV_HANDLERS = new Set([
@@ -62,6 +65,9 @@ export default function BenchmarkModal() {
         setGeneratedEnvironments,
         generatedBaseSeed,
         setGeneratedBaseSeed,
+        jobSetup,
+        setJobSetup,
+        setJobAlgorithm,
     } = useBenchmarkModalStore();
 
     const { providers, algorithms, parameters: catalogParameters, metrics: catalogMetrics } = useComputationCatalogStore();
@@ -71,7 +77,7 @@ export default function BenchmarkModal() {
         onClose: close,
     });
 
-    const [activeTab, setActiveTab] = useState<"env-setup" | "setup" | "run">("env-setup");
+    const [activeTab, setActiveTab] = useState<"env-setup" | "setup" | "job-setup" | "run">("env-setup");
     const [generateStatus, setGenerateStatus] = useState<ModalActionStatus | undefined>(undefined);
     const [generateStatusMessage, setGenerateStatusMessage] = useState<string | undefined>(undefined);
 
@@ -366,6 +372,17 @@ export default function BenchmarkModal() {
                 <div className="flex shrink-0 border-b border-gray-300 bg-gray-100">
                     <button
                         type="button"
+                        onClick={() => setActiveTab("job-setup")}
+                        className={`px-4 py-2 text-sm font-medium transition-colors focus:outline-none border-b-2 -mb-px cursor-pointer
+                            ${activeTab === "job-setup"
+                                ? "border-teal-600 text-teal-700"
+                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                            }`}
+                    >
+                        Job Setup
+                    </button>
+                    <button
+                        type="button"
                         onClick={() => setActiveTab("env-setup")}
                         className={`px-4 py-2 text-sm font-medium transition-colors focus:outline-none border-b-2 -mb-px
                                 ${activeTab === "env-setup"
@@ -438,6 +455,15 @@ export default function BenchmarkModal() {
                             onSetSystemEnvironmentSetup={setSystemEnvironmentSetup}
                             generatedEnvironments={generatedEnvironments}
                             generatedBaseSeed={generatedBaseSeed}
+                        />
+                    )}
+                    {activeTab === "job-setup" && (
+                        <BenchmarkJobSetupTab
+                            providers={providers}
+                            allAlgorithms={algorithms}
+                            jobSetup={jobSetup}
+                            onSetJobSetup={setJobSetup}
+                            onSetJobAlgorithm={setJobAlgorithm}
                         />
                     )}
                     {activeTab === "run" && (

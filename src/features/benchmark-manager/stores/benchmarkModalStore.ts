@@ -81,6 +81,23 @@ export interface BenchmarkMultipleRunsSetup {
     stepValueCalculation: BenchmarkStepValueCalculation;
 }
 
+// ─── Job Setup ───────────────────────────────────────────────────────────────
+
+export type BenchmarkJobType = "" | "parameter-eval" | "algorithm-eval";
+
+export interface BenchmarkJobAlgorithm {
+    providerId: number | null;
+    algorithmId: number | null;
+}
+
+export interface BenchmarkJobSetup {
+    type: BenchmarkJobType;
+    /** Number of algorithm slots (always 1 for parameter-eval, user-defined for algorithm-eval) */
+    algorithmsCount: number;
+    /** Per-slot provider+algorithm selections; length === algorithmsCount */
+    algorithms: BenchmarkJobAlgorithm[];
+}
+
 // ─── Execution & Results ───────────────────────────────────────────────────
 
 export interface BenchmarkMetricsValues {
@@ -184,6 +201,9 @@ interface BenchmarkModalState {
     /** The effective base seed used for the last generation (random hex if baseSeed was empty) */
     generatedBaseSeed: string;
 
+    // Job setup
+    jobSetup: BenchmarkJobSetup;
+
     open: () => void;
     close: () => void;
     setSelectedProvider: (providerId: number | null) => void;
@@ -201,6 +221,8 @@ interface BenchmarkModalState {
     setError: (error: string | null) => void;
     setGeneratedEnvironments: (envs: BenchmarkGeneratedEnvironment[]) => void;
     setGeneratedBaseSeed: (seed: string) => void;
+    setJobSetup: (setup: Partial<BenchmarkJobSetup>) => void;
+    setJobAlgorithm: (index: number, update: Partial<BenchmarkJobAlgorithm>) => void;
     reset: () => void;
 
     // Execution management
@@ -256,6 +278,9 @@ const INITIAL_STATE: Omit<BenchmarkModalState, keyof {
     setIsRunning: () => void;
     setError: () => void;
     setGeneratedEnvironments: () => void;
+    setGeneratedBaseSeed: () => void;
+    setJobSetup: () => void;
+    setJobAlgorithm: () => void;
     reset: () => void;
     setBenchmarkExecutionState: () => void;
     addStepResult: () => void;
@@ -298,6 +323,11 @@ const INITIAL_STATE: Omit<BenchmarkModalState, keyof {
     executionState: INITIAL_EXECUTION_STATE,
     generatedEnvironments: [],
     generatedBaseSeed: "",
+    jobSetup: {
+        type: "",
+        algorithmsCount: 1,
+        algorithms: [],
+    },
 };
 
 export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) => ({
@@ -385,6 +415,21 @@ export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) =
 
     setGeneratedEnvironments: (envs) => set({ generatedEnvironments: envs }),
     setGeneratedBaseSeed: (seed) => set({ generatedBaseSeed: seed }),
+
+    setJobSetup: (setup) => {
+        set((state) => ({
+            jobSetup: { ...state.jobSetup, ...setup },
+        }));
+    },
+
+    setJobAlgorithm: (index, update) => {
+        set((state) => {
+            const algorithms = state.jobSetup.algorithms.map((a, i) =>
+                i === index ? { ...a, ...update } : a,
+            );
+            return { jobSetup: { ...state.jobSetup, algorithms } };
+        });
+    },
 
     reset: () => set(INITIAL_STATE),
 
