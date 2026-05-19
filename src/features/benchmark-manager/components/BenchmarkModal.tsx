@@ -20,6 +20,7 @@ import type { ModalActionStatus } from "@/components/modal/modal-action-bar/Moda
 import BenchmarkSetupTab from "@/features/benchmark-manager/components/BenchmarkSetupTab";
 import BenchmarkEnvSetupTab from "@/features/benchmark-manager/components/BenchmarkEnvSetupTab";
 import BenchmarkJobSetupTab from "@/features/benchmark-manager/components/BenchmarkJobSetupTab";
+import BenchmarkAlgoSetupTab from "@/features/benchmark-manager/components/BenchmarkAlgoSetupTab";
 import BenchmarkRunTab from "@/features/benchmark-manager/components/BenchmarkRunTab";
 
 const SYSTEM_ENV_HANDLERS = new Set([
@@ -77,7 +78,14 @@ export default function BenchmarkModal() {
         onClose: close,
     });
 
-    const [activeTab, setActiveTab] = useState<"env-setup" | "setup" | "job-setup" | "run">("env-setup");
+    const [activeTab, setActiveTab] = useState<"env-setup" | "setup" | "job-setup" | "run" | `algo-${number}`>("job-setup");
+
+    // Reset active tab when algo count drops below the current algo tab index
+    useEffect(() => {
+        if (typeof activeTab !== "string" || !activeTab.startsWith("algo-")) return;
+        const idx = Number(activeTab.slice(5));
+        if (idx >= jobSetup.algorithms.length) setActiveTab("job-setup");
+    }, [jobSetup.algorithms.length]);
     const [generateStatus, setGenerateStatus] = useState<ModalActionStatus | undefined>(undefined);
     const [generateStatusMessage, setGenerateStatusMessage] = useState<string | undefined>(undefined);
 
@@ -391,8 +399,20 @@ export default function BenchmarkModal() {
                             }`}
                     >
                         Env. Setup
-                    </button>
-                    <button
+                    </button>                    {jobSetup.algorithms.map((_, i) => (
+                        <button
+                            key={i}
+                            type="button"
+                            onClick={() => setActiveTab(`algo-${i}`)}
+                            className={`px-4 py-2 text-sm font-medium transition-colors focus:outline-none border-b-2 -mb-px cursor-pointer
+                                ${activeTab === `algo-${i}`
+                                    ? "border-teal-600 text-teal-700"
+                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                }`}
+                        >
+                            #{i + 1} Algo.
+                        </button>
+                    ))}                    <button
                         type="button"
                         onClick={() => setActiveTab("setup")}
                         className={`px-4 py-2 text-sm font-medium transition-colors focus:outline-none border-b-2 -mb-px
@@ -457,6 +477,22 @@ export default function BenchmarkModal() {
                             generatedBaseSeed={generatedBaseSeed}
                         />
                     )}
+                    {activeTab.startsWith("algo-") && (() => {
+                        const idx = Number((activeTab as string).slice(5));
+                        const slot = jobSetup.algorithms[idx];
+                        if (!slot) return null;
+                        return (
+                            <BenchmarkAlgoSetupTab
+                                index={idx}
+                                slot={slot}
+                                jobType={jobSetup.type}
+                                providers={providers}
+                                allAlgorithms={algorithms}
+                                catalogParameters={catalogParameters}
+                                onSetSlot={(update) => setJobAlgorithm(idx, update)}
+                            />
+                        );
+                    })()}
                     {activeTab === "job-setup" && (
                         <BenchmarkJobSetupTab
                             providers={providers}

@@ -13,7 +13,13 @@ import type { ComputationAlgorithm, ComputationProvider } from "@/types/serviceT
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function makeEmptySlot(): BenchmarkJobAlgorithm {
-    return { providerId: null, algorithmId: null };
+    return {
+        providerId: null,
+        algorithmId: null,
+        multipleRunsSetup: { runsPerEnvironment: 1, runsPerStep: 1, stepValueCalculation: "median" },
+        targetParameterSetup: null,
+        fixedParameters: [],
+    };
 }
 
 function resizeAlgorithms(current: BenchmarkJobAlgorithm[], count: number): BenchmarkJobAlgorithm[] {

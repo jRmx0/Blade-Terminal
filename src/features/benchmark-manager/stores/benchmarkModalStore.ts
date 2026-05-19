@@ -81,6 +81,15 @@ export interface BenchmarkMultipleRunsSetup {
     stepValueCalculation: BenchmarkStepValueCalculation;
 }
 
+export interface BenchmarkAlgoMultipleRunsSetup {
+    /** Number of independent runs per environment */
+    runsPerEnvironment: number;
+    /** Number of runs per step value (only used for parameter-eval) */
+    runsPerStep: number;
+    /** How to aggregate metric values from multiple runs */
+    stepValueCalculation: BenchmarkStepValueCalculation;
+}
+
 // ─── Job Setup ───────────────────────────────────────────────────────────────
 
 export type BenchmarkJobType = "" | "parameter-eval" | "algorithm-eval";
@@ -88,6 +97,9 @@ export type BenchmarkJobType = "" | "parameter-eval" | "algorithm-eval";
 export interface BenchmarkJobAlgorithm {
     providerId: number | null;
     algorithmId: number | null;
+    multipleRunsSetup: BenchmarkAlgoMultipleRunsSetup;
+    targetParameterSetup: BenchmarkParameterSetup | null;
+    fixedParameters: BenchmarkFixedParameter[];
 }
 
 export interface BenchmarkJobSetup {
