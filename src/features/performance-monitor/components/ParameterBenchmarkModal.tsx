@@ -24,7 +24,7 @@ import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import type { AlgorithmMetric, AlgorithmParameter, ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
 import { unitLabel } from "@/utils/unitOfMeasure";
-import ChartCard from "@/features/performance-monitor/components/internal/ChartCard";
+import ChartCard from "@/components/chart/ChartCard";
 import InternalCardModalFastTab from "@/components/modals/card-modal/internal/InternalCardModalFastTab";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
 

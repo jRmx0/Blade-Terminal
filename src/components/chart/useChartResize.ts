@@ -7,7 +7,7 @@ import {
     MIN_CHART_W,
     MIN_CHART_H,
     type ChartSize,
-} from "../stores/performanceMonitorModalStore";
+} from "@/components/chart/performanceMonitorModalStore";
 
 interface UseChartResizeOptions {
     metricId: number;

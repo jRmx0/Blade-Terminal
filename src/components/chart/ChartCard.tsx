@@ -18,8 +18,8 @@ import {
     usePerformanceMonitorModalStore,
     DEFAULT_CHART_WIDTH,
     DEFAULT_CHART_HEIGHT,
-} from "../../stores/performanceMonitorModalStore";
-import { useChartResize } from "../../hooks/useChartResize";
+} from "@/components/chart/performanceMonitorModalStore";
+import { useChartResize } from "@/components/chart/useChartResize";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 

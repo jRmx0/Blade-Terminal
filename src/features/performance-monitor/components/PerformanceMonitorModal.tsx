@@ -3,14 +3,14 @@ import {
     usePerformanceMonitorModalStore,
     DEFAULT_CHART_WIDTH,
     MODAL_CHROME_W,
-} from "@/features/performance-monitor/stores/performanceMonitorModalStore";
+} from "@/components/chart/performanceMonitorModalStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
 import type { PerformanceMetric, PerformanceMetricStage } from "@/types/serviceTypes";
-import ChartCard from "./internal/ChartCard";
+import ChartCard from "@/components/chart/ChartCard";
 
 export default function PerformanceMonitorModal() {
     const { isOpen, close, chartSizes, initChartSizes } = usePerformanceMonitorModalStore();
