@@ -87,7 +87,7 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
             {props.type === "select" ? (
                 <div className="flex-1 min-w-0 flex items-center h-8">
                     <Listbox value={props.value} onChange={(v) => props.onChange?.(v)} disabled={disabled}>
-                        <ListboxButton className="group w-full flex items-center gap-1 border border-gray-300 rounded bg-white text-left select-none focus:outline-none px-2 h-7 cursor-pointer data-open:border-teal-600 data-disabled:cursor-default data-disabled:opacity-50 transition-colors">
+                        <ListboxButton className="group w-full flex items-center gap-1 border border-gray-300 rounded bg-white text-left select-none focus:outline-none px-2 h-7 cursor-pointer data-open:border-teal-600 data-disabled:cursor-default data-disabled:bg-gray-100 data-disabled:text-gray-500 transition-colors">
                             <span className="text-sm flex-1 truncate text-gray-800 group-data-disabled:text-gray-500">
                                 {props.options.find((o) => o.value === props.value)?.label ?? "\u00A0"}
                             </span>
