@@ -419,19 +419,18 @@ function SetupTabContent({
                     ]}
                     onChange={(v) => onSelectProvider(v ? Number(v) : null)}
                 />
-                {selectedProviderId !== null && (
-                    <CardModalField
-                        id="algorithm"
-                        label="Algorithm"
-                        type="select"
-                        value={selectedAlgorithm !== undefined ? String(selectedAlgorithm.id) : ""}
-                        options={[
-                            { value: "", label: "" },
-                            ...availableAlgorithms.map((a) => ({ value: String(a.id), label: a.name })),
-                        ]}
-                        onChange={(v) => onSelectAlgorithm(v ? Number(v) : null)}
-                    />
-                )}
+                <CardModalField
+                    id="algorithm"
+                    label="Algorithm"
+                    type="select"
+                    disabled={selectedProviderId === null}
+                    value={selectedAlgorithm !== undefined ? String(selectedAlgorithm.id) : ""}
+                    options={[
+                        { value: "", label: "" },
+                        ...availableAlgorithms.map((a) => ({ value: String(a.id), label: a.name })),
+                    ]}
+                    onChange={(v) => onSelectAlgorithm(v ? Number(v) : null)}
+                />
             </InternalCardModalFastTab>
 
             {/* Target Parameter */}
@@ -464,31 +463,30 @@ function SetupTabContent({
                         }
                     }}
                 />
-                {targetParameterSetup && (
-                    <>
-                        <CardModalField
-                            id="target-start"
-                            label="Start"
-                            type="number"
-                            value={targetParameterSetup.startValue}
-                            onChange={(v) => onSetTargetParameter({ ...targetParameterSetup, startValue: v })}
-                        />
-                        <CardModalField
-                            id="target-end"
-                            label="End"
-                            type="number"
-                            value={targetParameterSetup.endValue}
-                            onChange={(v) => onSetTargetParameter({ ...targetParameterSetup, endValue: v })}
-                        />
-                        <CardModalField
-                            id="target-step"
-                            label="Step"
-                            type="number"
-                            value={targetParameterSetup.stepValue}
-                            onChange={(v) => onSetTargetParameter({ ...targetParameterSetup, stepValue: v })}
-                        />
-                    </>
-                )}
+                <CardModalField
+                    id="target-start"
+                    label="Start"
+                    type="number"
+                    disabled={!targetParameterSetup}
+                    value={targetParameterSetup?.startValue ?? ""}
+                    onChange={(v) => targetParameterSetup && onSetTargetParameter({ ...targetParameterSetup, startValue: v })}
+                />
+                <CardModalField
+                    id="target-end"
+                    label="End"
+                    type="number"
+                    disabled={!targetParameterSetup}
+                    value={targetParameterSetup?.endValue ?? ""}
+                    onChange={(v) => targetParameterSetup && onSetTargetParameter({ ...targetParameterSetup, endValue: v })}
+                />
+                <CardModalField
+                    id="target-step"
+                    label="Step"
+                    type="number"
+                    disabled={!targetParameterSetup}
+                    value={targetParameterSetup?.stepValue ?? ""}
+                    onChange={(v) => targetParameterSetup && onSetTargetParameter({ ...targetParameterSetup, stepValue: v })}
+                />
             </InternalCardModalFastTab>
 
             {/* Fixed Parameters */}
