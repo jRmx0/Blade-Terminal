@@ -53,7 +53,8 @@ function isInputVariant(config: CardModalFieldConfig): config is CardModalInputC
 
 const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props, ref) => {
     const { label, disabled = false, hint, hintState = "info" } = props;
-    const displayLabel = props.unit ? `${label} (${props.unit})` : label;
+    const effectiveUnit = props.unit && (!('type' in props) || props.type === "number") ? props.unit : undefined;
+    const displayLabel = effectiveUnit ? `${label} (${effectiveUnit})` : label;
     const hs = HINT_STYLE[hintState];
     const showRequiredMarker =
         isInputVariant(props) && props.required === true && props.value.trim().length === 0;
