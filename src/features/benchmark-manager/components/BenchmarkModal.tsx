@@ -6,6 +6,7 @@ import {
 } from "@/config/db-ops/enums";
 import { validateGeneratorSystemParams } from "@/features/canvas-editing/utils/envGenerator";
 import type { CoordSystemType, EnvFormat } from "@/config/db-ops/enums";
+import { APP_PARAMETER_HANDLER } from "@/config/computation/appParameterHandlers";
 import {
     useBenchmarkModalStore,
     type BenchmarkEnvironmentSetup,
@@ -25,6 +26,12 @@ import type { AlgorithmMetric, AlgorithmParameter, ComputationAlgorithm, Computa
 import ChartCard from "@/components/chart/ChartCard";
 import InternalCardModalFastTab from "@/components/modals/card-modal/internal/InternalCardModalFastTab";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
+
+const SYSTEM_ENV_HANDLERS = new Set([
+    APP_PARAMETER_HANDLER.ENVIRONMENT_FORMAT,
+    APP_PARAMETER_HANDLER.ENVIRONMENT_TYPE,
+    APP_PARAMETER_HANDLER.ENVIRONMENT_COORDSYSTEM,
+]);
 
 export default function BenchmarkModal() {
     const {
@@ -110,7 +117,9 @@ export default function BenchmarkModal() {
     );
 
     const nonTargetParameters = useMemo(
-        () => algorithmParameters.filter((p) => p.id !== targetParameterSetup?.targetParamId),
+        () => algorithmParameters.filter(
+            (p) => p.id !== targetParameterSetup?.targetParamId && !SYSTEM_ENV_HANDLERS.has(p.appHandler ?? ""),
+        ),
         [algorithmParameters, targetParameterSetup],
     );
 
