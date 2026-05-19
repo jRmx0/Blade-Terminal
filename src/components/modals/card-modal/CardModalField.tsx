@@ -22,6 +22,8 @@ interface CardModalInputConfig extends CardModalFieldBase {
     value: string;
     placeholder?: string;
     required?: boolean;
+    min?: number;
+    max?: number;
     onChange?: (value: string) => void;
     onConfirm?: () => void;
 }
@@ -150,7 +152,19 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
                             title={props.type !== "password" ? props.value || props.placeholder : undefined}
                             onChange={(e) => props.onChange?.(e.target.value)}
                             onFocus={() => setIsFocused(true)}
-                            onBlur={() => setIsFocused(false)}
+                            onBlur={() => {
+                                setIsFocused(false);
+                                if (props.type === "number" && props.value !== "") {
+                                    const numeric = Number(props.value);
+                                    if (!isNaN(numeric)) {
+                                        if (props.min !== undefined && numeric < props.min) {
+                                            props.onChange?.(String(props.min));
+                                        } else if (props.max !== undefined && numeric > props.max) {
+                                            props.onChange?.(String(props.max));
+                                        }
+                                    }
+                                }
+                            }}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") props.onConfirm?.();
                             }}
@@ -164,7 +178,8 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
                                     tabIndex={-1}
                                     onMouseDown={(e) => {
                                         e.preventDefault();
-                                        props.onChange?.(String(Number(props.value) + 1));
+                                        const next = Number(props.value) + 1;
+                                        props.onChange?.(String(props.max !== undefined && next > props.max ? props.max : next));
                                     }}
                                     className="flex items-center justify-center text-gray-400 hover:text-gray-700 active:text-teal-600 cursor-pointer"
                                     style={{ height: 12 }}
@@ -176,7 +191,8 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
                                     tabIndex={-1}
                                     onMouseDown={(e) => {
                                         e.preventDefault();
-                                        props.onChange?.(String(Number(props.value) - 1));
+                                        const next = Number(props.value) - 1;
+                                        props.onChange?.(String(props.min !== undefined && next < props.min ? props.min : next));
                                     }}
                                     className="flex items-center justify-center text-gray-400 hover:text-gray-700 active:text-teal-600 cursor-pointer"
                                     style={{ height: 12 }}
