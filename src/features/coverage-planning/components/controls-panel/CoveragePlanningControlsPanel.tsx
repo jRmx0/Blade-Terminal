@@ -95,6 +95,10 @@ function getNumericParameterUnit(parameter: AlgorithmParameter, unitOfMeasure: U
         return "";
     }
 
+    if (parameter.unitType === undefined) {
+        return "";
+    }
+
     return unitLabel(unitOfMeasure);
 }
 
