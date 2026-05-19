@@ -507,11 +507,8 @@ function SetupTabContent({
                                 id={`fixed-param-${param.id}`}
                                 label={param.name}
                                 type="select"
-                                value={rawValue}
-                                options={[
-                                    { value: "", label: "" },
-                                    ...param.enumValues.map((v) => ({ value: v, label: v })),
-                                ]}
+                                value={rawValue || (param.enumValues[0] ?? "")}
+                                options={param.enumValues.map((v) => ({ value: v, label: v }))}
                                 onChange={(v: string) => onSetFixedParameter(param.id, v)}
                             />
                         );
