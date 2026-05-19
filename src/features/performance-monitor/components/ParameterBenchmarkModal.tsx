@@ -307,8 +307,6 @@ export default function ParameterBenchmarkModal() {
                             onRemoveFixedParameter={removeFixedParameter}
                             environmentSetup={environmentSetup}
                             onSetEnvironmentSetup={setEnvironmentSetup}
-                            systemEnvironmentSetup={systemEnvironmentSetup}
-                            onSetSystemEnvironmentSetup={setSystemEnvironmentSetup}
                             multipleRunsSetup={multipleRunsSetup}
                             onSetMultipleRunsSetup={setMultipleRunsSetup}
                             metricsConfig={metricsConfig}
@@ -363,8 +361,6 @@ interface SetupTabContentProps {
     onRemoveFixedParameter: (paramId: number) => void;
     environmentSetup: any;
     onSetEnvironmentSetup: (setup: any) => void;
-    systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
-    onSetSystemEnvironmentSetup: (setup: Partial<BenchmarkSystemEnvironmentSetup>) => void;
     multipleRunsSetup: any;
     onSetMultipleRunsSetup: (setup: any) => void;
     metricsConfig: any;
@@ -387,8 +383,6 @@ function SetupTabContent({
     onRemoveFixedParameter,
     environmentSetup,
     onSetEnvironmentSetup,
-    systemEnvironmentSetup,
-    onSetSystemEnvironmentSetup,
     multipleRunsSetup,
     onSetMultipleRunsSetup,
     metricsConfig,
@@ -411,72 +405,6 @@ function SetupTabContent({
                         </option>
                     ))}
                 </select>
-            </div>
-
-            {/* System Environment Parameters */}
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded flex flex-col gap-3">
-                <div className="text-sm font-medium text-amber-900">System Environment Parameters</div>
-
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Format</label>
-                        <select
-                            value={systemEnvironmentSetup.format}
-                            onChange={(e) => onSetSystemEnvironmentSetup({ format: e.target.value })}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        >
-                            {ENV_FORMAT_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>{option.label}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Type</label>
-                        <select
-                            value={systemEnvironmentSetup.type}
-                            onChange={(e) => onSetSystemEnvironmentSetup({ type: e.target.value })}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        >
-                            {ENV_TYPE_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>{option.label}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Coordinate System</label>
-                        <select
-                            value={systemEnvironmentSetup.coordinateSystem}
-                            onChange={(e) => onSetSystemEnvironmentSetup({ coordinateSystem: e.target.value })}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        >
-                            {COORD_SYSTEM_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>{option.label}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Headland Width</label>
-                        <input
-                            type="text"
-                            value={systemEnvironmentSetup.headlandWidth}
-                            onChange={(e) => onSetSystemEnvironmentSetup({ headlandWidth: e.target.value })}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        />
-                    </div>
-                </div>
-
-                <label className="flex items-center gap-2 cursor-pointer w-fit">
-                    <input
-                        type="checkbox"
-                        checked={systemEnvironmentSetup.headland}
-                        onChange={(e) => onSetSystemEnvironmentSetup({ headland: e.target.checked })}
-                        className="w-4 h-4 border-gray-300 rounded focus:ring-2 focus:ring-teal-500"
-                    />
-                    <span className="text-sm text-gray-700">Headland Enabled</span>
-                </label>
             </div>
 
             {/* Algorithm Selection */}
