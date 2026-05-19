@@ -559,7 +559,6 @@ function SetupTabContent({
                     label="Seed"
                     type="text"
                     value={String(environmentSetup.seed)}
-                    placeholder="(empty = randomize)"
                     onChange={(v) => onSetEnvironmentSetup({ seed: v })}
                 />
             </InternalCardModalFastTab>
