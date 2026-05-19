@@ -23,6 +23,8 @@ import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import type { AlgorithmMetric, AlgorithmParameter, ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
 import ChartCard from "@/features/performance-monitor/components/internal/ChartCard";
+import InternalCardModalFastTab from "@/components/modals/card-modal/internal/InternalCardModalFastTab";
+import CardModalField from "@/components/modals/card-modal/CardModalField";
 
 export default function ParameterBenchmarkModal() {
     const {
@@ -388,337 +390,223 @@ function SetupTabContent({
     metricsConfig,
     onToggleMetric,
 }: SetupTabContentProps) {
+    const [computationExpanded, setComputationExpanded] = useState(true);
+    const [targetParamExpanded, setTargetParamExpanded] = useState(true);
+    const [fixedParamsExpanded, setFixedParamsExpanded] = useState(true);
+    const [generatorExpanded, setGeneratorExpanded] = useState(true);
+    const [multipleRunsExpanded, setMultipleRunsExpanded] = useState(true);
+    const [metricsExpanded, setMetricsExpanded] = useState(true);
+
+    const targetParamDisabled = numericParameters.length === 0;
+    const fixedParamsDisabled = nonTargetParameters.length === 0;
+
     return (
         <div className="p-4 flex flex-col gap-4">
-            {/* Provider Selection */}
-            <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-gray-700">Provider</label>
-                <select
-                    value={selectedProviderId ?? ""}
-                    onChange={(e) => onSelectProvider(Number(e.target.value))}
-                    className="px-3 py-2 border border-gray-300 rounded text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                    <option value="">Select a provider...</option>
-                    {providers.map((p) => (
-                        <option key={p.id} value={p.id}>
-                            {p.name}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            {/* Computation */}
+            <InternalCardModalFastTab
+                title="Computation"
+                expanded={computationExpanded}
+                onToggle={() => setComputationExpanded((x) => !x)}
+            >
+                <CardModalField
+                    id="provider"
+                    label="Provider"
+                    type="select"
+                    value={selectedProviderId !== null ? String(selectedProviderId) : ""}
+                    options={[
+                        { value: "", label: "Select a provider..." },
+                        ...providers.map((p) => ({ value: String(p.id), label: p.name })),
+                    ]}
+                    onChange={(v) => { if (v) onSelectProvider(Number(v)); }}
+                />
+                {selectedProviderId !== null && (
+                    <CardModalField
+                        id="algorithm"
+                        label="Algorithm"
+                        type="select"
+                        value={selectedAlgorithm !== undefined ? String(selectedAlgorithm.id) : ""}
+                        options={[
+                            { value: "", label: "Select an algorithm..." },
+                            ...availableAlgorithms.map((a) => ({ value: String(a.id), label: a.name })),
+                        ]}
+                        onChange={(v) => { if (v) onSelectAlgorithm(Number(v)); }}
+                    />
+                )}
+            </InternalCardModalFastTab>
 
-            {/* Algorithm Selection */}
-            {selectedProviderId && (
-                <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-gray-700">Algorithm</label>
-                    <select
-                        value={selectedAlgorithm?.id ?? ""}
-                        onChange={(e) => onSelectAlgorithm(Number(e.target.value))}
-                        className="px-3 py-2 border border-gray-300 rounded text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    >
-                        <option value="">Select an algorithm...</option>
-                        {availableAlgorithms.map((a) => (
-                            <option key={a.id} value={a.id}>
-                                {a.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            )}
-
-            {/* Target Parameter Selection */}
-            {numericParameters.length > 0 && (
-                <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-gray-700">Target Parameter to Benchmark</label>
-                    <select
-                        value={targetParameterSetup?.targetParamId ?? ""}
-                        onChange={(e) => {
-                            const paramId = Number(e.target.value);
-                            const param = numericParameters.find((p) => p.id === paramId);
-                            if (param) {
-                                onSetTargetParameter({
-                                    targetParamId: paramId,
-                                    startValue: param.defaultValue || param.minValue?.toString() || "0",
-                                    endValue: param.maxValue?.toString() || "100",
-                                    stepValue: "1",
-                                });
-                            }
-                        }}
-                        className="px-3 py-2 border border-gray-300 rounded text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    >
-                        <option value="">Select a parameter...</option>
-                        {numericParameters.map((p) => (
-                            <option key={p.id} value={p.id}>
-                                {p.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            )}
-
-            {/* Target Parameter Range */}
-            {targetParameterSetup && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded flex flex-col gap-3">
-                    <div className="text-sm font-medium text-blue-900">Target Parameter Range</div>
-
-                    <div className="grid grid-cols-3 gap-2">
-                        <div className="flex flex-col gap-1">
-                            <label className="text-xs font-medium text-gray-600">Start</label>
-                            <input
-                                type="number"
-                                value={targetParameterSetup.startValue}
-                                onChange={(e) =>
-                                    onSetTargetParameter({
-                                        ...targetParameterSetup,
-                                        startValue: e.target.value,
-                                    })
-                                }
-                                className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            />
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <label className="text-xs font-medium text-gray-600">End</label>
-                            <input
-                                type="number"
-                                value={targetParameterSetup.endValue}
-                                onChange={(e) =>
-                                    onSetTargetParameter({
-                                        ...targetParameterSetup,
-                                        endValue: e.target.value,
-                                    })
-                                }
-                                className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            />
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <label className="text-xs font-medium text-gray-600">Step</label>
-                            <input
-                                type="number"
-                                value={targetParameterSetup.stepValue}
-                                onChange={(e) =>
-                                    onSetTargetParameter({
-                                        ...targetParameterSetup,
-                                        stepValue: e.target.value,
-                                    })
-                                }
-                                className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Target Parameter */}
+            <InternalCardModalFastTab
+                title="Target Parameter"
+                expanded={targetParamDisabled ? false : targetParamExpanded}
+                onToggle={targetParamDisabled ? () => { } : () => setTargetParamExpanded((x) => !x)}
+                disabled={targetParamDisabled}
+            >
+                <CardModalField
+                    id="target-param"
+                    label="Parameter"
+                    type="select"
+                    value={targetParameterSetup?.targetParamId !== undefined ? String(targetParameterSetup.targetParamId) : ""}
+                    options={[
+                        { value: "", label: "Select a parameter..." },
+                        ...numericParameters.map((p) => ({ value: String(p.id), label: p.name })),
+                    ]}
+                    onChange={(v) => {
+                        const paramId = Number(v);
+                        const param = numericParameters.find((p) => p.id === paramId);
+                        if (param) {
+                            onSetTargetParameter({
+                                targetParamId: paramId,
+                                startValue: param.defaultValue || param.minValue?.toString() || "0",
+                                endValue: param.maxValue?.toString() || "100",
+                                stepValue: "1",
+                            });
+                        }
+                    }}
+                />
+                {targetParameterSetup && (
+                    <>
+                        <CardModalField
+                            id="target-start"
+                            label="Start"
+                            type="number"
+                            value={targetParameterSetup.startValue}
+                            onChange={(v) => onSetTargetParameter({ ...targetParameterSetup, startValue: v })}
+                        />
+                        <CardModalField
+                            id="target-end"
+                            label="End"
+                            type="number"
+                            value={targetParameterSetup.endValue}
+                            onChange={(v) => onSetTargetParameter({ ...targetParameterSetup, endValue: v })}
+                        />
+                        <CardModalField
+                            id="target-step"
+                            label="Step"
+                            type="number"
+                            value={targetParameterSetup.stepValue}
+                            onChange={(v) => onSetTargetParameter({ ...targetParameterSetup, stepValue: v })}
+                        />
+                    </>
+                )}
+            </InternalCardModalFastTab>
 
             {/* Fixed Parameters */}
-            {nonTargetParameters.length > 0 && (
-                <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-gray-700">Fixed Parameters</label>
-                    <div className="flex flex-col gap-2">
-                        {nonTargetParameters.map((param) => {
-                            const fixedValue = fixedParameters.find((fp) => fp.paramId === param.id);
-                            return (
-                                <div key={param.id} className="flex items-center gap-2">
-                                    <label className="text-xs text-gray-600 flex-1">{param.name}</label>
-                                    <input
-                                        type="text"
-                                        value={fixedValue?.value ?? param.defaultValue ?? ""}
-                                        onChange={(e) => onSetFixedParameter(param.id, e.target.value)}
-                                        placeholder={param.defaultValue || ""}
-                                        className="px-2 py-1 border border-gray-300 rounded text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                    />
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
-            {/* Environment Generation Setup */}
-            <div className="p-3 bg-green-50 border border-green-200 rounded flex flex-col gap-3">
-                <div className="text-sm font-medium text-green-900">Environment Generator Setup</div>
-
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Width</label>
-                        <input
-                            type="number"
-                            value={environmentSetup.width}
-                            onChange={(e) =>
-                                onSetEnvironmentSetup({ width: Number(e.target.value) })
-                            }
-                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Height</label>
-                        <input
-                            type="number"
-                            value={environmentSetup.height}
-                            onChange={(e) =>
-                                onSetEnvironmentSetup({ height: Number(e.target.value) })
-                            }
-                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Cell Size</label>
-                        <input
-                            type="number"
-                            value={environmentSetup.cellSize}
-                            onChange={(e) =>
-                                onSetEnvironmentSetup({ cellSize: Number(e.target.value) })
-                            }
-                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Obstacle Ratio (%)</label>
-                        <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={environmentSetup.obstacleRatio}
-                            onChange={(e) =>
-                                onSetEnvironmentSetup({ obstacleRatio: Number(e.target.value) })
-                            }
-                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Clustering Prob (%)</label>
-                        <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={environmentSetup.clusteringProb}
-                            onChange={(e) =>
-                                onSetEnvironmentSetup({ clusteringProb: Number(e.target.value) })
-                            }
-                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Seed</label>
-                        <input
+            <InternalCardModalFastTab
+                title="Fixed Parameters"
+                expanded={fixedParamsDisabled ? false : fixedParamsExpanded}
+                onToggle={fixedParamsDisabled ? () => { } : () => setFixedParamsExpanded((x) => !x)}
+                disabled={fixedParamsDisabled}
+            >
+                {nonTargetParameters.map((param) => {
+                    const fixedValue = fixedParameters.find((fp) => fp.paramId === param.id);
+                    return (
+                        <CardModalField
+                            key={param.id}
+                            id={`fixed-param-${param.id}`}
+                            label={param.name}
                             type="text"
-                            value={environmentSetup.seed}
-                            onChange={(e) =>
-                                onSetEnvironmentSetup({ seed: e.target.value })
-                            }
-                            placeholder="(empty = randomize)"
-                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                            value={fixedValue?.value ?? param.defaultValue ?? ""}
+                            placeholder={param.defaultValue || ""}
+                            onChange={(v) => onSetFixedParameter(param.id, v)}
                         />
-                    </div>
-                </div>
-            </div>
+                    );
+                })}
+            </InternalCardModalFastTab>
 
-            {/* Multiple Runs Setup */}
-            <div className="p-3 bg-purple-50 border border-purple-200 rounded flex flex-col gap-3">
-                <div className="text-sm font-medium text-purple-900">Multiple Runs Configuration</div>
+            {/* Generator */}
+            <InternalCardModalFastTab
+                title="Generator"
+                expanded={generatorExpanded}
+                onToggle={() => setGeneratorExpanded((x) => !x)}
+            >
+                <CardModalField
+                    id="gen-width"
+                    label="Width"
+                    type="number"
+                    value={String(environmentSetup.width)}
+                    onChange={(v) => onSetEnvironmentSetup({ width: Number(v) })}
+                />
+                <CardModalField
+                    id="gen-height"
+                    label="Height"
+                    type="number"
+                    value={String(environmentSetup.height)}
+                    onChange={(v) => onSetEnvironmentSetup({ height: Number(v) })}
+                />
+                <CardModalField
+                    id="gen-cell-size"
+                    label="Cell Size"
+                    type="number"
+                    value={String(environmentSetup.cellSize)}
+                    onChange={(v) => onSetEnvironmentSetup({ cellSize: Number(v) })}
+                />
+                <CardModalField
+                    id="gen-obstacle-ratio"
+                    label="Obstacle Ratio (%)"
+                    type="number"
+                    value={String(environmentSetup.obstacleRatio)}
+                    onChange={(v) => onSetEnvironmentSetup({ obstacleRatio: Number(v) })}
+                />
+                <CardModalField
+                    id="gen-clustering-prob"
+                    label="Clustering Prob (%)"
+                    type="number"
+                    value={String(environmentSetup.clusteringProb)}
+                    onChange={(v) => onSetEnvironmentSetup({ clusteringProb: Number(v) })}
+                />
+                <CardModalField
+                    id="gen-seed"
+                    label="Seed"
+                    type="text"
+                    value={String(environmentSetup.seed)}
+                    placeholder="(empty = randomize)"
+                    onChange={(v) => onSetEnvironmentSetup({ seed: v })}
+                />
+            </InternalCardModalFastTab>
 
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Runs per Step</label>
-                        <input
-                            type="number"
-                            min="1"
-                            value={multipleRunsSetup.runsPerStep}
-                            onChange={(e) =>
-                                onSetMultipleRunsSetup({ runsPerStep: Math.max(1, Number(e.target.value)) })
-                            }
-                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                            Number of computations to run for each parameter value
-                        </p>
-                    </div>
+            {/* Multiple Runs */}
+            <InternalCardModalFastTab
+                title="Multiple Runs"
+                expanded={multipleRunsExpanded}
+                onToggle={() => setMultipleRunsExpanded((x) => !x)}
+            >
+                <CardModalField
+                    id="runs-per-step"
+                    label="Runs per Step"
+                    type="number"
+                    value={String(multipleRunsSetup.runsPerStep)}
+                    onChange={(v) => onSetMultipleRunsSetup({ runsPerStep: Math.max(1, Number(v)) })}
+                />
+                <CardModalField
+                    id="aggregate-method"
+                    label="Aggregate Method"
+                    type="select"
+                    value={multipleRunsSetup.stepValueCalculation}
+                    options={[
+                        { value: "median", label: "Median" },
+                        { value: "average", label: "Average" },
+                    ]}
+                    onChange={(v) => onSetMultipleRunsSetup({ stepValueCalculation: v as any })}
+                />
+            </InternalCardModalFastTab>
 
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-600">Aggregate Method</label>
-                        <select
-                            value={multipleRunsSetup.stepValueCalculation}
-                            onChange={(e) =>
-                                onSetMultipleRunsSetup({ stepValueCalculation: e.target.value as any })
-                            }
-                            className="px-2 py-1 border border-gray-300 rounded text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        >
-                            <option value="median">Median</option>
-                            <option value="average">Average</option>
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">
-                            How to combine metrics from multiple runs
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Metrics to Track */}
-            <div className="p-3 bg-teal-50 border border-teal-200 rounded flex flex-col gap-3">
-                <div className="text-sm font-medium text-teal-900">Metrics to Track</div>
-
-                <div className="grid grid-cols-2 gap-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={metricsConfig.selectedMetrics.has("coverage")}
-                            onChange={() => onToggleMetric("coverage")}
-                            className="w-4 h-4 border-gray-300 rounded focus:ring-2 focus:ring-teal-500"
-                        />
-                        <span className="text-sm text-gray-700">Coverage Ratio</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={metricsConfig.selectedMetrics.has("overlap")}
-                            onChange={() => onToggleMetric("overlap")}
-                            className="w-4 h-4 border-gray-300 rounded focus:ring-2 focus:ring-teal-500"
-                        />
-                        <span className="text-sm text-gray-700">Overlap Ratio</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={metricsConfig.selectedMetrics.has("efficiency")}
-                            onChange={() => onToggleMetric("efficiency")}
-                            className="w-4 h-4 border-gray-300 rounded focus:ring-2 focus:ring-teal-500"
-                        />
-                        <span className="text-sm text-gray-700">Efficiency</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={metricsConfig.selectedMetrics.has("turns")}
-                            onChange={() => onToggleMetric("turns")}
-                            className="w-4 h-4 border-gray-300 rounded focus:ring-2 focus:ring-teal-500"
-                        />
-                        <span className="text-sm text-gray-700">Number of Turns</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={metricsConfig.selectedMetrics.has("pathLength")}
-                            onChange={() => onToggleMetric("pathLength")}
-                            className="w-4 h-4 border-gray-300 rounded focus:ring-2 focus:ring-teal-500"
-                        />
-                        <span className="text-sm text-gray-700">Path Length</span>
-                    </label>
-                </div>
-            </div>
+            {/* Metrics */}
+            <InternalCardModalFastTab
+                title="Metrics"
+                expanded={metricsExpanded}
+                onToggle={() => setMetricsExpanded((x) => !x)}
+            >
+                <CardModalField id="metric-coverage" label="Coverage Ratio" type="checkbox" checked={metricsConfig.selectedMetrics.has("coverage")} onChange={() => onToggleMetric("coverage")} />
+                <CardModalField id="metric-overlap" label="Overlap Ratio" type="checkbox" checked={metricsConfig.selectedMetrics.has("overlap")} onChange={() => onToggleMetric("overlap")} />
+                <CardModalField id="metric-efficiency" label="Efficiency" type="checkbox" checked={metricsConfig.selectedMetrics.has("efficiency")} onChange={() => onToggleMetric("efficiency")} />
+                <CardModalField id="metric-turns" label="Number of Turns" type="checkbox" checked={metricsConfig.selectedMetrics.has("turns")} onChange={() => onToggleMetric("turns")} />
+                <CardModalField id="metric-path-length" label="Path Length" type="checkbox" checked={metricsConfig.selectedMetrics.has("pathLength")} onChange={() => onToggleMetric("pathLength")} />
+            </InternalCardModalFastTab>
         </div>
     );
 }
 
-// ─── Run Tab ──────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Run Tab ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 interface RunTabContentProps {
     selectedProvider: ComputationProvider | undefined;
@@ -798,7 +686,7 @@ function RunTabContent({
                     <div><strong>Provider:</strong> {selectedProvider?.name}</div>
                     <div><strong>Algorithm:</strong> {selectedAlgorithm?.name}</div>
                     <div><strong>Target Parameter:</strong> Varying</div>
-                    <div><strong>Environment:</strong> {environmentSetup.width}×{environmentSetup.height} cells, {environmentSetup.cellSize} cell size</div>
+                    <div><strong>Environment:</strong> {environmentSetup.width}├ù{environmentSetup.height} cells, {environmentSetup.cellSize} cell size</div>
                     <div><strong>Runs per Step:</strong> {multipleRunsSetup.runsPerStep}</div>
                     <div><strong>Aggregate Method:</strong> {multipleRunsSetup.stepValueCalculation}</div>
                     <div><strong>Format:</strong> {ENV_FORMAT_OPTIONS.find((x) => x.value === systemEnvironmentSetup.format)?.label ?? systemEnvironmentSetup.format}</div>
@@ -820,7 +708,7 @@ function RunTabContent({
             <div className="p-3 bg-slate-50 border border-slate-200 rounded flex flex-col gap-2">
                 <div className="flex items-center justify-between text-xs text-slate-700">
                     <span>
-                        Progress: {executionState.progress.completedSteps}/{executionState.progress.totalSteps} steps • {executionState.progress.completedRuns}/{executionState.progress.totalRuns} runs
+                        Progress: {executionState.progress.completedSteps}/{executionState.progress.totalSteps} steps ΓÇó {executionState.progress.completedRuns}/{executionState.progress.totalRuns} runs
                     </span>
                     <span className="font-medium uppercase tracking-wide">{executionState.status}</span>
                 </div>
@@ -922,7 +810,7 @@ function RunTabContent({
                                             const aggregate = stepResult.aggregatedMetrics[metric][aggregateKey];
                                             return (
                                                 <td key={metric} className="px-2 py-2 text-gray-700">
-                                                    {typeof aggregate === "number" ? aggregate.toFixed(3) : "—"}
+                                                    {typeof aggregate === "number" ? aggregate.toFixed(3) : "ΓÇö"}
                                                 </td>
                                             );
                                         })}
