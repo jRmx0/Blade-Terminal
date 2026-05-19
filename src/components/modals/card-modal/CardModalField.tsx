@@ -1,4 +1,5 @@
-import { forwardRef } from "react";
+import { forwardRef, useState } from "react";
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
 
 export type CardModalTextFieldHintState = "info" | "warning" | "error";
 
@@ -53,6 +54,9 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
     const showRequiredMarker =
         isInputVariant(props) && props.required === true && props.value.trim().length === 0;
 
+    const [isFocused, setIsFocused] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
+
     return (
         <div className="flex items-start gap-3 min-w-0">
             {/* Label */}
@@ -81,47 +85,106 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
 
             {/* Control */}
             {props.type === "select" ? (
-                <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                    <select
-                        value={props.value}
-                        disabled={disabled}
-                        onChange={(e) => props.onChange?.(e.target.value)}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded text-gray-800 bg-white focus:outline-none focus:border-teal-600 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-default"
-                    >
-                        {props.options.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                                {opt.label}
-                            </option>
-                        ))}
-                    </select>
+                <div className="flex-1 min-w-0 flex items-center h-8">
+                    <Listbox value={props.value} onChange={(v) => props.onChange?.(v)} disabled={disabled}>
+                        <div className="relative w-full">
+                            <ListboxButton className="group w-full flex items-center gap-1 border border-gray-300 rounded bg-white text-left select-none focus:outline-none px-2 h-7 cursor-pointer data-open:border-teal-600 data-disabled:cursor-default data-disabled:opacity-50 transition-colors">
+                                <span className="text-sm flex-1 truncate text-gray-800 group-data-disabled:text-gray-500">
+                                    {props.options.find((o) => o.value === props.value)?.label ?? "\u00A0"}
+                                </span>
+                                <span
+                                    className="material-symbols-outlined shrink-0 transition-transform duration-150 text-gray-400 group-data-open:rotate-180 group-data-open:text-teal-600 group-data-disabled:text-gray-300"
+                                    style={{ fontSize: 16 }}
+                                >
+                                    expand_more
+                                </span>
+                            </ListboxButton>
+                            <ListboxOptions className="absolute left-0 right-0 top-full mt-0.5 border border-gray-300 rounded shadow-md bg-white max-h-48 overflow-y-auto outline-none z-50">
+                                {props.options.map((opt) => (
+                                    <ListboxOption
+                                        key={opt.value}
+                                        value={opt.value}
+                                        className="px-3 py-1 text-sm cursor-pointer transition-colors text-gray-700 border-b border-white last:border-b-0 data-focus:bg-teal-600 data-focus:text-white data-selected:bg-teal-600 data-selected:text-white data-selected:font-medium"
+                                    >
+                                        {opt.label || "\u00A0"}
+                                    </ListboxOption>
+                                ))}
+                            </ListboxOptions>
+                        </div>
+                    </Listbox>
                 </div>
             ) : props.type === "checkbox" ? (
                 <div className="flex-1 min-w-0 h-8 flex items-center">
-                    <input
-                        type="checkbox"
-                        checked={props.checked}
+                    <button
+                        type="button"
+                        role="switch"
+                        aria-checked={props.checked}
                         disabled={disabled}
-                        onChange={(e) => props.onChange?.(e.target.checked)}
-                        className="w-4 h-4 border-gray-300 rounded focus:ring-2 focus:ring-teal-500 cursor-pointer disabled:cursor-default"
-                    />
+                        onClick={() => !disabled && props.onChange?.(!props.checked)}
+                        className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors focus:outline-none ${disabled ? "opacity-50 cursor-default" : "cursor-pointer"
+                            } ${props.checked ? "bg-teal-600" : "bg-gray-300"}`}
+                    >
+                        <span
+                            className={`inline-block h-3 w-3 rounded-full bg-white shadow transition-transform ${props.checked ? "translate-x-3.5" : "translate-x-0.5"
+                                }`}
+                        />
+                    </button>
                 </div>
             ) : (
-                <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                    <input
-                        ref={ref}
-                        type={props.type ?? "text"}
-                        value={props.value}
-                        placeholder={props.placeholder}
-                        required={props.required}
-                        aria-required={props.required}
-                        disabled={disabled}
-                        title={props.type !== "password" ? props.value || props.placeholder : undefined}
-                        onChange={(e) => props.onChange?.(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") props.onConfirm?.();
-                        }}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded text-gray-800 focus:outline-none focus:border-teal-600 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-default truncate"
-                    />
+                <div
+                    className="flex-1 min-w-0 flex items-center h-8"
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                >
+                    <div className="relative w-full">
+                        <input
+                            ref={ref}
+                            type={props.type === "number" ? "text" : (props.type ?? "text")}
+                            inputMode={props.type === "number" ? "numeric" : undefined}
+                            value={props.value}
+                            placeholder={props.placeholder}
+                            required={props.required}
+                            aria-required={props.required}
+                            disabled={disabled}
+                            title={props.type !== "password" ? props.value || props.placeholder : undefined}
+                            onChange={(e) => props.onChange?.(e.target.value)}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") props.onConfirm?.();
+                            }}
+                            className={`w-full px-2 text-sm border rounded text-gray-800 h-7 focus:outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-default truncate ${props.type === "number" ? "pr-5" : ""
+                                } ${isFocused ? "border-teal-600" : "border-gray-300"}`}
+                        />
+                        {props.type === "number" && (isFocused || isHovered) && !disabled && (
+                            <div className="absolute right-px top-1/2 -translate-y-1/2 flex flex-col w-3 mr-1.5">
+                                <button
+                                    type="button"
+                                    tabIndex={-1}
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        props.onChange?.(String(Number(props.value) + 1));
+                                    }}
+                                    className="flex items-center justify-center text-gray-400 hover:text-gray-700 active:text-teal-600 cursor-pointer"
+                                    style={{ height: 12 }}
+                                >
+                                    <span className="material-symbols-outlined leading-none" style={{ fontSize: 14 }}>expand_less</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    tabIndex={-1}
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        props.onChange?.(String(Number(props.value) - 1));
+                                    }}
+                                    className="flex items-center justify-center text-gray-400 hover:text-gray-700 active:text-teal-600 cursor-pointer"
+                                    style={{ height: 12 }}
+                                >
+                                    <span className="material-symbols-outlined leading-none" style={{ fontSize: 14 }}>expand_more</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
