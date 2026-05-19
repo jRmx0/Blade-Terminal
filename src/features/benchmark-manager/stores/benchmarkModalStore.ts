@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
+import type { ObjectType } from "@/config/db-ops/enums";
 
 export interface BenchmarkParameterSetup {
     /** Parameter ID to vary */
@@ -34,6 +36,20 @@ export interface BenchmarkEnvironmentSetSetup {
     count: number;
     /** Base seed used to derive a unique seed for each environment (empty = randomize) */
     baseSeed: string;
+}
+
+export interface BenchmarkGeneratedEnvironment {
+    /** 0-based index within the generated set */
+    index: number;
+    /** Seed string passed to the generator */
+    derivedSeed: string;
+    boundary: Point[];
+    obstacles: Point[][];
+    startEndPoint: Point;
+    objectType: ObjectType;
+    usedSeedHex: string;
+    usedClusteringPct: number;
+    usedObstacleRatioPct: number;
 }
 
 export interface BenchmarkSystemEnvironmentSetup {
@@ -163,6 +179,9 @@ interface BenchmarkModalState {
     // Execution & Results
     executionState: BenchmarkExecutionState;
 
+    // Generated environments (stored in memory, not yet persisted to DB)
+    generatedEnvironments: BenchmarkGeneratedEnvironment[];
+
     open: () => void;
     close: () => void;
     setSelectedProvider: (providerId: number | null) => void;
@@ -178,6 +197,7 @@ interface BenchmarkModalState {
     setMetrics: (metrics: BenchmarkMetricType[]) => void;
     setIsRunning: (running: boolean) => void;
     setError: (error: string | null) => void;
+    setGeneratedEnvironments: (envs: BenchmarkGeneratedEnvironment[]) => void;
     reset: () => void;
 
     // Execution management
@@ -232,6 +252,7 @@ const INITIAL_STATE: Omit<BenchmarkModalState, keyof {
     setMetrics: () => void;
     setIsRunning: () => void;
     setError: () => void;
+    setGeneratedEnvironments: () => void;
     reset: () => void;
     setBenchmarkExecutionState: () => void;
     addStepResult: () => void;
@@ -272,6 +293,7 @@ const INITIAL_STATE: Omit<BenchmarkModalState, keyof {
     isRunning: false,
     error: null,
     executionState: INITIAL_EXECUTION_STATE,
+    generatedEnvironments: [],
 };
 
 export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) => ({
@@ -356,6 +378,8 @@ export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) =
     setIsRunning: (running) => set({ isRunning: running }),
 
     setError: (error) => set({ error }),
+
+    setGeneratedEnvironments: (envs) => set({ generatedEnvironments: envs }),
 
     reset: () => set(INITIAL_STATE),
 

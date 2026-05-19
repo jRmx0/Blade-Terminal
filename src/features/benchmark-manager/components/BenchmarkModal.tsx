@@ -4,8 +4,8 @@ import {
     ENV_FORMAT_OPTIONS,
     ENV_TYPE_OPTIONS,
 } from "@/config/db-ops/enums";
-import { validateGeneratorSystemParams } from "@/features/canvas-editing/utils/envGenerator";
-import type { CoordSystemType, EnvFormat } from "@/config/db-ops/enums";
+import { generateCompliantEnvironment, validateGeneratorSystemParams } from "@/features/canvas-editing/utils/envGenerator";
+import type { CoordSystemType, EnvFormat, EnvType } from "@/config/db-ops/enums";
 import { APP_PARAMETER_HANDLER } from "@/config/computation/appParameterHandlers";
 import {
     useBenchmarkModalStore,
@@ -13,6 +13,7 @@ import {
     type BenchmarkEnvironmentSetup,
     type BenchmarkExecutionState,
     type BenchmarkFixedParameter,
+    type BenchmarkGeneratedEnvironment,
     type BenchmarkMetricType,
     type BenchmarkMultipleRunsSetup,
     type BenchmarkParameterSetup,
@@ -27,6 +28,8 @@ import type { AlgorithmMetric, AlgorithmParameter, ComputationAlgorithm, Computa
 import ChartCard from "@/components/chart/ChartCard";
 import InternalCardModalFastTab from "@/components/modals/card-modal/internal/InternalCardModalFastTab";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
+import ModalActionBar, { type ModalActionBarItem } from "@/components/modal/modal-action-bar/ModalActionBar";
+import type { ModalActionStatus } from "@/components/modal/modal-action-bar/ModalActionBarAction";
 
 const SYSTEM_ENV_HANDLERS = new Set([
     APP_PARAMETER_HANDLER.ENVIRONMENT_FORMAT,
@@ -67,6 +70,7 @@ export default function BenchmarkModal() {
         resetResults,
         cancelBenchmark,
         reset,
+        setGeneratedEnvironments,
     } = useBenchmarkModalStore();
 
     const { providers, algorithms, parameters: catalogParameters, metrics: catalogMetrics } = useComputationCatalogStore();
@@ -77,6 +81,8 @@ export default function BenchmarkModal() {
     });
 
     const [activeTab, setActiveTab] = useState<"env-setup" | "setup" | "run">("env-setup");
+    const [generateStatus, setGenerateStatus] = useState<ModalActionStatus | undefined>(undefined);
+    const [generateStatusMessage, setGenerateStatusMessage] = useState<string | undefined>(undefined);
 
     // Filtered data
     const selectedProvider = useMemo(
@@ -264,6 +270,91 @@ export default function BenchmarkModal() {
         reset();
     }, [reset]);
 
+    const handleGenerateEnvironments = useCallback(() => {
+        if (!generatorSystemValidation.ok) return;
+
+        setGenerateStatus("loading");
+        setGenerateStatusMessage(undefined);
+
+        const systemParams = {
+            format: systemEnvironmentSetup.format as EnvFormat,
+            type: systemEnvironmentSetup.type as EnvType,
+            coordSystem: systemEnvironmentSetup.coordinateSystem as CoordSystemType,
+        };
+
+        const generated: BenchmarkGeneratedEnvironment[] = [];
+        const errors: string[] = [];
+
+        for (let i = 0; i < environmentSetSetup.count; i++) {
+            const derivedSeed = environmentSetSetup.baseSeed.trim()
+                ? `${environmentSetSetup.baseSeed.trim()}-env-${i}`
+                : "";
+
+            const result = generateCompliantEnvironment({
+                width: environmentSetup.width,
+                height: environmentSetup.height,
+                cellSize: environmentSetup.cellSize,
+                obstacleRatio: environmentSetup.obstacleRatio,
+                clusteringProb: environmentSetup.clusteringProb,
+                seed: derivedSeed,
+                systemParams,
+            });
+
+            if (result.ok) {
+                generated.push({
+                    index: i,
+                    derivedSeed,
+                    boundary: result.value.environment.boundary,
+                    obstacles: result.value.environment.obstacles,
+                    startEndPoint: result.value.environment.startEndPoint,
+                    objectType: result.value.objectType,
+                    usedSeedHex: result.value.environment.usedSeedHex,
+                    usedClusteringPct: result.value.environment.usedClusteringPct,
+                    usedObstacleRatioPct: result.value.environment.usedObstacleRatioPct,
+                });
+            } else {
+                errors.push(`Env ${i + 1}: ${result.error}`);
+            }
+        }
+
+        if (errors.length === 0) {
+            setGeneratedEnvironments(generated);
+            setGenerateStatus("success");
+            setGenerateStatusMessage(
+                `${generated.length} environment${generated.length !== 1 ? "s" : ""} generated.`,
+            );
+        } else {
+            setGenerateStatus("error");
+            setGenerateStatusMessage(errors.join("\n"));
+        }
+    }, [
+        generatorSystemValidation.ok,
+        environmentSetSetup.count,
+        environmentSetSetup.baseSeed,
+        environmentSetup.width,
+        environmentSetup.height,
+        environmentSetup.cellSize,
+        environmentSetup.obstacleRatio,
+        environmentSetup.clusteringProb,
+        systemEnvironmentSetup.format,
+        systemEnvironmentSetup.type,
+        systemEnvironmentSetup.coordinateSystem,
+        setGeneratedEnvironments,
+    ]);
+
+    const envSetupActions: ModalActionBarItem[] = [
+        {
+            id: "generate-env",
+            icon: "auto_awesome",
+            label: "Generate Env.",
+            onClick: handleGenerateEnvironments,
+            disabled: !generatorSystemValidation.ok || environmentSetSetup.count < 1,
+            loading: generateStatus === "loading",
+            status: generateStatus !== undefined && generateStatus !== "loading" ? generateStatus : undefined,
+            statusMessage: generateStatusMessage,
+        },
+    ];
+
     if (!isOpen) return null;
 
     return (
@@ -314,6 +405,11 @@ export default function BenchmarkModal() {
                         Run
                     </button>
                 </div>
+
+                {/* Env Setup Action Bar */}
+                {activeTab === "env-setup" && (
+                    <ModalActionBar actions={envSetupActions} />
+                )}
 
                 {/* Body */}
                 <div className="flex-1 overflow-y-auto">
