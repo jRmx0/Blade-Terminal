@@ -87,30 +87,31 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
             {props.type === "select" ? (
                 <div className="flex-1 min-w-0 flex items-center h-8">
                     <Listbox value={props.value} onChange={(v) => props.onChange?.(v)} disabled={disabled}>
-                        <div className="relative w-full">
-                            <ListboxButton className="group w-full flex items-center gap-1 border border-gray-300 rounded bg-white text-left select-none focus:outline-none px-2 h-7 cursor-pointer data-open:border-teal-600 data-disabled:cursor-default data-disabled:opacity-50 transition-colors">
-                                <span className="text-sm flex-1 truncate text-gray-800 group-data-disabled:text-gray-500">
-                                    {props.options.find((o) => o.value === props.value)?.label ?? "\u00A0"}
-                                </span>
-                                <span
-                                    className="material-symbols-outlined shrink-0 transition-transform duration-150 text-gray-400 group-data-open:rotate-180 group-data-open:text-teal-600 group-data-disabled:text-gray-300"
-                                    style={{ fontSize: 16 }}
+                        <ListboxButton className="group w-full flex items-center gap-1 border border-gray-300 rounded bg-white text-left select-none focus:outline-none px-2 h-7 cursor-pointer data-open:border-teal-600 data-disabled:cursor-default data-disabled:opacity-50 transition-colors">
+                            <span className="text-sm flex-1 truncate text-gray-800 group-data-disabled:text-gray-500">
+                                {props.options.find((o) => o.value === props.value)?.label ?? "\u00A0"}
+                            </span>
+                            <span
+                                className="material-symbols-outlined shrink-0 transition-transform duration-150 text-gray-400 group-data-open:rotate-180 group-data-open:text-teal-600 group-data-disabled:text-gray-300"
+                                style={{ fontSize: 16 }}
+                            >
+                                expand_more
+                            </span>
+                        </ListboxButton>
+                        <ListboxOptions
+                            anchor={{ to: "bottom start", gap: 4 }}
+                            className="w-(--button-width) border border-gray-300 rounded shadow-md bg-white max-h-48 overflow-y-auto outline-none z-200 select-none cursor-default"
+                        >
+                            {props.options.map((opt) => (
+                                <ListboxOption
+                                    key={opt.value}
+                                    value={opt.value}
+                                    className="px-3 py-1 text-sm cursor-pointer transition-colors text-gray-700 border-b border-white last:border-b-0 data-focus:bg-teal-600 data-focus:text-white data-selected:bg-teal-600 data-selected:text-white data-selected:font-medium"
                                 >
-                                    expand_more
-                                </span>
-                            </ListboxButton>
-                            <ListboxOptions className="absolute left-0 right-0 top-full mt-0.5 border border-gray-300 rounded shadow-md bg-white max-h-48 overflow-y-auto outline-none z-50">
-                                {props.options.map((opt) => (
-                                    <ListboxOption
-                                        key={opt.value}
-                                        value={opt.value}
-                                        className="px-3 py-1 text-sm cursor-pointer transition-colors text-gray-700 border-b border-white last:border-b-0 data-focus:bg-teal-600 data-focus:text-white data-selected:bg-teal-600 data-selected:text-white data-selected:font-medium"
-                                    >
-                                        {opt.label || "\u00A0"}
-                                    </ListboxOption>
-                                ))}
-                            </ListboxOptions>
-                        </div>
+                                    {opt.label || "\u00A0"}
+                                </ListboxOption>
+                            ))}
+                        </ListboxOptions>
                     </Listbox>
                 </div>
             ) : props.type === "checkbox" ? (

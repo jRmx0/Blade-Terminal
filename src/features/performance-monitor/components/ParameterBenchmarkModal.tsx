@@ -414,7 +414,7 @@ function SetupTabContent({
                     type="select"
                     value={selectedProviderId !== null ? String(selectedProviderId) : ""}
                     options={[
-                        { value: "", label: "Select a provider..." },
+                        { value: "", label: "" },
                         ...providers.map((p) => ({ value: String(p.id), label: p.name })),
                     ]}
                     onChange={(v) => { if (v) onSelectProvider(Number(v)); }}
@@ -426,7 +426,7 @@ function SetupTabContent({
                         type="select"
                         value={selectedAlgorithm !== undefined ? String(selectedAlgorithm.id) : ""}
                         options={[
-                            { value: "", label: "Select an algorithm..." },
+                            { value: "", label: "" },
                             ...availableAlgorithms.map((a) => ({ value: String(a.id), label: a.name })),
                         ]}
                         onChange={(v) => { if (v) onSelectAlgorithm(Number(v)); }}
@@ -447,7 +447,7 @@ function SetupTabContent({
                     type="select"
                     value={targetParameterSetup?.targetParamId !== undefined ? String(targetParameterSetup.targetParamId) : ""}
                     options={[
-                        { value: "", label: "Select a parameter..." },
+                        { value: "", label: "" },
                         ...numericParameters.map((p) => ({ value: String(p.id), label: p.name })),
                     ]}
                     onChange={(v) => {
