@@ -1,5 +1,5 @@
 import MenuBarItem from "@/components/menu-bar/MenuBarItem";
-import { useParameterBenchmarkModalStore } from "@/features/performance-monitor/stores/parameterBenchmarkModalStore";
+import { useParameterBenchmarkModalStore } from "@/features/benchmark-manager/stores/parameterBenchmarkModalStore";
 
 export default function ParameterBenchmarkButton() {
     const open = useParameterBenchmarkModalStore((s) => s.open);

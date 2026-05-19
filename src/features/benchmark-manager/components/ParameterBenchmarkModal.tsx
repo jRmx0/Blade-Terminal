@@ -15,8 +15,8 @@ import {
     type BenchmarkMultipleRunsSetup,
     type BenchmarkParameterSetup,
     type BenchmarkSystemEnvironmentSetup,
-} from "@/features/performance-monitor/stores/parameterBenchmarkModalStore";
-import { runBenchmark as runBenchmarkService } from "@/features/performance-monitor/data/benchmarkRunnerService";
+} from "@/features/benchmark-manager/stores/parameterBenchmarkModalStore";
+import { runBenchmark as runBenchmarkService } from "@/features/benchmark-manager/data/benchmarkRunnerService";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { useModalLifecycle } from "@/hooks/modals/useModalLifecycle";

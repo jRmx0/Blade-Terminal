@@ -26,7 +26,7 @@ import {
     type BenchmarkRun,
     type BenchmarkSystemEnvironmentSetup,
     type BenchmarkStepResult,
-} from "@/features/performance-monitor/stores/parameterBenchmarkModalStore";
+} from "@/features/benchmark-manager/stores/parameterBenchmarkModalStore";
 import type { Object as CanvasObject } from "@/types/schemaTypes";
 import {
     buildCoverageVisitMap,

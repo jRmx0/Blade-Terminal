@@ -5,7 +5,7 @@ import type {
     BenchmarkMultipleRunsSetup,
     BenchmarkParameterSetup,
     BenchmarkSystemEnvironmentSetup,
-} from "@/features/performance-monitor/stores/parameterBenchmarkModalStore";
+} from "@/features/benchmark-manager/stores/parameterBenchmarkModalStore";
 import type {
     AlgorithmMetric,
     AlgorithmParameter,
@@ -180,7 +180,7 @@ async function resetSystemEnvParameters() {
 
 describe("runBenchmark", () => {
     test("executes one step and aggregates selected metric", async () => {
-        const { runBenchmark } = await import("@/features/performance-monitor/data/benchmarkRunnerService");
+        const { runBenchmark } = await import("@/features/benchmark-manager/data/benchmarkRunnerService");
         await resetSystemEnvParameters();
 
         let submittedBody: Record<string, any> | null = null;
@@ -242,7 +242,7 @@ describe("runBenchmark", () => {
     });
 
     test("continues to next run when one run fails", async () => {
-        const { runBenchmark } = await import("@/features/performance-monitor/data/benchmarkRunnerService");
+        const { runBenchmark } = await import("@/features/benchmark-manager/data/benchmarkRunnerService");
         await resetSystemEnvParameters();
 
         let call = 0;
@@ -302,7 +302,7 @@ describe("runBenchmark", () => {
     });
 
     test("omits realworld when headland is disabled", async () => {
-        const { runBenchmark } = await import("@/features/performance-monitor/data/benchmarkRunnerService");
+        const { runBenchmark } = await import("@/features/benchmark-manager/data/benchmarkRunnerService");
 
         let submittedBody: Record<string, any> | null = null;
 
@@ -354,7 +354,7 @@ describe("runBenchmark", () => {
     });
 
     test("skips run before submit when headland width is invalid", async () => {
-        const { runBenchmark } = await import("@/features/performance-monitor/data/benchmarkRunnerService");
+        const { runBenchmark } = await import("@/features/benchmark-manager/data/benchmarkRunnerService");
 
         const requestedUrls: string[] = [];
 
@@ -392,7 +392,7 @@ describe("runBenchmark", () => {
     });
 
     test("falls back to locally computed coverage/overlap/efficiency when provider metrics are absent", async () => {
-        const { runBenchmark } = await import("@/features/performance-monitor/data/benchmarkRunnerService");
+        const { runBenchmark } = await import("@/features/benchmark-manager/data/benchmarkRunnerService");
 
         let submitBody: Record<string, any> | null = null;
 
