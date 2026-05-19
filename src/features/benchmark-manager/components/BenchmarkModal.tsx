@@ -7,7 +7,7 @@ import {
 import { validateGeneratorSystemParams } from "@/features/canvas-editing/utils/envGenerator";
 import type { CoordSystemType, EnvFormat } from "@/config/db-ops/enums";
 import {
-    useParameterBenchmarkModalStore,
+    useBenchmarkModalStore,
     type BenchmarkEnvironmentSetup,
     type BenchmarkExecutionState,
     type BenchmarkFixedParameter,
@@ -15,7 +15,7 @@ import {
     type BenchmarkMultipleRunsSetup,
     type BenchmarkParameterSetup,
     type BenchmarkSystemEnvironmentSetup,
-} from "@/features/benchmark-manager/stores/parameterBenchmarkModalStore";
+} from "@/features/benchmark-manager/stores/benchmarkModalStore";
 import { runBenchmark as runBenchmarkService } from "@/features/benchmark-manager/data/benchmarkRunnerService";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
@@ -28,7 +28,7 @@ import ChartCard from "@/components/chart/ChartCard";
 import InternalCardModalFastTab from "@/components/modals/card-modal/internal/InternalCardModalFastTab";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
 
-export default function ParameterBenchmarkModal() {
+export default function BenchmarkModal() {
     const {
         isOpen,
         close,
@@ -59,12 +59,12 @@ export default function ParameterBenchmarkModal() {
         resetResults,
         cancelBenchmark,
         reset,
-    } = useParameterBenchmarkModalStore();
+    } = useBenchmarkModalStore();
 
     const { providers, algorithms, parameters: catalogParameters, metrics: catalogMetrics } = useComputationCatalogStore();
     const { handleBackdropMouseDown } = useModalLifecycle({
         isOpen,
-        shortcutToken: "parameter-benchmark-modal",
+        shortcutToken: "benchmark-modal",
         onClose: close,
     });
 
@@ -262,7 +262,7 @@ export default function ParameterBenchmarkModal() {
             <div className="flex flex-col w-200 max-h-[85vh] bg-gray-100 rounded-lg shadow-xl overflow-hidden">
                 {/* Header */}
                 <div className="border-b border-gray-200 shrink-0">
-                    <ModalTitle title="Parameter Benchmark" onClose={close} />
+                    <ModalTitle title="Benchmark" onClose={close} />
                 </div>
 
                 {/* Tab Bar */}

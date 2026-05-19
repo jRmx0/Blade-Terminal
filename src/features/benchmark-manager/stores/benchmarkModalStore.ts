@@ -141,7 +141,7 @@ export interface BenchmarkExecutionState {
     error?: string;
 }
 
-interface ParameterBenchmarkModalState {
+interface BenchmarkModalState {
     isOpen: boolean;
     selectedProviderId: number | null;
     selectedAlgorithmId: number | null;
@@ -209,7 +209,7 @@ export function calculateAggregateMetrics(values: Array<number | null>): { media
     return { median, average };
 }
 
-const INITIAL_STATE: Omit<ParameterBenchmarkModalState, keyof {
+const INITIAL_STATE: Omit<BenchmarkModalState, keyof {
     open: () => void;
     close: () => void;
     setSelectedProvider: () => void;
@@ -263,7 +263,7 @@ const INITIAL_STATE: Omit<ParameterBenchmarkModalState, keyof {
     executionState: INITIAL_EXECUTION_STATE,
 };
 
-export const useParameterBenchmarkModalStore = create<ParameterBenchmarkModalState>()((set, get) => ({
+export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) => ({
     ...INITIAL_STATE,
 
     open: () => set({ isOpen: true }),

@@ -5,7 +5,7 @@ import type {
     BenchmarkMultipleRunsSetup,
     BenchmarkParameterSetup,
     BenchmarkSystemEnvironmentSetup,
-} from "@/features/benchmark-manager/stores/parameterBenchmarkModalStore";
+} from "@/features/benchmark-manager/stores/benchmarkModalStore";
 import type {
     AlgorithmMetric,
     AlgorithmParameter,

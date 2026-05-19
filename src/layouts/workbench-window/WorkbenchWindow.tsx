@@ -15,7 +15,7 @@ import AlgorithmCardModal from "@/features/computation-provider/components/Algor
 import ComputeExecuteModal from "@/components/modals/compute-execute-modal/ComputeExecuteModal";
 import ImportModal from "@/features/workspace-manager/components/import-modal/ImportModal";
 import PerformanceMonitorModal from "@/features/performance-monitor/PerformanceMonitorModal";
-import ParameterBenchmarkModal from "@/features/benchmark-manager/components/ParameterBenchmarkModal";
+import BenchmarkModal from "@/features/benchmark-manager/components/BenchmarkModal";
 import GeoAnchorModal from "@/features/geo-anchor/components/GeoAnchorModal";
 
 export default function WorkbenchWindow() {
@@ -44,7 +44,7 @@ export default function WorkbenchWindow() {
       <ComputeExecuteModal />
       <ImportModal />
       <PerformanceMonitorModal />
-      <ParameterBenchmarkModal />
+      <BenchmarkModal />
       <GeoAnchorModal />
     </div>
   );
