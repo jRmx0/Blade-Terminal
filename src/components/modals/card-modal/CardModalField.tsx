@@ -1,4 +1,4 @@
-import { forwardRef, useState } from "react";
+import { forwardRef, useState, useRef, useEffect } from "react";
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
 import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { unitLabel } from "@/utils/unitOfMeasure";
@@ -71,6 +71,31 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
 
     const [isFocused, setIsFocused] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const copyResetTimeoutRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (copyResetTimeoutRef.current !== null) {
+                window.clearTimeout(copyResetTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    const handleCopy = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const valueToCopy = isInputVariant(props) ? (props.placeholder ?? "") : "";
+        if (!valueToCopy) return;
+        await navigator.clipboard.writeText(valueToCopy);
+        setCopied(true);
+        if (copyResetTimeoutRef.current !== null) {
+            window.clearTimeout(copyResetTimeoutRef.current);
+        }
+        copyResetTimeoutRef.current = window.setTimeout(() => {
+            setCopied(false);
+            copyResetTimeoutRef.current = null;
+        }, 3000);
+    };
 
     return (
         <div className="flex items-start gap-3 min-w-0">
@@ -153,39 +178,57 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
                     onMouseLeave={() => setIsHovered(false)}
                 >
                     <div className="relative w-full">
-                        <input
-                            ref={ref}
-                            type={props.type === "password" ? "password" : "text"}
-                            inputMode={isNumericType ? "numeric" : undefined}
-                            value={props.value}
-                            placeholder={props.placeholder}
-                            required={props.required}
-                            aria-required={props.required}
-                            disabled={disabled}
-                            title={props.type !== "password" ? props.value || props.placeholder : undefined}
-                            onChange={(e) => props.onChange?.(e.target.value)}
-                            onFocus={() => setIsFocused(true)}
-                            onBlur={() => {
-                                setIsFocused(false);
-                                if (isNumericType && props.value !== "") {
-                                    const numeric = Number(props.value);
-                                    if (!isNaN(numeric)) {
-                                        if (props.min !== undefined && numeric < props.min) {
-                                            props.onChange?.(String(props.min));
-                                        } else if (props.max !== undefined && numeric > props.max) {
-                                            props.onChange?.(String(props.max));
-                                        }
-                                    }
-                                }
-                            }}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") props.onConfirm?.();
-                            }}
-                            className={`w-full px-2 text-sm border rounded text-gray-800 placeholder:text-gray-400 placeholder:italic h-7 focus:outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-default truncate ${isNumericType ? "pr-5" : ""
-                                } ${isFocused ? "border-teal-600" : "border-gray-300"}`}
-                        />
-                        {isNumericType && (isFocused || isHovered) && !disabled && (
-                            <div className="absolute right-px top-1/2 -translate-y-1/2 flex flex-col w-3 mr-1.5">
+                        {(() => {
+                            const showCopyBtn = (isFocused || isHovered) && !disabled && props.type !== "password" && !props.value && !!props.placeholder;
+                            return (
+                                <>
+                                    <input
+                                        ref={ref}
+                                        type={props.type === "password" ? "password" : "text"}
+                                        inputMode={isNumericType ? "numeric" : undefined}
+                                        value={props.value}
+                                        placeholder={props.placeholder}
+                                        required={props.required}
+                                        aria-required={props.required}
+                                        disabled={disabled}
+                                        title={props.type !== "password" ? props.value || props.placeholder : undefined}
+                                        onChange={(e) => props.onChange?.(e.target.value)}
+                                        onFocus={() => setIsFocused(true)}
+                                        onBlur={() => {
+                                            setIsFocused(false);
+                                            if (isNumericType && props.value !== "") {
+                                                const numeric = Number(props.value);
+                                                if (!isNaN(numeric)) {
+                                                    if (props.min !== undefined && numeric < props.min) {
+                                                        props.onChange?.(String(props.min));
+                                                    } else if (props.max !== undefined && numeric > props.max) {
+                                                        props.onChange?.(String(props.max));
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") props.onConfirm?.();
+                                        }}
+                                        className={`w-full px-2 text-sm border rounded text-gray-800 placeholder:text-gray-400 placeholder:italic h-7 focus:outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-default truncate ${
+                                            isNumericType && showCopyBtn ? "pr-10" : isNumericType ? "pr-5" : showCopyBtn ? "pr-6" : ""
+                                        } ${isFocused ? "border-teal-600" : "border-gray-300"}`}
+                                    />
+                                    {showCopyBtn && (
+                                        <button
+                                            type="button"
+                                            tabIndex={-1}
+                                            onClick={handleCopy}
+                                            title={copied ? "Copied" : "Copy to clipboard"}
+                                            className={`absolute right-1 top-1/2 -translate-y-1/2 flex items-center transition-colors cursor-pointer ${copied ? "text-green-500" : "text-gray-400 hover:text-gray-600"}`}
+                                        >
+                                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                                                {copied ? "check" : "content_copy"}
+                                            </span>
+                                        </button>
+                                    )}
+                                    {isNumericType && (isFocused || isHovered) && !disabled && (
+                                        <div className={`absolute ${showCopyBtn ? "right-5" : "right-px"} top-1/2 -translate-y-1/2 flex flex-col w-3 mr-1.5`}>
                                 <button
                                     type="button"
                                     tabIndex={-1}
@@ -212,8 +255,11 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
                                 >
                                     <span className="material-symbols-outlined leading-none" style={{ fontSize: 14 }}>expand_more</span>
                                 </button>
-                            </div>
-                        )}
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
             )}
