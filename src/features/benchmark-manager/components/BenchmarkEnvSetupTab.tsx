@@ -62,6 +62,7 @@ export default function BenchmarkEnvSetupTab({
                     label="Base Seed"
                     type="text"
                     value={environmentSetSetup.baseSeed}
+                    placeholder={!environmentSetSetup.baseSeed ? (generatedEnvironments[0]?.usedSeedHex ?? undefined) : undefined}
                     onChange={(v) => onSetEnvironmentSetSetup({ baseSeed: v })}
                 />
             </InternalCardModalFastTab>
@@ -181,6 +182,7 @@ export default function BenchmarkEnvSetupTab({
                             id: env.index,
                             boundary: env.boundary,
                             obstacles: env.obstacles,
+                            seedHex: env.usedSeedHex,
                         }))}
                     />
                 </div>

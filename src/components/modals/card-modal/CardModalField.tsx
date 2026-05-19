@@ -181,7 +181,7 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") props.onConfirm?.();
                             }}
-                            className={`w-full px-2 text-sm border rounded text-gray-800 h-7 focus:outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-default truncate ${isNumericType ? "pr-5" : ""
+                            className={`w-full px-2 text-sm border rounded text-gray-800 placeholder:text-gray-400 placeholder:italic h-7 focus:outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-default truncate ${isNumericType ? "pr-5" : ""
                                 } ${isFocused ? "border-teal-600" : "border-gray-300"}`}
                         />
                         {isNumericType && (isFocused || isHovered) && !disabled && (

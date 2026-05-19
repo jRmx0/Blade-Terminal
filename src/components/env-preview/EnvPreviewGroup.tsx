@@ -6,6 +6,8 @@ export interface EnvPreviewItem {
     id: number;
     boundary: Point[];
     obstacles: Point[][];
+    /** Hex seed string used during generation. Shown below the canvas when provided. */
+    seedHex?: string;
 }
 
 interface EnvPreviewGroupProps {

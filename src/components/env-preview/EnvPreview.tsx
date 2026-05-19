@@ -8,9 +8,11 @@ interface EnvPreviewProps {
     obstacles: Point[][];
     /** Canvas side length in px. Default: 120 */
     size?: number;
+    /** Hex seed used during generation. Displayed below the canvas when provided. */
+    seedHex?: string;
 }
 
-export default function EnvPreview({ id, boundary, obstacles, size = 120 }: EnvPreviewProps) {
+export default function EnvPreview({ id, boundary, obstacles, size = 120, seedHex }: EnvPreviewProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -86,6 +88,9 @@ export default function EnvPreview({ id, boundary, obstacles, size = 120 }: EnvP
             <div className="border-2 border-white">
                 <canvas ref={canvasRef} width={size} height={size} />
             </div>
+            {seedHex && (
+                <span className="text-[10px] font-mono text-gray-400 leading-none">{seedHex}</span>
+            )}
         </div>
     );
 }
