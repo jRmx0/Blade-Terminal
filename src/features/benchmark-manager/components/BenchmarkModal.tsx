@@ -464,6 +464,8 @@ export default function BenchmarkModal() {
                             jobSetup={jobSetup}
                             onSetJobSetup={setJobSetup}
                             onSetJobAlgorithm={setJobAlgorithm}
+                            metricsConfig={metricsConfig}
+                            onToggleMetric={toggleMetric}
                         />
                     )}
                     {activeTab === "run" && (

@@ -5,6 +5,8 @@ import {
     type BenchmarkJobSetup,
     type BenchmarkJobAlgorithm,
     type BenchmarkJobType,
+    type BenchmarkMetricsConfig,
+    type BenchmarkMetricType,
 } from "@/features/benchmark-manager/stores/benchmarkModalStore";
 import type { ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
 
@@ -27,6 +29,8 @@ export interface BenchmarkJobSetupTabProps {
     jobSetup: BenchmarkJobSetup;
     onSetJobSetup: (setup: Partial<BenchmarkJobSetup>) => void;
     onSetJobAlgorithm: (index: number, update: Partial<BenchmarkJobAlgorithm>) => void;
+    metricsConfig: BenchmarkMetricsConfig;
+    onToggleMetric: (metric: BenchmarkMetricType) => void;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -37,9 +41,12 @@ export default function BenchmarkJobSetupTab({
     jobSetup,
     onSetJobSetup,
     onSetJobAlgorithm,
+    metricsConfig,
+    onToggleMetric,
 }: BenchmarkJobSetupTabProps) {
     const [jobExpanded, setJobExpanded] = useState(true);
     const [algorithmsExpanded, setAlgorithmsExpanded] = useState(true);
+    const [metricsExpanded, setMetricsExpanded] = useState(true);
 
     const algorithmsDisabled = jobSetup.type === "";
 
@@ -153,6 +160,19 @@ export default function BenchmarkJobSetupTab({
                         </div>
                     );
                 })}
+            </InternalCardModalFastTab>
+
+            {/* Metrics */}
+            <InternalCardModalFastTab
+                title="Metrics"
+                expanded={metricsExpanded}
+                onToggle={() => setMetricsExpanded((x) => !x)}
+            >
+                <CardModalField id="job-metric-coverage" label="Coverage Ratio" type="checkbox" checked={metricsConfig.selectedMetrics.has("coverage")} onChange={() => onToggleMetric("coverage")} />
+                <CardModalField id="job-metric-overlap" label="Overlap Ratio" type="checkbox" checked={metricsConfig.selectedMetrics.has("overlap")} onChange={() => onToggleMetric("overlap")} />
+                <CardModalField id="job-metric-efficiency" label="Efficiency" type="checkbox" checked={metricsConfig.selectedMetrics.has("efficiency")} onChange={() => onToggleMetric("efficiency")} />
+                <CardModalField id="job-metric-turns" label="Number of Turns" type="checkbox" checked={metricsConfig.selectedMetrics.has("turns")} onChange={() => onToggleMetric("turns")} />
+                <CardModalField id="job-metric-path-length" label="Path Length" type="checkbox" checked={metricsConfig.selectedMetrics.has("pathLength")} onChange={() => onToggleMetric("pathLength")} />
             </InternalCardModalFastTab>
         </div>
     );
