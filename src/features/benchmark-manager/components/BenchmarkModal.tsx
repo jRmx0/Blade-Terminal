@@ -60,6 +60,8 @@ export default function BenchmarkModal() {
         reset,
         generatedEnvironments,
         setGeneratedEnvironments,
+        generatedBaseSeed,
+        setGeneratedBaseSeed,
     } = useBenchmarkModalStore();
 
     const { providers, algorithms, parameters: catalogParameters, metrics: catalogMetrics } = useComputationCatalogStore();
@@ -274,10 +276,11 @@ export default function BenchmarkModal() {
         const generated: BenchmarkGeneratedEnvironment[] = [];
         const errors: string[] = [];
 
+        const effectiveBaseSeed = environmentSetSetup.baseSeed.trim()
+            || `0x${(((Date.now() ^ (Math.random() * 0x100000000 >>> 0)) >>> 0)).toString(16).toUpperCase().padStart(8, "0")}`;
+
         for (let i = 0; i < environmentSetSetup.count; i++) {
-            const derivedSeed = environmentSetSetup.baseSeed.trim()
-                ? `${environmentSetSetup.baseSeed.trim()}-env-${i}`
-                : "";
+            const derivedSeed = `${effectiveBaseSeed}-env-${i}`;
 
             const result = generateCompliantEnvironment({
                 width: environmentSetup.width,
@@ -308,6 +311,7 @@ export default function BenchmarkModal() {
 
         if (errors.length === 0) {
             setGeneratedEnvironments(generated);
+            setGeneratedBaseSeed(effectiveBaseSeed);
             setGenerateStatus("success");
             setGenerateStatusMessage(
                 `${generated.length} environment${generated.length !== 1 ? "s" : ""} generated.`,
@@ -329,6 +333,7 @@ export default function BenchmarkModal() {
         systemEnvironmentSetup.type,
         systemEnvironmentSetup.coordinateSystem,
         setGeneratedEnvironments,
+        setGeneratedBaseSeed,
     ]);
 
     const envSetupActions: ModalActionBarItem[] = [
@@ -432,6 +437,7 @@ export default function BenchmarkModal() {
                             systemEnvironmentSetup={systemEnvironmentSetup}
                             onSetSystemEnvironmentSetup={setSystemEnvironmentSetup}
                             generatedEnvironments={generatedEnvironments}
+                            generatedBaseSeed={generatedBaseSeed}
                         />
                     )}
                     {activeTab === "run" && (

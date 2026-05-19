@@ -24,6 +24,7 @@ export interface BenchmarkEnvSetupTabProps {
     systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
     onSetSystemEnvironmentSetup: (setup: Partial<BenchmarkSystemEnvironmentSetup>) => void;
     generatedEnvironments: BenchmarkGeneratedEnvironment[];
+    generatedBaseSeed: string;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -36,6 +37,7 @@ export default function BenchmarkEnvSetupTab({
     systemEnvironmentSetup,
     onSetSystemEnvironmentSetup,
     generatedEnvironments,
+    generatedBaseSeed,
 }: BenchmarkEnvSetupTabProps) {
     const [systemExpanded, setSystemExpanded] = useState(true);
     const [generatorExpanded, setGeneratorExpanded] = useState(true);
@@ -62,7 +64,7 @@ export default function BenchmarkEnvSetupTab({
                     label="Base Seed"
                     type="text"
                     value={environmentSetSetup.baseSeed}
-                    placeholder={!environmentSetSetup.baseSeed ? (generatedEnvironments[0]?.usedSeedHex ?? undefined) : undefined}
+                    placeholder={!environmentSetSetup.baseSeed && generatedBaseSeed ? generatedBaseSeed : undefined}
                     onChange={(v) => onSetEnvironmentSetSetup({ baseSeed: v })}
                 />
             </InternalCardModalFastTab>

@@ -181,6 +181,8 @@ interface BenchmarkModalState {
 
     // Generated environments (stored in memory, not yet persisted to DB)
     generatedEnvironments: BenchmarkGeneratedEnvironment[];
+    /** The effective base seed used for the last generation (random hex if baseSeed was empty) */
+    generatedBaseSeed: string;
 
     open: () => void;
     close: () => void;
@@ -198,6 +200,7 @@ interface BenchmarkModalState {
     setIsRunning: (running: boolean) => void;
     setError: (error: string | null) => void;
     setGeneratedEnvironments: (envs: BenchmarkGeneratedEnvironment[]) => void;
+    setGeneratedBaseSeed: (seed: string) => void;
     reset: () => void;
 
     // Execution management
@@ -294,6 +297,7 @@ const INITIAL_STATE: Omit<BenchmarkModalState, keyof {
     error: null,
     executionState: INITIAL_EXECUTION_STATE,
     generatedEnvironments: [],
+    generatedBaseSeed: "",
 };
 
 export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) => ({
@@ -380,6 +384,7 @@ export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) =
     setError: (error) => set({ error }),
 
     setGeneratedEnvironments: (envs) => set({ generatedEnvironments: envs }),
+    setGeneratedBaseSeed: (seed) => set({ generatedBaseSeed: seed }),
 
     reset: () => set(INITIAL_STATE),
 
