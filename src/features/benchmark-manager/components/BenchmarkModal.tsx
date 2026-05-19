@@ -288,7 +288,7 @@ export default function BenchmarkModal() {
                                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                             }`}
                     >
-                        Env Setup
+                        Env. Setup
                     </button>
                     <button
                         type="button"
@@ -653,7 +653,7 @@ function EnvSetupTabContent({
             >
                 <CardModalField
                     id="env-set-count"
-                    label="Environment Count"
+                    label="Env. Count"
                     type="number"
                     value={String(environmentSetSetup.count)}
                     onChange={(v) => onSetEnvironmentSetSetup({ count: Math.max(1, Number(v)) })}
@@ -666,7 +666,7 @@ function EnvSetupTabContent({
                     onChange={(v) => onSetEnvironmentSetSetup({ baseSeed: v })}
                 />
             </InternalCardModalFastTab>
-            
+
             {/* System Environment */}
             <InternalCardModalFastTab
                 title="Environment"
