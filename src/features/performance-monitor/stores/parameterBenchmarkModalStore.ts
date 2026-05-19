@@ -159,8 +159,8 @@ interface ParameterBenchmarkModalState {
 
     open: () => void;
     close: () => void;
-    setSelectedProvider: (providerId: number) => void;
-    setSelectedAlgorithm: (algorithmId: number) => void;
+    setSelectedProvider: (providerId: number | null) => void;
+    setSelectedAlgorithm: (algorithmId: number | null) => void;
     setTargetParameterSetup: (setup: BenchmarkParameterSetup) => void;
     setFixedParameter: (paramId: number, value: string) => void;
     removeFixedParameter: (paramId: number) => void;
@@ -270,9 +270,9 @@ export const useParameterBenchmarkModalStore = create<ParameterBenchmarkModalSta
 
     close: () => set({ isOpen: false }),
 
-    setSelectedProvider: (providerId) => set({ selectedProviderId: providerId, selectedAlgorithmId: null }),
+    setSelectedProvider: (providerId) => set({ selectedProviderId: providerId, selectedAlgorithmId: null, targetParameterSetup: null, fixedParameters: [] }),
 
-    setSelectedAlgorithm: (algorithmId) => set({ selectedAlgorithmId: algorithmId }),
+    setSelectedAlgorithm: (algorithmId) => set({ selectedAlgorithmId: algorithmId, targetParameterSetup: null, fixedParameters: [] }),
 
     setTargetParameterSetup: (setup) => set({ targetParameterSetup: setup }),
 

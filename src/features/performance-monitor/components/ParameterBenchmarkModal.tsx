@@ -350,10 +350,10 @@ export default function ParameterBenchmarkModal() {
 interface SetupTabContentProps {
     providers: ComputationProvider[];
     selectedProviderId: number | null;
-    onSelectProvider: (providerId: number) => void;
+    onSelectProvider: (providerId: number | null) => void;
     availableAlgorithms: ComputationAlgorithm[];
     selectedAlgorithm: ComputationAlgorithm | undefined;
-    onSelectAlgorithm: (algorithmId: number) => void;
+    onSelectAlgorithm: (algorithmId: number | null) => void;
     numericParameters: AlgorithmParameter[];
     targetParameterSetup: BenchmarkParameterSetup | null;
     onSetTargetParameter: (setup: any) => void;
@@ -417,7 +417,7 @@ function SetupTabContent({
                         { value: "", label: "" },
                         ...providers.map((p) => ({ value: String(p.id), label: p.name })),
                     ]}
-                    onChange={(v) => { if (v) onSelectProvider(Number(v)); }}
+                    onChange={(v) => onSelectProvider(v ? Number(v) : null)}
                 />
                 {selectedProviderId !== null && (
                     <CardModalField
@@ -429,7 +429,7 @@ function SetupTabContent({
                             { value: "", label: "" },
                             ...availableAlgorithms.map((a) => ({ value: String(a.id), label: a.name })),
                         ]}
-                        onChange={(v) => { if (v) onSelectAlgorithm(Number(v)); }}
+                        onChange={(v) => onSelectAlgorithm(v ? Number(v) : null)}
                     />
                 )}
             </InternalCardModalFastTab>
@@ -451,6 +451,7 @@ function SetupTabContent({
                         ...numericParameters.map((p) => ({ value: String(p.id), label: p.name })),
                     ]}
                     onChange={(v) => {
+                        if (!v) { onSetTargetParameter(null); return; }
                         const paramId = Number(v);
                         const param = numericParameters.find((p) => p.id === paramId);
                         if (param) {
