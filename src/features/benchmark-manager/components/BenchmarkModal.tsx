@@ -431,7 +431,7 @@ export default function BenchmarkModal() {
                             onSetEnvironmentSetSetup={setEnvironmentSetSetup}
                             systemEnvironmentSetup={systemEnvironmentSetup}
                             onSetSystemEnvironmentSetup={setSystemEnvironmentSetup}
-                            generatedEnvironmentsCount={generatedEnvironments.length}
+                            generatedEnvironments={generatedEnvironments}
                         />
                     )}
                     {activeTab === "run" && (

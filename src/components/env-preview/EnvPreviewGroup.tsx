@@ -14,15 +14,15 @@ interface EnvPreviewGroupProps {
     size?: number;
 }
 
-export default function EnvPreviewGroup({ environments, size = 80 }: EnvPreviewGroupProps) {
+export default function EnvPreviewGroup({ environments, size = 110 }: EnvPreviewGroupProps) {
     if (environments.length === 0) {
         return (
-            <p className="text-xs text-gray-400 italic">Aplinkos nesugeneruotos.</p>
+            <p className="text-xs text-gray-400 italic">Environments not generated.</p>
         );
     }
 
     return (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 justify-center">
             {environments.map((env) => (
                 <EnvPreview
                     key={env.id}

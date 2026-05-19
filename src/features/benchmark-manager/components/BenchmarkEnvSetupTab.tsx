@@ -9,8 +9,10 @@ import CardModalField from "@/components/modals/card-modal/CardModalField";
 import {
     type BenchmarkEnvironmentSetSetup,
     type BenchmarkEnvironmentSetup,
+    type BenchmarkGeneratedEnvironment,
     type BenchmarkSystemEnvironmentSetup,
 } from "@/features/benchmark-manager/stores/benchmarkModalStore";
+import EnvPreviewGroup, { type EnvPreviewItem } from "@/components/env-preview/EnvPreviewGroup";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -21,7 +23,7 @@ export interface BenchmarkEnvSetupTabProps {
     onSetEnvironmentSetSetup: (setup: Partial<BenchmarkEnvironmentSetSetup>) => void;
     systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
     onSetSystemEnvironmentSetup: (setup: Partial<BenchmarkSystemEnvironmentSetup>) => void;
-    generatedEnvironmentsCount: number;
+    generatedEnvironments: BenchmarkGeneratedEnvironment[];
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -33,7 +35,7 @@ export default function BenchmarkEnvSetupTab({
     onSetEnvironmentSetSetup,
     systemEnvironmentSetup,
     onSetSystemEnvironmentSetup,
-    generatedEnvironmentsCount,
+    generatedEnvironments,
 }: BenchmarkEnvSetupTabProps) {
     const [systemExpanded, setSystemExpanded] = useState(true);
     const [generatorExpanded, setGeneratorExpanded] = useState(true);
@@ -170,9 +172,18 @@ export default function BenchmarkEnvSetupTab({
                     id="preview-generated-count"
                     label="Generated Env. Count"
                     type="text"
-                    value={String(generatedEnvironmentsCount)}
+                    value={String(generatedEnvironments.length)}
                     disabled
                 />
+                <div className="px-3 pt-1 pb-3 flex justify-center">
+                    <EnvPreviewGroup
+                        environments={generatedEnvironments.map((env): EnvPreviewItem => ({
+                            id: env.index,
+                            boundary: env.boundary,
+                            obstacles: env.obstacles,
+                        }))}
+                    />
+                </div>
             </InternalCardModalFastTab>
         </div>
     );

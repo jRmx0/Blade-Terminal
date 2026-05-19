@@ -83,7 +83,7 @@ export default function EnvPreview({ id, boundary, obstacles, size = 120 }: EnvP
     return (
         <div className="flex flex-col items-center gap-1">
             <span className="text-xs font-bold text-gray-900">Scenarijus {id + 1}</span>
-            <div className="border-2 border-black">
+            <div className="border-2 border-white">
                 <canvas ref={canvasRef} width={size} height={size} />
             </div>
         </div>
