@@ -5,6 +5,7 @@ import {
     ENV_TYPE_OPTIONS,
 } from "@/config/db-ops/enums";
 import { validateGeneratorSystemParams } from "@/features/canvas-editing/utils/envGenerator";
+import type { CoordSystemType, EnvFormat } from "@/config/db-ops/enums";
 import {
     useParameterBenchmarkModalStore,
     type BenchmarkEnvironmentSetup,
@@ -127,8 +128,8 @@ export default function ParameterBenchmarkModal() {
     }, [selectedProvider, selectedAlgorithm, targetParameterSetup]);
 
     const generatorSystemValidation = useMemo(() => validateGeneratorSystemParams({
-        format: systemEnvironmentSetup.format,
-        coordSystem: systemEnvironmentSetup.coordinateSystem,
+        format: systemEnvironmentSetup.format as EnvFormat,
+        coordSystem: systemEnvironmentSetup.coordinateSystem as CoordSystemType,
     }), [systemEnvironmentSetup.format, systemEnvironmentSetup.coordinateSystem]);
 
     // Reset tab when modal closes
