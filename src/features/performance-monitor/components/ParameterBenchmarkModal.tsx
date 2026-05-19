@@ -498,21 +498,52 @@ function SetupTabContent({
             >
                 {nonTargetParameters.map((param) => {
                     const fixedValue = fixedParameters.find((fp) => fp.paramId === param.id);
+                    const rawValue = fixedValue?.value ?? param.defaultValue ?? "";
+
+                    if (param.paramType === "Enum") {
+                        return (
+                            <CardModalField
+                                key={param.id}
+                                id={`fixed-param-${param.id}`}
+                                label={param.name}
+                                type="select"
+                                value={rawValue}
+                                options={[
+                                    { value: "", label: "" },
+                                    ...param.enumValues.map((v) => ({ value: v, label: v })),
+                                ]}
+                                onChange={(v: string) => onSetFixedParameter(param.id, v)}
+                            />
+                        );
+                    }
+
+                    if (param.paramType === "Boolean") {
+                        return (
+                            <CardModalField
+                                key={param.id}
+                                id={`fixed-param-${param.id}`}
+                                label={param.name}
+                                type="checkbox"
+                                checked={rawValue === "true"}
+                                onChange={(v) => onSetFixedParameter(param.id, String(v))}
+                            />
+                        );
+                    }
+
                     return (
                         <CardModalField
                             key={param.id}
                             id={`fixed-param-${param.id}`}
                             label={param.name}
-                            type="text"
-                            value={fixedValue?.value ?? param.defaultValue ?? ""}
+                            type={param.paramType === "Integer" || param.paramType === "Decimal" ? "number" as const : "text" as const}
+                            value={rawValue}
                             placeholder={param.defaultValue || ""}
-                            onChange={(v) => onSetFixedParameter(param.id, v)}
+                            onChange={(v: string) => onSetFixedParameter(param.id, v)}
                         />
                     );
                 })}
             </InternalCardModalFastTab>
 
-            {/* Generator */}
             <InternalCardModalFastTab
                 title="Generator"
                 expanded={generatorExpanded}
