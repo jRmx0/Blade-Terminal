@@ -548,7 +548,7 @@ function SetupTabContent({
                             id={`fixed-param-${param.id}`}
                             label={param.name}
                             unit={getNumericParamUnit(param) || undefined}
-                            type={param.paramType === "Integer" || param.paramType === "Decimal" ? "number" as const : "text" as const}
+                            type={param.paramType as "Integer" | "Decimal" | "String"}
                             value={rawValue}
                             min={param.minValue}
                             max={param.maxValue}

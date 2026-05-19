@@ -19,7 +19,7 @@ interface CardModalFieldBase {
 }
 
 interface CardModalInputConfig extends CardModalFieldBase {
-    type?: "text" | "password" | "number";
+    type?: "text" | "password" | "number" | "Integer" | "Decimal" | "String";
     value: string;
     placeholder?: string;
     required?: boolean;
@@ -53,7 +53,8 @@ function isInputVariant(config: CardModalFieldConfig): config is CardModalInputC
 
 const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props, ref) => {
     const { label, disabled = false, hint, hintState = "info" } = props;
-    const effectiveUnit = props.unit && (!('type' in props) || props.type === "number") ? props.unit : undefined;
+    const isNumericType = props.type === "number" || props.type === "Integer" || props.type === "Decimal";
+    const effectiveUnit = props.unit && isNumericType ? props.unit : undefined;
     const displayLabel = effectiveUnit ? `${label} (${effectiveUnit})` : label;
     const hs = HINT_STYLE[hintState];
     const showRequiredMarker =
@@ -145,8 +146,8 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
                     <div className="relative w-full">
                         <input
                             ref={ref}
-                            type={props.type === "number" ? "text" : (props.type ?? "text")}
-                            inputMode={props.type === "number" ? "numeric" : undefined}
+                            type={props.type === "password" ? "password" : "text"}
+                            inputMode={isNumericType ? "numeric" : undefined}
                             value={props.value}
                             placeholder={props.placeholder}
                             required={props.required}
@@ -157,7 +158,7 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
                             onFocus={() => setIsFocused(true)}
                             onBlur={() => {
                                 setIsFocused(false);
-                                if (props.type === "number" && props.value !== "") {
+                                if (isNumericType && props.value !== "") {
                                     const numeric = Number(props.value);
                                     if (!isNaN(numeric)) {
                                         if (props.min !== undefined && numeric < props.min) {
@@ -171,10 +172,10 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") props.onConfirm?.();
                             }}
-                            className={`w-full px-2 text-sm border rounded text-gray-800 h-7 focus:outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-default truncate ${props.type === "number" ? "pr-5" : ""
+                            className={`w-full px-2 text-sm border rounded text-gray-800 h-7 focus:outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-default truncate ${isNumericType ? "pr-5" : ""
                                 } ${isFocused ? "border-teal-600" : "border-gray-300"}`}
                         />
-                        {props.type === "number" && (isFocused || isHovered) && !disabled && (
+                        {isNumericType && (isFocused || isHovered) && !disabled && (
                             <div className="absolute right-px top-1/2 -translate-y-1/2 flex flex-col w-3 mr-1.5">
                                 <button
                                     type="button"
