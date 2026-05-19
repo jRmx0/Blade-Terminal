@@ -73,7 +73,7 @@ export default function BenchmarkModal() {
         onClose: close,
     });
 
-    const [activeTab, setActiveTab] = useState<"setup" | "env-setup" | "run">("setup");
+    const [activeTab, setActiveTab] = useState<"env-setup" | "setup" | "run">("env-setup");
 
     // Filtered data
     const selectedProvider = useMemo(
@@ -145,7 +145,7 @@ export default function BenchmarkModal() {
 
     // Reset tab when modal closes
     useEffect(() => {
-        if (!isOpen) setActiveTab("setup");
+        if (!isOpen) setActiveTab("env-setup");
     }, [isOpen]);
 
     const abortControllerRef = useRef<AbortController | null>(null);
