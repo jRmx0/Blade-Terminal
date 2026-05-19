@@ -18,10 +18,12 @@ import {
 } from "@/features/performance-monitor/stores/parameterBenchmarkModalStore";
 import { runBenchmark as runBenchmarkService } from "@/features/performance-monitor/data/benchmarkRunnerService";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
+import { useUiUnitOfMeasureStore } from "@/features/ui-manager/stores/uiUnitOfMeasureStore";
 import { useModalLifecycle } from "@/hooks/modals/useModalLifecycle";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import type { AlgorithmMetric, AlgorithmParameter, ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
+import { unitLabel } from "@/utils/unitOfMeasure";
 import ChartCard from "@/features/performance-monitor/components/internal/ChartCard";
 import InternalCardModalFastTab from "@/components/modals/card-modal/internal/InternalCardModalFastTab";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
@@ -397,6 +399,16 @@ function SetupTabContent({
     const [multipleRunsExpanded, setMultipleRunsExpanded] = useState(true);
     const [metricsExpanded, setMetricsExpanded] = useState(true);
 
+    const unitOfMeasure = useUiUnitOfMeasureStore((s) => s.unitOfMeasure);
+    const getNumericParamUnit = (param: AlgorithmParameter): string => {
+        if (param.unitType === "ratio") return "%";
+        if (param.unitType === "unitless") return "";
+        return unitLabel(unitOfMeasure);
+    };
+
+    const targetParam = numericParameters.find((p) => p.id === targetParameterSetup?.targetParamId);
+    const targetParamUnit = targetParam ? getNumericParamUnit(targetParam) || undefined : undefined;
+
     const targetParamDisabled = numericParameters.length === 0;
     const fixedParamsDisabled = nonTargetParameters.length === 0;
 
@@ -466,6 +478,7 @@ function SetupTabContent({
                 <CardModalField
                     id="target-start"
                     label="Start"
+                    unit={targetParamUnit}
                     type="number"
                     disabled={!targetParameterSetup}
                     value={targetParameterSetup?.startValue ?? ""}
@@ -474,6 +487,7 @@ function SetupTabContent({
                 <CardModalField
                     id="target-end"
                     label="End"
+                    unit={targetParamUnit}
                     type="number"
                     disabled={!targetParameterSetup}
                     value={targetParameterSetup?.endValue ?? ""}
@@ -482,6 +496,7 @@ function SetupTabContent({
                 <CardModalField
                     id="target-step"
                     label="Step"
+                    unit={targetParamUnit}
                     type="number"
                     disabled={!targetParameterSetup}
                     value={targetParameterSetup?.stepValue ?? ""}
@@ -532,6 +547,7 @@ function SetupTabContent({
                             key={param.id}
                             id={`fixed-param-${param.id}`}
                             label={param.name}
+                            unit={getNumericParamUnit(param) || undefined}
                             type={param.paramType === "Integer" || param.paramType === "Decimal" ? "number" as const : "text" as const}
                             value={rawValue}
                             min={param.minValue}
@@ -551,6 +567,7 @@ function SetupTabContent({
                 <CardModalField
                     id="gen-width"
                     label="Width"
+                    unit={unitLabel(unitOfMeasure) || undefined}
                     type="number"
                     value={String(environmentSetup.width)}
                     onChange={(v) => onSetEnvironmentSetup({ width: Number(v) })}
@@ -558,6 +575,7 @@ function SetupTabContent({
                 <CardModalField
                     id="gen-height"
                     label="Height"
+                    unit={unitLabel(unitOfMeasure) || undefined}
                     type="number"
                     value={String(environmentSetup.height)}
                     onChange={(v) => onSetEnvironmentSetup({ height: Number(v) })}
@@ -565,20 +583,23 @@ function SetupTabContent({
                 <CardModalField
                     id="gen-cell-size"
                     label="Cell Size"
+                    unit={unitLabel(unitOfMeasure) || undefined}
                     type="number"
                     value={String(environmentSetup.cellSize)}
                     onChange={(v) => onSetEnvironmentSetup({ cellSize: Number(v) })}
                 />
                 <CardModalField
                     id="gen-obstacle-ratio"
-                    label="Obstacle Ratio (%)"
+                    label="Obstacle Ratio"
+                    unit="%"
                     type="number"
                     value={String(environmentSetup.obstacleRatio)}
                     onChange={(v) => onSetEnvironmentSetup({ obstacleRatio: Number(v) })}
                 />
                 <CardModalField
                     id="gen-clustering-prob"
-                    label="Clustering Prob (%)"
+                    label="Clustering Prob"
+                    unit="%"
                     type="number"
                     value={String(environmentSetup.clusteringProb)}
                     onChange={(v) => onSetEnvironmentSetup({ clusteringProb: Number(v) })}

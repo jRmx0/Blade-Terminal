@@ -12,6 +12,7 @@ const HINT_STYLE: Record<CardModalTextFieldHintState, { icon: string; color: str
 interface CardModalFieldBase {
     id: string;
     label: string;
+    unit?: string;
     disabled?: boolean;
     hint?: string;
     hintState?: CardModalTextFieldHintState;
@@ -52,6 +53,7 @@ function isInputVariant(config: CardModalFieldConfig): config is CardModalInputC
 
 const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props, ref) => {
     const { label, disabled = false, hint, hintState = "info" } = props;
+    const displayLabel = props.unit ? `${label} (${props.unit})` : label;
     const hs = HINT_STYLE[hintState];
     const showRequiredMarker =
         isInputVariant(props) && props.required === true && props.value.trim().length === 0;
@@ -65,9 +67,9 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
             <div className="w-1/3 shrink-0 h-8 flex items-center gap-1 min-w-0">
                 <label
                     className="text-sm text-gray-500 tracking-wide whitespace-nowrap shrink-0 cursor-default"
-                    title={label}
+                    title={displayLabel}
                 >
-                    {label}
+                    {displayLabel}
                 </label>
                 {showRequiredMarker && (
                     <span className="text-red-500 text-sm leading-none shrink-0 cursor-default" title="Required field" aria-hidden="true">
