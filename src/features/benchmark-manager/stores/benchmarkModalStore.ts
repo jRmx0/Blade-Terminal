@@ -269,14 +269,14 @@ const INITIAL_STATE: Omit<BenchmarkModalState, keyof {
     targetParameterSetup: null,
     fixedParameters: [],
     environmentSetup: {
-        width: 1000,
-        height: 1000,
-        cellSize: 5,
-        obstacleRatio: 25,
-        clusteringProb: 50,
+        width: 510,
+        height: 510,
+        cellSize: 30,
+        obstacleRatio: 30,
+        clusteringProb: 97,
     },
     environmentSetSetup: {
-        count: 1,
+        count: 20,
         baseSeed: "",
     },
     systemEnvironmentSetup: {
@@ -284,7 +284,7 @@ const INITIAL_STATE: Omit<BenchmarkModalState, keyof {
         type: "any_offline",
         coordinateSystem: "Cartesian",
         headland: true,
-        headlandWidth: "10",
+        headlandWidth: "4.9",
     },
     multipleRunsSetup: {
         runsPerStep: 3,
