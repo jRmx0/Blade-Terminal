@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import ChartCard from "@/components/chart/ChartCard";
 import {
     type BenchmarkAlgoResult,
@@ -35,6 +35,21 @@ export interface BenchmarkRunTabProps {
     canStartBenchmark: boolean;
     systemParamsError: string | null;
     algoResults: BenchmarkAlgoResult[];
+}
+
+// ─── Utilities ───────────────────────────────────────────────────────────────
+
+function downloadCsv(filename: string, rows: string[][]): void {
+    const content = rows
+        .map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -91,6 +106,37 @@ export default function BenchmarkRunTab({
             })),
         }));
     }, [executionState.results, selectedMetrics, stepValueCalculation, targetParameterName]);
+
+    const handleExportCsv = useCallback(() => {
+        if (jobType === "algorithm-eval") {
+            const headers = ["Algorithm", "Env", "Runs OK", "Runs Failed", ...selectedMetrics.map((m) => METRIC_LABELS[m])];
+            const rows = algoResults.flatMap((algoResult) =>
+                algoResult.envResults.map((envResult) => [
+                    `#${algoResult.algoIndex + 1}`,
+                    `#${envResult.envIndex + 1}`,
+                    String(envResult.runsCompleted),
+                    String(envResult.runsFailed),
+                    ...selectedMetrics.map((metric) => {
+                        const v = envResult.metrics[metric];
+                        return v === null ? "" : String(v);
+                    }),
+                ])
+            );
+            downloadCsv("benchmark-algo-eval.csv", [headers, ...rows]);
+        } else {
+            const headers = [targetParameterName, "Runs OK", "Runs Failed", ...selectedMetrics.map((m) => METRIC_LABELS[m])];
+            const rows = executionState.results.map((stepResult) => [
+                String(stepResult.stepValue),
+                String(stepResult.runsCompleted),
+                String(stepResult.runsFailed),
+                ...selectedMetrics.map((metric) => {
+                    const v = stepResult.aggregatedMetrics[metric][stepValueCalculation];
+                    return typeof v === "number" ? String(v) : "";
+                }),
+            ]);
+            downloadCsv(`benchmark-param-eval-${targetParameterName}.csv`, [headers, ...rows]);
+        }
+    }, [jobType, algoResults, executionState.results, selectedMetrics, stepValueCalculation, targetParameterName]);
 
     const { progress, status } = executionState;
     const statusInfo = STATUS_CONFIG[status];
@@ -209,8 +255,16 @@ export default function BenchmarkRunTab({
             {/* ── E. Results ────────────────────────────────────────────── */}
             {jobType === "algorithm-eval" ? (
                 <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
-                    <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                        Results
+                    <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                        <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Results</span>
+                        <span
+                            onClick={algoResults.length === 0 ? undefined : handleExportCsv}
+                            title="Export CSV"
+                            className={`material-symbols-outlined cursor-pointer select-none leading-none ${algoResults.length === 0 ? "text-gray-200 pointer-events-none" : "text-gray-300 hover:text-gray-600"}`}
+                            style={{ fontSize: 16 }}
+                        >
+                            table_chart
+                        </span>
                     </div>
                     {algoResults.length === 0 ? (
                         <div className="text-center text-sm text-gray-400 py-8">
@@ -260,8 +314,16 @@ export default function BenchmarkRunTab({
             ) : (
                 /* ── E. Parameter-eval Results table ─────────────────── */
                 <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
-                    <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                        Results
+                    <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                        <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Results</span>
+                        <span
+                            onClick={executionState.results.length === 0 ? undefined : handleExportCsv}
+                            title="Export CSV"
+                            className={`material-symbols-outlined cursor-pointer select-none leading-none ${executionState.results.length === 0 ? "text-gray-200 pointer-events-none" : "text-gray-300 hover:text-gray-600"}`}
+                            style={{ fontSize: 16 }}
+                        >
+                            table_chart
+                        </span>
                     </div>
                 {executionState.results.length === 0 ? (
                     <div className="text-center text-sm text-gray-400 py-8">
