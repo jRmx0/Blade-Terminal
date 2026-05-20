@@ -24,6 +24,7 @@ import { useChartResize } from "@/components/chart/useChartResize";
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const STAGE_COLORS = ["#ef4444", "#f59e0b", "#84cc16", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6"];
+const LINE_COLORS = ["#0d9488", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#84cc16", "#06b6d4"];
 
 const borderBoxPlugin: Plugin<"line"> = {
     id: "borderBox",
@@ -42,16 +43,22 @@ const borderBoxPlugin: Plugin<"line"> = {
     },
 };
 
+export interface ChartSeries {
+    label: string;
+    data: Array<number | { x: number; y: number }>;
+    color?: string;
+}
+
 interface ChartCardProps {
     metricId: number;
     name: string;
-    data: Array<number | { x: number; y: number }>;
+    series: ChartSeries[];
     stages?: PerformanceMetricStage[];
     xAxisLabel?: string;
     yAxisLabel?: string;
 }
 
-export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yAxisLabel }: ChartCardProps) {
+export default function ChartCard({ metricId, name, series, stages, xAxisLabel, yAxisLabel }: ChartCardProps) {
     const chartRef = useRef<ChartJS<"line"> | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const effectiveTitleRef = useRef(name);
@@ -59,6 +66,7 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
     const [titleOverride, setTitleOverride] = useState(name);
     const [xAxisLabelOverride, setXAxisLabelOverride] = useState(xAxisLabel ?? "Index");
     const [yAxisLabelOverride, setYAxisLabelOverride] = useState(yAxisLabel ?? "Value");
+    const [seriesLabelOverrides, setSeriesLabelOverrides] = useState<string[]>(() => series.map((s) => s.label));
 
     useEffect(() => {
         setTitleOverride(name);
@@ -72,9 +80,18 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
         setYAxisLabelOverride(yAxisLabel ?? "Value");
     }, [yAxisLabel]);
 
+    useEffect(() => {
+        setSeriesLabelOverrides(series.map((s) => s.label));
+    }, [series]);
+
     const effectiveTitle = titleOverride.trim() || name;
     const effectiveXAxisLabel = xAxisLabelOverride.trim() || (xAxisLabel ?? "Index");
     const effectiveYAxisLabel = yAxisLabelOverride.trim() || (yAxisLabel ?? "Value");
+
+    const effectiveSeriesLabels = useMemo(
+        () => series.map((s, i) => seriesLabelOverrides[i]?.trim() || s.label),
+        [series, seriesLabelOverrides],
+    );
 
     useEffect(() => {
         effectiveTitleRef.current = effectiveTitle;
@@ -84,26 +101,37 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
         chartRef.current?.update();
     }, [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel]);
 
-    const normalizedPoints = useMemo(
+    const normalizedSeriesPoints = useMemo(
         () =>
-            data.map((item, index) =>
-                typeof item === "number"
-                    ? { x: index, y: item }
-                    : { x: item.x, y: item.y },
+            series.map((s) =>
+                s.data.map((item, index) =>
+                    typeof item === "number"
+                        ? { x: index, y: item }
+                        : { x: item.x, y: item.y },
+                ),
             ),
-        [data],
+        [series],
     );
 
-    const isXYData = useMemo(() => data.some((item) => typeof item !== "number"), [data]);
+    const isXYData = useMemo(
+        () => series.some((s) => s.data.some((item) => typeof item !== "number")),
+        [series],
+    );
 
     const yValues = useMemo(
-        () => normalizedPoints.map((point) => point.y).filter((value) => Number.isFinite(value)),
-        [normalizedPoints],
+        () =>
+            normalizedSeriesPoints
+                .flatMap((pts) => pts.map((pt) => pt.y))
+                .filter((value) => Number.isFinite(value)),
+        [normalizedSeriesPoints],
     );
 
     const xValues = useMemo(
-        () => normalizedPoints.map((point) => point.x).filter((value) => Number.isFinite(value)),
-        [normalizedPoints],
+        () =>
+            normalizedSeriesPoints
+                .flatMap((pts) => pts.map((pt) => pt.x))
+                .filter((value) => Number.isFinite(value)),
+        [normalizedSeriesPoints],
     );
 
     const xMin = useMemo(() => (xValues.length > 0 ? Math.min(...xValues) : undefined), [xValues]);
@@ -111,7 +139,12 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
 
     const min = useMemo(() => (yValues.length > 0 ? Math.min(...yValues) : null), [yValues]);
     const max = useMemo(() => (yValues.length > 0 ? Math.max(...yValues) : null), [yValues]);
-    const showDots = data.length <= 20;
+
+    const maxSeriesLength = useMemo(
+        () => Math.max(0, ...normalizedSeriesPoints.map((pts) => pts.length)),
+        [normalizedSeriesPoints],
+    );
+    const showDots = maxSeriesLength <= 20;
 
     const axisNumberFormatter = useMemo(
         () => new Intl.NumberFormat("fr-FR", { useGrouping: true, maximumFractionDigits: 2 }),
@@ -131,11 +164,11 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
         () => (stages ?? [])
             .map((stage, index) => ({
                 label: stage.label,
-                sampleIndex: Math.max(0, Math.min(normalizedPoints.length - 1, Math.round(stage.sampleIndex))),
+                sampleIndex: Math.max(0, Math.min(maxSeriesLength - 1, Math.round(stage.sampleIndex))),
                 color: STAGE_COLORS[index % STAGE_COLORS.length] ?? "#9ca3af",
             }))
             .sort((a, b) => a.sampleIndex - b.sampleIndex),
-        [normalizedPoints.length, stages],
+        [maxSeriesLength, stages],
     );
 
     const titlePlugin = useMemo<Plugin<"line">>(
@@ -167,7 +200,7 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
         () => ({
             id: `stageMarkers-${metricId}`,
             afterDatasetsDraw(chart) {
-                if (normalizedStages.length === 0 || normalizedPoints.length === 0) return;
+                if (normalizedStages.length === 0 || maxSeriesLength === 0) return;
 
                 const xScale = chart.scales.x as { getPixelForValue: (value: number) => number } | undefined;
                 if (!xScale) return;
@@ -178,8 +211,9 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
                 ctx.setLineDash([6, 4]);
                 ctx.lineWidth = 2;
 
+                const refSeries = normalizedSeriesPoints[0] ?? [];
                 for (const stage of normalizedStages) {
-                    const stageXValue = normalizedPoints[stage.sampleIndex]?.x ?? stage.sampleIndex;
+                    const stageXValue = refSeries[stage.sampleIndex]?.x ?? stage.sampleIndex;
                     const x = xScale.getPixelForValue(stageXValue);
                     if (!Number.isFinite(x) || x < left || x > right) continue;
 
@@ -193,7 +227,7 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
                 ctx.restore();
             },
         }),
-        [metricId, normalizedPoints, normalizedStages],
+        [metricId, maxSeriesLength, normalizedSeriesPoints, normalizedStages],
     );
 
     const { chartSizes, setChartSize, persistChartSizes } = usePerformanceMonitorModalStore();
@@ -353,9 +387,18 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
     }, [chartRef, effectiveTitle, normalizedStages]);
 
     const handleCsvExport = useCallback(async () => {
-        const header = `${effectiveXAxisLabel},${effectiveYAxisLabel}`;
-        const rows = normalizedPoints.map((point) => `${point.x},${point.y}`);
-        const csv = [header, ...rows].join("\n");
+        const allXValues = Array.from(
+            new Set(normalizedSeriesPoints.flatMap((pts) => pts.map((pt) => pt.x))),
+        ).sort((a, b) => a - b);
+        const header = [effectiveXAxisLabel, ...effectiveSeriesLabels].join(",");
+        const csvRows = allXValues.map((x) => {
+            const yVals = normalizedSeriesPoints.map((pts) => {
+                const pt = pts.find((p) => p.x === x);
+                return pt !== undefined ? String(pt.y) : "";
+            });
+            return [x, ...yVals].join(",");
+        });
+        const csv = [header, ...csvRows].join("\n");
         const blob = new Blob([csv], { type: "text/csv" });
         let fileHandle: FileSystemFileHandle;
         try {
@@ -375,35 +418,38 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
         } catch (err) {
             console.error("[ChartCard] CSV write failed:", err);
         }
-    }, [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel, normalizedPoints]);
+    }, [effectiveTitle, effectiveXAxisLabel, effectiveSeriesLabels, normalizedSeriesPoints]);
 
     const chartData = useMemo(
         () => {
-            const dataset = {
-                data: isXYData
-                    ? normalizedPoints.map((point) => ({ x: point.x, y: point.y }))
-                    : normalizedPoints.map((point) => point.y),
-                borderColor: "#0d9488",
-                borderWidth: 1.5,
-                spanGaps: true,
-                pointRadius: showDots ? 2 : 0,
-                pointHoverRadius: 4,
-                pointBackgroundColor: "#0d9488",
-                tension: 0,
-            };
+            const datasets = series.map((s, i) => {
+                const pts = normalizedSeriesPoints[i] ?? [];
+                const color = s.color ?? LINE_COLORS[i % LINE_COLORS.length] ?? "#0d9488";
+                return {
+                    label: effectiveSeriesLabels[i] ?? s.label,
+                    data: isXYData
+                        ? pts.map((pt) => ({ x: pt.x, y: pt.y }))
+                        : pts.map((pt) => pt.y),
+                    borderColor: color,
+                    borderWidth: 1.5,
+                    spanGaps: true,
+                    pointRadius: showDots ? 2 : 0,
+                    pointHoverRadius: 4,
+                    pointBackgroundColor: color,
+                    tension: 0,
+                };
+            });
 
             if (isXYData) {
-                return {
-                    datasets: [dataset],
-                };
+                return { datasets };
             }
 
             return {
-                labels: normalizedPoints.map((_, i) => i),
-                datasets: [dataset],
+                labels: Array.from({ length: maxSeriesLength }, (_, i) => i),
+                datasets,
             };
         },
-        [isXYData, normalizedPoints, showDots],
+        [series, normalizedSeriesPoints, isXYData, showDots, effectiveSeriesLabels, maxSeriesLength],
     );
 
     const options = useMemo<ChartOptions<"line">>(
@@ -413,7 +459,11 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
             animation: false,
             layout: { padding: { top: 22 } },
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: series.length > 1,
+                    position: "bottom" as const,
+                    labels: { color: "#4b5563", font: { size: 12 } },
+                },
                 tooltip: {
                     callbacks: {
                         title: (items) => {
@@ -424,7 +474,8 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
                         },
                         label: (item) => {
                             const yValue = typeof item.parsed?.y === "number" ? item.parsed.y : Number(item.raw);
-                            return `${effectiveTitle}: ${formatAxisTick(yValue)}`;
+                            const seriesLabel = item.dataset.label ?? effectiveTitle;
+                            return `${seriesLabel}: ${formatAxisTick(yValue)}`;
                         },
                     },
                 },
@@ -452,7 +503,7 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
                 },
             },
         }),
-        [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel, formatAxisTick, isXYData, xMin, xMax],
+        [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel, formatAxisTick, isXYData, xMin, xMax, series],
     );
 
     return (
@@ -531,6 +582,29 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
                             />
                         </label>
                     </div>
+                    {series.length > 1 && (
+                        <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
+                            {series.map((s, i) => (
+                                <label key={i} className="flex flex-col gap-1 text-xs font-medium text-gray-700">
+                                    Series {i + 1} label
+                                    <input
+                                        type="text"
+                                        value={seriesLabelOverrides[i] ?? s.label}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setSeriesLabelOverrides((prev) => {
+                                                const next = [...prev];
+                                                next[i] = value;
+                                                return next;
+                                            });
+                                        }}
+                                        className="h-8 rounded border border-gray-300 px-2 text-xs text-gray-800 outline-none focus:border-teal-500"
+                                        placeholder={s.label}
+                                    />
+                                </label>
+                            ))}
+                        </div>
+                    )}
                     <div className="mt-2 flex items-center justify-end gap-2">
                         <button
                             type="button"
@@ -538,6 +612,7 @@ export default function ChartCard({ metricId, name, data, stages, xAxisLabel, yA
                                 setTitleOverride(name);
                                 setXAxisLabelOverride(xAxisLabel ?? "Index");
                                 setYAxisLabelOverride(yAxisLabel ?? "Value");
+                                setSeriesLabelOverrides(series.map((s) => s.label));
                             }}
                             className="rounded border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100"
                         >

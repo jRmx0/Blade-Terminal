@@ -384,7 +384,7 @@ export default function BenchmarkRunTab({
                                 key={series.metric}
                                 metricId={series.metricId}
                                 name={series.name}
-                                data={series.data}
+                                series={[{ label: series.name, data: series.data }]}
                                 xAxisLabel={targetParameterName}
                                 yAxisLabel={series.name.split(" vs ")[0]}
                             />

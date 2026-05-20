@@ -132,7 +132,7 @@ export default function PerformanceMonitorModal() {
                                         key={metric.id}
                                         metricId={metric.id}
                                         name={metric.name}
-                                        data={data}
+                                        series={[{ label: metric.name, data }]}
                                         stages={metric.stages}
                                         xAxisLabel={metric.style?.xAxisLabel}
                                         yAxisLabel={metric.style?.yAxisLabel}
