@@ -333,6 +333,8 @@ const INITIAL_STATE: Omit<BenchmarkModalState, keyof {
     reset: () => void;
     setBenchmarkExecutionState: () => void;
     addStepResult: () => void;
+    addAlgoResult: () => void;
+    addAlgoEnvResult: () => void;
     updateRunProgress: () => void;
     cancelBenchmark: () => void;
     resetResults: () => void;
