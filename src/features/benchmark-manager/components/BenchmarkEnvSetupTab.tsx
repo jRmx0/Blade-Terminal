@@ -148,6 +148,14 @@ export default function BenchmarkEnvSetupTab({
                     onChange={(v) => onSetEnvironmentSetup({ cellSize: Number(v) })}
                 />
                 <CardModalField
+                    id="gen-coverage-cell-size"
+                    label="Coverage Cell Size"
+                    unitType="uom"
+                    type="number"
+                    value={String(environmentSetup.coverageGridCellSize)}
+                    onChange={(v) => onSetEnvironmentSetup({ coverageGridCellSize: Number(v) })}
+                />
+                <CardModalField
                     id="gen-obstacle-ratio"
                     label="Obstacle Ratio"
                     unit="%"

@@ -620,11 +620,11 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
 
                     const metrics = extractRunMetrics(completed, algorithmMetrics, {
                         objects: coverageObjects,
-                        cellSize: environmentSetup.cellSize,
+                        cellSize: environmentSetup.coverageGridCellSize,
                         pathWidth:
                             Number.isFinite(pathWidth) && pathWidth > 0
                                 ? pathWidth
-                                : environmentSetup.cellSize,
+                                : environmentSetup.coverageGridCellSize,
                     });
 
                     const filteredMetrics: BenchmarkMetricsValues = {

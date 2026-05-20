@@ -25,6 +25,8 @@ export interface BenchmarkEnvironmentSetup {
     height: number;
     /** Cell size for grid generation */
     cellSize: number;
+    /** Cell size used when computing coverage grid metrics */
+    coverageGridCellSize: number;
     /** Obstacle ratio (0-100) */
     obstacleRatio: number;
     /** Clustering probability (0-100) */
@@ -309,6 +311,7 @@ const INITIAL_STATE: Omit<BenchmarkModalState, keyof {
         width: 510,
         height: 510,
         cellSize: 30,
+        coverageGridCellSize: 5,
         obstacleRatio: 30,
         clusteringProb: 97,
     },
