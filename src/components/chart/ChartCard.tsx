@@ -3,6 +3,7 @@ import {
     Chart as ChartJS,
     CategoryScale,
     LinearScale,
+    LogarithmicScale,
     PointElement,
     LineElement,
     Title,
@@ -21,7 +22,7 @@ import {
 } from "@/components/chart/performanceMonitorModalStore";
 import { useChartResize } from "@/components/chart/useChartResize";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, LogarithmicScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const STAGE_COLORS = ["#ef4444", "#f59e0b", "#84cc16", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6"];
 const LINE_COLORS = ["#0d9488", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#84cc16", "#06b6d4"];
@@ -67,6 +68,9 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
     const [xAxisLabelOverride, setXAxisLabelOverride] = useState(xAxisLabel ?? "Index");
     const [yAxisLabelOverride, setYAxisLabelOverride] = useState(yAxisLabel ?? "Value");
     const [seriesLabelOverrides, setSeriesLabelOverrides] = useState<string[]>(() => series.map((s) => s.label));
+    const [isAxisSettingsOpen, setIsAxisSettingsOpen] = useState(false);
+    const [xLogScale, setXLogScale] = useState(false);
+    const [yLogScale, setYLogScale] = useState(false);
 
     useEffect(() => {
         setTitleOverride(name);
@@ -136,6 +140,15 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
 
     const xMin = useMemo(() => (xValues.length > 0 ? Math.min(...xValues) : undefined), [xValues]);
     const xMax = useMemo(() => (xValues.length > 0 ? Math.max(...xValues) : undefined), [xValues]);
+
+    const yLogOffset = useMemo(
+        () => yLogScale && yValues.length > 0 ? Math.max(0, 1 - Math.min(...yValues)) : 0,
+        [yLogScale, yValues],
+    );
+    const xLogOffset = useMemo(
+        () => xLogScale && isXYData && xValues.length > 0 ? Math.max(0, 1 - Math.min(...xValues)) : 0,
+        [xLogScale, isXYData, xValues],
+    );
 
     const min = useMemo(() => (yValues.length > 0 ? Math.min(...yValues) : null), [yValues]);
     const max = useMemo(() => (yValues.length > 0 ? Math.max(...yValues) : null), [yValues]);
@@ -214,7 +227,7 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
                 const refSeries = normalizedSeriesPoints[0] ?? [];
                 for (const stage of normalizedStages) {
                     const stageXValue = refSeries[stage.sampleIndex]?.x ?? stage.sampleIndex;
-                    const x = xScale.getPixelForValue(stageXValue);
+                    const x = xScale.getPixelForValue(stageXValue + xLogOffset);
                     if (!Number.isFinite(x) || x < left || x > right) continue;
 
                     ctx.strokeStyle = stage.color;
@@ -227,7 +240,7 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
                 ctx.restore();
             },
         }),
-        [metricId, maxSeriesLength, normalizedSeriesPoints, normalizedStages],
+        [metricId, maxSeriesLength, normalizedSeriesPoints, normalizedStages, xLogOffset],
     );
 
     const { chartSizes, setChartSize, persistChartSizes } = usePerformanceMonitorModalStore();
@@ -428,8 +441,8 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
                 return {
                     label: effectiveSeriesLabels[i] ?? s.label,
                     data: isXYData
-                        ? pts.map((pt) => ({ x: pt.x, y: pt.y }))
-                        : pts.map((pt) => pt.y),
+                        ? pts.map((pt) => ({ x: pt.x + xLogOffset, y: pt.y + yLogOffset }))
+                        : pts.map((pt) => pt.y + yLogOffset),
                     borderColor: color,
                     borderWidth: 1.5,
                     spanGaps: true,
@@ -449,7 +462,7 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
                 datasets,
             };
         },
-        [series, normalizedSeriesPoints, isXYData, showDots, effectiveSeriesLabels, maxSeriesLength],
+        [series, normalizedSeriesPoints, isXYData, showDots, effectiveSeriesLabels, maxSeriesLength, xLogOffset, yLogOffset],
     );
 
     const options = useMemo<ChartOptions<"line">>(
@@ -469,11 +482,11 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
                         title: (items) => {
                             const item = items[0];
                             if (!item) return `${effectiveXAxisLabel}: `;
-                            const xValue = typeof item.parsed?.x === "number" ? item.parsed.x : Number(item.label);
+                            const xValue = (typeof item.parsed?.x === "number" ? item.parsed.x : Number(item.label)) - xLogOffset;
                             return `${effectiveXAxisLabel}: ${formatAxisTick(xValue)}`;
                         },
                         label: (item) => {
-                            const yValue = typeof item.parsed?.y === "number" ? item.parsed.y : Number(item.raw);
+                            const yValue = (typeof item.parsed?.y === "number" ? item.parsed.y : Number(item.raw)) - yLogOffset;
                             const seriesLabel = item.dataset.label ?? effectiveTitle;
                             return `${seriesLabel}: ${formatAxisTick(yValue)}`;
                         },
@@ -482,28 +495,29 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
             },
             scales: {
                 x: {
-                    type: isXYData ? "linear" : "category",
-                    ...(isXYData && xMin !== undefined && xMax !== undefined ? { min: xMin, max: xMax } : {}),
+                    type: isXYData ? (xLogScale ? "logarithmic" : "linear") : "category",
+                    ...(isXYData && xMin !== undefined && xMax !== undefined ? { min: xMin + xLogOffset, max: xMax + xLogOffset } : {}),
                     title: { display: true, text: effectiveXAxisLabel, font: { size: 14, weight: "bold" }, color: "#4b5563" },
                     ticks: {
                         font: { size: 14, weight: "bold" },
                         color: "#4b5563",
                         autoSkipPadding: 20,
                         maxRotation: 0,
-                        callback: (value) => formatAxisTick(value),
+                        callback: (value) => formatAxisTick(typeof value === "number" ? value - xLogOffset : value),
                     },
                     grid: { color: "#e5e7eb" },
                     border: { color: "#9ca3af" },
                 },
                 y: {
+                    type: yLogScale ? "logarithmic" : "linear",
                     title: { display: true, text: effectiveYAxisLabel, font: { size: 14, weight: "bold" }, color: "#4b5563" },
-                    ticks: { font: { size: 14, weight: "bold" }, color: "#4b5563", callback: (value) => formatAxisTick(value) },
+                    ticks: { font: { size: 14, weight: "bold" }, color: "#4b5563", callback: (value) => formatAxisTick(typeof value === "number" ? value - yLogOffset : value) },
                     grid: { color: "#e5e7eb" },
                     border: { color: "#9ca3af" },
                 },
             },
         }),
-        [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel, formatAxisTick, isXYData, xMin, xMax, series],
+        [effectiveTitle, effectiveXAxisLabel, effectiveYAxisLabel, formatAxisTick, isXYData, xMin, xMax, series, xLogScale, yLogScale, xLogOffset, yLogOffset],
     );
 
     return (
@@ -515,6 +529,14 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
                     options={options}
                     plugins={[borderBoxPlugin, titlePlugin, stageMarkersPlugin]}
                 />
+                <span
+                    onClick={() => setIsAxisSettingsOpen((prev) => !prev)}
+                    title="Axis settings"
+                    className={`material-symbols-outlined absolute right-20 cursor-pointer select-none leading-none z-10 ${isAxisSettingsOpen ? "text-gray-600" : "text-gray-300 hover:text-gray-600"}`}
+                    style={{ fontSize: 16, bottom: '-12px' }}
+                >
+                    tune
+                </span>
                 <span
                     onClick={handleCsvExport}
                     title="Export CSV"
@@ -625,6 +647,52 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
                         >
                             Done
                         </button>
+                    </div>
+                </div>
+            )}
+            {isAxisSettingsOpen && (
+                <div className="mx-auto mt-2 rounded border border-gray-200 bg-white px-3 py-2" style={{ width: chartWidth }}>
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-700">
+                                Y axis — logarithmic
+                                {yLogScale && yLogOffset > 0 && (
+                                    <span className="ml-2 font-normal text-gray-400">shifted +{formatAxisTick(yLogOffset)}</span>
+                                )}
+                            </span>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={yLogScale}
+                                onClick={() => setYLogScale((prev) => !prev)}
+                                className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${yLogScale ? "bg-teal-600" : "bg-gray-200"}`}
+                            >
+                                <span
+                                    className={`pointer-events-none inline-block h-3 w-3 rounded-full bg-white shadow transform transition-transform ${yLogScale ? "translate-x-3" : "translate-x-0"}`}
+                                />
+                            </button>
+                        </div>
+                        {isXYData && (
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-gray-700">
+                                    X axis — logarithmic
+                                    {xLogScale && xLogOffset > 0 && (
+                                        <span className="ml-2 font-normal text-gray-400">shifted +{formatAxisTick(xLogOffset)}</span>
+                                    )}
+                                </span>
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={xLogScale}
+                                    onClick={() => setXLogScale((prev) => !prev)}
+                                    className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${xLogScale ? "bg-teal-600" : "bg-gray-200"}`}
+                                >
+                                    <span
+                                        className={`pointer-events-none inline-block h-3 w-3 rounded-full bg-white shadow transform transition-transform ${xLogScale ? "translate-x-3" : "translate-x-0"}`}
+                                    />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
