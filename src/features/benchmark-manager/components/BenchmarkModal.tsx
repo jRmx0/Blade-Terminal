@@ -212,8 +212,8 @@ export default function BenchmarkModal() {
             return;
         }
 
-        if (!generatorSystemValidation.ok) {
-            setError(generatorSystemValidation.error ?? "Unsupported system environment setup for benchmark generation.");
+        if (generatedEnvironments.length === 0) {
+            setError("No environments generated. Please generate environments in the Env. Setup tab first.");
             return;
         }
 
@@ -227,11 +227,6 @@ export default function BenchmarkModal() {
                 : 0;
         const totalSteps = Math.max(estimatedStepCount, 0);
 
-        const slot0MultipleRunsSetup = {
-            runsPerStep: slot0.multipleRunsSetup.runsPerStep,
-            stepValueCalculation: slot0.multipleRunsSetup.stepValueCalculation,
-        };
-
         const controller = new AbortController();
         abortControllerRef.current = controller;
 
@@ -244,7 +239,7 @@ export default function BenchmarkModal() {
             progress: {
                 totalSteps,
                 completedSteps: 0,
-                totalRuns: totalSteps * slot0MultipleRunsSetup.runsPerStep,
+                totalRuns: totalSteps * generatedEnvironments.length,
                 completedRuns: 0,
             },
             results: [],
@@ -261,9 +256,8 @@ export default function BenchmarkModal() {
                 targetParameterSetup: slot0.targetParameterSetup,
                 fixedParameters: slot0.fixedParameters,
                 environmentSetup,
-                environmentSetSetup,
+                generatedEnvironments,
                 systemEnvironmentSetup,
-                multipleRunsSetup: slot0MultipleRunsSetup,
                 selectedMetrics: metricsConfig.selectedMetrics,
                 signal: controller.signal,
                 onProgress: (progress) => setBenchmarkExecutionState({ progress }),
@@ -303,12 +297,10 @@ export default function BenchmarkModal() {
         resetResults,
         setBenchmarkExecutionState,
         environmentSetup,
-        environmentSetSetup,
+        generatedEnvironments,
         systemEnvironmentSetup,
         metricsConfig.selectedMetrics,
         addStepResult,
-        generatorSystemValidation.error,
-        generatorSystemValidation.ok,
     ]);
 
     const handleCancelBenchmark = useCallback(() => {
@@ -536,8 +528,8 @@ export default function BenchmarkModal() {
                             executionState={executionState}
                             onStartBenchmark={handleStartBenchmark}
                             onCancelBenchmark={handleCancelBenchmark}
-                            canStartBenchmark={isSetupValid && generatorSystemValidation.ok}
-                            systemParamsError={generatorSystemValidation.error}
+                            canStartBenchmark={isSetupValid && generatedEnvironments.length > 0}
+                            systemParamsError={generatedEnvironments.length === 0 ? "No environments generated. Please generate environments in the Env. Setup tab first." : null}
                         />
                     )}
                 </div>

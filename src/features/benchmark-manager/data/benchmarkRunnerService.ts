@@ -1,12 +1,5 @@
-import {
-    generateCompliantEnvironment,
-    validateGeneratorSystemParams,
-    type GeneratorSystemParams,
-    type GeneratedEnvironment,
-} from "@/features/canvas-editing/utils/envGenerator";
 import { buildComputationProviderEndpointUrl } from "@/features/computation-provider/utils/computationProviderUrl";
 import {
-    COORD_SYSTEM_OPTIONS,
     ENV_FORMAT_OPTIONS,
     ENV_TYPE_OPTIONS,
     OBJECT_CATEGORY,
@@ -17,12 +10,11 @@ import { computeNetArea } from "@/features/canvas-editing/utils/canvasGeometry";
 import {
     calculateAggregateMetrics,
     type BenchmarkAggregatedMetrics,
-    type BenchmarkEnvironmentSetSetup,
     type BenchmarkEnvironmentSetup,
     type BenchmarkFixedParameter,
+    type BenchmarkGeneratedEnvironment,
     type BenchmarkMetricType,
     type BenchmarkMetricsValues,
-    type BenchmarkMultipleRunsSetup,
     type BenchmarkParameterSetup,
     type BenchmarkRun,
     type BenchmarkSystemEnvironmentSetup,
@@ -65,9 +57,8 @@ export interface RunBenchmarkConfig {
     targetParameterSetup: BenchmarkParameterSetup;
     fixedParameters: BenchmarkFixedParameter[];
     environmentSetup: BenchmarkEnvironmentSetup;
-    environmentSetSetup: BenchmarkEnvironmentSetSetup;
+    generatedEnvironments: BenchmarkGeneratedEnvironment[];
     systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
-    multipleRunsSetup: BenchmarkMultipleRunsSetup;
     selectedMetrics: Set<BenchmarkMetricType>;
     signal?: AbortSignal;
     onProgress?: (progress: BenchmarkProgressUpdate) => void;
@@ -235,24 +226,6 @@ function getSystemEnvironmentParameters(systemEnvironmentSetup: BenchmarkSystemE
         "Coordinate System": systemEnvironmentSetup.coordinateSystem,
         "Headland": systemEnvironmentSetup.headland,
         "Headland Width": systemEnvironmentSetup.headlandWidth,
-    };
-}
-
-function resolveGeneratorSystemParams(
-    systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup,
-): GeneratorSystemParams | null {
-    const format = ENV_FORMAT_OPTIONS.find((option) => option.value === systemEnvironmentSetup.format)?.value;
-    const type = ENV_TYPE_OPTIONS.find((option) => option.value === systemEnvironmentSetup.type)?.value;
-    const coordSystem = COORD_SYSTEM_OPTIONS.find((option) => option.value === systemEnvironmentSetup.coordinateSystem)?.value;
-
-    if (!format || !type || !coordSystem) {
-        return null;
-    }
-
-    return {
-        format,
-        type,
-        coordSystem,
     };
 }
 
@@ -444,9 +417,8 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
         targetParameterSetup,
         fixedParameters,
         environmentSetup,
-        environmentSetSetup,
+        generatedEnvironments,
         systemEnvironmentSetup,
-        multipleRunsSetup,
         selectedMetrics,
         signal,
         onProgress,
@@ -454,17 +426,8 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
         onStepCompleted,
     } = config;
 
-    const generatorSystemParams = resolveGeneratorSystemParams(systemEnvironmentSetup);
-    if (generatorSystemParams === null) {
-        throw new Error("Invalid benchmark system environment setup for generator.");
-    }
-
-    const systemValidation = validateGeneratorSystemParams({
-        format: generatorSystemParams.format,
-        coordSystem: generatorSystemParams.coordSystem,
-    });
-    if (!systemValidation.ok) {
-        throw new Error(systemValidation.error ?? "Unsupported benchmark system environment setup for generator.");
+    if (generatedEnvironments.length === 0) {
+        throw new Error("No environments available. Please generate environments in the Env. Setup tab first.");
     }
 
     const stepValues = buildStepValues(targetParameterSetup);
@@ -472,7 +435,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
         throw new Error("Invalid target parameter range. No benchmark steps could be generated.");
     }
 
-    const totalRuns = stepValues.length * multipleRunsSetup.runsPerStep;
+    const totalRuns = stepValues.length * generatedEnvironments.length;
     let completedRuns = 0;
     const stepResults: BenchmarkStepResult[] = [];
 
@@ -492,7 +455,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
 
         const runs: BenchmarkRun[] = [];
 
-        for (let runIndex = 0; runIndex < multipleRunsSetup.runsPerStep; runIndex += 1) {
+        for (let envIndex = 0; envIndex < generatedEnvironments.length; envIndex += 1) {
             if (signal?.aborted) {
                 break;
             }
@@ -503,38 +466,25 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 totalRuns,
                 completedRuns,
                 currentStepValue: stepValue,
-                currentRunIndex: runIndex,
+                currentRunIndex: envIndex,
             });
 
-            const runSeed = environmentSetSetup.baseSeed.trim()
-                ? `${environmentSetSetup.baseSeed.trim()}-step-${stepValue}-run-${runIndex}`
-                : "";
-
-            const compliantGeneration = generateCompliantEnvironment({
-                width: environmentSetup.width,
-                height: environmentSetup.height,
-                cellSize: environmentSetup.cellSize,
-                obstacleRatio: environmentSetup.obstacleRatio,
-                clusteringProb: environmentSetup.clusteringProb,
-                seed: runSeed,
-                systemParams: generatorSystemParams,
-            });
-
-            if (!compliantGeneration.ok) {
-                throw new Error(compliantGeneration.error);
-            }
-
-            const generated = compliantGeneration.value.environment;
-            const benchmarkObjectType = compliantGeneration.value.objectType;
+            const generatedEnv = generatedEnvironments[envIndex]!;
+            const generated = {
+                boundary: generatedEnv.boundary,
+                obstacles: generatedEnv.obstacles,
+                startEndPoint: generatedEnv.startEndPoint,
+            };
+            const benchmarkObjectType = generatedEnv.objectType;
 
             const run: BenchmarkRun = {
                 stepValue,
-                runIndex,
+                runIndex: envIndex,
                 status: "running",
             };
             runs.push(run);
 
-            onRunUpdate?.(stepValue, runIndex, { status: "running" });
+            onRunUpdate?.(stepValue, envIndex, { status: "running" });
 
             const { objects, zoneObjects, obstacleObjects } = toCanvasObjects(generated, benchmarkObjectType);
 
@@ -562,7 +512,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 completedRuns += 1;
                 run.status = "skipped";
                 run.error = resolvedGeometry.error;
-                onRunUpdate?.(stepValue, runIndex, {
+                onRunUpdate?.(stepValue, envIndex, {
                     status: "skipped",
                     error: resolvedGeometry.error,
                 });
@@ -602,12 +552,12 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 const error = submitResult.error ?? "Failed to submit benchmark run.";
                 run.status = "skipped";
                 run.error = error;
-                onRunUpdate?.(stepValue, runIndex, { status: "skipped", error });
+                onRunUpdate?.(stepValue, envIndex, { status: "skipped", error });
                 continue;
             }
 
             run.jobId = submitResult.jobId;
-            onRunUpdate?.(stepValue, runIndex, { jobId: submitResult.jobId });
+            onRunUpdate?.(stepValue, envIndex, { jobId: submitResult.jobId });
 
             try {
                 const state = await pollComputeJob(submitResult.pollUrl, provider.apiKey, signal);
@@ -618,7 +568,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                     run.status = "failed";
                     run.error = error;
                     run.completedAt = state.completedAt;
-                    onRunUpdate?.(stepValue, runIndex, {
+                    onRunUpdate?.(stepValue, envIndex, {
                         status: "failed",
                         error,
                         completedAt: state.completedAt,
@@ -678,7 +628,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 run.metrics = filteredMetrics;
                 run.completedAt = completed.completedAt;
 
-                onRunUpdate?.(stepValue, runIndex, {
+                onRunUpdate?.(stepValue, envIndex, {
                     status: "completed",
                     metrics: filteredMetrics,
                     completedAt: completed.completedAt,
@@ -688,7 +638,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 const message = error instanceof Error ? error.message : String(error);
                 run.status = signal?.aborted ? "skipped" : "failed";
                 run.error = message;
-                onRunUpdate?.(stepValue, runIndex, {
+                onRunUpdate?.(stepValue, envIndex, {
                     status: run.status,
                     error: message,
                 });
