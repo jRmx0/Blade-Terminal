@@ -203,6 +203,27 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
         [axisNumberFormatter],
     );
 
+    const { chartSizes, setChartSize, persistChartSizes } = usePerformanceMonitorModalStore();
+    const { width: chartWidth, height: chartHeight } =
+        chartSizes[metricId] ?? { width: DEFAULT_CHART_WIDTH, height: DEFAULT_CHART_HEIGHT };
+
+    const { handleResizePointerDown, isDragging } = useChartResize({ metricId, chartSizes, setChartSize, persistChartSizes, chartRef, containerRef });
+
+    // Decimated index list for category charts — shared between chartData and stageMarkersPlugin
+    // so both use the exact same coordinate system.
+    const displayIndices = useMemo<number[] | null>(() => {
+        if (isXYData) return null;
+        const dpr = window.devicePixelRatio || 1;
+        const displayThreshold = Math.max(2, Math.round(chartWidth * dpr));
+        const stride = Math.max(1, Math.ceil(maxSeriesLength / displayThreshold));
+        const indices: number[] = [];
+        for (let i = 0; i < maxSeriesLength; i += stride) indices.push(i);
+        if (indices.length > 0 && indices[indices.length - 1] !== maxSeriesLength - 1) {
+            indices.push(maxSeriesLength - 1);
+        }
+        return indices;
+    }, [isXYData, chartWidth, maxSeriesLength]);
+
     const normalizedStages = useMemo(
         () => (stages ?? [])
             .map((stage, index) => ({
@@ -256,8 +277,29 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
 
                 const refSeries = normalizedSeriesPoints[0] ?? [];
                 for (const stage of normalizedStages) {
-                    const stageXValue = refSeries[stage.sampleIndex]?.x ?? stage.sampleIndex;
-                    const x = xScale.getPixelForValue(stageXValue + xLogOffset);
+                    let x: number;
+                    if (isXYData) {
+                        // Linear/log scale: use actual x value from the series
+                        const stageXValue = refSeries[stage.sampleIndex]?.x ?? stage.sampleIndex;
+                        x = xScale.getPixelForValue(stageXValue + xLogOffset);
+                    } else if (displayIndices && displayIndices.length > 0) {
+                        // Category scale: getPixelForValue takes a 0-based position in the labels array.
+                        // Map stage.sampleIndex (original data index) to a fractional position in displayIndices.
+                        const idx = displayIndices.findIndex((di) => di >= stage.sampleIndex);
+                        let categoryPos: number;
+                        if (idx === -1) {
+                            categoryPos = displayIndices.length - 1;
+                        } else if (idx === 0 || displayIndices[idx] === stage.sampleIndex) {
+                            categoryPos = idx;
+                        } else {
+                            const prev = displayIndices[idx - 1]!;
+                            const curr = displayIndices[idx]!;
+                            categoryPos = (idx - 1) + (stage.sampleIndex - prev) / (curr - prev);
+                        }
+                        x = xScale.getPixelForValue(categoryPos);
+                    } else {
+                        continue;
+                    }
                     if (!Number.isFinite(x) || x < left || x > right) continue;
 
                     ctx.strokeStyle = stage.color;
@@ -270,14 +312,8 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
                 ctx.restore();
             },
         }),
-        [metricId, maxSeriesLength, normalizedSeriesPoints, normalizedStages, xLogOffset],
+        [metricId, maxSeriesLength, normalizedSeriesPoints, normalizedStages, isXYData, displayIndices, xLogOffset],
     );
-
-    const { chartSizes, setChartSize, persistChartSizes } = usePerformanceMonitorModalStore();
-    const { width: chartWidth, height: chartHeight } =
-        chartSizes[metricId] ?? { width: DEFAULT_CHART_WIDTH, height: DEFAULT_CHART_HEIGHT };
-
-    const { handleResizePointerDown, isDragging } = useChartResize({ metricId, chartSizes, setChartSize, persistChartSizes, chartRef, containerRef });
 
     const handleDownload = useCallback(async () => {
         if (!chartRef.current) return;
@@ -489,21 +525,16 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
                 return { datasets };
             }
 
-            // Category data: stride-based decimation shared across all series so x positions stay consistent.
-            const stride = Math.max(1, Math.ceil(maxSeriesLength / displayThreshold));
-            const displayIndices: number[] = [];
-            for (let i = 0; i < maxSeriesLength; i += stride) displayIndices.push(i);
-            if (displayIndices.length > 0 && displayIndices[displayIndices.length - 1] !== maxSeriesLength - 1) {
-                displayIndices.push(maxSeriesLength - 1);
-            }
-            const showDots = displayIndices.length <= 20;
+            // Category data: use shared displayIndices memo so plugin and chartData stay in sync.
+            const indices = displayIndices ?? [];
+            const showDots = indices.length <= 20;
 
             const datasets = series.map((s, i) => {
                 const pts = normalizedSeriesPoints[i] ?? [];
                 const color = s.color ?? LINE_COLORS[i % LINE_COLORS.length] ?? "#0d9488";
                 return {
                     label: effectiveSeriesLabels[i] ?? s.label,
-                    data: displayIndices.map((idx) => {
+                    data: indices.map((idx) => {
                         const y = pts[idx]?.y;
                         return y !== undefined ? y + yLogOffset : null;
                     }),
@@ -517,9 +548,9 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
                 };
             });
 
-            return { labels: displayIndices, datasets };
+            return { labels: indices, datasets };
         },
-        [series, normalizedSeriesPoints, isXYData, effectiveSeriesLabels, maxSeriesLength, xLogOffset, yLogOffset, chartWidth],
+        [series, normalizedSeriesPoints, isXYData, effectiveSeriesLabels, maxSeriesLength, xLogOffset, yLogOffset, displayIndices],
     );
 
     const options = useMemo<ChartOptions<"line">>(
