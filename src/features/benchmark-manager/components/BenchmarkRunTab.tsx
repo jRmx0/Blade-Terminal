@@ -1,31 +1,45 @@
 import { useMemo } from "react";
-import {
-    ENV_FORMAT_OPTIONS,
-    ENV_TYPE_OPTIONS,
-} from "@/config/db-ops/enums";
 import ChartCard from "@/components/chart/ChartCard";
 import {
+    type BenchmarkEnvironmentSetSetup,
     type BenchmarkEnvironmentSetup,
     type BenchmarkExecutionState,
-    type BenchmarkFixedParameter,
+    type BenchmarkExecutionStatus,
+    type BenchmarkJobType,
     type BenchmarkMetricType,
-    type BenchmarkMultipleRunsSetup,
     type BenchmarkParameterSetup,
+    type BenchmarkStepValueCalculation,
     type BenchmarkSystemEnvironmentSetup,
 } from "@/features/benchmark-manager/stores/benchmarkModalStore";
-import type { ComputationAlgorithm, ComputationProvider } from "@/types/serviceTypes";
+
+// ─── Helper ───────────────────────────────────────────────────────────────────
+
+function buildStepValues(setup: BenchmarkParameterSetup | null): number[] {
+    if (!setup) return [];
+    const start = Number(setup.startValue);
+    const end = Number(setup.endValue);
+    const step = Number(setup.stepValue);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || !Number.isFinite(step) || step <= 0) return [];
+    const values: number[] = [];
+    for (let v = start; v <= end + step * 1e-9; v += step) {
+        values.push(Math.round(v * 1e9) / 1e9);
+        if (values.length > 1000) break;
+    }
+    return values;
+}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface BenchmarkRunTabProps {
-    selectedProvider: ComputationProvider | undefined;
-    selectedAlgorithm: ComputationAlgorithm | undefined;
-    targetParameterSetup: BenchmarkParameterSetup | null;
+    jobType: BenchmarkJobType;
+    providerName: string;
+    algorithmName: string;
     targetParameterName: string;
-    fixedParameters: BenchmarkFixedParameter[];
+    targetParameterSetup: BenchmarkParameterSetup | null;
+    stepValueCalculation: BenchmarkStepValueCalculation;
     environmentSetup: BenchmarkEnvironmentSetup;
+    environmentSetSetup: BenchmarkEnvironmentSetSetup;
     systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
-    multipleRunsSetup: BenchmarkMultipleRunsSetup;
     metricsConfig: { selectedMetrics: Set<BenchmarkMetricType> };
     isRunning: boolean;
     error: string | null;
@@ -36,17 +50,34 @@ export interface BenchmarkRunTabProps {
     systemParamsError: string | null;
 }
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const STATUS_CONFIG: Record<BenchmarkExecutionStatus, { label: string; className: string }> = {
+    idle: { label: "IDLE", className: "bg-gray-100 text-gray-600" },
+    running: { label: "RUNNING", className: "bg-blue-100 text-blue-700" },
+    completed: { label: "COMPLETED", className: "bg-teal-100 text-teal-700" },
+    cancelled: { label: "CANCELLED", className: "bg-amber-100 text-amber-700" },
+    error: { label: "ERROR", className: "bg-red-100 text-red-700" },
+};
+
+const METRIC_LABELS: Record<BenchmarkMetricType, string> = {
+    coverage: "Coverage Ratio",
+    overlap: "Overlap Ratio",
+    efficiency: "Efficiency",
+    turns: "Number of Turns",
+    pathLength: "Path Length",
+};
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function BenchmarkRunTab({
-    selectedProvider,
-    selectedAlgorithm,
-    targetParameterSetup,
+    providerName,
+    algorithmName,
     targetParameterName,
-    fixedParameters,
+    targetParameterSetup,
+    stepValueCalculation,
     environmentSetup,
-    systemEnvironmentSetup,
-    multipleRunsSetup,
+    environmentSetSetup,
     metricsConfig,
     isRunning,
     error,
@@ -56,168 +87,188 @@ export default function BenchmarkRunTab({
     canStartBenchmark,
     systemParamsError,
 }: BenchmarkRunTabProps) {
-    const metricLabels: Record<BenchmarkMetricType, string> = {
-        coverage: "Coverage Ratio",
-        overlap: "Overlap Ratio",
-        efficiency: "Efficiency",
-        turns: "Number of Turns",
-        pathLength: "Path Length",
-    };
+    const selectedMetrics = useMemo(() => Array.from(metricsConfig.selectedMetrics), [metricsConfig.selectedMetrics]);
+    const stepValues = useMemo(() => buildStepValues(targetParameterSetup), [targetParameterSetup]);
 
-    const selectedMetrics = Array.from(metricsConfig.selectedMetrics);
-    const aggregateKey = multipleRunsSetup.stepValueCalculation;
+    const completedStepValues = useMemo(
+        () => new Set(executionState.results.map((r) => r.stepValue)),
+        [executionState.results],
+    );
+    const failedStepValues = useMemo(
+        () => new Set(executionState.results.filter((r) => r.runsFailed > 0).map((r) => r.stepValue)),
+        [executionState.results],
+    );
 
     const chartSeries = useMemo(() => {
         const sorted = [...executionState.results].sort((a, b) => a.stepValue - b.stepValue);
-        const labels: Record<BenchmarkMetricType, string> = {
-            coverage: "Coverage Ratio",
-            overlap: "Overlap Ratio",
-            efficiency: "Efficiency",
-            turns: "Number of Turns",
-            pathLength: "Path Length",
-        };
-
         return selectedMetrics.map((metric, idx) => ({
             metric,
             metricId: 10000 + idx,
-            name: `${labels[metric]} vs ${targetParameterName}`,
+            name: `${METRIC_LABELS[metric]} vs ${targetParameterName}`,
             data: sorted.map((result) => ({
                 x: result.stepValue,
-                y: result.aggregatedMetrics[metric][aggregateKey] ?? Number.NaN,
+                y: result.aggregatedMetrics[metric][stepValueCalculation] ?? Number.NaN,
             })),
         }));
-    }, [executionState.results, selectedMetrics, aggregateKey, targetParameterName]);
+    }, [executionState.results, selectedMetrics, stepValueCalculation, targetParameterName]);
+
+    const { progress, status } = executionState;
+    const statusInfo = STATUS_CONFIG[status];
+    const progressPct = progress.totalRuns > 0 ? (progress.completedRuns / progress.totalRuns) * 100 : 0;
+
+    function getStepBadgeClass(value: number): string {
+        if (executionState.progress.currentStepValue === value && isRunning) return "bg-blue-100 text-blue-700 animate-pulse ring-1 ring-blue-300";
+        if (failedStepValues.has(value)) return "bg-red-100 text-red-700";
+        if (completedStepValues.has(value)) return "bg-teal-100 text-teal-700";
+        return "bg-gray-100 text-gray-500";
+    }
 
     return (
         <div className="p-4 flex flex-col gap-4">
-            {/* Summary */}
-            <div className="p-3 bg-gray-50 border border-gray-300 rounded">
-                <div className="text-sm font-medium text-gray-700 mb-2">Benchmark Configuration</div>
-                <div className="text-xs text-gray-600 space-y-1">
-                    <div><strong>Provider:</strong> {selectedProvider?.name}</div>
-                    <div><strong>Algorithm:</strong> {selectedAlgorithm?.name}</div>
-                    <div><strong>Target Parameter:</strong> Varying</div>
-                    <div><strong>Environment:</strong> {environmentSetup.width}×{environmentSetup.height} cells, {environmentSetup.cellSize} cell size</div>
-                    <div><strong>Runs per Step:</strong> {multipleRunsSetup.runsPerStep}</div>
-                    <div><strong>Aggregate Method:</strong> {multipleRunsSetup.stepValueCalculation}</div>
-                    <div><strong>Format:</strong> {ENV_FORMAT_OPTIONS.find((x) => x.value === systemEnvironmentSetup.format)?.label ?? systemEnvironmentSetup.format}</div>
-                    <div><strong>Type:</strong> {ENV_TYPE_OPTIONS.find((x) => x.value === systemEnvironmentSetup.type)?.label ?? systemEnvironmentSetup.type}</div>
-                    <div><strong>Coordinate System:</strong> {systemEnvironmentSetup.coordinateSystem}</div>
-                    <div><strong>Headland:</strong> {systemEnvironmentSetup.headland ? "Enabled" : "Disabled"}</div>
-                    <div><strong>Headland Width:</strong> {systemEnvironmentSetup.headlandWidth}</div>
-                    <div>
-                        <strong>Tracked Metrics:</strong> {selectedMetrics.map((m) => metricLabels[m]).join(", ")}
-                    </div>
-                </div>
-            </div>
 
-            {/* Progress */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded flex flex-col gap-2">
-                <div className="flex items-center justify-between text-xs text-slate-700">
-                    <span>
-                        Progress: {executionState.progress.completedSteps}/{executionState.progress.totalSteps} steps · {executionState.progress.completedRuns}/{executionState.progress.totalRuns} runs
-                    </span>
-                    <span className="font-medium uppercase tracking-wide">{executionState.status}</span>
-                </div>
-                <div className="w-full h-2 bg-slate-200 rounded overflow-hidden">
-                    <div
-                        className="h-full bg-teal-500 transition-all"
-                        style={{
-                            width: `${executionState.progress.totalRuns > 0
-                                ? (executionState.progress.completedRuns / executionState.progress.totalRuns) * 100
-                                : 0}%`,
-                        }}
-                    />
-                </div>
-                {typeof executionState.progress.currentStepValue === "number" && typeof executionState.progress.currentRunIndex === "number" && (
-                    <div className="text-xs text-slate-600">
-                        Running step value <strong>{executionState.progress.currentStepValue}</strong>, run {executionState.progress.currentRunIndex + 1}/{multipleRunsSetup.runsPerStep}
-                    </div>
-                )}
-            </div>
-
-            {/* Status */}
-            {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded">
-                    <div className="text-sm font-medium text-red-900">Error</div>
-                    <div className="text-xs text-red-700 mt-1">{error}</div>
-                </div>
-            )}
-
-            {systemParamsError && (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded">
-                    <div className="text-sm font-medium text-amber-900">Generator Compatibility</div>
-                    <div className="text-xs text-amber-800 mt-1">{systemParamsError}</div>
-                </div>
-            )}
-
-            {isRunning && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded flex items-center gap-2">
-                    <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                    <div className="text-sm text-blue-900">Running benchmarks...</div>
-                </div>
-            )}
-
-            {/* Actions */}
+            {/* ── A. Controls bar ───────────────────────────────────────── */}
             <div className="flex items-center gap-2">
                 <button
                     type="button"
                     onClick={onStartBenchmark}
                     disabled={isRunning || !canStartBenchmark}
-                    className={`px-4 py-2 rounded text-sm font-medium text-white transition-colors ${isRunning
-                        ? "bg-gray-400 cursor-not-allowed"
+                    className={`px-4 py-1.5 rounded text-sm font-medium text-white transition-colors ${isRunning || !canStartBenchmark
+                        ? "bg-gray-300 cursor-not-allowed text-gray-500"
                         : "bg-teal-600 hover:bg-teal-700 active:bg-teal-800"
                         }`}
                 >
-                    {isRunning ? "Running..." : "Start Benchmark"}
+                    Start Benchmark
                 </button>
-
                 <button
                     type="button"
                     onClick={onCancelBenchmark}
                     disabled={!isRunning}
-                    className={`px-4 py-2 rounded text-sm font-medium text-white transition-colors ${!isRunning
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-rose-600 hover:bg-rose-700 active:bg-rose-800"
+                    className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${!isRunning
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
                         }`}
                 >
-                    Cancel Benchmark
+                    Cancel
                 </button>
+                <span className={`ml-auto px-2.5 py-0.5 rounded text-xs font-semibold tracking-wider ${statusInfo.className}`}>
+                    {statusInfo.label}
+                </span>
             </div>
 
-            {/* Live Results */}
-            <div className="border border-gray-300 rounded bg-white overflow-hidden">
-                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 text-sm font-medium text-gray-700">
-                    Live Results
+            {/* ── B. Job Summary card ───────────────────────────────────── */}
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <div>
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5">Algorithm</p>
+                    <p className="text-sm font-medium text-gray-800">
+                        #1 — {providerName || <span className="italic text-gray-400">not selected</span>} / {algorithmName || <span className="italic text-gray-400">not selected</span>}
+                    </p>
+                </div>
+                <div>
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5">Environments</p>
+                    <p className="text-sm text-gray-700">
+                        {environmentSetSetup.count} × {environmentSetup.width}×{environmentSetup.height} @ {environmentSetup.cellSize}px
+                    </p>
+                </div>
+                {targetParameterSetup && (
+                    <>
+                        <div>
+                            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5 mt-1.5">Varying</p>
+                            <p className="text-sm text-gray-700">
+                                {targetParameterName}: {targetParameterSetup.startValue} → {targetParameterSetup.endValue}, step {targetParameterSetup.stepValue}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5 mt-1.5">Aggregate</p>
+                            <p className="text-sm text-gray-700 capitalize">{stepValueCalculation}</p>
+                        </div>
+                    </>
+                )}
+            </div>
+
+            {/* ── C. Progress ───────────────────────────────────────────── */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs text-slate-600">
+                    <span>
+                        Steps: <strong className="text-slate-800">{progress.completedSteps}</strong>/{progress.totalSteps}
+                        {" · "}
+                        Runs: <strong className="text-slate-800">{progress.completedRuns}</strong>/{progress.totalRuns}
+                    </span>
+                    {isRunning && typeof progress.currentStepValue === "number" && (
+                        <span className="text-blue-600">
+                            Testing {targetParameterName} = <strong>{progress.currentStepValue}</strong>
+                        </span>
+                    )}
+                </div>
+                <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                        className="h-full bg-teal-500 transition-all duration-300"
+                        style={{ width: `${progressPct}%` }}
+                    />
+                </div>
+                {stepValues.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-0.5">
+                        {stepValues.map((v) => (
+                            <span
+                                key={v}
+                                className={`px-1.5 py-0.5 rounded text-xs font-mono ${getStepBadgeClass(v)}`}
+                            >
+                                {v}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* ── D. Banners ────────────────────────────────────────────── */}
+            {systemParamsError && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs font-semibold text-amber-900 mb-0.5">Generator Compatibility</p>
+                    <p className="text-xs text-amber-800">{systemParamsError}</p>
+                </div>
+            )}
+            {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-xs font-semibold text-red-900 mb-0.5">Error</p>
+                    <p className="text-xs text-red-700">{error}</p>
+                </div>
+            )}
+
+            {/* ── E. Results table ──────────────────────────────────────── */}
+            <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
+                <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    Results
                 </div>
                 {executionState.results.length === 0 ? (
-                    <div className="text-center text-sm text-gray-500 py-8">
-                        Benchmark results will appear here
+                    <div className="text-center text-sm text-gray-400 py-8">
+                        Results will appear here once steps complete
                     </div>
                 ) : (
-                    <div className="max-h-80 overflow-auto">
+                    <div className="max-h-64 overflow-auto">
                         <table className="w-full text-xs">
-                            <thead className="bg-gray-100 text-gray-700 sticky top-0">
+                            <thead className="bg-gray-50 text-gray-600 sticky top-0">
                                 <tr>
-                                    <th className="px-2 py-2 text-left">Step</th>
-                                    <th className="px-2 py-2 text-left">Runs</th>
+                                    <th className="px-3 py-2 text-left font-medium">{targetParameterName}</th>
+                                    <th className="px-3 py-2 text-left font-medium">Runs</th>
                                     {selectedMetrics.map((metric) => (
-                                        <th key={metric} className="px-2 py-2 text-left">{metricLabels[metric]}</th>
+                                        <th key={metric} className="px-3 py-2 text-left font-medium">{METRIC_LABELS[metric]}</th>
                                     ))}
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-gray-100">
                                 {executionState.results.map((stepResult) => (
-                                    <tr key={stepResult.stepValue} className="border-t border-gray-100">
-                                        <td className="px-2 py-2 font-medium text-gray-800">{stepResult.stepValue}</td>
-                                        <td className="px-2 py-2 text-gray-600">
-                                            {stepResult.runsCompleted} ok / {stepResult.runsFailed} failed
+                                    <tr key={stepResult.stepValue} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-3 py-2 font-mono font-medium text-gray-800">{stepResult.stepValue}</td>
+                                        <td className="px-3 py-2 text-gray-500">
+                                            <span className="text-teal-700">{stepResult.runsCompleted} ok</span>
+                                            {stepResult.runsFailed > 0 && (
+                                                <span className="text-red-600"> / {stepResult.runsFailed} failed</span>
+                                            )}
                                         </td>
                                         {selectedMetrics.map((metric) => {
-                                            const aggregate = stepResult.aggregatedMetrics[metric][aggregateKey];
+                                            const aggregate = stepResult.aggregatedMetrics[metric][stepValueCalculation];
                                             return (
-                                                <td key={metric} className="px-2 py-2 text-gray-700">
-                                                    {typeof aggregate === "number" ? aggregate.toFixed(3) : "—"}
+                                                <td key={metric} className="px-3 py-2 tabular-nums text-gray-700">
+                                                    {typeof aggregate === "number" ? aggregate.toFixed(4) : "—"}
                                                 </td>
                                             );
                                         })}
@@ -229,14 +280,14 @@ export default function BenchmarkRunTab({
                 )}
             </div>
 
-            {/* Charts */}
-            <div className="border border-gray-300 rounded bg-white overflow-hidden">
-                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 text-sm font-medium text-gray-700">
-                    Benchmark Trend Charts
+            {/* ── F. Charts ─────────────────────────────────────────────── */}
+            <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
+                <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    Trend Charts
                 </div>
                 {chartSeries.length === 0 || executionState.results.length === 0 ? (
-                    <div className="text-center text-sm text-gray-500 py-8">
-                        Complete at least one benchmark step to render charts.
+                    <div className="text-center text-sm text-gray-400 py-8">
+                        Complete at least one step to render charts
                     </div>
                 ) : (
                     <div className="p-3 flex flex-col gap-3 max-h-112 overflow-y-auto">
@@ -256,3 +307,4 @@ export default function BenchmarkRunTab({
         </div>
     );
 }
+

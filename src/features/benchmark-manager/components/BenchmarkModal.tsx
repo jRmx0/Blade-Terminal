@@ -88,7 +88,7 @@ export default function BenchmarkModal() {
     const [generateStatus, setGenerateStatus] = useState<ModalActionStatus | undefined>(undefined);
     const [generateStatusMessage, setGenerateStatusMessage] = useState<string | undefined>(undefined);
 
-    // Filtered data
+    // Filtered data (kept for env-setup tab catalog reference, not for run)
     const selectedProvider = useMemo(
         () => providers.find((p) => p.id === selectedProviderId),
         [providers, selectedProviderId],
@@ -141,15 +141,59 @@ export default function BenchmarkModal() {
         [algorithmParameters, targetParameterSetup],
     );
 
+    // ─── Slot 0 derivations (used by Run tab) ────────────────────────────────
+
+    const slot0 = jobSetup.algorithms[0] ?? null;
+
+    const slot0Provider = useMemo(
+        () => providers.find((p) => p.id === slot0?.providerId) ?? null,
+        [providers, slot0?.providerId],
+    );
+
+    const slot0Algorithm = useMemo(
+        () =>
+            slot0?.algorithmId && slot0?.providerId
+                ? algorithms.find((a) => a.id === slot0.algorithmId && a.computationProviderId === slot0.providerId) ?? null
+                : null,
+        [algorithms, slot0?.algorithmId, slot0?.providerId],
+    );
+
+    const slot0AlgoParams = useMemo(
+        () =>
+            slot0?.algorithmId && slot0?.providerId
+                ? catalogParameters.filter(
+                    (p) => p.algorithmId === slot0.algorithmId && p.computationProviderId === slot0.providerId,
+                )
+                : [],
+        [catalogParameters, slot0?.algorithmId, slot0?.providerId],
+    );
+
+    const slot0AlgoMetrics = useMemo(
+        () =>
+            slot0?.algorithmId && slot0?.providerId
+                ? catalogMetrics.filter(
+                    (m) => m.algorithmId === slot0.algorithmId && m.computationProviderId === slot0.providerId,
+                )
+                : [],
+        [catalogMetrics, slot0?.algorithmId, slot0?.providerId],
+    );
+
+    const slot0TargetParam = useMemo(
+        () => slot0AlgoParams.find((p) => p.id === slot0?.targetParameterSetup?.targetParamId) ?? null,
+        [slot0AlgoParams, slot0?.targetParameterSetup?.targetParamId],
+    );
+
     // Validation
     const isSetupValid = useMemo(() => {
-        if (!selectedProvider || !selectedAlgorithm || !targetParameterSetup) return false;
-        const { startValue, endValue, stepValue } = targetParameterSetup;
-        const start = Number(startValue);
-        const end = Number(endValue);
-        const step = Number(stepValue);
+        if (jobSetup.type !== "parameter-eval") return false;
+        if (!slot0 || slot0.providerId === null || slot0.algorithmId === null) return false;
+        const tps = slot0.targetParameterSetup;
+        if (!tps) return false;
+        const start = Number(tps.startValue);
+        const end = Number(tps.endValue);
+        const step = Number(tps.stepValue);
         return !isNaN(start) && !isNaN(end) && !isNaN(step) && step > 0 && start <= end;
-    }, [selectedProvider, selectedAlgorithm, targetParameterSetup]);
+    }, [jobSetup.type, slot0]);
 
     const generatorSystemValidation = useMemo(() => validateGeneratorSystemParams({
         format: systemEnvironmentSetup.format as EnvFormat,
@@ -164,7 +208,7 @@ export default function BenchmarkModal() {
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const handleStartBenchmark = useCallback(async () => {
-        if (!selectedProvider || !selectedAlgorithm || !targetParameterSetup) {
+        if (!slot0Provider || !slot0Algorithm || !slot0?.targetParameterSetup) {
             return;
         }
 
@@ -173,14 +217,20 @@ export default function BenchmarkModal() {
             return;
         }
 
-        const start = Number(targetParameterSetup.startValue);
-        const end = Number(targetParameterSetup.endValue);
-        const step = Number(targetParameterSetup.stepValue);
+        const tps = slot0.targetParameterSetup;
+        const start = Number(tps.startValue);
+        const end = Number(tps.endValue);
+        const step = Number(tps.stepValue);
         const estimatedStepCount =
             Number.isFinite(start) && Number.isFinite(end) && Number.isFinite(step) && step > 0
                 ? Math.floor((end - start) / step) + 1
                 : 0;
         const totalSteps = Math.max(estimatedStepCount, 0);
+
+        const slot0MultipleRunsSetup = {
+            runsPerStep: slot0.multipleRunsSetup.runsPerStep,
+            stepValueCalculation: slot0.multipleRunsSetup.stepValueCalculation,
+        };
 
         const controller = new AbortController();
         abortControllerRef.current = controller;
@@ -194,7 +244,7 @@ export default function BenchmarkModal() {
             progress: {
                 totalSteps,
                 completedSteps: 0,
-                totalRuns: totalSteps * multipleRunsSetup.runsPerStep,
+                totalRuns: totalSteps * slot0MultipleRunsSetup.runsPerStep,
                 completedRuns: 0,
             },
             results: [],
@@ -204,16 +254,16 @@ export default function BenchmarkModal() {
 
         try {
             const results = await runBenchmarkService({
-                provider: selectedProvider,
-                algorithm: selectedAlgorithm,
-                algorithmParameters,
-                algorithmMetrics,
-                targetParameterSetup,
-                fixedParameters,
+                provider: slot0Provider,
+                algorithm: slot0Algorithm,
+                algorithmParameters: slot0AlgoParams,
+                algorithmMetrics: slot0AlgoMetrics,
+                targetParameterSetup: slot0.targetParameterSetup,
+                fixedParameters: slot0.fixedParameters,
                 environmentSetup,
                 environmentSetSetup,
                 systemEnvironmentSetup,
-                multipleRunsSetup,
+                multipleRunsSetup: slot0MultipleRunsSetup,
                 selectedMetrics: metricsConfig.selectedMetrics,
                 signal: controller.signal,
                 onProgress: (progress) => setBenchmarkExecutionState({ progress }),
@@ -243,21 +293,18 @@ export default function BenchmarkModal() {
             abortControllerRef.current = null;
         }
     }, [
-        selectedProvider,
-        selectedAlgorithm,
-        targetParameterSetup,
+        slot0,
+        slot0Provider,
+        slot0Algorithm,
+        slot0AlgoParams,
+        slot0AlgoMetrics,
         setIsRunning,
         setError,
         resetResults,
         setBenchmarkExecutionState,
-        multipleRunsSetup.runsPerStep,
-        algorithmParameters,
-        algorithmMetrics,
-        fixedParameters,
         environmentSetup,
         environmentSetSetup,
         systemEnvironmentSetup,
-        multipleRunsSetup,
         metricsConfig.selectedMetrics,
         addStepResult,
         generatorSystemValidation.error,
@@ -474,21 +521,22 @@ export default function BenchmarkModal() {
                     )}
                     {activeTab === "run" && (
                         <BenchmarkRunTab
-                            selectedProvider={selectedProvider}
-                            selectedAlgorithm={selectedAlgorithm}
-                            targetParameterSetup={targetParameterSetup}
-                            targetParameterName={selectedTargetParameter?.name ?? "Parameter"}
-                            fixedParameters={fixedParameters}
+                            jobType={jobSetup.type}
+                            providerName={slot0Provider?.name ?? ""}
+                            algorithmName={slot0Algorithm?.name ?? ""}
+                            targetParameterName={slot0TargetParam?.name ?? "Parameter"}
+                            targetParameterSetup={slot0?.targetParameterSetup ?? null}
+                            stepValueCalculation={slot0?.multipleRunsSetup.stepValueCalculation ?? "median"}
                             environmentSetup={environmentSetup}
+                            environmentSetSetup={environmentSetSetup}
                             systemEnvironmentSetup={systemEnvironmentSetup}
-                            multipleRunsSetup={multipleRunsSetup}
                             metricsConfig={metricsConfig}
                             isRunning={isRunning}
                             error={error}
                             executionState={executionState}
                             onStartBenchmark={handleStartBenchmark}
                             onCancelBenchmark={handleCancelBenchmark}
-                            canStartBenchmark={generatorSystemValidation.ok}
+                            canStartBenchmark={isSetupValid && generatorSystemValidation.ok}
                             systemParamsError={generatorSystemValidation.error}
                         />
                     )}
