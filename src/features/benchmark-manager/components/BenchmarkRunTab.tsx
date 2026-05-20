@@ -133,7 +133,7 @@ export default function BenchmarkRunTab({
                 <div>
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5">Environments</p>
                     <p className="text-sm text-gray-700">
-                        {environmentSetSetup.count} × {environmentSetup.width}×{environmentSetup.height} @ {environmentSetup.cellSize}px
+                        {environmentSetSetup.count} × {environmentSetup.width}×{environmentSetup.height} @ {environmentSetup.cellSize}
                     </p>
                 </div>
                 {targetParameterSetup && (
