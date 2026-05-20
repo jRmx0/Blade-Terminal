@@ -78,7 +78,7 @@ export default function BenchmarkModal() {
         onClose: close,
     });
 
-    const [activeTab, setActiveTab] = useState<"env-setup" | "setup" | "job-setup" | "run" | `algo-${number}`>("job-setup");
+    const [activeTab, setActiveTab] = useState<"job-setup" | "env-setup" | "setup" | "run" | `algo-${number}`>("job-setup");
 
     // Reset active tab when algo count drops below the current algo tab index
     useEffect(() => {
