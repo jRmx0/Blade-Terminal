@@ -17,7 +17,6 @@ import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import ModalActionBar, { type ModalActionBarItem } from "@/components/modal/modal-action-bar/ModalActionBar";
 import type { ModalActionStatus } from "@/components/modal/modal-action-bar/ModalActionBarAction";
-import BenchmarkSetupTab from "@/features/benchmark-manager/components/BenchmarkSetupTab";
 import BenchmarkEnvSetupTab from "@/features/benchmark-manager/components/BenchmarkEnvSetupTab";
 import BenchmarkJobSetupTab from "@/features/benchmark-manager/components/BenchmarkJobSetupTab";
 import BenchmarkAlgoSetupTab from "@/features/benchmark-manager/components/BenchmarkAlgoSetupTab";
@@ -78,7 +77,7 @@ export default function BenchmarkModal() {
         onClose: close,
     });
 
-    const [activeTab, setActiveTab] = useState<"job-setup" | "env-setup" | "setup" | "run" | `algo-${number}`>("job-setup");
+    const [activeTab, setActiveTab] = useState<"job-setup" | "env-setup" | "run" | `algo-${number}`>("job-setup");
 
     // Reset active tab when algo count drops below the current algo tab index
     useEffect(() => {
@@ -412,17 +411,7 @@ export default function BenchmarkModal() {
                         >
                             #{i + 1} Algo.
                         </button>
-                    ))}                    <button
-                        type="button"
-                        onClick={() => setActiveTab("setup")}
-                        className={`px-4 py-2 text-sm font-medium transition-colors focus:outline-none border-b-2 -mb-px
-                            ${activeTab === "setup"
-                                ? "border-teal-600 text-teal-700"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                            }`}
-                    >
-                        Setup
-                    </button>
+                    ))}
                     <button
                         type="button"
                         onClick={() => setActiveTab("run")}
@@ -444,27 +433,6 @@ export default function BenchmarkModal() {
 
                 {/* Body */}
                 <div className="flex-1 overflow-y-auto">
-                    {activeTab === "setup" && (
-                        <BenchmarkSetupTab
-                            providers={providers}
-                            selectedProviderId={selectedProviderId}
-                            onSelectProvider={setSelectedProvider}
-                            availableAlgorithms={availableAlgorithms}
-                            selectedAlgorithm={selectedAlgorithm}
-                            onSelectAlgorithm={setSelectedAlgorithm}
-                            numericParameters={numericParameters}
-                            targetParameterSetup={targetParameterSetup}
-                            onSetTargetParameter={setTargetParameterSetup}
-                            nonTargetParameters={nonTargetParameters}
-                            fixedParameters={fixedParameters}
-                            onSetFixedParameter={setFixedParameter}
-                            onRemoveFixedParameter={removeFixedParameter}
-                            multipleRunsSetup={multipleRunsSetup}
-                            onSetMultipleRunsSetup={setMultipleRunsSetup}
-                            metricsConfig={metricsConfig}
-                            onToggleMetric={toggleMetric}
-                        />
-                    )}
                     {activeTab === "env-setup" && (
                         <BenchmarkEnvSetupTab
                             environmentSetup={environmentSetup}
