@@ -222,32 +222,36 @@ export default function BenchmarkRunTab({
                                 <thead className="bg-gray-50 text-gray-600 sticky top-0">
                                     <tr>
                                         <th className="px-3 py-2 text-left font-medium">Algorithm</th>
-                                        <th className="px-3 py-2 text-left font-medium">Envs</th>
+                                        <th className="px-3 py-2 text-left font-medium">Env</th>
+                                        <th className="px-3 py-2 text-left font-medium">Runs</th>
                                         {selectedMetrics.map((metric) => (
                                             <th key={metric} className="px-3 py-2 text-left font-medium">{METRIC_LABELS[metric]}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {algoResults.map((algoResult) => (
-                                        <tr key={algoResult.algoIndex} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-3 py-2 font-medium text-gray-800">#{algoResult.algoIndex + 1}</td>
-                                            <td className="px-3 py-2 text-gray-500">
-                                                <span className="text-teal-700">{algoResult.envsCompleted} ok</span>
-                                                {algoResult.envsFailed > 0 && (
-                                                    <span className="text-red-600"> / {algoResult.envsFailed} failed</span>
-                                                )}
-                                            </td>
-                                            {selectedMetrics.map((metric) => {
-                                                const agg = algoResult.aggregatedMetrics[metric][stepValueCalculation];
-                                                return (
-                                                    <td key={metric} className="px-3 py-2 tabular-nums text-gray-700">
-                                                        {typeof agg === "number" ? agg.toFixed(4) : "—"}
-                                                    </td>
-                                                );
-                                            })}
-                                        </tr>
-                                    ))}
+                                    {algoResults.flatMap((algoResult) =>
+                                        algoResult.envResults.map((envResult) => (
+                                            <tr key={`${algoResult.algoIndex}-${envResult.envIndex}`} className="hover:bg-gray-50 transition-colors">
+                                                <td className="px-3 py-2 font-medium text-gray-800">#{algoResult.algoIndex + 1}</td>
+                                                <td className="px-3 py-2 font-medium text-gray-800">#{envResult.envIndex + 1}</td>
+                                                <td className="px-3 py-2 text-gray-500">
+                                                    <span className="text-teal-700">{envResult.runsCompleted} ok</span>
+                                                    {envResult.runsFailed > 0 && (
+                                                        <span className="text-red-600"> / {envResult.runsFailed} failed</span>
+                                                    )}
+                                                </td>
+                                                {selectedMetrics.map((metric) => {
+                                                    const value = envResult.metrics[metric];
+                                                    return (
+                                                        <td key={metric} className="px-3 py-2 tabular-nums text-gray-700">
+                                                            {typeof value === "number" ? String(parseFloat(value.toFixed(2))) : "—"}
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -289,7 +293,7 @@ export default function BenchmarkRunTab({
                                             const aggregate = stepResult.aggregatedMetrics[metric][stepValueCalculation];
                                             return (
                                                 <td key={metric} className="px-3 py-2 tabular-nums text-gray-700">
-                                                    {typeof aggregate === "number" ? aggregate.toFixed(4) : "—"}
+                                                    {typeof aggregate === "number" ? String(parseFloat(aggregate.toFixed(2))) : "—"}
                                                 </td>
                                             );
                                         })}
