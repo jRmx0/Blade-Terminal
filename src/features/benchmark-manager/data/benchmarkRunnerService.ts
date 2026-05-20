@@ -444,6 +444,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
         targetParameterSetup,
         fixedParameters,
         environmentSetup,
+        environmentSetSetup,
         systemEnvironmentSetup,
         multipleRunsSetup,
         selectedMetrics,
