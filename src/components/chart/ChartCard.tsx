@@ -27,6 +27,37 @@ ChartJS.register(CategoryScale, LinearScale, LogarithmicScale, PointElement, Lin
 const STAGE_COLORS = ["#ef4444", "#f59e0b", "#84cc16", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6"];
 const LINE_COLORS = ["#0d9488", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#84cc16", "#06b6d4"];
 
+/** Largest-Triangle-Three-Buckets downsampling — preserves the visual shape of a line. */
+function lttb(
+    data: Array<{ x: number; y: number }>,
+    threshold: number,
+): Array<{ x: number; y: number }> {
+    const n = data.length;
+    if (threshold >= n || n <= 2) return data;
+    const sampled: Array<{ x: number; y: number }> = [data[0]!];
+    const bucketSize = (n - 2) / (threshold - 2);
+    let a = 0;
+    for (let i = 0; i < threshold - 2; i++) {
+        const bStart = Math.floor((i + 1) * bucketSize) + 1;
+        const bEnd = Math.min(Math.floor((i + 2) * bucketSize) + 1, n - 1);
+        const nStart = Math.floor((i + 2) * bucketSize) + 1;
+        const nEnd = Math.min(Math.floor((i + 3) * bucketSize) + 1, n - 1);
+        let avgX = 0, avgY = 0, count = 0;
+        for (let j = nStart; j < nEnd; j++) { avgX += data[j]!.x; avgY += data[j]!.y; count++; }
+        if (count > 0) { avgX /= count; avgY /= count; }
+        const ax = data[a]!.x, ay = data[a]!.y;
+        let maxArea = -1, maxIdx = bStart;
+        for (let j = bStart; j < bEnd; j++) {
+            const area = Math.abs((ax - avgX) * (data[j]!.y - ay) - (ax - data[j]!.x) * (avgY - ay));
+            if (area > maxArea) { maxArea = area; maxIdx = j; }
+        }
+        sampled.push(data[maxIdx]!);
+        a = maxIdx;
+    }
+    sampled.push(data[n - 1]!);
+    return sampled;
+}
+
 const borderBoxPlugin: Plugin<"line"> = {
     id: "borderBox",
     afterDraw(chart) {
@@ -157,7 +188,6 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
         () => Math.max(0, ...normalizedSeriesPoints.map((pts) => pts.length)),
         [normalizedSeriesPoints],
     );
-    const showDots = maxSeriesLength <= 20;
 
     const axisNumberFormatter = useMemo(
         () => new Intl.NumberFormat("fr-FR", { useGrouping: true, maximumFractionDigits: 2 }),
@@ -435,14 +465,48 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
 
     const chartData = useMemo(
         () => {
+            const dpr = window.devicePixelRatio || 1;
+            const displayThreshold = Math.max(2, Math.round(chartWidth * dpr));
+
+            if (isXYData) {
+                const datasets = series.map((s, i) => {
+                    const pts = normalizedSeriesPoints[i] ?? [];
+                    const color = s.color ?? LINE_COLORS[i % LINE_COLORS.length] ?? "#0d9488";
+                    const raw = pts.map((pt) => ({ x: pt.x + xLogOffset, y: pt.y + yLogOffset }));
+                    const display = raw.length > displayThreshold ? lttb(raw, displayThreshold) : raw;
+                    return {
+                        label: effectiveSeriesLabels[i] ?? s.label,
+                        data: display,
+                        borderColor: color,
+                        borderWidth: 1.5,
+                        spanGaps: true,
+                        pointRadius: display.length <= 20 ? 2 : 0,
+                        pointHoverRadius: 4,
+                        pointBackgroundColor: color,
+                        tension: 0,
+                    };
+                });
+                return { datasets };
+            }
+
+            // Category data: stride-based decimation shared across all series so x positions stay consistent.
+            const stride = Math.max(1, Math.ceil(maxSeriesLength / displayThreshold));
+            const displayIndices: number[] = [];
+            for (let i = 0; i < maxSeriesLength; i += stride) displayIndices.push(i);
+            if (displayIndices.length > 0 && displayIndices[displayIndices.length - 1] !== maxSeriesLength - 1) {
+                displayIndices.push(maxSeriesLength - 1);
+            }
+            const showDots = displayIndices.length <= 20;
+
             const datasets = series.map((s, i) => {
                 const pts = normalizedSeriesPoints[i] ?? [];
                 const color = s.color ?? LINE_COLORS[i % LINE_COLORS.length] ?? "#0d9488";
                 return {
                     label: effectiveSeriesLabels[i] ?? s.label,
-                    data: isXYData
-                        ? pts.map((pt) => ({ x: pt.x + xLogOffset, y: pt.y + yLogOffset }))
-                        : pts.map((pt) => pt.y + yLogOffset),
+                    data: displayIndices.map((idx) => {
+                        const y = pts[idx]?.y;
+                        return y !== undefined ? y + yLogOffset : null;
+                    }),
                     borderColor: color,
                     borderWidth: 1.5,
                     spanGaps: true,
@@ -453,16 +517,9 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
                 };
             });
 
-            if (isXYData) {
-                return { datasets };
-            }
-
-            return {
-                labels: Array.from({ length: maxSeriesLength }, (_, i) => i),
-                datasets,
-            };
+            return { labels: displayIndices, datasets };
         },
-        [series, normalizedSeriesPoints, isXYData, showDots, effectiveSeriesLabels, maxSeriesLength, xLogOffset, yLogOffset],
+        [series, normalizedSeriesPoints, isXYData, effectiveSeriesLabels, maxSeriesLength, xLogOffset, yLogOffset, chartWidth],
     );
 
     const options = useMemo<ChartOptions<"line">>(
