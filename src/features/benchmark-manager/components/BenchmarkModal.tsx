@@ -58,7 +58,7 @@ export default function BenchmarkModal() {
         executionState,
         setBenchmarkExecutionState,
         addStepResult,
-        addAlgoResult,
+        addAlgoEnvResult,
         resetResults,
         cancelBenchmark,
         reset,
@@ -284,7 +284,8 @@ export default function BenchmarkModal() {
                     selectedMetrics: metricsConfig.selectedMetrics,
                     signal: controller.signal,
                     onProgress: (progress) => setBenchmarkExecutionState({ progress }),
-                    onAlgoCompleted: (result) => addAlgoResult(result),
+                    onAlgoEnvCompleted: (algoIndex, algorithmId, providerId, envResult) =>
+                        addAlgoEnvResult(algoIndex, algorithmId, providerId, envResult),
                 });
 
                 setBenchmarkExecutionState({
@@ -396,7 +397,7 @@ export default function BenchmarkModal() {
         systemEnvironmentSetup,
         metricsConfig.selectedMetrics,
         addStepResult,
-        addAlgoResult,
+        addAlgoEnvResult,
     ]);
 
     const handleCancelBenchmark = useCallback(() => {

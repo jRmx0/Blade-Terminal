@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import ChartCard from "@/components/chart/ChartCard";
+import ChartCard, { type ChartSeries } from "@/components/chart/ChartCard";
 import {
     type BenchmarkAlgoResult,
     type BenchmarkEnvironmentSetSetup,
@@ -100,12 +100,31 @@ export default function BenchmarkRunTab({
             metric,
             metricId: 10000 + idx,
             name: `${METRIC_LABELS[metric]} vs ${targetParameterName}`,
-            data: sorted.map((result) => ({
-                x: result.stepValue,
-                y: result.aggregatedMetrics[metric][stepValueCalculation] ?? Number.NaN,
-            })),
+            series: [{
+                label: METRIC_LABELS[metric],
+                data: sorted.map((result) => ({
+                    x: result.stepValue,
+                    y: result.aggregatedMetrics[metric][stepValueCalculation] ?? Number.NaN,
+                })),
+            }] as ChartSeries[],
         }));
     }, [executionState.results, selectedMetrics, stepValueCalculation, targetParameterName]);
+
+    const algoChartSeries = useMemo(() => {
+        if (algoResults.length === 0) return [];
+        return selectedMetrics.map((metric, idx) => ({
+            metric,
+            metricId: 20000 + idx,
+            name: METRIC_LABELS[metric],
+            series: algoResults.map((algoResult) => ({
+                label: jobAlgorithms[algoResult.algoIndex]?.algorithmName || `#${algoResult.algoIndex + 1}`,
+                data: algoResult.envResults.map((envResult) => ({
+                    x: envResult.envIndex + 1,
+                    y: envResult.metrics[metric] ?? Number.NaN,
+                })),
+            })) as ChartSeries[],
+        }));
+    }, [algoResults, selectedMetrics, jobAlgorithms]);
 
     const handleExportCsv = useCallback(() => {
         if (jobType === "algorithm-eval") {
@@ -373,23 +392,44 @@ export default function BenchmarkRunTab({
                 <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wide">
                     Trend Charts
                 </div>
-                {chartSeries.length === 0 || executionState.results.length === 0 ? (
-                    <div className="text-center text-sm text-gray-400 py-8">
-                        Complete at least one step to render charts
-                    </div>
+                {jobType === "algorithm-eval" ? (
+                    algoChartSeries.length === 0 ? (
+                        <div className="text-center text-sm text-gray-400 py-8">
+                            Complete at least one algorithm to render charts
+                        </div>
+                    ) : (
+                        <div className="p-3 flex flex-col gap-3 max-h-112 overflow-y-auto">
+                            {algoChartSeries.map((chart) => (
+                                <ChartCard
+                                    key={chart.metric}
+                                    metricId={chart.metricId}
+                                    name={chart.name}
+                                    series={chart.series}
+                                    xAxisLabel="Environment"
+                                    yAxisLabel={METRIC_LABELS[chart.metric]}
+                                />
+                            ))}
+                        </div>
+                    )
                 ) : (
-                    <div className="p-3 flex flex-col gap-3 max-h-112 overflow-y-auto">
-                        {chartSeries.map((series) => (
-                            <ChartCard
-                                key={series.metric}
-                                metricId={series.metricId}
-                                name={series.name}
-                                data={series.data}
-                                xAxisLabel={targetParameterName}
-                                yAxisLabel={series.name.split(" vs ")[0]}
-                            />
-                        ))}
-                    </div>
+                    chartSeries.length === 0 || executionState.results.length === 0 ? (
+                        <div className="text-center text-sm text-gray-400 py-8">
+                            Complete at least one step to render charts
+                        </div>
+                    ) : (
+                        <div className="p-3 flex flex-col gap-3 max-h-112 overflow-y-auto">
+                            {chartSeries.map((chart) => (
+                                <ChartCard
+                                    key={chart.metric}
+                                    metricId={chart.metricId}
+                                    name={chart.name}
+                                    series={chart.series}
+                                    xAxisLabel={targetParameterName}
+                                    yAxisLabel={METRIC_LABELS[chart.metric]}
+                                />
+                            ))}
+                        </div>
+                    )
                 )}
             </div>
         </div>

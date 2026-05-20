@@ -731,6 +731,7 @@ export interface RunAlgorithmEvalConfig {
     selectedMetrics: Set<BenchmarkMetricType>;
     signal?: AbortSignal;
     onProgress?: (progress: BenchmarkProgressUpdate) => void;
+    onAlgoEnvCompleted?: (algoIndex: number, algorithmId: number, providerId: number, envResult: BenchmarkAlgoEnvResult) => void;
     onAlgoCompleted?: (result: BenchmarkAlgoResult) => void;
 }
 
@@ -743,6 +744,7 @@ export async function runAlgorithmEvalBenchmark(config: RunAlgorithmEvalConfig):
         selectedMetrics,
         signal,
         onProgress,
+        onAlgoEnvCompleted,
         onAlgoCompleted,
     } = config;
 
@@ -926,12 +928,14 @@ export async function runAlgorithmEvalBenchmark(config: RunAlgorithmEvalConfig):
                 pathLength: calculateAggregateMetrics(repeatMetrics.map((m) => m.pathLength))[slot.stepValueCalculation],
             };
 
-            envResults.push({
+            const envResult: BenchmarkAlgoEnvResult = {
                 envIndex,
                 runsCompleted,
                 runsFailed,
                 metrics: envMetrics,
-            });
+            };
+            envResults.push(envResult);
+            onAlgoEnvCompleted?.(algoIndex, algorithm.id, provider.id, envResult);
         }
 
         const aggregatedMetrics: BenchmarkAggregatedMetrics = {

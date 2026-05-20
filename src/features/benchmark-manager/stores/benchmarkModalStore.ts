@@ -275,6 +275,7 @@ interface BenchmarkModalState {
     setBenchmarkExecutionState: (state: Partial<BenchmarkExecutionState>) => void;
     addStepResult: (result: BenchmarkStepResult) => void;
     addAlgoResult: (result: BenchmarkAlgoResult) => void;
+    addAlgoEnvResult: (algoIndex: number, algorithmId: number, providerId: number, envResult: BenchmarkAlgoEnvResult) => void;
     updateRunProgress: (stepValue: number, runIndex: number, updates: Partial<BenchmarkRun>) => void;
     cancelBenchmark: () => void;
     resetResults: () => void;
@@ -523,6 +524,59 @@ export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) =
                         ...state.executionState.progress,
                         completedSteps: nextAlgoResults.length,
                     },
+                },
+            };
+        });
+    },
+
+    addAlgoEnvResult: (algoIndex, algorithmId, providerId, envResult) => {
+        set((state) => {
+            const existingIdx = state.executionState.algoResults.findIndex((r) => r.algoIndex === algoIndex);
+            let nextAlgoResults: BenchmarkAlgoResult[];
+
+            if (existingIdx === -1) {
+                const newEnvResults = [envResult];
+                const newResult: BenchmarkAlgoResult = {
+                    algoIndex,
+                    algorithmId,
+                    providerId,
+                    envResults: newEnvResults,
+                    aggregatedMetrics: {
+                        coverage: calculateAggregateMetrics(newEnvResults.map((e) => e.metrics.coverage)),
+                        overlap: calculateAggregateMetrics(newEnvResults.map((e) => e.metrics.overlap)),
+                        efficiency: calculateAggregateMetrics(newEnvResults.map((e) => e.metrics.efficiency)),
+                        turns: calculateAggregateMetrics(newEnvResults.map((e) => e.metrics.turns)),
+                        pathLength: calculateAggregateMetrics(newEnvResults.map((e) => e.metrics.pathLength)),
+                    },
+                    envsCompleted: envResult.runsFailed === 0 ? 1 : 0,
+                    envsFailed: envResult.runsFailed > 0 ? 1 : 0,
+                };
+                nextAlgoResults = [...state.executionState.algoResults, newResult];
+            } else {
+                const existing = state.executionState.algoResults[existingIdx]!;
+                const updatedEnvResults = [...existing.envResults, envResult];
+                const updatedResult: BenchmarkAlgoResult = {
+                    ...existing,
+                    envResults: updatedEnvResults,
+                    aggregatedMetrics: {
+                        coverage: calculateAggregateMetrics(updatedEnvResults.map((e) => e.metrics.coverage)),
+                        overlap: calculateAggregateMetrics(updatedEnvResults.map((e) => e.metrics.overlap)),
+                        efficiency: calculateAggregateMetrics(updatedEnvResults.map((e) => e.metrics.efficiency)),
+                        turns: calculateAggregateMetrics(updatedEnvResults.map((e) => e.metrics.turns)),
+                        pathLength: calculateAggregateMetrics(updatedEnvResults.map((e) => e.metrics.pathLength)),
+                    },
+                    envsCompleted: existing.envsCompleted + (envResult.runsFailed === 0 ? 1 : 0),
+                    envsFailed: existing.envsFailed + (envResult.runsFailed > 0 ? 1 : 0),
+                };
+                nextAlgoResults = state.executionState.algoResults.map((r, i) =>
+                    i === existingIdx ? updatedResult : r,
+                );
+            }
+
+            return {
+                executionState: {
+                    ...state.executionState,
+                    algoResults: nextAlgoResults,
                 },
             };
         });
