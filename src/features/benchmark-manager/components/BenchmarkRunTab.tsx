@@ -175,9 +175,8 @@ export default function BenchmarkRunTab({
                         className="h-full bg-teal-500 transition-all duration-300"
                         style={{ width: `${progressPct}%` }}
                     />
-                    </div>
                 </div>
-            )}
+            </div>
 
             {/* ── D. Banners ────────────────────────────────────────────── */}
             {systemParamsError && (
