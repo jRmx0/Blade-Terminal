@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import InternalCardModalFastTab from "@/components/modals/card-modal/internal/InternalCardModalFastTab";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
 import { APP_PARAMETER_HANDLER } from "@/config/computation/appParameterHandlers";
+import { SYSTEM_HEADLAND_PROVIDER_PARAM_NAMES } from "@/features/coverage-planning/utils/headlandGeometry";
 import {
     type BenchmarkJobAlgorithm,
     type BenchmarkJobType,
@@ -74,7 +75,8 @@ export default function BenchmarkAlgoSetupTab({
             algorithmParams.filter(
                 (p) =>
                     p.id !== slot.targetParameterSetup?.targetParamId &&
-                    !SYSTEM_ENV_HANDLERS.has(p.appHandler ?? ""),
+                    !SYSTEM_ENV_HANDLERS.has(p.appHandler ?? "") &&
+                    !SYSTEM_HEADLAND_PROVIDER_PARAM_NAMES.has(p.name),
             ),
         [algorithmParams, slot.targetParameterSetup],
     );
