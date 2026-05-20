@@ -184,6 +184,17 @@ export default function BenchmarkModal() {
         [slot0AlgoParams, slot0?.targetParameterSetup?.targetParamId],
     );
 
+    const jobAlgorithms = useMemo(
+        () => jobSetup.algorithms.map((slot) => ({
+            providerName: providers.find((p) => p.id === slot.providerId)?.name ?? "",
+            algorithmName:
+                slot.algorithmId && slot.providerId
+                    ? (algorithms.find((a) => a.id === slot.algorithmId && a.computationProviderId === slot.providerId)?.name ?? "")
+                    : "",
+        })),
+        [jobSetup.algorithms, providers, algorithms],
+    );
+
     // Validation
     const isSetupValid = useMemo(() => {
         if (jobSetup.type === "parameter-eval") {
@@ -601,6 +612,7 @@ export default function BenchmarkModal() {
                             jobType={jobSetup.type}
                             providerName={slot0Provider?.name ?? ""}
                             algorithmName={slot0Algorithm?.name ?? ""}
+                            jobAlgorithms={jobAlgorithms}
                             targetParameterName={slot0TargetParam?.name ?? "Parameter"}
                             targetParameterSetup={slot0?.targetParameterSetup ?? null}
                             stepValueCalculation={slot0?.multipleRunsSetup.stepValueCalculation ?? "median"}

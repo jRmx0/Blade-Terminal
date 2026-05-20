@@ -19,6 +19,7 @@ export interface BenchmarkRunTabProps {
     jobType: BenchmarkJobType;
     providerName: string;
     algorithmName: string;
+    jobAlgorithms: Array<{ providerName: string; algorithmName: string }>;
     targetParameterName: string;
     targetParameterSetup: BenchmarkParameterSetup | null;
     stepValueCalculation: BenchmarkStepValueCalculation;
@@ -60,6 +61,7 @@ export default function BenchmarkRunTab({
     jobType,
     providerName,
     algorithmName,
+    jobAlgorithms,
     targetParameterName,
     targetParameterSetup,
     stepValueCalculation,
@@ -130,9 +132,21 @@ export default function BenchmarkRunTab({
             <div className="grid grid-cols-2 gap-x-6 gap-y-1 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                 <div>
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5">Algorithm</p>
-                    <p className="text-sm font-medium text-gray-800">
-                        #1 — {providerName || <span className="italic text-gray-400">not selected</span>} / {algorithmName || <span className="italic text-gray-400">not selected</span>}
-                    </p>
+                    {jobType === "algorithm-eval" ? (
+                        <div className="flex flex-col gap-0.5">
+                            {jobAlgorithms.length > 0 ? jobAlgorithms.map((algo, idx) => (
+                                <p key={idx} className="text-sm font-medium text-gray-800">
+                                    #{idx + 1} — {algo.providerName || <span className="italic text-gray-400">not selected</span>} / {algo.algorithmName || <span className="italic text-gray-400">not selected</span>}
+                                </p>
+                            )) : (
+                                <p className="text-sm italic text-gray-400">No algorithms configured</p>
+                            )}
+                        </div>
+                    ) : (
+                        <p className="text-sm font-medium text-gray-800">
+                            #1 — {providerName || <span className="italic text-gray-400">not selected</span>} / {algorithmName || <span className="italic text-gray-400">not selected</span>}
+                        </p>
+                    )}
                 </div>
                 <div>
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5">Environments</p>
