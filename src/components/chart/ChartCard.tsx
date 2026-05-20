@@ -235,6 +235,19 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
         [maxSeriesLength, stages],
     );
 
+    // Keep a ref with all the data the stage-markers plugin needs.
+    // Updated synchronously during render so the plugin always reads current values
+    // without needing a new plugin object (avoids stale-closure misplacement on resize).
+    const stageMarkersDataRef = useRef({
+        displayIndices,
+        normalizedStages,
+        isXYData,
+        maxSeriesLength,
+        normalizedSeriesPoints,
+        xLogOffset,
+    });
+    stageMarkersDataRef.current = { displayIndices, normalizedStages, isXYData, maxSeriesLength, normalizedSeriesPoints, xLogOffset };
+
     const titlePlugin = useMemo<Plugin<"line">>(
         () => ({
             id: `centerTitle-${metricId}`,
@@ -264,6 +277,9 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
         () => ({
             id: `stageMarkers-${metricId}`,
             afterDatasetsDraw(chart) {
+                const { displayIndices, normalizedStages, isXYData, maxSeriesLength, normalizedSeriesPoints, xLogOffset } =
+                    stageMarkersDataRef.current;
+
                 if (normalizedStages.length === 0 || maxSeriesLength === 0) return;
 
                 const xScale = chart.scales.x as { getPixelForValue: (value: number) => number } | undefined;
@@ -312,7 +328,9 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
                 ctx.restore();
             },
         }),
-        [metricId, maxSeriesLength, normalizedSeriesPoints, normalizedStages, isXYData, displayIndices, xLogOffset],
+        // Plugin object is stable per metricId; all dynamic data flows through stageMarkersDataRef.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [metricId],
     );
 
     const handleDownload = useCallback(async () => {
