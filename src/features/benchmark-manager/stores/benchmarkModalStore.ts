@@ -355,7 +355,7 @@ const INITIAL_STATE: Omit<BenchmarkModalState, keyof {
     },
     systemEnvironmentSetup: {
         format: "polygon",
-        type: "any_offline",
+        type: "offline",
         coordinateSystem: "Cartesian",
         headland: true,
         headlandWidth: "4.9",
