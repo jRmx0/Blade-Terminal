@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import ChartCard from "@/components/chart/ChartCard";
 import {
+    type BenchmarkAlgoResult,
     type BenchmarkEnvironmentSetSetup,
     type BenchmarkEnvironmentSetup,
     type BenchmarkExecutionState,
@@ -32,6 +33,7 @@ export interface BenchmarkRunTabProps {
     onCancelBenchmark: () => void;
     canStartBenchmark: boolean;
     systemParamsError: string | null;
+    algoResults: BenchmarkAlgoResult[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -55,6 +57,7 @@ const METRIC_LABELS: Record<BenchmarkMetricType, string> = {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function BenchmarkRunTab({
+    jobType,
     providerName,
     algorithmName,
     targetParameterName,
@@ -70,6 +73,7 @@ export default function BenchmarkRunTab({
     onCancelBenchmark,
     canStartBenchmark,
     systemParamsError,
+    algoResults,
 }: BenchmarkRunTabProps) {
     const selectedMetrics = useMemo(() => Array.from(metricsConfig.selectedMetrics), [metricsConfig.selectedMetrics]);
 
@@ -171,8 +175,9 @@ export default function BenchmarkRunTab({
                         className="h-full bg-teal-500 transition-all duration-300"
                         style={{ width: `${progressPct}%` }}
                     />
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* ── D. Banners ────────────────────────────────────────────── */}
             {systemParamsError && (
@@ -188,11 +193,59 @@ export default function BenchmarkRunTab({
                 </div>
             )}
 
-            {/* ── E. Results table ──────────────────────────────────────── */}
-            <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
-                <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    Results
+            {/* ── E. Results ────────────────────────────────────────────── */}
+            {jobType === "algorithm-eval" ? (
+                <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
+                    <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                        Results
+                    </div>
+                    {algoResults.length === 0 ? (
+                        <div className="text-center text-sm text-gray-400 py-8">
+                            Results will appear here once algorithms complete
+                        </div>
+                    ) : (
+                        <div className="max-h-64 overflow-auto">
+                            <table className="w-full text-xs">
+                                <thead className="bg-gray-50 text-gray-600 sticky top-0">
+                                    <tr>
+                                        <th className="px-3 py-2 text-left font-medium">Algorithm</th>
+                                        <th className="px-3 py-2 text-left font-medium">Envs</th>
+                                        {selectedMetrics.map((metric) => (
+                                            <th key={metric} className="px-3 py-2 text-left font-medium">{METRIC_LABELS[metric]}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {algoResults.map((algoResult) => (
+                                        <tr key={algoResult.algoIndex} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-3 py-2 font-medium text-gray-800">#{algoResult.algoIndex + 1}</td>
+                                            <td className="px-3 py-2 text-gray-500">
+                                                <span className="text-teal-700">{algoResult.envsCompleted} ok</span>
+                                                {algoResult.envsFailed > 0 && (
+                                                    <span className="text-red-600"> / {algoResult.envsFailed} failed</span>
+                                                )}
+                                            </td>
+                                            {selectedMetrics.map((metric) => {
+                                                const agg = algoResult.aggregatedMetrics[metric][stepValueCalculation];
+                                                return (
+                                                    <td key={metric} className="px-3 py-2 tabular-nums text-gray-700">
+                                                        {typeof agg === "number" ? agg.toFixed(4) : "—"}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
+            ) : (
+                /* ── E. Parameter-eval Results table ─────────────────── */
+                <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
+                    <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                        Results
+                    </div>
                 {executionState.results.length === 0 ? (
                     <div className="text-center text-sm text-gray-400 py-8">
                         Results will appear here once steps complete
@@ -233,7 +286,8 @@ export default function BenchmarkRunTab({
                         </table>
                     </div>
                 )}
-            </div>
+                </div>
+            )}
 
             {/* ── F. Charts ─────────────────────────────────────────────── */}
             <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">

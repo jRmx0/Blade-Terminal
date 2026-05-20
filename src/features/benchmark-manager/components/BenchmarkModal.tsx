@@ -10,7 +10,7 @@ import {
     type BenchmarkJobSetup,
     type BenchmarkJobAlgorithm,
 } from "@/features/benchmark-manager/stores/benchmarkModalStore";
-import { runBenchmark as runBenchmarkService } from "@/features/benchmark-manager/data/benchmarkRunnerService";
+import { runBenchmark as runBenchmarkService, runAlgorithmEvalBenchmark } from "@/features/benchmark-manager/data/benchmarkRunnerService";
 import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import { useModalLifecycle } from "@/hooks/modals/useModalLifecycle";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
@@ -58,6 +58,7 @@ export default function BenchmarkModal() {
         executionState,
         setBenchmarkExecutionState,
         addStepResult,
+        addAlgoResult,
         resetResults,
         cancelBenchmark,
         reset,
@@ -185,15 +186,20 @@ export default function BenchmarkModal() {
 
     // Validation
     const isSetupValid = useMemo(() => {
-        if (jobSetup.type !== "parameter-eval") return false;
-        if (!slot0 || slot0.providerId === null || slot0.algorithmId === null) return false;
-        const tps = slot0.targetParameterSetup;
-        if (!tps) return false;
-        const start = Number(tps.startValue);
-        const end = Number(tps.endValue);
-        const step = Number(tps.stepValue);
-        return !isNaN(start) && !isNaN(end) && !isNaN(step) && step > 0 && start <= end;
-    }, [jobSetup.type, slot0]);
+        if (jobSetup.type === "parameter-eval") {
+            if (!slot0 || slot0.providerId === null || slot0.algorithmId === null) return false;
+            const tps = slot0.targetParameterSetup;
+            if (!tps) return false;
+            const start = Number(tps.startValue);
+            const end = Number(tps.endValue);
+            const step = Number(tps.stepValue);
+            return !isNaN(start) && !isNaN(end) && !isNaN(step) && step > 0 && start <= end;
+        }
+        if (jobSetup.type === "algorithm-eval") {
+            return jobSetup.algorithms.some((a) => a.providerId !== null && a.algorithmId !== null);
+        }
+        return false;
+    }, [jobSetup.type, jobSetup.algorithms, slot0]);
 
     const generatorSystemValidation = useMemo(() => validateGeneratorSystemParams({
         format: systemEnvironmentSetup.format as EnvFormat,
@@ -208,12 +214,90 @@ export default function BenchmarkModal() {
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const handleStartBenchmark = useCallback(async () => {
-        if (!slot0Provider || !slot0Algorithm || !slot0?.targetParameterSetup) {
+        if (generatedEnvironments.length === 0) {
+            setError("No environments generated. Please generate environments in the Env. Setup tab first.");
             return;
         }
 
-        if (generatedEnvironments.length === 0) {
-            setError("No environments generated. Please generate environments in the Env. Setup tab first.");
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+        setIsRunning(true);
+        setError(null);
+        resetResults();
+
+        if (jobSetup.type === "algorithm-eval") {
+            const validSlots = jobSetup.algorithms
+                .map((slot, i) => ({ slot, i }))
+                .filter(({ slot }) => slot.providerId !== null && slot.algorithmId !== null);
+
+            const totalRuns = validSlots.reduce(
+                (sum, { slot }) => sum + generatedEnvironments.length * slot.multipleRunsSetup.runsPerEnvironment,
+                0,
+            );
+
+            setBenchmarkExecutionState({
+                status: "running",
+                progress: { totalSteps: validSlots.length, completedSteps: 0, totalRuns, completedRuns: 0 },
+                results: [],
+                algoResults: [],
+                abortSignal: controller.signal,
+                error: undefined,
+            });
+
+            try {
+                await runAlgorithmEvalBenchmark({
+                    slots: validSlots.map(({ slot, i }) => {
+                        const slotProvider = providers.find((p) => p.id === slot.providerId)!;
+                        const slotAlgorithm = algorithms.find(
+                            (a) => a.id === slot.algorithmId && a.computationProviderId === slot.providerId,
+                        )!;
+                        const slotParams = catalogParameters.filter(
+                            (p) => p.algorithmId === slot.algorithmId && p.computationProviderId === slot.providerId,
+                        );
+                        const slotMetrics = catalogMetrics.filter(
+                            (m) => m.algorithmId === slot.algorithmId && m.computationProviderId === slot.providerId,
+                        );
+                        return {
+                            provider: slotProvider,
+                            algorithm: slotAlgorithm,
+                            algorithmParameters: slotParams,
+                            algorithmMetrics: slotMetrics,
+                            fixedParameters: slot.fixedParameters,
+                            runsPerEnvironment: slot.multipleRunsSetup.runsPerEnvironment,
+                            stepValueCalculation: slot.multipleRunsSetup.stepValueCalculation,
+                        };
+                    }),
+                    environmentSetup,
+                    generatedEnvironments,
+                    systemEnvironmentSetup,
+                    selectedMetrics: metricsConfig.selectedMetrics,
+                    signal: controller.signal,
+                    onProgress: (progress) => setBenchmarkExecutionState({ progress }),
+                    onAlgoCompleted: (result) => addAlgoResult(result),
+                });
+
+                setBenchmarkExecutionState({
+                    status: controller.signal.aborted ? "cancelled" : "completed",
+                    abortSignal: undefined,
+                });
+            } catch (runError) {
+                const message = runError instanceof Error ? runError.message : String(runError);
+                if (controller.signal.aborted) {
+                    setBenchmarkExecutionState({ status: "cancelled", abortSignal: undefined });
+                } else {
+                    setError(message);
+                    setBenchmarkExecutionState({ status: "error", error: message, abortSignal: undefined });
+                }
+            } finally {
+                setIsRunning(false);
+                abortControllerRef.current = null;
+            }
+            return;
+        }
+
+        // parameter-eval path
+        if (!slot0Provider || !slot0Algorithm || !slot0?.targetParameterSetup) {
+            setIsRunning(false);
             return;
         }
 
@@ -227,13 +311,6 @@ export default function BenchmarkModal() {
                 : 0;
         const totalSteps = Math.max(estimatedStepCount, 0);
 
-        const controller = new AbortController();
-        abortControllerRef.current = controller;
-
-        setIsRunning(true);
-        setError(null);
-        resetResults();
-
         setBenchmarkExecutionState({
             status: "running",
             progress: {
@@ -243,6 +320,7 @@ export default function BenchmarkModal() {
                 completedRuns: 0,
             },
             results: [],
+            algoResults: [],
             abortSignal: controller.signal,
             error: undefined,
         });
@@ -288,11 +366,16 @@ export default function BenchmarkModal() {
             abortControllerRef.current = null;
         }
     }, [
+        jobSetup,
         slot0,
         slot0Provider,
         slot0Algorithm,
         slot0AlgoParams,
         slot0AlgoMetrics,
+        providers,
+        algorithms,
+        catalogParameters,
+        catalogMetrics,
         setIsRunning,
         setError,
         resetResults,
@@ -302,6 +385,7 @@ export default function BenchmarkModal() {
         systemEnvironmentSetup,
         metricsConfig.selectedMetrics,
         addStepResult,
+        addAlgoResult,
     ]);
 
     const handleCancelBenchmark = useCallback(() => {
@@ -531,6 +615,7 @@ export default function BenchmarkModal() {
                             onCancelBenchmark={handleCancelBenchmark}
                             canStartBenchmark={isSetupValid && generatedEnvironments.length > 0}
                             systemParamsError={generatedEnvironments.length === 0 ? "No environments generated. Please generate environments in the Env. Setup tab first." : null}
+                            algoResults={executionState.algoResults}
                         />
                     )}
                 </div>

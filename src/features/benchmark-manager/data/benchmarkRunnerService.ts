@@ -10,6 +10,8 @@ import { computeNetArea } from "@/features/canvas-editing/utils/canvasGeometry";
 import {
     calculateAggregateMetrics,
     type BenchmarkAggregatedMetrics,
+    type BenchmarkAlgoEnvResult,
+    type BenchmarkAlgoResult,
     type BenchmarkEnvironmentSetup,
     type BenchmarkFixedParameter,
     type BenchmarkGeneratedEnvironment,
@@ -17,6 +19,7 @@ import {
     type BenchmarkMetricsValues,
     type BenchmarkParameterSetup,
     type BenchmarkRun,
+    type BenchmarkStepValueCalculation,
     type BenchmarkSystemEnvironmentSetup,
     type BenchmarkStepResult,
 } from "@/features/benchmark-manager/stores/benchmarkModalStore";
@@ -178,6 +181,31 @@ function toCanvasObjects(
         zoneObjects,
         obstacleObjects,
     };
+}
+
+function buildFixedParameters(
+    algorithmParameters: AlgorithmParameter[],
+    fixedParameters: BenchmarkFixedParameter[],
+): Record<string, number | boolean | string | null> {
+    const fixedById = new Map<number, string>();
+    for (const fixed of fixedParameters) {
+        fixedById.set(fixed.paramId, fixed.value);
+    }
+
+    const parameters: Record<string, number | boolean | string | null> = {};
+
+    for (const param of algorithmParameters) {
+        const rawValue = fixedById.get(param.id) ?? param.defaultValue;
+
+        if (rawValue.trim() === "" && (isNullableParameter(param.name, param.paramType) || isNumericParameter(param.paramType))) {
+            parameters[param.name] = null;
+            continue;
+        }
+
+        parameters[param.name] = coerceParamValue(rawValue, param.paramType);
+    }
+
+    return parameters;
 }
 
 function buildParametersForStep(
@@ -681,4 +709,262 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
     }
 
     return stepResults;
+}
+
+// ─── Algorithm Eval Runner ───────────────────────────────────────────────────────────
+
+export interface RunAlgorithmEvalSlot {
+    provider: ComputationProvider;
+    algorithm: ComputationAlgorithm;
+    algorithmParameters: AlgorithmParameter[];
+    algorithmMetrics: AlgorithmMetric[];
+    fixedParameters: BenchmarkFixedParameter[];
+    runsPerEnvironment: number;
+    stepValueCalculation: BenchmarkStepValueCalculation;
+}
+
+export interface RunAlgorithmEvalConfig {
+    slots: RunAlgorithmEvalSlot[];
+    environmentSetup: BenchmarkEnvironmentSetup;
+    generatedEnvironments: BenchmarkGeneratedEnvironment[];
+    systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
+    selectedMetrics: Set<BenchmarkMetricType>;
+    signal?: AbortSignal;
+    onProgress?: (progress: BenchmarkProgressUpdate) => void;
+    onAlgoCompleted?: (result: BenchmarkAlgoResult) => void;
+}
+
+export async function runAlgorithmEvalBenchmark(config: RunAlgorithmEvalConfig): Promise<BenchmarkAlgoResult[]> {
+    const {
+        slots,
+        environmentSetup,
+        generatedEnvironments,
+        systemEnvironmentSetup,
+        selectedMetrics,
+        signal,
+        onProgress,
+        onAlgoCompleted,
+    } = config;
+
+    if (generatedEnvironments.length === 0) {
+        throw new Error("No environments available. Please generate environments in the Env. Setup tab first.");
+    }
+
+    if (slots.length === 0) {
+        throw new Error("No algorithm slots configured.");
+    }
+
+    const totalRuns = slots.reduce((sum, slot) => sum + generatedEnvironments.length * slot.runsPerEnvironment, 0);
+    let completedRuns = 0;
+    const algoResults: BenchmarkAlgoResult[] = [];
+
+    onProgress?.({
+        totalSteps: slots.length,
+        completedSteps: 0,
+        totalRuns,
+        completedRuns,
+    });
+
+    for (let algoIndex = 0; algoIndex < slots.length; algoIndex += 1) {
+        if (signal?.aborted) break;
+
+        const slot = slots[algoIndex]!;
+        const { provider, algorithm, algorithmParameters, algorithmMetrics, fixedParameters, runsPerEnvironment } = slot;
+
+        const baseParameters = buildFixedParameters(algorithmParameters, fixedParameters);
+        const systemEnvironmentParameters = getSystemEnvironmentParameters(systemEnvironmentSetup);
+        for (const [key, value] of Object.entries(systemEnvironmentParameters)) {
+            baseParameters[key] = value;
+        }
+
+        const headlandEnabled = systemEnvironmentSetup.headland;
+        const headlandWidth = parseHeadlandWidth(systemEnvironmentSetup.headlandWidth);
+
+        const pathWidthRaw = baseParameters["Path Width"];
+        const pathWidth =
+            typeof pathWidthRaw === "number"
+                ? pathWidthRaw
+                : typeof pathWidthRaw === "string"
+                    ? Number(pathWidthRaw)
+                    : NaN;
+        const effectiveCellSize =
+            Number.isFinite(pathWidth) && pathWidth > 0
+                ? pathWidth
+                : environmentSetup.coverageGridCellSize;
+
+        const envResults: BenchmarkAlgoEnvResult[] = [];
+
+        for (let envIndex = 0; envIndex < generatedEnvironments.length; envIndex += 1) {
+            if (signal?.aborted) break;
+
+            const generatedEnv = generatedEnvironments[envIndex]!;
+            const generated = {
+                boundary: generatedEnv.boundary,
+                obstacles: generatedEnv.obstacles,
+                startEndPoint: generatedEnv.startEndPoint,
+            };
+            const benchmarkObjectType = generatedEnv.objectType;
+
+            const { objects, zoneObjects, obstacleObjects } = toCanvasObjects(generated, benchmarkObjectType);
+
+            const resolvedGeometry = resolveRequestGeometry({ objects, headlandEnabled, headlandWidth });
+
+            let requestBody: Record<string, unknown> | null = null;
+            if (resolvedGeometry.ok) {
+                requestBody = {
+                    environment: {
+                        zones: resolvedGeometry.zones,
+                        obstacles: resolvedGeometry.obstacles,
+                        startPoint: generated.startEndPoint,
+                        endPoint: generated.startEndPoint,
+                    },
+                    parameters: baseParameters,
+                };
+
+                if (headlandEnabled) {
+                    requestBody.realworld = {
+                        zones: zoneObjects.map((o) => ({ vertices: o.vertices.map(({ x, y }) => ({ x, y })) })),
+                        obstacles: obstacleObjects.map((o) => ({ vertices: o.vertices.map(({ x, y }) => ({ x, y })) })),
+                    };
+                }
+            }
+
+            const repeatMetrics: BenchmarkMetricsValues[] = [];
+            let runsCompleted = 0;
+            let runsFailed = 0;
+
+            for (let repeatIndex = 0; repeatIndex < runsPerEnvironment; repeatIndex += 1) {
+                if (signal?.aborted) break;
+
+                const runIndex = algoIndex * generatedEnvironments.length * runsPerEnvironment
+                    + envIndex * runsPerEnvironment
+                    + repeatIndex;
+
+                onProgress?.({
+                    totalSteps: slots.length,
+                    completedSteps: algoIndex,
+                    totalRuns,
+                    completedRuns,
+                    currentStepValue: algoIndex,
+                    currentRunIndex: runIndex,
+                });
+
+                if (!resolvedGeometry.ok || !requestBody) {
+                    completedRuns += 1;
+                    runsFailed += 1;
+                    continue;
+                }
+
+                try {
+                    const submitResult = await submitComputeRequest(provider, algorithm.id, requestBody, signal);
+
+                    if (!submitResult.ok || !submitResult.pollUrl) {
+                        completedRuns += 1;
+                        runsFailed += 1;
+                        continue;
+                    }
+
+                    const state = await pollComputeJob(submitResult.pollUrl, provider.apiKey, signal);
+
+                    if (state.status === "failed") {
+                        completedRuns += 1;
+                        runsFailed += 1;
+                        continue;
+                    }
+
+                    const completed = state as ComputeJobStateCompleted;
+                    const coverageObjects: CanvasObject[] = [
+                        ...resolvedGeometry.zones.map((zone, index) => ({
+                            id: index + 1,
+                            environmentId: 0,
+                            category: OBJECT_CATEGORY.ZONE,
+                            type: benchmarkObjectType,
+                            vertexCount: zone.vertices.length,
+                            area: computePolygonArea(zone.vertices),
+                            vertices: zone.vertices.map((v) => ({ x: v.x, y: v.y })),
+                        })),
+                        ...resolvedGeometry.obstacles.map((obstacle, index) => ({
+                            id: resolvedGeometry.zones.length + index + 1,
+                            environmentId: 0,
+                            category: OBJECT_CATEGORY.OBSTACLE,
+                            type: benchmarkObjectType,
+                            vertexCount: obstacle.vertices.length,
+                            area: computePolygonArea(obstacle.vertices),
+                            vertices: obstacle.vertices.map((v) => ({ x: v.x, y: v.y })),
+                        })),
+                    ];
+
+                    const metrics = extractRunMetrics(completed, algorithmMetrics, {
+                        objects: coverageObjects,
+                        cellSize: environmentSetup.coverageGridCellSize,
+                        pathWidth: effectiveCellSize,
+                    });
+
+                    const filteredMetrics: BenchmarkMetricsValues = {
+                        coverage: selectedMetrics.has("coverage") ? metrics.coverage : null,
+                        overlap: selectedMetrics.has("overlap") ? metrics.overlap : null,
+                        efficiency: selectedMetrics.has("efficiency") ? metrics.efficiency : null,
+                        turns: selectedMetrics.has("turns") ? metrics.turns : null,
+                        pathLength: selectedMetrics.has("pathLength") ? metrics.pathLength : null,
+                    };
+
+                    repeatMetrics.push(filteredMetrics);
+                    completedRuns += 1;
+                    runsCompleted += 1;
+                } catch {
+                    completedRuns += 1;
+                    runsFailed += 1;
+                }
+            }
+
+            // Aggregate repeat runs into a single per-environment metric value
+            const envMetrics: BenchmarkMetricsValues = {
+                coverage: calculateAggregateMetrics(repeatMetrics.map((m) => m.coverage))[slot.stepValueCalculation],
+                overlap: calculateAggregateMetrics(repeatMetrics.map((m) => m.overlap))[slot.stepValueCalculation],
+                efficiency: calculateAggregateMetrics(repeatMetrics.map((m) => m.efficiency))[slot.stepValueCalculation],
+                turns: calculateAggregateMetrics(repeatMetrics.map((m) => m.turns))[slot.stepValueCalculation],
+                pathLength: calculateAggregateMetrics(repeatMetrics.map((m) => m.pathLength))[slot.stepValueCalculation],
+            };
+
+            envResults.push({
+                envIndex,
+                runsCompleted,
+                runsFailed,
+                metrics: envMetrics,
+            });
+        }
+
+        const aggregatedMetrics: BenchmarkAggregatedMetrics = {
+            coverage: calculateAggregateMetrics(envResults.map((e) => e.metrics.coverage)),
+            overlap: calculateAggregateMetrics(envResults.map((e) => e.metrics.overlap)),
+            efficiency: calculateAggregateMetrics(envResults.map((e) => e.metrics.efficiency)),
+            turns: calculateAggregateMetrics(envResults.map((e) => e.metrics.turns)),
+            pathLength: calculateAggregateMetrics(envResults.map((e) => e.metrics.pathLength)),
+        };
+
+        const envsCompleted = envResults.filter((e) => e.runsFailed === 0).length;
+        const envsFailed = envResults.filter((e) => e.runsFailed > 0).length;
+
+        const algoResult: BenchmarkAlgoResult = {
+            algoIndex,
+            algorithmId: algorithm.id,
+            providerId: provider.id,
+            envResults,
+            aggregatedMetrics,
+            envsCompleted,
+            envsFailed,
+        };
+
+        algoResults.push(algoResult);
+        onAlgoCompleted?.(algoResult);
+
+        onProgress?.({
+            totalSteps: slots.length,
+            completedSteps: algoIndex + 1,
+            totalRuns,
+            completedRuns,
+        });
+    }
+
+    return algoResults;
 }

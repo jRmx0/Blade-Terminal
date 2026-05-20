@@ -163,6 +163,36 @@ export interface BenchmarkStepResult {
     rawRuns: BenchmarkRun[];
 }
 
+// ─── Algorithm Eval Results ──────────────────────────────────────────────────
+
+export interface BenchmarkAlgoEnvResult {
+    /** 0-based environment index */
+    envIndex: number;
+    /** Number of successful repeat runs for this environment */
+    runsCompleted: number;
+    /** Number of failed/skipped repeat runs for this environment */
+    runsFailed: number;
+    /** Per-environment metrics aggregated across runsPerEnvironment repeats */
+    metrics: BenchmarkMetricsValues;
+}
+
+export interface BenchmarkAlgoResult {
+    /** 0-based algorithm slot index */
+    algoIndex: number;
+    /** Algorithm ID (from catalog) */
+    algorithmId: number;
+    /** Provider ID (from catalog) */
+    providerId: number;
+    /** One entry per generated environment */
+    envResults: BenchmarkAlgoEnvResult[];
+    /** Metrics aggregated across all environments */
+    aggregatedMetrics: BenchmarkAggregatedMetrics;
+    /** Number of environments where all runs completed */
+    envsCompleted: number;
+    /** Number of environments where at least one run failed/was skipped */
+    envsFailed: number;
+}
+
 export type BenchmarkExecutionStatus = "idle" | "running" | "completed" | "error" | "cancelled";
 
 export interface BenchmarkProgress {
@@ -185,8 +215,10 @@ export interface BenchmarkExecutionState {
     status: BenchmarkExecutionStatus;
     /** Progress tracking */
     progress: BenchmarkProgress;
-    /** All completed step results so far */
+    /** Completed step results (parameter-eval) */
     results: BenchmarkStepResult[];
+    /** Completed algorithm results (algorithm-eval) */
+    algoResults: BenchmarkAlgoResult[];
     /** AbortController signal for cancellation */
     abortSignal?: AbortSignal;
     /** Error message if execution failed */
@@ -242,6 +274,7 @@ interface BenchmarkModalState {
     // Execution management
     setBenchmarkExecutionState: (state: Partial<BenchmarkExecutionState>) => void;
     addStepResult: (result: BenchmarkStepResult) => void;
+    addAlgoResult: (result: BenchmarkAlgoResult) => void;
     updateRunProgress: (stepValue: number, runIndex: number, updates: Partial<BenchmarkRun>) => void;
     cancelBenchmark: () => void;
     resetResults: () => void;
@@ -256,6 +289,7 @@ const INITIAL_EXECUTION_STATE: BenchmarkExecutionState = {
         completedRuns: 0,
     },
     results: [],
+    algoResults: [],
 };
 
 export function calculateAggregateMetrics(values: Array<number | null>): { median: number | null; average: number | null } {
@@ -478,6 +512,22 @@ export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) =
         });
     },
 
+    addAlgoResult: (result) => {
+        set((state) => {
+            const nextAlgoResults = [...state.executionState.algoResults, result];
+            return {
+                executionState: {
+                    ...state.executionState,
+                    algoResults: nextAlgoResults,
+                    progress: {
+                        ...state.executionState.progress,
+                        completedSteps: nextAlgoResults.length,
+                    },
+                },
+            };
+        });
+    },
+
     updateRunProgress: (stepValue, runIndex, updates) => {
         set((state) => {
             let shouldIncrementCompletedRuns = false;
@@ -548,6 +598,7 @@ export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) =
             executionState: {
                 ...INITIAL_EXECUTION_STATE,
                 results: [],
+                algoResults: [],
             },
             error: null,
         }));
