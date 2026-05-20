@@ -239,7 +239,7 @@ export default function BenchmarkModal() {
             progress: {
                 totalSteps,
                 completedSteps: 0,
-                totalRuns: totalSteps * generatedEnvironments.length,
+                totalRuns: totalSteps * generatedEnvironments.length * (slot0.multipleRunsSetup.runsPerEnvironment ?? 1),
                 completedRuns: 0,
             },
             results: [],
@@ -257,6 +257,7 @@ export default function BenchmarkModal() {
                 fixedParameters: slot0.fixedParameters,
                 environmentSetup,
                 generatedEnvironments,
+                runsPerEnvironment: slot0.multipleRunsSetup.runsPerEnvironment,
                 systemEnvironmentSetup,
                 selectedMetrics: metricsConfig.selectedMetrics,
                 signal: controller.signal,

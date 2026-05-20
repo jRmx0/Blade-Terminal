@@ -58,6 +58,7 @@ export interface RunBenchmarkConfig {
     fixedParameters: BenchmarkFixedParameter[];
     environmentSetup: BenchmarkEnvironmentSetup;
     generatedEnvironments: BenchmarkGeneratedEnvironment[];
+    runsPerEnvironment: number;
     systemEnvironmentSetup: BenchmarkSystemEnvironmentSetup;
     selectedMetrics: Set<BenchmarkMetricType>;
     signal?: AbortSignal;
@@ -418,6 +419,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
         fixedParameters,
         environmentSetup,
         generatedEnvironments,
+        runsPerEnvironment,
         systemEnvironmentSetup,
         selectedMetrics,
         signal,
@@ -435,7 +437,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
         throw new Error("Invalid target parameter range. No benchmark steps could be generated.");
     }
 
-    const totalRuns = stepValues.length * generatedEnvironments.length;
+    const totalRuns = stepValues.length * generatedEnvironments.length * runsPerEnvironment;
     let completedRuns = 0;
     const stepResults: BenchmarkStepResult[] = [];
 
@@ -460,15 +462,6 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 break;
             }
 
-            onProgress?.({
-                totalSteps: stepValues.length,
-                completedSteps: stepIndex,
-                totalRuns,
-                completedRuns,
-                currentStepValue: stepValue,
-                currentRunIndex: envIndex,
-            });
-
             const generatedEnv = generatedEnvironments[envIndex]!;
             const generated = {
                 boundary: generatedEnv.boundary,
@@ -476,15 +469,6 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 startEndPoint: generatedEnv.startEndPoint,
             };
             const benchmarkObjectType = generatedEnv.objectType;
-
-            const run: BenchmarkRun = {
-                stepValue,
-                runIndex: envIndex,
-                status: "running",
-            };
-            runs.push(run);
-
-            onRunUpdate?.(stepValue, envIndex, { status: "running" });
 
             const { objects, zoneObjects, obstacleObjects } = toCanvasObjects(generated, benchmarkObjectType);
 
@@ -508,140 +492,169 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                 headlandWidth,
             });
 
-            if (!resolvedGeometry.ok) {
-                completedRuns += 1;
-                run.status = "skipped";
-                run.error = resolvedGeometry.error;
-                onRunUpdate?.(stepValue, envIndex, {
-                    status: "skipped",
-                    error: resolvedGeometry.error,
-                });
-                continue;
-            }
-
-            const requestBody: Record<string, unknown> = {
-                environment: {
-                    zones: resolvedGeometry.zones,
-                    obstacles: resolvedGeometry.obstacles,
-                    startPoint: generated.startEndPoint,
-                    endPoint: generated.startEndPoint,
-                },
-                parameters,
-            };
-
-            if (headlandEnabled) {
-                requestBody.realworld = {
-                    zones: zoneObjects.map((o) => ({
-                        vertices: o.vertices.map(({ x, y }) => ({ x, y })),
-                    })),
-                    obstacles: obstacleObjects.map((o) => ({
-                        vertices: o.vertices.map(({ x, y }) => ({ x, y })),
-                    })),
+            let requestBody: Record<string, unknown> | null = null;
+            if (resolvedGeometry.ok) {
+                requestBody = {
+                    environment: {
+                        zones: resolvedGeometry.zones,
+                        obstacles: resolvedGeometry.obstacles,
+                        startPoint: generated.startEndPoint,
+                        endPoint: generated.startEndPoint,
+                    },
+                    parameters,
                 };
+
+                if (headlandEnabled) {
+                    requestBody.realworld = {
+                        zones: zoneObjects.map((o) => ({
+                            vertices: o.vertices.map(({ x, y }) => ({ x, y })),
+                        })),
+                        obstacles: obstacleObjects.map((o) => ({
+                            vertices: o.vertices.map(({ x, y }) => ({ x, y })),
+                        })),
+                    };
+                }
             }
 
-            const submitResult = await submitComputeRequest(
-                provider,
-                algorithm.id,
-                requestBody,
-                signal,
-            );
+            for (let repeatIndex = 0; repeatIndex < runsPerEnvironment; repeatIndex += 1) {
+                if (signal?.aborted) {
+                    break;
+                }
 
-            if (!submitResult.ok || !submitResult.pollUrl || !submitResult.jobId) {
-                completedRuns += 1;
-                const error = submitResult.error ?? "Failed to submit benchmark run.";
-                run.status = "skipped";
-                run.error = error;
-                onRunUpdate?.(stepValue, envIndex, { status: "skipped", error });
-                continue;
-            }
+                const runIndex = envIndex * runsPerEnvironment + repeatIndex;
 
-            run.jobId = submitResult.jobId;
-            onRunUpdate?.(stepValue, envIndex, { jobId: submitResult.jobId });
+                onProgress?.({
+                    totalSteps: stepValues.length,
+                    completedSteps: stepIndex,
+                    totalRuns,
+                    completedRuns,
+                    currentStepValue: stepValue,
+                    currentRunIndex: runIndex,
+                });
 
-            try {
-                const state = await pollComputeJob(submitResult.pollUrl, provider.apiKey, signal);
+                const run: BenchmarkRun = {
+                    stepValue,
+                    runIndex,
+                    status: "running",
+                };
+                runs.push(run);
 
-                if (state.status === "failed") {
+                onRunUpdate?.(stepValue, runIndex, { status: "running" });
+
+                if (!resolvedGeometry.ok || !requestBody) {
                     completedRuns += 1;
-                    const error = state.error.message;
-                    run.status = "failed";
-                    run.error = error;
-                    run.completedAt = state.completedAt;
-                    onRunUpdate?.(stepValue, envIndex, {
-                        status: "failed",
-                        error,
-                        completedAt: state.completedAt,
+                    run.status = "skipped";
+                    run.error = resolvedGeometry.ok ? "Request body could not be built." : resolvedGeometry.error;
+                    onRunUpdate?.(stepValue, runIndex, {
+                        status: "skipped",
+                        error: run.error,
                     });
                     continue;
                 }
 
-                const completed = state as ComputeJobStateCompleted;
-                const pathWidthRaw = parameters["Path Width"];
-                const pathWidth =
-                    typeof pathWidthRaw === "number"
-                        ? pathWidthRaw
-                        : typeof pathWidthRaw === "string"
-                            ? Number(pathWidthRaw)
-                            : NaN;
+                const submitResult = await submitComputeRequest(
+                    provider,
+                    algorithm.id,
+                    requestBody,
+                    signal,
+                );
 
-                const coverageObjects: CanvasObject[] = [
-                    ...resolvedGeometry.zones.map((zone, index) => ({
-                        id: index + 1,
-                        environmentId: 0,
-                        category: OBJECT_CATEGORY.ZONE,
-                        type: benchmarkObjectType,
-                        vertexCount: zone.vertices.length,
-                        area: computePolygonArea(zone.vertices),
-                        vertices: zone.vertices.map((v) => ({ x: v.x, y: v.y })),
-                    })),
-                    ...resolvedGeometry.obstacles.map((obstacle, index) => ({
-                        id: resolvedGeometry.zones.length + index + 1,
-                        environmentId: 0,
-                        category: OBJECT_CATEGORY.OBSTACLE,
-                        type: benchmarkObjectType,
-                        vertexCount: obstacle.vertices.length,
-                        area: computePolygonArea(obstacle.vertices),
-                        vertices: obstacle.vertices.map((v) => ({ x: v.x, y: v.y })),
-                    })),
-                ];
+                if (!submitResult.ok || !submitResult.pollUrl || !submitResult.jobId) {
+                    completedRuns += 1;
+                    const error = submitResult.error ?? "Failed to submit benchmark run.";
+                    run.status = "skipped";
+                    run.error = error;
+                    onRunUpdate?.(stepValue, runIndex, { status: "skipped", error });
+                    continue;
+                }
 
-                const metrics = extractRunMetrics(completed, algorithmMetrics, {
-                    objects: coverageObjects,
-                    cellSize: environmentSetup.cellSize,
-                    pathWidth:
-                        Number.isFinite(pathWidth) && pathWidth > 0
-                            ? pathWidth
-                            : environmentSetup.cellSize,
-                });
+                run.jobId = submitResult.jobId;
+                onRunUpdate?.(stepValue, runIndex, { jobId: submitResult.jobId });
 
-                const filteredMetrics: BenchmarkMetricsValues = {
-                    coverage: selectedMetrics.has("coverage") ? metrics.coverage : null,
-                    overlap: selectedMetrics.has("overlap") ? metrics.overlap : null,
-                    efficiency: selectedMetrics.has("efficiency") ? metrics.efficiency : null,
-                    turns: selectedMetrics.has("turns") ? metrics.turns : null,
-                    pathLength: selectedMetrics.has("pathLength") ? metrics.pathLength : null,
-                };
+                try {
+                    const state = await pollComputeJob(submitResult.pollUrl, provider.apiKey, signal);
 
-                completedRuns += 1;
-                run.status = "completed";
-                run.metrics = filteredMetrics;
-                run.completedAt = completed.completedAt;
+                    if (state.status === "failed") {
+                        completedRuns += 1;
+                        const error = state.error.message;
+                        run.status = "failed";
+                        run.error = error;
+                        run.completedAt = state.completedAt;
+                        onRunUpdate?.(stepValue, runIndex, {
+                            status: "failed",
+                            error,
+                            completedAt: state.completedAt,
+                        });
+                        continue;
+                    }
 
-                onRunUpdate?.(stepValue, envIndex, {
-                    status: "completed",
-                    metrics: filteredMetrics,
-                    completedAt: completed.completedAt,
-                });
-            } catch (error) {
-                completedRuns += 1;
-                const message = error instanceof Error ? error.message : String(error);
-                run.status = signal?.aborted ? "skipped" : "failed";
-                run.error = message;
-                onRunUpdate?.(stepValue, envIndex, {
-                    status: run.status,
-                    error: message,
-                });
+                    const completed = state as ComputeJobStateCompleted;
+                    const pathWidthRaw = parameters["Path Width"];
+                    const pathWidth =
+                        typeof pathWidthRaw === "number"
+                            ? pathWidthRaw
+                            : typeof pathWidthRaw === "string"
+                                ? Number(pathWidthRaw)
+                                : NaN;
+
+                    const coverageObjects: CanvasObject[] = [
+                        ...resolvedGeometry.zones.map((zone, index) => ({
+                            id: index + 1,
+                            environmentId: 0,
+                            category: OBJECT_CATEGORY.ZONE,
+                            type: benchmarkObjectType,
+                            vertexCount: zone.vertices.length,
+                            area: computePolygonArea(zone.vertices),
+                            vertices: zone.vertices.map((v) => ({ x: v.x, y: v.y })),
+                        })),
+                        ...resolvedGeometry.obstacles.map((obstacle, index) => ({
+                            id: resolvedGeometry.zones.length + index + 1,
+                            environmentId: 0,
+                            category: OBJECT_CATEGORY.OBSTACLE,
+                            type: benchmarkObjectType,
+                            vertexCount: obstacle.vertices.length,
+                            area: computePolygonArea(obstacle.vertices),
+                            vertices: obstacle.vertices.map((v) => ({ x: v.x, y: v.y })),
+                        })),
+                    ];
+
+                    const metrics = extractRunMetrics(completed, algorithmMetrics, {
+                        objects: coverageObjects,
+                        cellSize: environmentSetup.cellSize,
+                        pathWidth:
+                            Number.isFinite(pathWidth) && pathWidth > 0
+                                ? pathWidth
+                                : environmentSetup.cellSize,
+                    });
+
+                    const filteredMetrics: BenchmarkMetricsValues = {
+                        coverage: selectedMetrics.has("coverage") ? metrics.coverage : null,
+                        overlap: selectedMetrics.has("overlap") ? metrics.overlap : null,
+                        efficiency: selectedMetrics.has("efficiency") ? metrics.efficiency : null,
+                        turns: selectedMetrics.has("turns") ? metrics.turns : null,
+                        pathLength: selectedMetrics.has("pathLength") ? metrics.pathLength : null,
+                    };
+
+                    completedRuns += 1;
+                    run.status = "completed";
+                    run.metrics = filteredMetrics;
+                    run.completedAt = completed.completedAt;
+
+                    onRunUpdate?.(stepValue, runIndex, {
+                        status: "completed",
+                        metrics: filteredMetrics,
+                        completedAt: completed.completedAt,
+                    });
+                } catch (error) {
+                    completedRuns += 1;
+                    const message = error instanceof Error ? error.message : String(error);
+                    run.status = signal?.aborted ? "skipped" : "failed";
+                    run.error = message;
+                    onRunUpdate?.(stepValue, runIndex, {
+                        status: run.status,
+                        error: message,
+                    });
+                }
             }
         }
 

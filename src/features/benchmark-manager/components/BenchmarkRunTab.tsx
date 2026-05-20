@@ -12,22 +12,6 @@ import {
     type BenchmarkSystemEnvironmentSetup,
 } from "@/features/benchmark-manager/stores/benchmarkModalStore";
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
-
-function buildStepValues(setup: BenchmarkParameterSetup | null): number[] {
-    if (!setup) return [];
-    const start = Number(setup.startValue);
-    const end = Number(setup.endValue);
-    const step = Number(setup.stepValue);
-    if (!Number.isFinite(start) || !Number.isFinite(end) || !Number.isFinite(step) || step <= 0) return [];
-    const values: number[] = [];
-    for (let v = start; v <= end + step * 1e-9; v += step) {
-        values.push(Math.round(v * 1e9) / 1e9);
-        if (values.length > 1000) break;
-    }
-    return values;
-}
-
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface BenchmarkRunTabProps {
@@ -88,16 +72,6 @@ export default function BenchmarkRunTab({
     systemParamsError,
 }: BenchmarkRunTabProps) {
     const selectedMetrics = useMemo(() => Array.from(metricsConfig.selectedMetrics), [metricsConfig.selectedMetrics]);
-    const stepValues = useMemo(() => buildStepValues(targetParameterSetup), [targetParameterSetup]);
-
-    const completedStepValues = useMemo(
-        () => new Set(executionState.results.map((r) => r.stepValue)),
-        [executionState.results],
-    );
-    const failedStepValues = useMemo(
-        () => new Set(executionState.results.filter((r) => r.runsFailed > 0).map((r) => r.stepValue)),
-        [executionState.results],
-    );
 
     const chartSeries = useMemo(() => {
         const sorted = [...executionState.results].sort((a, b) => a.stepValue - b.stepValue);
@@ -115,13 +89,6 @@ export default function BenchmarkRunTab({
     const { progress, status } = executionState;
     const statusInfo = STATUS_CONFIG[status];
     const progressPct = progress.totalRuns > 0 ? (progress.completedRuns / progress.totalRuns) * 100 : 0;
-
-    function getStepBadgeClass(value: number): string {
-        if (executionState.progress.currentStepValue === value && isRunning) return "bg-blue-100 text-blue-700 animate-pulse ring-1 ring-blue-300";
-        if (failedStepValues.has(value)) return "bg-red-100 text-red-700";
-        if (completedStepValues.has(value)) return "bg-teal-100 text-teal-700";
-        return "bg-gray-100 text-gray-500";
-    }
 
     return (
         <div className="p-4 flex flex-col gap-4">
@@ -205,18 +172,6 @@ export default function BenchmarkRunTab({
                         style={{ width: `${progressPct}%` }}
                     />
                 </div>
-                {stepValues.length > 0 && (
-                    <div className="flex flex-wrap gap-1 pt-0.5">
-                        {stepValues.map((v) => (
-                            <span
-                                key={v}
-                                className={`px-1.5 py-0.5 rounded text-xs font-mono ${getStepBadgeClass(v)}`}
-                            >
-                                {v}
-                            </span>
-                        ))}
-                    </div>
-                )}
             </div>
 
             {/* ── D. Banners ────────────────────────────────────────────── */}

@@ -135,6 +135,23 @@ export default function BenchmarkAlgoSetupTab({
                 onToggle={() => setMultipleRunsExpanded((x) => !x)}
             >
                 <CardModalField
+                    id={`algo-runs-per-env-${slot.algorithmId}`}
+                    label="Runs per Environment"
+                    type="number"
+                    value={String(slot.multipleRunsSetup.runsPerEnvironment)}
+                    onChange={(v) => {
+                        const n = Math.max(1, Math.floor(Number(v)));
+                        if (Number.isFinite(n)) {
+                            onSetSlot({
+                                multipleRunsSetup: {
+                                    ...slot.multipleRunsSetup,
+                                    runsPerEnvironment: n,
+                                },
+                            });
+                        }
+                    }}
+                />
+                <CardModalField
                     id={`algo-aggregate-method-${slot.algorithmId}`}
                     label="Aggregate Method"
                     type="select"
