@@ -33,6 +33,7 @@ import { CanvasSystemPolygonResultLayer } from "@/features/canvas-editing/compon
 import { CppDebugResultLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CppDebugResultLayer";
 import CanvasModifierFloatingControl from "@/features/canvas-editing/components/floating-control/CanvasModifierFloatingControl";
 import CanvasGeneratorFloatingControl from "@/features/canvas-editing/components/floating-control/CanvasGeneratorFloatingControl";
+import CanvasHeatMapScaleFloatingControl from "@/features/canvas-editing/components/floating-control/CanvasHeatMapScaleFloatingControl";
 import CppDebugFloatingControl from "@/features/coverage-planning/components/floating-control/CppDebugFloatingControl";
 import { useEnvPointStore } from "@/stores/envPointStore";
 import { useEnvStore } from "@/stores/envStore";
@@ -470,6 +471,7 @@ export default function CanvasEditor() {
       </Stage>
       <CanvasModifierFloatingControl />
       <CanvasGeneratorFloatingControl />
+      <CanvasHeatMapScaleFloatingControl />
       <CppDebugFloatingControl />
     </div>
   );
