@@ -18,6 +18,7 @@ export default function CppDebugFloatingControl() {
     const [isRunning, setIsRunning] = useState(false);
     const [isAutoStepping, setIsAutoStepping] = useState(false);
     const isAutoSteppingRef = useRef(false);
+    const isMountedRef = useRef(false);
 
     const isDone = totalSteps > 0 && currentStep >= totalSteps;
 
@@ -35,6 +36,7 @@ export default function CppDebugFloatingControl() {
 
     // Persist position to store on drag
     useEffect(() => {
+        if (!isMountedRef.current) { isMountedRef.current = true; return; }
         setControlPosition(pos);
     }, [setControlPosition, pos]);
 

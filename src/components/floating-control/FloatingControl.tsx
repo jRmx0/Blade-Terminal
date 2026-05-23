@@ -25,6 +25,7 @@ export default function FloatingControl({
     onPositionChange,
 }: FloatingControlProps) {
     const windowRef = useRef<HTMLDivElement>(null);
+    const isMountedRef = useRef(false);
     const [pos, setPos] = useState(defaultPosition);
     const [minimized, setMinimized] = useState(false);
     const [tooSmall, setTooSmall] = useState(false);
@@ -40,6 +41,7 @@ export default function FloatingControl({
     }, [defaultPosition.x, defaultPosition.y]);
 
     useEffect(() => {
+        if (!isMountedRef.current) { isMountedRef.current = true; return; }
         onPositionChange?.(pos);
     }, [onPositionChange, pos]);
 
