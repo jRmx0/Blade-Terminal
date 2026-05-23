@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import {
     FloatingControl,
     FloatingControlNumberField,
@@ -23,7 +23,7 @@ interface CanvasModifierFloatingControlPrefs {
     };
 }
 
-export default function CanvasModifierFloatingControl() {
+function CanvasModifierFloatingControl() {
     const isOpen = useCanvasModifierFloatingControlStore((s) => s.isOpen);
     const setOpen = useCanvasModifierFloatingControlStore((s) => s.setOpen);
 
@@ -134,3 +134,5 @@ export default function CanvasModifierFloatingControl() {
         </FloatingControl>
     );
 }
+
+export default memo(CanvasModifierFloatingControl);

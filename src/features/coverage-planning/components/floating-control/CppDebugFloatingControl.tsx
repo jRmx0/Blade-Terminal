@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { useFloatingControlZStore } from "@/components/floating-control/floatingControlZStore";
 import { useCppDebugStore } from "@/features/coverage-planning/stores/cppDebugStore";
 import { fastForwardDebugSession, stepDebugSession, restartDebugSession, stopDebugSession } from "@/features/coverage-planning/data/debugService";
 
 const CONTROL_ID = "cpp-debug";
 
-export default function CppDebugFloatingControl() {
+function CppDebugFloatingControl() {
     const containerRef = useRef<HTMLDivElement>(null);
 
     const isOpen = useCppDebugStore((s) => s.isOpen);
@@ -20,6 +20,16 @@ export default function CppDebugFloatingControl() {
     const isAutoSteppingRef = useRef(false);
     const isMountedRef = useRef(false);
 
+    // Mirror of pos kept in a ref so Effect 1 can check reference equality
+    // without adding pos to the dependency array.
+    const posRef = useRef(pos);
+    posRef.current = pos;
+
+    // When true, the most recent pos change came from Effect 1 syncing the store
+    // value rather than from a user drag / resize clamp. Effect 2 skips the
+    // setControlPosition call in that case, breaking the circular feedback loop.
+    const posFromPropRef = useRef(false);
+
     const isDone = totalSteps > 0 && currentStep >= totalSteps;
 
     const register = useFloatingControlZStore((s) => s.register);
@@ -28,15 +38,23 @@ export default function CppDebugFloatingControl() {
 
     useEffect(() => { register(CONTROL_ID); }, [register]);
 
-    // Sync position from store when it changes externally
+    // Effect 1: sync pos when store's controlPosition values change.
+    // Guard: skip when posRef already holds the exact same object as controlPosition
+    // (happens right after a drag propagated back through the store) to avoid
+    // setting posFromPropRef when setPos would bail out anyway.
     useEffect(() => {
+        if (posRef.current === controlPosition) return;
+        posFromPropRef.current = true;
         setPos(controlPosition);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [controlPosition.x, controlPosition.y]);
 
-    // Persist position to store on drag
+    // Effect 2: persist user-driven position changes (drag, clamp) back to the store.
+    // posFromPropRef prevents re-writing the store when Effect 1 was the source of the
+    // change, eliminating the circular loop: store → Effect 1 → pos → Effect 2 → store.
     useEffect(() => {
         if (!isMountedRef.current) { isMountedRef.current = true; return; }
+        if (posFromPropRef.current) { posFromPropRef.current = false; return; }
         setControlPosition(pos);
     }, [setControlPosition, pos]);
 
@@ -222,3 +240,5 @@ export default function CppDebugFloatingControl() {
         </div>
     );
 }
+
+export default memo(CppDebugFloatingControl);

@@ -116,7 +116,14 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
     }, [yAxisLabel]);
 
     useEffect(() => {
-        setSeriesLabelOverrides(series.map((s) => s.label));
+        const newLabels = series.map((s) => s.label);
+        // Use functional update so React bails out (returns same reference) when
+        // the labels haven't actually changed — prevents a re-render every time the
+        // parent passes a new series array identity with identical content.
+        setSeriesLabelOverrides((prev) => {
+            if (prev.length === newLabels.length && prev.every((l, i) => l === newLabels[i])) return prev;
+            return newLabels;
+        });
     }, [series]);
 
     const effectiveTitle = titleOverride.trim() || name;

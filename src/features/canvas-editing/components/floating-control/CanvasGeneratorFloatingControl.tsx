@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useRef } from "react";
+import { memo, useMemo, useEffect, useRef } from "react";
 import {
     FloatingControl,
     FloatingControlNumberField,
@@ -33,7 +33,7 @@ import type { CanvasGeneratorFloatingControlPrefs } from "@/features/canvas-edit
 
 const UI_PREF_KEY = "floatingControl.canvas-generator";
 
-export default function CanvasGeneratorFloatingControl() {
+function CanvasGeneratorFloatingControl() {
     const isOpen = useCanvasGeneratorFloatingControlStore((s) => s.isOpen);
     const width = useCanvasGeneratorFloatingControlStore((s) => s.width);
     const height = useCanvasGeneratorFloatingControlStore((s) => s.height);
@@ -419,3 +419,5 @@ export default function CanvasGeneratorFloatingControl() {
         </FloatingControl>
     );
 }
+
+export default memo(CanvasGeneratorFloatingControl);
