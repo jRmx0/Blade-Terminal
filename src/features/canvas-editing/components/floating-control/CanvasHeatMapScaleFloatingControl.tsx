@@ -1,3 +1,4 @@
+import { memo } from "react";
 import FloatingControl from "@/components/floating-control/FloatingControl";
 import { useCanvasHeatMapScaleFloatingControlStore } from "@/features/canvas-editing/stores/canvasHeatMapScaleFloatingControlStore";
 import { useComputeResultStore } from "@/stores/useComputeResultStore";
@@ -18,7 +19,7 @@ function stopLabel(t: number, maxCount: number): string {
     return String(Math.round(t * maxCount));
 }
 
-export default function CanvasHeatMapScaleFloatingControl() {
+function CanvasHeatMapScaleFloatingControl() {
     const isOpen = useCanvasHeatMapScaleFloatingControlStore((s) => s.isOpen);
     const setOpen = useCanvasHeatMapScaleFloatingControlStore((s) => s.setOpen);
     const maxCount = useComputeResultStore((s) => s.coverageMetrics.maxCount);
@@ -30,6 +31,7 @@ export default function CanvasHeatMapScaleFloatingControl() {
             isOpen={isOpen}
             onClose={() => setOpen(false)}
             defaultPosition={{ x: 16, y: 16 }}
+            hideHeader
         >
             <div className="px-3 pt-1 pb-2 flex flex-col gap-1">
                 {/* Title above the bar */}
@@ -58,3 +60,5 @@ export default function CanvasHeatMapScaleFloatingControl() {
         </FloatingControl>
     );
 }
+
+export default memo(CanvasHeatMapScaleFloatingControl);
