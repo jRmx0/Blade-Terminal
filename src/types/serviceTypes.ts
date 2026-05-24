@@ -287,6 +287,7 @@ export interface MetricMetadataResponse {
     type: MetricType;
     group?: string;
     style?: TimeSeriesMetricStyle;
+    benchmark?: boolean;
 }
 
 export interface AlgorithmMetric {
@@ -297,6 +298,7 @@ export interface AlgorithmMetric {
     type: MetricType;
     group?: string;
     style?: TimeSeriesMetricStyle;
+    benchmark?: boolean;
 }
 
 export interface MetadataAlgorithmResponse {

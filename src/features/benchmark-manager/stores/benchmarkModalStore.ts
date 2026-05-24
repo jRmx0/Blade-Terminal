@@ -120,6 +120,8 @@ export interface BenchmarkMetricsValues {
     efficiency: number | null;
     turns: number | null;
     pathLength: number | null;
+    /** Dynamic performance metrics flagged benchmark=true, keyed by metric name */
+    performance: Record<string, number | null>;
 }
 
 export type BenchmarkRunStatus = "queued" | "running" | "completed" | "failed" | "skipped";
@@ -148,6 +150,8 @@ export interface BenchmarkAggregatedMetrics {
     efficiency: { median: number | null; average: number | null };
     turns: { median: number | null; average: number | null };
     pathLength: { median: number | null; average: number | null };
+    /** Dynamic performance metrics flagged benchmark=true, keyed by metric name */
+    performance: Record<string, { median: number | null; average: number | null }>;
 }
 
 export interface BenchmarkStepResult {
@@ -536,6 +540,15 @@ export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) =
             const existingIdx = state.executionState.algoResults.findIndex((r) => r.algoIndex === algoIndex);
             let nextAlgoResults: BenchmarkAlgoResult[];
 
+            function aggregatePerformance(envResults: BenchmarkAlgoEnvResult[]): Record<string, { median: number | null; average: number | null }> {
+                const allNames = new Set(envResults.flatMap((e) => Object.keys(e.metrics.performance)));
+                const result: Record<string, { median: number | null; average: number | null }> = {};
+                for (const name of allNames) {
+                    result[name] = calculateAggregateMetrics(envResults.map((e) => e.metrics.performance[name] ?? null));
+                }
+                return result;
+            }
+
             if (existingIdx === -1) {
                 const newEnvResults = [envResult];
                 const newResult: BenchmarkAlgoResult = {
@@ -549,6 +562,7 @@ export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) =
                         efficiency: calculateAggregateMetrics(newEnvResults.map((e) => e.metrics.efficiency)),
                         turns: calculateAggregateMetrics(newEnvResults.map((e) => e.metrics.turns)),
                         pathLength: calculateAggregateMetrics(newEnvResults.map((e) => e.metrics.pathLength)),
+                        performance: aggregatePerformance(newEnvResults),
                     },
                     envsCompleted: envResult.runsFailed === 0 ? 1 : 0,
                     envsFailed: envResult.runsFailed > 0 ? 1 : 0,
@@ -566,6 +580,7 @@ export const useBenchmarkModalStore = create<BenchmarkModalState>()((set, get) =
                         efficiency: calculateAggregateMetrics(updatedEnvResults.map((e) => e.metrics.efficiency)),
                         turns: calculateAggregateMetrics(updatedEnvResults.map((e) => e.metrics.turns)),
                         pathLength: calculateAggregateMetrics(updatedEnvResults.map((e) => e.metrics.pathLength)),
+                        performance: aggregatePerformance(updatedEnvResults),
                     },
                     envsCompleted: existing.envsCompleted + (envResult.runsFailed === 0 ? 1 : 0),
                     envsFailed: existing.envsFailed + (envResult.runsFailed > 0 ? 1 : 0),

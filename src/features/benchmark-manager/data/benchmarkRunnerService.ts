@@ -410,12 +410,21 @@ function extractRunMetrics(
     const pathLength =
         findMetricValueByName(algorithmMetrics, resultMetrics, ["path length", "path"]) ?? pathLengthFallback;
 
+    // Extract dynamic performance metrics flagged benchmark=true
+    const performance: Record<string, number | null> = {};
+    for (const meta of algorithmMetrics) {
+        if (meta.benchmark === true) {
+            performance[meta.name] = performanceMetricToNumber(resultMetrics?.find((m) => m.id === meta.id));
+        }
+    }
+
     return {
         coverage,
         overlap,
         efficiency,
         turns,
         pathLength,
+        performance,
     };
 }
 
@@ -428,12 +437,19 @@ function aggregateStepRuns(runs: BenchmarkRun[]): BenchmarkAggregatedMetrics {
     const turnsValues = successfulRuns.map((run) => run.metrics?.turns ?? null);
     const pathLengthValues = successfulRuns.map((run) => run.metrics?.pathLength ?? null);
 
+    const allPerfNames = new Set(successfulRuns.flatMap((run) => Object.keys(run.metrics?.performance ?? {})));
+    const performance: Record<string, { median: number | null; average: number | null }> = {};
+    for (const name of allPerfNames) {
+        performance[name] = calculateAggregateMetrics(successfulRuns.map((run) => run.metrics?.performance[name] ?? null));
+    }
+
     return {
         coverage: calculateAggregateMetrics(coverageValues),
         overlap: calculateAggregateMetrics(overlapValues),
         efficiency: calculateAggregateMetrics(efficiencyValues),
         turns: calculateAggregateMetrics(turnsValues),
         pathLength: calculateAggregateMetrics(pathLengthValues),
+        performance,
     };
 }
 
@@ -661,6 +677,7 @@ export async function runBenchmark(config: RunBenchmarkConfig): Promise<Benchmar
                         efficiency: selectedMetrics.has("efficiency") ? metrics.efficiency : null,
                         turns: selectedMetrics.has("turns") ? metrics.turns : null,
                         pathLength: selectedMetrics.has("pathLength") ? metrics.pathLength : null,
+                        performance: metrics.performance,
                     };
 
                     completedRuns += 1;
@@ -908,6 +925,7 @@ export async function runAlgorithmEvalBenchmark(config: RunAlgorithmEvalConfig):
                         efficiency: selectedMetrics.has("efficiency") ? metrics.efficiency : null,
                         turns: selectedMetrics.has("turns") ? metrics.turns : null,
                         pathLength: selectedMetrics.has("pathLength") ? metrics.pathLength : null,
+                        performance: metrics.performance,
                     };
 
                     repeatMetrics.push(filteredMetrics);
@@ -920,12 +938,19 @@ export async function runAlgorithmEvalBenchmark(config: RunAlgorithmEvalConfig):
             }
 
             // Aggregate repeat runs into a single per-environment metric value
+            const allPerfNames = new Set(repeatMetrics.flatMap((m) => Object.keys(m.performance)));
+            const envPerformance: Record<string, number | null> = {};
+            for (const name of allPerfNames) {
+                envPerformance[name] = calculateAggregateMetrics(repeatMetrics.map((m) => m.performance[name] ?? null))[slot.stepValueCalculation];
+            }
+
             const envMetrics: BenchmarkMetricsValues = {
                 coverage: calculateAggregateMetrics(repeatMetrics.map((m) => m.coverage))[slot.stepValueCalculation],
                 overlap: calculateAggregateMetrics(repeatMetrics.map((m) => m.overlap))[slot.stepValueCalculation],
                 efficiency: calculateAggregateMetrics(repeatMetrics.map((m) => m.efficiency))[slot.stepValueCalculation],
                 turns: calculateAggregateMetrics(repeatMetrics.map((m) => m.turns))[slot.stepValueCalculation],
                 pathLength: calculateAggregateMetrics(repeatMetrics.map((m) => m.pathLength))[slot.stepValueCalculation],
+                performance: envPerformance,
             };
 
             const envResult: BenchmarkAlgoEnvResult = {
@@ -944,6 +969,14 @@ export async function runAlgorithmEvalBenchmark(config: RunAlgorithmEvalConfig):
             efficiency: calculateAggregateMetrics(envResults.map((e) => e.metrics.efficiency)),
             turns: calculateAggregateMetrics(envResults.map((e) => e.metrics.turns)),
             pathLength: calculateAggregateMetrics(envResults.map((e) => e.metrics.pathLength)),
+            performance: (() => {
+                const allNames = new Set(envResults.flatMap((e) => Object.keys(e.metrics.performance)));
+                const perf: Record<string, { median: number | null; average: number | null }> = {};
+                for (const name of allNames) {
+                    perf[name] = calculateAggregateMetrics(envResults.map((e) => e.metrics.performance[name] ?? null));
+                }
+                return perf;
+            })(),
         };
 
         const envsCompleted = envResults.filter((e) => e.runsFailed === 0).length;

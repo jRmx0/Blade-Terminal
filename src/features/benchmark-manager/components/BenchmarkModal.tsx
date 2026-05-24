@@ -195,6 +195,20 @@ export default function BenchmarkModal() {
         [jobSetup.algorithms, providers, algorithms],
     );
 
+    const benchmarkPerfMetricNames = useMemo(() => {
+        const names = new Set<string>();
+        for (const slot of jobSetup.algorithms) {
+            if (slot.algorithmId && slot.providerId) {
+                for (const m of catalogMetrics) {
+                    if (m.algorithmId === slot.algorithmId && m.computationProviderId === slot.providerId && m.benchmark === true) {
+                        names.add(m.name);
+                    }
+                }
+            }
+        }
+        return [...names];
+    }, [jobSetup.algorithms, catalogMetrics]);
+
     // Validation
     const isSetupValid = useMemo(() => {
         if (jobSetup.type === "parameter-eval") {
@@ -629,6 +643,7 @@ export default function BenchmarkModal() {
                             canStartBenchmark={isSetupValid && generatedEnvironments.length > 0}
                             systemParamsError={generatedEnvironments.length === 0 ? "No environments generated. Please generate environments in the Env. Setup tab first." : null}
                             algoResults={executionState.algoResults}
+                            benchmarkPerfMetricNames={benchmarkPerfMetricNames}
                         />
                     )}
                 </div>

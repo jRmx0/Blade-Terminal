@@ -35,6 +35,8 @@ export interface BenchmarkRunTabProps {
     canStartBenchmark: boolean;
     systemParamsError: string | null;
     algoResults: BenchmarkAlgoResult[];
+    /** Names of algorithm metrics flagged benchmark=true, grouped across all slots */
+    benchmarkPerfMetricNames: string[];
 }
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
@@ -91,6 +93,7 @@ export default function BenchmarkRunTab({
     canStartBenchmark,
     systemParamsError,
     algoResults,
+    benchmarkPerfMetricNames,
 }: BenchmarkRunTabProps) {
     const selectedMetrics = useMemo(() => Array.from(metricsConfig.selectedMetrics), [metricsConfig.selectedMetrics]);
 
@@ -126,9 +129,41 @@ export default function BenchmarkRunTab({
         }));
     }, [algoResults, selectedMetrics, jobAlgorithms]);
 
+    // ── Performance metric charts ─────────────────────────────────────────
+    const perfChartSeries = useMemo(() => {
+        const sorted = [...executionState.results].sort((a, b) => a.stepValue - b.stepValue);
+        return benchmarkPerfMetricNames.map((name, idx) => ({
+            name,
+            metricId: 30000 + idx,
+            chartName: `${name} vs ${targetParameterName}`,
+            series: [{
+                label: name,
+                data: sorted.map((result) => ({
+                    x: result.stepValue,
+                    y: result.aggregatedMetrics.performance[name]?.[stepValueCalculation] ?? Number.NaN,
+                })),
+            }] as ChartSeries[],
+        }));
+    }, [executionState.results, benchmarkPerfMetricNames, stepValueCalculation, targetParameterName]);
+
+    const algoPerfChartSeries = useMemo(() => {
+        if (algoResults.length === 0) return [];
+        return benchmarkPerfMetricNames.map((name, idx) => ({
+            name,
+            metricId: 40000 + idx,
+            series: algoResults.map((algoResult) => ({
+                label: jobAlgorithms[algoResult.algoIndex]?.algorithmName || `#${algoResult.algoIndex + 1}`,
+                data: algoResult.envResults.map((envResult) => ({
+                    x: envResult.envIndex + 1,
+                    y: envResult.metrics.performance[name] ?? Number.NaN,
+                })),
+            })) as ChartSeries[],
+        }));
+    }, [algoResults, benchmarkPerfMetricNames, jobAlgorithms]);
+
     const handleExportCsv = useCallback(() => {
         if (jobType === "algorithm-eval") {
-            const headers = ["Algorithm", "Env", "Runs OK", "Runs Failed", ...selectedMetrics.map((m) => METRIC_LABELS[m])];
+            const headers = ["Algorithm", "Env", "Runs OK", "Runs Failed", ...selectedMetrics.map((m) => METRIC_LABELS[m]), ...benchmarkPerfMetricNames];
             const rows = algoResults.flatMap((algoResult) =>
                 algoResult.envResults.map((envResult) => [
                     `#${algoResult.algoIndex + 1}`,
@@ -139,11 +174,15 @@ export default function BenchmarkRunTab({
                         const v = envResult.metrics[metric];
                         return v === null ? "" : String(v);
                     }),
+                    ...benchmarkPerfMetricNames.map((name) => {
+                        const v = envResult.metrics.performance[name];
+                        return v === null || v === undefined ? "" : String(v);
+                    }),
                 ])
             );
             downloadCsv("benchmark-algo-eval.csv", [headers, ...rows]);
         } else {
-            const headers = [targetParameterName, "Runs OK", "Runs Failed", ...selectedMetrics.map((m) => METRIC_LABELS[m])];
+            const headers = [targetParameterName, "Runs OK", "Runs Failed", ...selectedMetrics.map((m) => METRIC_LABELS[m]), ...benchmarkPerfMetricNames];
             const rows = executionState.results.map((stepResult) => [
                 String(stepResult.stepValue),
                 String(stepResult.runsCompleted),
@@ -152,10 +191,14 @@ export default function BenchmarkRunTab({
                     const v = stepResult.aggregatedMetrics[metric][stepValueCalculation];
                     return typeof v === "number" ? String(v) : "";
                 }),
+                ...benchmarkPerfMetricNames.map((name) => {
+                    const v = stepResult.aggregatedMetrics.performance[name]?.[stepValueCalculation];
+                    return typeof v === "number" ? String(v) : "";
+                }),
             ]);
             downloadCsv(`benchmark-param-eval-${targetParameterName}.csv`, [headers, ...rows]);
         }
-    }, [jobType, algoResults, executionState.results, selectedMetrics, stepValueCalculation, targetParameterName]);
+    }, [jobType, algoResults, executionState.results, selectedMetrics, stepValueCalculation, targetParameterName, benchmarkPerfMetricNames]);
 
     const { progress, status } = executionState;
     const statusInfo = STATUS_CONFIG[status];
@@ -300,6 +343,9 @@ export default function BenchmarkRunTab({
                                         {selectedMetrics.map((metric) => (
                                             <th key={metric} className="px-3 py-2 text-left font-medium">{METRIC_LABELS[metric]}</th>
                                         ))}
+                                        {benchmarkPerfMetricNames.map((name) => (
+                                            <th key={`perf-${name}`} className="px-3 py-2 text-left font-medium text-violet-700">{name}</th>
+                                        ))}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
@@ -318,6 +364,14 @@ export default function BenchmarkRunTab({
                                                     const value = envResult.metrics[metric];
                                                     return (
                                                         <td key={metric} className="px-3 py-2 tabular-nums text-gray-700">
+                                                            {typeof value === "number" ? String(parseFloat(value.toFixed(2))) : "—"}
+                                                        </td>
+                                                    );
+                                                })}
+                                                {benchmarkPerfMetricNames.map((name) => {
+                                                    const value = envResult.metrics.performance[name];
+                                                    return (
+                                                        <td key={`perf-${name}`} className="px-3 py-2 tabular-nums text-violet-700">
                                                             {typeof value === "number" ? String(parseFloat(value.toFixed(2))) : "—"}
                                                         </td>
                                                     );
@@ -344,46 +398,57 @@ export default function BenchmarkRunTab({
                             table_chart
                         </span>
                     </div>
-                {executionState.results.length === 0 ? (
-                    <div className="text-center text-sm text-gray-400 py-8">
-                        Results will appear here once steps complete
-                    </div>
-                ) : (
-                    <div className="max-h-64 overflow-auto">
-                        <table className="w-full text-xs">
-                            <thead className="bg-gray-50 text-gray-600 sticky top-0">
-                                <tr>
-                                    <th className="px-3 py-2 text-left font-medium">{targetParameterName}</th>
-                                    <th className="px-3 py-2 text-left font-medium">Runs</th>
-                                    {selectedMetrics.map((metric) => (
-                                        <th key={metric} className="px-3 py-2 text-left font-medium">{METRIC_LABELS[metric]}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {executionState.results.map((stepResult) => (
-                                    <tr key={stepResult.stepValue} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-3 py-2 font-mono font-medium text-gray-800">{stepResult.stepValue}</td>
-                                        <td className="px-3 py-2 text-gray-500">
-                                            <span className="text-teal-700">{stepResult.runsCompleted} ok</span>
-                                            {stepResult.runsFailed > 0 && (
-                                                <span className="text-red-600"> / {stepResult.runsFailed} failed</span>
-                                            )}
-                                        </td>
-                                        {selectedMetrics.map((metric) => {
-                                            const aggregate = stepResult.aggregatedMetrics[metric][stepValueCalculation];
-                                            return (
-                                                <td key={metric} className="px-3 py-2 tabular-nums text-gray-700">
-                                                    {typeof aggregate === "number" ? String(parseFloat(aggregate.toFixed(2))) : "—"}
-                                                </td>
-                                            );
-                                        })}
+                    {executionState.results.length === 0 ? (
+                        <div className="text-center text-sm text-gray-400 py-8">
+                            Results will appear here once steps complete
+                        </div>
+                    ) : (
+                        <div className="max-h-64 overflow-auto">
+                            <table className="w-full text-xs">
+                                <thead className="bg-gray-50 text-gray-600 sticky top-0">
+                                    <tr>
+                                        <th className="px-3 py-2 text-left font-medium">{targetParameterName}</th>
+                                        <th className="px-3 py-2 text-left font-medium">Runs</th>
+                                        {selectedMetrics.map((metric) => (
+                                            <th key={metric} className="px-3 py-2 text-left font-medium">{METRIC_LABELS[metric]}</th>
+                                        ))}
+                                        {benchmarkPerfMetricNames.map((name) => (
+                                            <th key={`perf-${name}`} className="px-3 py-2 text-left font-medium text-violet-700">{name}</th>
+                                        ))}
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {executionState.results.map((stepResult) => (
+                                        <tr key={stepResult.stepValue} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-3 py-2 font-mono font-medium text-gray-800">{stepResult.stepValue}</td>
+                                            <td className="px-3 py-2 text-gray-500">
+                                                <span className="text-teal-700">{stepResult.runsCompleted} ok</span>
+                                                {stepResult.runsFailed > 0 && (
+                                                    <span className="text-red-600"> / {stepResult.runsFailed} failed</span>
+                                                )}
+                                            </td>
+                                            {selectedMetrics.map((metric) => {
+                                                const aggregate = stepResult.aggregatedMetrics[metric][stepValueCalculation];
+                                                return (
+                                                    <td key={metric} className="px-3 py-2 tabular-nums text-gray-700">
+                                                        {typeof aggregate === "number" ? String(parseFloat(aggregate.toFixed(2))) : "—"}
+                                                    </td>
+                                                );
+                                            })}
+                                            {benchmarkPerfMetricNames.map((name) => {
+                                                const aggregate = stepResult.aggregatedMetrics.performance[name]?.[stepValueCalculation];
+                                                return (
+                                                    <td key={`perf-${name}`} className="px-3 py-2 tabular-nums text-violet-700">
+                                                        {typeof aggregate === "number" ? String(parseFloat(aggregate.toFixed(2))) : "—"}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -393,7 +458,7 @@ export default function BenchmarkRunTab({
                     Trend Charts
                 </div>
                 {jobType === "algorithm-eval" ? (
-                    algoChartSeries.length === 0 ? (
+                    algoChartSeries.length === 0 && algoPerfChartSeries.length === 0 ? (
                         <div className="text-center text-sm text-gray-400 py-8">
                             Complete at least one algorithm to render charts
                         </div>
@@ -409,10 +474,20 @@ export default function BenchmarkRunTab({
                                     yAxisLabel={METRIC_LABELS[chart.metric]}
                                 />
                             ))}
+                            {algoPerfChartSeries.map((chart) => (
+                                <ChartCard
+                                    key={`perf-${chart.name}`}
+                                    metricId={chart.metricId}
+                                    name={chart.name}
+                                    series={chart.series}
+                                    xAxisLabel="Environment"
+                                    yAxisLabel={chart.name}
+                                />
+                            ))}
                         </div>
                     )
                 ) : (
-                    chartSeries.length === 0 || executionState.results.length === 0 ? (
+                    chartSeries.length === 0 && perfChartSeries.length === 0 || executionState.results.length === 0 ? (
                         <div className="text-center text-sm text-gray-400 py-8">
                             Complete at least one step to render charts
                         </div>
@@ -426,6 +501,16 @@ export default function BenchmarkRunTab({
                                     series={chart.series}
                                     xAxisLabel={targetParameterName}
                                     yAxisLabel={METRIC_LABELS[chart.metric]}
+                                />
+                            ))}
+                            {perfChartSeries.map((chart) => (
+                                <ChartCard
+                                    key={`perf-${chart.name}`}
+                                    metricId={chart.metricId}
+                                    name={chart.chartName}
+                                    series={chart.series}
+                                    xAxisLabel={targetParameterName}
+                                    yAxisLabel={chart.name}
                                 />
                             ))}
                         </div>

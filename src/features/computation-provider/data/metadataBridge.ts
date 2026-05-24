@@ -135,6 +135,7 @@ export function ingestProviderMetadata(
                 type: m.type,
                 group: m.group,
                 style: m.style,
+                benchmark: m.benchmark,
             })),
         };
     });
