@@ -60,9 +60,9 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
     const isNumericType = props.type === "number" || props.type === "Integer" || props.type === "Decimal";
     const resolvedUnit =
         props.unitType === "uom" ? unitLabel(unitOfMeasure) :
-        props.unitType === "ratio" ? "%" :
-        props.unitType !== undefined ? "" :
-        (props.unit ?? "");
+            props.unitType === "ratio" ? "%" :
+                props.unitType !== undefined ? "" :
+                    (props.unit ?? "");
     const effectiveUnit = resolvedUnit && isNumericType ? resolvedUnit : undefined;
     const displayLabel = effectiveUnit ? `${label} (${effectiveUnit})` : label;
     const hs = HINT_STYLE[hintState];
@@ -102,7 +102,7 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
             {/* Label */}
             <div className="w-1/3 shrink-0 h-8 flex items-center gap-1 min-w-0">
                 <label
-                    className="text-sm text-gray-500 tracking-wide whitespace-nowrap shrink-0 cursor-default"
+                    className="text-sm text-gray-500 tracking-wide truncate min-w-0 cursor-default"
                     title={displayLabel}
                 >
                     {displayLabel}
@@ -210,9 +210,8 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") props.onConfirm?.();
                                         }}
-                                        className={`w-full px-2 text-sm border rounded text-gray-800 placeholder:text-gray-400 placeholder:italic h-7 focus:outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-default truncate ${
-                                            isNumericType && showCopyBtn ? "pr-10" : isNumericType ? "pr-5" : showCopyBtn ? "pr-6" : ""
-                                        } ${isFocused ? "border-teal-600" : "border-gray-300"}`}
+                                        className={`w-full px-2 text-sm border rounded text-gray-800 placeholder:text-gray-400 placeholder:italic h-7 focus:outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-default truncate ${isNumericType && showCopyBtn ? "pr-10" : isNumericType ? "pr-5" : showCopyBtn ? "pr-6" : ""
+                                            } ${isFocused ? "border-teal-600" : "border-gray-300"}`}
                                     />
                                     {showCopyBtn && (
                                         <button
@@ -229,32 +228,32 @@ const CardModalField = forwardRef<HTMLInputElement, CardModalFieldConfig>((props
                                     )}
                                     {isNumericType && (isFocused || isHovered) && !disabled && (
                                         <div className={`absolute ${showCopyBtn ? "right-5" : "right-px"} top-1/2 -translate-y-1/2 flex flex-col w-3 mr-1.5`}>
-                                <button
-                                    type="button"
-                                    tabIndex={-1}
-                                    onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        const next = Number(props.value) + 1;
-                                        props.onChange?.(String(props.max !== undefined && next > props.max ? props.max : next));
-                                    }}
-                                    className="flex items-center justify-center text-gray-400 hover:text-gray-700 active:text-teal-600 cursor-pointer"
-                                    style={{ height: 12 }}
-                                >
-                                    <span className="material-symbols-outlined leading-none" style={{ fontSize: 14 }}>expand_less</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    tabIndex={-1}
-                                    onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        const next = Number(props.value) - 1;
-                                        props.onChange?.(String(props.min !== undefined && next < props.min ? props.min : next));
-                                    }}
-                                    className="flex items-center justify-center text-gray-400 hover:text-gray-700 active:text-teal-600 cursor-pointer"
-                                    style={{ height: 12 }}
-                                >
-                                    <span className="material-symbols-outlined leading-none" style={{ fontSize: 14 }}>expand_more</span>
-                                </button>
+                                            <button
+                                                type="button"
+                                                tabIndex={-1}
+                                                onMouseDown={(e) => {
+                                                    e.preventDefault();
+                                                    const next = Number(props.value) + 1;
+                                                    props.onChange?.(String(props.max !== undefined && next > props.max ? props.max : next));
+                                                }}
+                                                className="flex items-center justify-center text-gray-400 hover:text-gray-700 active:text-teal-600 cursor-pointer"
+                                                style={{ height: 12 }}
+                                            >
+                                                <span className="material-symbols-outlined leading-none" style={{ fontSize: 14 }}>expand_less</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                tabIndex={-1}
+                                                onMouseDown={(e) => {
+                                                    e.preventDefault();
+                                                    const next = Number(props.value) - 1;
+                                                    props.onChange?.(String(props.min !== undefined && next < props.min ? props.min : next));
+                                                }}
+                                                className="flex items-center justify-center text-gray-400 hover:text-gray-700 active:text-teal-600 cursor-pointer"
+                                                style={{ height: 12 }}
+                                            >
+                                                <span className="material-symbols-outlined leading-none" style={{ fontSize: 14 }}>expand_more</span>
+                                            </button>
                                         </div>
                                     )}
                                 </>
