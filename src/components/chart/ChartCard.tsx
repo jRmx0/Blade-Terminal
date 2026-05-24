@@ -494,16 +494,30 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
         const allXValues = Array.from(
             new Set(normalizedSeriesPoints.flatMap((pts) => pts.map((pt) => pt.x))),
         ).sort((a, b) => a - b);
-        const header = [effectiveXAxisLabel, ...effectiveSeriesLabels].join(",");
+
+        // Build x-value → marker label map so stages appear in the CSV as a Marker column.
+        const refSeries = normalizedSeriesPoints[0] ?? [];
+        const markerMap = new Map<number, string>();
+        for (const stage of normalizedStages) {
+            const stageX = isXYData
+                ? (refSeries[stage.sampleIndex]?.x ?? stage.sampleIndex)
+                : stage.sampleIndex;
+            const existing = markerMap.get(stageX);
+            markerMap.set(stageX, existing ? `${existing}; ${stage.label}` : stage.label);
+        }
+        const hasMarkers = normalizedStages.length > 0;
+
+        const header = [effectiveXAxisLabel, ...effectiveSeriesLabels, ...(hasMarkers ? ["Marker"] : [])].join(",");
         const csvRows = allXValues.map((x) => {
             const yVals = normalizedSeriesPoints.map((pts) => {
                 const pt = pts.find((p) => p.x === x);
                 return pt !== undefined ? String(pt.y) : "";
             });
-            return [x, ...yVals].join(",");
+            const markerCell = hasMarkers ? [markerMap.get(x) ?? ""] : [];
+            return [x, ...yVals, ...markerCell].join(",");
         });
         const csv = [header, ...csvRows].join("\n");
-        const blob = new Blob([csv], { type: "text/csv" });
+        const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" });
         let fileHandle: FileSystemFileHandle;
         try {
             fileHandle = await window.showSaveFilePicker({
@@ -522,7 +536,7 @@ export default function ChartCard({ metricId, name, series, stages, xAxisLabel, 
         } catch (err) {
             console.error("[ChartCard] CSV write failed:", err);
         }
-    }, [effectiveTitle, effectiveXAxisLabel, effectiveSeriesLabels, normalizedSeriesPoints]);
+    }, [effectiveTitle, effectiveXAxisLabel, effectiveSeriesLabels, normalizedSeriesPoints, normalizedStages, isXYData]);
 
     const chartData = useMemo(
         () => {
