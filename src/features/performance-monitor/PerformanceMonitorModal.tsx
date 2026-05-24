@@ -9,8 +9,9 @@ import { useComputationCatalogStore } from "@/stores/computationCatalogStore";
 import ModalTitle from "@/components/modal/modal-title/ModalTitle";
 import ModalFooterButton from "@/components/modal/modal-footer/ModalFooterButton";
 import CardModalField from "@/components/modals/card-modal/CardModalField";
-import type { PerformanceMetric, PerformanceMetricStage } from "@/types/serviceTypes";
+import type { BarChartItem, PerformanceMetric, PerformanceMetricStage } from "@/types/serviceTypes";
 import ChartCard from "@/components/chart/ChartCard";
+import BarChartCard from "@/components/chart/BarChartCard";
 
 export default function PerformanceMonitorModal() {
     const { isOpen, close, chartSizes, initChartSizes } = usePerformanceMonitorModalStore();
@@ -134,6 +135,19 @@ export default function PerformanceMonitorModal() {
                                         name={metric.name}
                                         series={[{ label: metric.name, data }]}
                                         stages={metric.stages}
+                                        xAxisLabel={metric.style?.xAxisLabel}
+                                        yAxisLabel={metric.style?.yAxisLabel}
+                                    />
+                                );
+                            }
+                            if (metric.type === "Bar-chart") {
+                                const items = Array.isArray(metric.value) ? metric.value as BarChartItem[] : [];
+                                return (
+                                    <BarChartCard
+                                        key={metric.id}
+                                        metricId={metric.id}
+                                        name={metric.name}
+                                        items={items}
                                         xAxisLabel={metric.style?.xAxisLabel}
                                         yAxisLabel={metric.style?.yAxisLabel}
                                     />

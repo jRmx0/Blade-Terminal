@@ -341,9 +341,14 @@ export interface AlgorithmDebug {
     layers: DebugResultLayer[];
 }
 
+export interface BarChartItem {
+    label: string;
+    duration: number;
+}
+
 export interface PerformanceMetric {
     id: number;
-    value: number | number[] | Array<{ x: number; y: number }>;
+    value: number | number[] | Array<{ x: number; y: number }> | BarChartItem[];
     stages?: PerformanceMetricStage[];
 }
 
