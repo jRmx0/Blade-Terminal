@@ -240,20 +240,42 @@ export function computeOverlapRatio(visitMap: Map<string, number>): number | nul
     return (totalVisits / visitMap.size) * 100 - 100;
 }
 
-/** Counts the total number of path waypoints across all segments, skipping consecutive duplicate points. */
+/** Counts turns as total accumulated direction-change angle divided by 90°, floored to a whole number. */
 export function computeNumberOfTurns(segments: CoveragePathPlanSegment[]): number {
-    let count = 0;
+    let totalAngle = 0;
+    let prevDx: number | null = null;
+    let prevDy: number | null = null;
     let prevX: number | null = null;
     let prevY: number | null = null;
+
     for (const segment of segments) {
         for (const { point } of segment.path) {
-            if (point.x === prevX && point.y === prevY) continue;
-            count++;
+            if (prevX === null || prevY === null) {
+                prevX = point.x;
+                prevY = point.y;
+                continue;
+            }
+
+            const dx = point.x - prevX;
+            const dy = point.y - prevY;
+            if (dx === 0 && dy === 0) continue;
+
+            if (prevDx !== null && prevDy !== null) {
+                const dot = prevDx * dx + prevDy * dy;
+                const prevMag = Math.sqrt(prevDx ** 2 + prevDy ** 2);
+                const currMag = Math.sqrt(dx ** 2 + dy ** 2);
+                const cos = Math.max(-1, Math.min(1, dot / (prevMag * currMag)));
+                totalAngle += Math.acos(cos) * (180 / Math.PI);
+            }
+
+            prevDx = dx;
+            prevDy = dy;
             prevX = point.x;
             prevY = point.y;
         }
     }
-    return count;
+
+    return Math.floor(totalAngle / 90);
 }
 
 /** Computes the total Euclidean path length across all segments, skipping consecutive duplicate points. */
