@@ -1,7 +1,7 @@
-export type ControlsPanelSectionId = "general" | "algo" | "env" | "object" | "debug";
+export type ControlsPanelSectionId = string;
 
 export interface ControlsPanelState {
-  expandedSections: Record<ControlsPanelSectionId, boolean>;
+  expandedSections: Record<string, boolean>;
   toggleSection: (sectionId: ControlsPanelSectionId) => void;
   expandSection: (sectionId: ControlsPanelSectionId) => void;
   collapseSection: (sectionId: ControlsPanelSectionId) => void;
@@ -30,9 +30,13 @@ export interface ControlsPanelSectionInputProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
   disabled?: boolean;
   placeholder?: string;
   type?: string;
+  min?: number;
+  max?: number;
 }
 
 export interface ControlsPanelSectionSelectProps {

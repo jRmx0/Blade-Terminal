@@ -6,15 +6,22 @@
   "scripts": {
     "dev": "bun --hot server/index.ts",
     "build": "bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
-    "start": "NODE_ENV=production bun server/index.ts"
+    "start": "NODE_ENV=production bun server/index.ts",
+    "test": "bun test",
+    "test:watch": "bun test --watch"
   },
   "dependencies": {
     "@eslint/js": "^10.0.1",
+    "@headlessui/react": "^2.2.9",
+    "@uiw/react-color": "^2.9.6",
     "bun-plugin-tailwind": "^0.1.2",
+    "chart.js": "^4.5.1",
     "dexie": "^4.3.0",
-    "dexie-react-hooks": "^4.2.0",
     "konva": "^10.2.0",
+    "material-symbols": "^0.44.4",
+    "polygon-clipping": "^0.15.7",
     "react": "^19",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "^19",
     "react-konva": "^19.2.2",
     "tailwindcss": "^4.1.18",

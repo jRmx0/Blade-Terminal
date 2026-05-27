@@ -1,0 +1,418 @@
+Project blade_terminal {
+  database_type: 'IndexedDB (Dexie.js)'
+  Note: '''
+    Client-side IndexedDB database for the Blade Terminal PWA.
+    Engine : Dexie.js — single-version schema (no migration history).
+    FKs    : IndexedDB has no enforced FK constraints.
+             All cascade deletes are handled in application code (server/db/).
+    PKs    : Compound primary keys are modelled as composite indexes marked [pk].
+    System : Layers/settings seeded at DB creation use algorithmId = 0,
+             providerId = 0 as sentinels to distinguish them from provider rows.
+  '''
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+Enum env_format {
+  polygon [note: 'Polygon-based environment']
+  grid    [note: 'Grid-based environment — not yet fully implemented']
+}
+
+Enum env_type {
+  offline     [note: 'Fixed: all objects forced offline']
+  online      [note: 'Fixed: all objects forced online']
+  any_offline [note: 'Mixed — new objects default to offline']
+  any_online  [note: 'Mixed — new objects default to online']
+}
+
+Enum coord_system {
+  Cartesian
+  Geographic [note: 'Not yet implemented']
+}
+
+Enum object_category {
+  zone     [note: 'Coverage area — vertices inserted clockwise (Y-down)']
+  obstacle [note: 'Area to avoid — vertices inserted counter-clockwise (Y-down)']
+}
+
+Enum object_type {
+  empty   [note: 'Stored as empty string "" — no type assigned']
+  offline
+  online
+}
+
+Enum algo_param_type {
+  Integer
+  Decimal
+  Boolean
+  String
+  Enum
+}
+
+Enum metric_type {
+  "Single-value"
+  "Time-series"
+}
+
+Enum layer_type {
+  Polygon
+  Point
+  Line
+  Grid
+  ObjectGroup [note: 'Settings-owner group layer — never renders standalone']
+}
+
+Enum style_type {
+  Boolean
+  Integer
+  Color
+  Pixels
+  PointShapeEnum
+  PolygonIDShapeEnum
+  StrokeStyleEnum
+  FillStyleEnum
+  OverlapLayoutEnum
+  PlacementEnum
+  FontWeightEnum
+  LineArrowStartEnum
+  LineArrowEndEnum
+  LineArrowMidEnum
+  PointLabelEnum [note: 'Value stored as JSON: Array<{value: string, color: string|null}>']
+}
+
+Enum style_group {
+  general
+  point
+  line
+  polygon
+}
+
+Enum app_enum_group {
+  format
+  type
+  coordsystem
+}
+
+// ─── Tables ───────────────────────────────────────────────────────────────────
+
+// ── system ── seed data & global UI prefs ─────────────────────────────────────
+
+Table system.appEnumSetup [note: 'Seed-only enum lookup catalog. Written once on the DB populate event. Never mutated at runtime.'] {
+  enumGroup app_enum_group [not null, note: 'Compound PK part 1']
+  value     varchar        [not null, note: 'Compound PK part 2 — machine-readable enum value']
+  label     varchar        [not null, note: 'Human-readable display label']
+
+  indexes {
+    (enumGroup, value) [pk]
+    enumGroup          [name: 'idx_appEnumSetup_group']
+  }
+}
+
+Table system.uiPreference [note: 'Generic key-value store for persistent UI state. Values are always JSON-serialized strings.'] {
+  key   varchar [not null, note: 'PK — preference identifier']
+  value varchar [not null, note: 'JSON-serialized preference value']
+
+  indexes {
+    key [pk]
+  }
+}
+
+// ── workspace ── user-created spatial geometry ────────────────────────────────
+
+Table workspace.environment [note: 'Spatial workspaces.'] {
+  id            integer      [not null, note: 'PK — manually assigned integer']
+  name          varchar      [not null, note: 'User-provided; truncated to WORKSPACE_NAME_MAX_LENGTH on write']
+  format        env_format   [not null]
+  type          env_type     [not null]
+  coordSystem   coord_system [not null]
+  zoneCount     integer      [not null, default: 0, note: 'Cached: count of zone-category objects']
+  obstacleCount integer      [not null, default: 0, note: 'Cached: count of obstacle-category objects']
+
+  indexes {
+    id   [pk]
+    name [name: 'idx_environments_name']
+  }
+}
+
+Table workspace.object [note: 'Polygon objects (zones / obstacles). Vertices stored inline as an ordered JSON array — no separate vertices table.'] {
+  id            integer         [not null, note: 'Compound PK part 1 — local sequential ID within the environment']
+  environmentId integer         [not null, note: 'Compound PK part 2; FK → workspace.environment.id']
+  category      object_category [not null]
+  type          object_type     [not null]
+  vertexCount   integer         [not null, default: 0, note: 'Cached: polygon vertex count (shoelace input size)']
+  area          float           [not null, default: 0, note: 'Cached: polygon area via shoelace formula']
+  vertices      json            [not null, note: 'Ordered Array<{x: number, y: number}> in draw order']
+
+  indexes {
+    (id, environmentId) [pk]
+    environmentId       [name: 'idx_objects_environmentId']
+  }
+}
+
+// ── provider ── external CPP service connections ──────────────────────────────
+
+Table provider.computationProvider [note: 'External CPP computation services. Stores credentials and metadata-fetch state.'] {
+  id                integer [not null, increment, note: 'PK — auto-incremented']
+  name              varchar [not null, note: 'User-provided display name']
+  url               varchar [not null, note: 'Base URL of the external service']
+  apiKey            varchar [not null, note: 'API authentication key']
+  metadataFetchedAt bigint  [null, note: 'Unix timestamp (ms) of last successful metadata fetch; null = never fetched']
+  urlAtLastFetch    varchar [null, note: 'Provider URL at the time of the last fetch — used for stale-detection']
+
+  indexes {
+    id   [pk]
+    name [name: 'idx_computationProviders_name']
+  }
+}
+
+Table provider.computationProviderAlgorithm [note: 'CPP algorithms exposed by a provider. Replaced atomically on metadata refresh. IDs are sequential (1-based) within each provider.'] {
+  id                    integer [not null, note: 'Compound PK part 1 — sequential within provider (1-based)']
+  computationProviderId integer [not null, note: 'Compound PK part 2; FK → provider.computationProvider.id']
+  name                  varchar [not null, note: 'Algorithm display name']
+
+  indexes {
+    (id, computationProviderId) [pk]
+    computationProviderId       [name: 'idx_cpAlgorithms_providerId']
+  }
+}
+
+// ── provider_catalog ── metadata fetched from provider (templates) ────────────
+
+Table provider_catalog.computationAlgorithmParameterSetup [note: 'Parameter metadata fetched from a provider. Template table — per-environment computationAlgorithmParameter rows are initialized from these defaults.'] {
+  id                    integer         [not null, note: 'Compound PK part 1 — from provider metadata']
+  algorithmId           integer         [not null, note: 'Compound PK part 2; FK → provider.computationProviderAlgorithm.id']
+  computationProviderId integer         [not null, note: 'Compound PK part 3; FK → provider.computationProvider.id']
+  name                  varchar         [not null, note: 'Parameter display name']
+  paramType             algo_param_type [not null]
+  enumValues            json            [not null, note: 'Required string array; empty [] for non-Enum params, populated for Enum paramType']
+  defaultValue          varchar         [not null, default: '', note: 'Serialized string default; empty string when unset']
+  minValue              float           [null, note: 'Minimum numeric value — meaningful for Integer and Decimal only']
+  section               varchar         [null, note: 'Provider-defined UI section label; rendered as "General" when absent']
+  appHandler            varchar         [null, note: 'Optional application-level behaviour handler key for enum params']
+
+  indexes {
+    (id, algorithmId, computationProviderId) [pk]
+    algorithmId                              [name: 'idx_paramSetup_algorithmId']
+    computationProviderId                    [name: 'idx_paramSetup_providerId']
+    (algorithmId, computationProviderId)     [name: 'idx_paramSetup_algo_provider']
+  }
+}
+
+Table provider_catalog.algorithmMetricSetup [note: 'Metric metadata fetched from a provider during metadata refresh.'] {
+  id                    integer     [not null, note: 'Compound PK part 1 — from provider metadata']
+  algorithmId           integer     [not null, note: 'Compound PK part 2; FK → provider.computationProviderAlgorithm.id']
+  computationProviderId integer     [not null, note: 'Compound PK part 3; FK → provider.computationProvider.id']
+  name                  varchar     [not null, note: 'Metric display name']
+  type                  metric_type [not null]
+  group                 varchar     [null, note: 'Optional metrics-panel grouping label']
+  style                 json        [null, note: 'Optional time-series chart style: {xAxisLabel?: string, yAxisLabel?: string}']
+
+  indexes {
+    (id, algorithmId, computationProviderId) [pk]
+    algorithmId                              [name: 'idx_metricsSetup_algorithmId']
+    computationProviderId                    [name: 'idx_metricsSetup_providerId']
+    (algorithmId, computationProviderId)     [name: 'idx_metricsSetup_algo_provider']
+  }
+}
+
+// ── runtime ── per-environment working state ──────────────────────────────────
+
+Table runtime.computationSelection [note: 'Active provider + algorithm selection per environment. One row per environment; upserted on every change.'] {
+  environmentId       integer [not null, note: 'PK; FK → workspace.environment.id']
+  selectedProviderId  integer [null,     note: 'FK → provider.computationProvider.id; null = nothing selected']
+  selectedAlgorithmId integer [null,     note: 'FK → provider.computationProviderAlgorithm.id within the provider; null = nothing selected']
+
+  indexes {
+    environmentId [pk]
+  }
+}
+
+Table runtime.computationAlgorithmParameter [note: 'Per-environment working parameter values. Initialized from provider_catalog.computationAlgorithmParameterSetup defaults when an algorithm is first activated for an environment.'] {
+  id            integer [not null, note: 'Compound PK part 1; matches provider_catalog.computationAlgorithmParameterSetup.id']
+  algorithmId   integer [not null, note: 'Compound PK part 2; FK → provider.computationProviderAlgorithm.id']
+  providerId    integer [not null, note: 'Compound PK part 3; FK → provider.computationProvider.id']
+  environmentId integer [not null, note: 'Compound PK part 4; FK → workspace.environment.id']
+  value         varchar [not null, note: 'Current serialized string value — all param types serialized to string']
+
+  indexes {
+    (id, algorithmId, providerId, environmentId) [pk]
+    (algorithmId, providerId, environmentId)     [name: 'idx_params_algo_provider_env']
+    environmentId                                [name: 'idx_params_environmentId']
+    providerId                                   [name: 'idx_params_providerId']
+  }
+}
+
+Table runtime.computeResult [note: 'Latest CPP result per environment. One row per environment; replaced on every successful compute run. result blob is immutable — never partially updated.'] {
+  environmentId integer [not null, note: 'PK; FK → workspace.environment.id — one row per environment']
+  jobId         varchar [not null, note: 'Provider-assigned job identifier']
+  algorithmId   integer [not null, note: 'Algorithm that produced this result']
+  providerId    integer [not null, note: 'Provider that executed the computation']
+  algorithmName varchar [not null, note: 'De-normalized snapshot of algorithm name at compute time']
+  completedAt   varchar [not null, note: 'ISO 8601 completion timestamp']
+  result        json    [not null, note: '''
+    Immutable ComputeResult blob. Shape:
+    {
+      coveragePathPlan: {
+        segments: Array<{
+          id: number,
+          type: "coverage" | "transit" | string,
+          path: Array<{ id: number, point: {x,y} }>
+        }>
+      },
+      debug?: { layers: Array<{ id, source, list }> },
+      performance?: { metrics: Array<{ id, value: number | number[] }> }
+    }
+  ''']
+
+  indexes {
+    environmentId [pk]
+  }
+}
+
+Table runtime.coverageGridVisitCache [note: 'Latest cached coverage-grid visits and derived metrics per environment. Used to avoid recomputation on reload and UI remount.'] {
+  environmentId     integer [not null, note: 'PK; FK → workspace.environment.id']
+  resultSignature   varchar [not null, note: 'Stable signature of compute output for staleness checks']
+  cellSize          float   [not null, note: 'Coverage-grid cell size used for rasterization']
+  pathWidth         float   [not null, note: 'Resolved path width used for visit-map generation']
+  visitEntries      json    [not null, note: 'Array<{ key: "col,row", count: number }> sparse visit map']
+  maxCount          integer [not null, note: 'Maximum visit count among visitEntries']
+  coverageRatioPct  float   [null, note: 'Cached coverage ratio percentage']
+  overlapRatioPct   float   [null, note: 'Cached overlap ratio percentage']
+  turnCount         integer [null, note: 'Cached number-of-turns metric']
+  pathLength        float   [null, note: 'Cached path-length metric in world units']
+  efficiency        float   [null, note: 'Cached efficiency percentage']
+  createdAt         varchar [not null, note: 'ISO 8601 cache write timestamp']
+
+  indexes {
+    environmentId [pk]
+  }
+}
+
+// ── layers ── layer catalog + per-environment style values ────────────────────
+
+Table layers.layer [note: 'Layer catalog. System layers seeded at populate with algorithmId=0 / providerId=0 as sentinels. Provider layers replaced atomically on metadata refresh.'] {
+  id           integer    [not null, note: 'Compound PK part 1 — natural key from registry or provider metadata; referenced by layers.layerSetting.layerId and layers.layerSettingSetup.layerId']
+  algorithmId  integer    [not null, note: 'Compound PK part 2; 0 = system sentinel; else FK → provider.computationProviderAlgorithm.id']
+  providerId   integer    [not null, note: 'Compound PK part 3; 0 = system sentinel; else FK → provider.computationProvider.id']
+  label        varchar    [not null, note: 'Display name']
+  computeLayer varchar    [null, note: 'Algorithm-specific result channel key e.g. "coveragePathPlan"']
+  type         layer_type [null, note: 'Nullable — absent on pre-type DB records for backward compatibility']
+
+  indexes {
+    (id, algorithmId, providerId) [pk]
+    id                            [name: 'idx_layers_id']
+    algorithmId                   [name: 'idx_layers_algorithmId']
+    providerId                    [name: 'idx_layers_providerId']
+    (algorithmId, providerId)     [name: 'idx_layers_algo_provider']
+  }
+}
+
+Table layers.layerSettingSetup [note: 'Style attribute metadata templates. Source-of-truth from which per-environment layers.layerSetting rows are initialized. System attributes use algorithmId=0 / providerId=0.'] {
+  id           integer     [not null, note: 'Compound PK part 1 — attribute ID from provider metadata or system registry']
+  layerId      integer     [not null, note: 'Compound PK part 2; FK → layers.layer.id']
+  algorithmId  integer     [not null, note: 'Compound PK part 3; 0 = system sentinel']
+  providerId   integer     [not null, note: 'Compound PK part 4; 0 = system sentinel']
+  key          varchar     [not null, note: 'Attribute label e.g. "Polygon Fill Color", "Show Vertex IDs" — also the display label']
+  styleType    style_type  [not null]
+  styleGroup   style_group [null, note: 'Absent for internal system attributes (e.g. "Show Vertex IDs")']
+  defaultValue varchar     [null, note: 'Serialized default string; null when no default is defined']
+  enumValues   json        [null, note: 'Allowed enum values — populated for PointLabelEnum attributes']
+  mapping      json        [null, note: 'Per-value color overrides: Array<{value: string, color: string|null}> — PointLabelEnum only']
+
+  indexes {
+    (id, layerId, algorithmId, providerId) [pk]
+    (layerId, algorithmId, providerId)     [name: 'idx_settingsSetup_layer_algo_provider']
+    (algorithmId, providerId)              [name: 'idx_settingsSetup_algo_provider']
+    providerId                             [name: 'idx_settingsSetup_providerId']
+  }
+}
+
+Table layers.layerSetting [note: 'Per-environment working layer style values. layers.layer is the load anchor — all layers are present regardless of whether they have setting rows. key/styleType/styleGroup are joined from layerSettingSetup at load time and never stored here.'] {
+  id            integer     [not null, note: 'Compound PK part 1; matches layers.layerSettingSetup.id']
+  layerId       integer     [not null, note: 'Compound PK part 2; FK → layers.layer.id']
+  algorithmId   integer     [not null, note: 'Compound PK part 3; 0 = system sentinel']
+  providerId    integer     [not null, note: 'Compound PK part 4; 0 = system sentinel']
+  environmentId integer     [not null, note: 'Compound PK part 5; FK → workspace.environment.id']
+  value         varchar     [not null, note: 'Current serialized value. PointLabelEnum: JSON.stringify(Array<{value,color}>)']
+
+  indexes {
+    (id, layerId, algorithmId, providerId, environmentId) [pk]
+    (layerId, algorithmId, providerId, environmentId)     [name: 'idx_layerSettings_layer_algo_provider_env']
+    (algorithmId, providerId, environmentId)              [name: 'idx_layerSettings_algo_provider_env']
+    environmentId                                         [name: 'idx_layerSettings_environmentId']
+    providerId                                            [name: 'idx_layerSettings_providerId']
+  }
+}
+
+// ─── Relationships ────────────────────────────────────────────────────────────
+// IndexedDB enforces no FK constraints — these are logical references only.
+// All cascade deletes are implemented in application code (server/db/).
+
+// workspace → child tables
+Ref: workspace.object.environmentId > workspace.environment.id [delete: cascade]
+Ref: runtime.computationSelection.environmentId - workspace.environment.id [delete: cascade]
+Ref: runtime.computationAlgorithmParameter.environmentId > workspace.environment.id [delete: cascade]
+Ref: runtime.computeResult.environmentId - workspace.environment.id [delete: cascade]
+Ref: runtime.coverageGridVisitCache.environmentId > workspace.environment.id [delete: cascade]
+Ref: layers.layerSetting.environmentId > workspace.environment.id [delete: cascade]
+
+// provider → child tables
+Ref: provider.computationProviderAlgorithm.computationProviderId > provider.computationProvider.id [delete: cascade]
+
+// provider.computationProviderAlgorithm → provider_catalog tables
+Ref: provider_catalog.computationAlgorithmParameterSetup.(algorithmId, computationProviderId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade]
+Ref: provider_catalog.algorithmMetricSetup.(algorithmId, computationProviderId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade]
+
+// runtime params initialized from provider_catalog templates
+Ref: runtime.computationAlgorithmParameter.(id, algorithmId, providerId) > provider_catalog.computationAlgorithmParameterSetup.(id, algorithmId, computationProviderId)
+Ref: runtime.computationAlgorithmParameter.(algorithmId, providerId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade]
+
+
+Ref: layers.layerSettingSetup.(algorithmId, providerId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade]
+Ref: layers.layerSetting.(algorithmId, providerId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade]
+
+// layers.layerSettingSetup → layers.layer
+Ref: layers.layerSettingSetup.(layerId, algorithmId, providerId) > layers.layer.(id, algorithmId, providerId)
+
+// layers.layerSetting → layers catalog
+Ref: layers.layerSetting.(layerId, algorithmId, providerId) > layers.layer.(id, algorithmId, providerId)
+Ref: layers.layerSetting.(id, layerId, algorithmId, providerId) > layers.layerSettingSetup.(id, layerId, algorithmId, providerId)
+
+// layers catalog owned by provider algorithms (0/0 sentinel = system, non-zero = provider)
+Ref: layers.layer.(algorithmId, providerId) > provider.computationProviderAlgorithm.(id, computationProviderId) [delete: cascade]
+
+
+// ─── TableGroups ──────────────────────────────────────────────────────────────
+
+// TableGroup system [note: 'Seed data & global UI preferences'] {
+//   system.appEnumSetup
+//   system.uiPreference
+// }
+
+// TableGroup workspace [note: 'User-created spatial geometry — environments and their polygon objects'] {
+//   workspace.environment
+//   workspace.object
+// }
+
+// TableGroup provider [note: 'External CPP computation service connections'] {
+//   provider.computationProvider
+//   provider.computationProviderAlgorithm
+// }
+
+// TableGroup provider_catalog [note: 'Metadata fetched from providers — parameter and metric definition templates'] {
+//   provider_catalog.computationAlgorithmParameterSetup
+//   provider_catalog.algorithmMetricSetup
+// }
+
+// TableGroup runtime [note: 'Per-environment working state — active selections, parameter values, compute results, and derived coverage-grid cache'] {
+//   runtime.computationSelection
+//   runtime.computationAlgorithmParameter
+//   runtime.computeResult
+//   runtime.coverageGridVisitCache
+// }
+
+// TableGroup layers [note: 'Layer catalog and per-environment style attribute values'] {
+//   layers.layer
+//   layers.layerSettingSetup
+//   layers.layerSetting
+// }

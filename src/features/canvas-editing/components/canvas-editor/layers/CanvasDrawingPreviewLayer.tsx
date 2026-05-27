@@ -1,10 +1,8 @@
 import { Layer, Line, Circle } from "react-konva";
 import type { Point } from "@/features/canvas-editing/utils/canvasGeometry";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
-import {
-    COLOR_ZONE_STROKE,
-    COLOR_OBSTACLE_STROKE,
-} from "@/config/canvas-editing/canvasConfig";
+import { useLayerSettingsStore, getLayerParam } from "@/stores/layerSettingsStore";
+import { LAYER_ID, LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 
 interface CanvasDrawingPreviewLayerProps {
     activeTool: ActiveTool | null;
@@ -19,14 +17,19 @@ export function CanvasDrawingPreviewLayer({
     mousePos,
     scale,
 }: CanvasDrawingPreviewLayerProps) {
+    const layers = useLayerSettingsStore((s) => s.layers);
     const isDrawing = activeTool === "addZone" || activeTool === "addObstacle";
 
     if (!isDrawing || drawingPoints.length === 0) return null;
 
-    const drawColor =
-        activeTool === "addZone" ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE;
-    const previewEdgeColor =
-        activeTool === "addZone" ? COLOR_ZONE_STROKE : COLOR_OBSTACLE_STROKE;
+    const drawLayerId = activeTool === "addZone" ? LAYER_ID.ZONES : LAYER_ID.OBSTACLES;
+    const drawColor = drawLayerId === LAYER_ID.ZONES
+        ? (getLayerParam(layers, LAYER_ID.ZONES, LAYER_PARAM_KEY.POLYGON_EDGE_COLOR) ?? "#22c55e")
+        : (getLayerParam(layers, LAYER_ID.OBSTACLES, LAYER_PARAM_KEY.POLYGON_EDGE_COLOR) ?? "#ef4444");
+    const previewEdgeColor = drawColor;
+    const drawEdgeWidth = parseFloat(getLayerParam(layers, drawLayerId, LAYER_PARAM_KEY.POLYGON_EDGE_WIDTH) ?? "1.5");
+    const previewDotRadius = Math.max(4, drawEdgeWidth) / scale;
+    const previewStrokeWidth = Math.max(2, drawEdgeWidth) / scale;
     const lastPoint = drawingPoints[drawingPoints.length - 1];
 
     return (
@@ -34,7 +37,7 @@ export function CanvasDrawingPreviewLayer({
             <Line
                 points={drawingPoints.flatMap((p) => [p.x, p.y])}
                 stroke={drawColor}
-                strokeWidth={2 / scale}
+                strokeWidth={previewStrokeWidth}
                 closed={false}
                 dash={[6 / scale, 3 / scale]}
             />
@@ -42,7 +45,7 @@ export function CanvasDrawingPreviewLayer({
                 <Line
                     points={[lastPoint.x, lastPoint.y, mousePos.x, mousePos.y]}
                     stroke={previewEdgeColor}
-                    strokeWidth={1.5 / scale}
+                    strokeWidth={previewStrokeWidth * 0.75}
                     dash={[4 / scale, 4 / scale]}
                 />
             )}
@@ -51,7 +54,7 @@ export function CanvasDrawingPreviewLayer({
                     key={`drawing-preview-point-${idx}`}
                     x={p.x}
                     y={p.y}
-                    radius={4 / scale}
+                    radius={previewDotRadius}
                     fill={drawColor}
                 />
             ))}

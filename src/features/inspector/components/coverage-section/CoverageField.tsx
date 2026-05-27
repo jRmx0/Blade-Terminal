@@ -1,7 +1,9 @@
 import InspectorPanelSectionField from "@/components/inspector-panel/InspectorPanelSectionField";
+import { useComputeResultStore } from "@/stores/useComputeResultStore";
 
 export default function CoverageField() {
-  return (
-    <InspectorPanelSectionField label="Coverage ratio" value="TBD" unit="%" />
-  );
+  const value = useComputeResultStore((s) => s.coverageMetrics.coverageRatioPct);
+  const display = value == null || !Number.isFinite(value) ? "—" : value.toFixed(1);
+
+  return <InspectorPanelSectionField label="Coverage ratio" value={display} unit="%" />;
 }

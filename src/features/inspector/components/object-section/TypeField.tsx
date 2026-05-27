@@ -1,17 +1,29 @@
-import InspectorPanelSectionField from "@/components/inspector-panel/InspectorPanelSectionField";
+import InspectorPanelSectionSelectField from "@/components/inspector-panel/InspectorPanelSectionSelectField";
 import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
 import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
-import { OBJECT_TYPE_OPTIONS } from "@/config/db-ops/enums";
+import { OBJECT_TYPE, OBJECT_TYPE_OPTIONS, isEnvTypeFixed, type ObjectType } from "@/config/db-ops/enums";
+import { useEnvStore } from "@/stores/envStore";
+
+const TYPE_OPTIONS = OBJECT_TYPE_OPTIONS.filter((o) => o.value !== OBJECT_TYPE.EMPTY);
 
 export default function TypeField() {
-  const selectedObjectId = useCanvasSelectionStore((s) => s.selectedObject?.id);
+  const selectedObject = useCanvasSelectionStore((s) => s.selectedObject);
   const type = useCanvasObjectStore(
-    (s) => s.objects.find((o) => o.id === selectedObjectId)?.type,
+    (s) => s.objects.find((o) => o.id === selectedObject?.id)?.type,
   );
+  const updateObjectType = useCanvasObjectStore((s) => s.updateObjectType);
+  const envType = useEnvStore((s) => s.env.type);
 
-  const label =
-    OBJECT_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? "—";
+  if (!selectedObject || type === undefined) return null;
 
-  return <InspectorPanelSectionField label="Type" value={label} />;
+  return (
+    <InspectorPanelSectionSelectField
+      label="Type"
+      value={type}
+      options={TYPE_OPTIONS}
+      disabled={isEnvTypeFixed(envType)}
+      onChange={(v) => updateObjectType(selectedObject, v as ObjectType)}
+    />
+  );
 }
 

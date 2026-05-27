@@ -2,7 +2,12 @@ import { create } from "zustand";
 import { useEnvStore } from "@/stores/envStore";
 import { useSaveModeStore } from "@/stores/saveModeStore";
 import { useCanvasObjectStore, selectIsDirty } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { useParameterValuesStore } from "@/stores/parameterValuesStore";
+import { useLayerSettingsStore } from "@/stores/layerSettingsStore";
+import { useComputeResultStore } from "@/stores/useComputeResultStore";
+import { useEnvPointStore } from "@/stores/envPointStore";
 import { saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
+import { useGeoAnchorStore } from "@/stores/geoAnchorStore";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -22,9 +27,15 @@ interface SaveStatusState {
 function computeStatus(): SaveStatus {
     const { isEnvDirty } = useEnvStore.getState();
     const isCanvasDirty = selectIsDirty(useCanvasObjectStore.getState());
+    const { isParameterValuesDirty } = useParameterValuesStore.getState();
+    const { isLayerSettingsDirty } = useLayerSettingsStore.getState();
     const { mode } = useSaveModeStore.getState();
 
-    const isDirty = isEnvDirty || isCanvasDirty;
+    const { isComputeResultDirty } = useComputeResultStore.getState();
+    const { isEnvPointsDirty } = useEnvPointStore.getState();
+    const { isSystemGeoAnchorDirty, isEnvironmentGeoAnchorDirty } = useGeoAnchorStore.getState();
+
+    const isDirty = isEnvDirty || isCanvasDirty || isParameterValuesDirty || isLayerSettingsDirty || isComputeResultDirty || isEnvPointsDirty || isSystemGeoAnchorDirty || isEnvironmentGeoAnchorDirty;
 
     if (isDirty && mode !== "autosave") return "unsaved";
     if (mode === "autosave" || (mode === "manual" && !isDirty)) return "saved";
@@ -40,9 +51,11 @@ export const useSaveStatusStore = create<SaveStatusState>()(() => ({
     status: computeStatus(),
 
     save: async () => {
-        await saveCanvas();
-        const { mode, setMode, isAutoSaveEnabled } = useSaveModeStore.getState();
-        if (mode === "session") setMode(isAutoSaveEnabled ? "autosave" : "manual");
+        const saved = await saveCanvas();
+        if (saved) {
+            const { mode, setMode, isAutoSaveEnabled } = useSaveModeStore.getState();
+            if (mode === "session") setMode(isAutoSaveEnabled ? "autosave" : "manual");
+        }
     },
 }));
 
@@ -57,3 +70,8 @@ function syncStatus(): void {
 useEnvStore.subscribe(syncStatus);
 useCanvasObjectStore.subscribe(syncStatus);
 useSaveModeStore.subscribe(syncStatus);
+useParameterValuesStore.subscribe(syncStatus);
+useLayerSettingsStore.subscribe(syncStatus);
+useComputeResultStore.subscribe(syncStatus);
+useEnvPointStore.subscribe(syncStatus);
+useGeoAnchorStore.subscribe(syncStatus);

@@ -9,23 +9,22 @@ export default function DeleteButton() {
   const { activeTool, setActiveTool } = useCanvasToolStore();
   const cancelDrawing = useCanvasDrawingStore((s) => s.cancelDrawing);
   const { deleteObject, deleteVertices } = useCanvasObjectStore();
-  const { selectedObject, selectedVertices, clearSelection, selectVertex } =
+  const { selectedObject, selectedVertexRefs, clearSelection, selectVertex } =
     useCanvasSelectionStore();
 
   const isActive = activeTool === "delete";
   const hasSelection = selectedObject !== null;
-  const hasVertexSelection = selectedVertices.length > 0;
+  const hasVertexSelection = selectedVertexRefs.length > 0;
   const isInSelectModeWithSelection = activeTool === "select" && hasSelection;
 
   function handleClick() {
     if (isActive) {
-      clearSelection();
       setActiveTool(null);
       return;
     }
     if (isInSelectModeWithSelection) {
       if (hasVertexSelection) {
-        deleteVertices(selectedObject!, selectedVertices);
+        deleteVertices(selectedObject!, selectedVertexRefs);
         selectVertex(null);
       } else {
         deleteObject(selectedObject!);

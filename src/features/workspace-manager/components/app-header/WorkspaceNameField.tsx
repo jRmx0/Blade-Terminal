@@ -38,19 +38,20 @@ export default function WorkspaceNameField() {
     if (e.key === "Escape") setIsEditing(false);
   }
 
-  const sharedClass = "px-2 py-1 text-xl text-gray-700 bg-gray-100 rounded";
+  const sharedClass = "px-2 py-1 mb-1 text-xl text-gray-700 bg-gray-100 rounded min-w-0";
 
   if (isEditing) {
     return (
       <input
         ref={inputRef}
         type="text"
+        size={40}
         value={draft}
         maxLength={WORKSPACE_NAME_MAX_LENGTH}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={handleKeyDown}
-        className={`${sharedClass} outline-none ring-2 ring-blue-400 cursor-text`}
+        className={`${sharedClass} w-full max-w-[40ch] outline-none ring-2 ring-teal-700 cursor-text`}
       />
     );
   }
@@ -60,7 +61,7 @@ export default function WorkspaceNameField() {
       type="button"
       onClick={startEditing}
       title="Rename"
-      className={`${sharedClass} cursor-pointer select-none hover:bg-gray-200 active:bg-gray-300 transition-colors`}
+      className={`${sharedClass} w-auto max-w-[40ch] text-left truncate cursor-pointer select-none hover:bg-gray-200 active:bg-gray-300 transition-colors`}
     >
       {name}
     </button>

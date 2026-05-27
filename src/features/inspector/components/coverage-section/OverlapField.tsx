@@ -1,7 +1,9 @@
 import InspectorPanelSectionField from "@/components/inspector-panel/InspectorPanelSectionField";
+import { useComputeResultStore } from "@/stores/useComputeResultStore";
 
-export default function RedundanceField() {
-  return (
-    <InspectorPanelSectionField label="Overlap ratio" value="TBD" unit="%" />
-  );
+export default function OverlapField() {
+  const value = useComputeResultStore((s) => s.coverageMetrics.overlapRatioPct);
+  const display = value == null || !Number.isFinite(value) ? "—" : value.toFixed(1);
+
+  return <InspectorPanelSectionField label="Overlap ratio" value={display} unit="%" />;
 }

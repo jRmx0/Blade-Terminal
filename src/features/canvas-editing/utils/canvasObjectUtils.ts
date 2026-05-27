@@ -1,42 +1,30 @@
-import type { Object, Vertex } from "@/types/schemaTypes";
-import { objectVertices, shoelaceArea } from "./canvasGeometry";
+import type { Object } from "@/types/schemaTypes";
+import type { VertexRef } from "@/features/canvas-editing/types/canvas";
+import { computePolygonArea, ensureWinding } from "@/utils/geometry";
+
+// ---------------------------------------------------------------------------
+// Normalize
+// ---------------------------------------------------------------------------
+
+/**
+ * Enforces winding order and recomputes vertexCount + area for a single object.
+ * This is the single source of truth for all post-mutation normalization.
+ */
+export function normalizeObject(o: Object): Object {
+    const vertices = o.vertices.length >= 3 ? ensureWinding(o.vertices, o.category) : o.vertices;
+    return { ...o, vertices, vertexCount: vertices.length, area: vertices.length >= 3 ? computePolygonArea(vertices) : 0 };
+}
 
 // ---------------------------------------------------------------------------
 // Sync
 // ---------------------------------------------------------------------------
 
 /**
- * After any mutation to an object's vertices, call this to:
- *   1. Rebuild the nextVertexId linked-list for the object's vertices.
- *   2. Update vertexCount + area on the EnvObject.
+ * After any mutation to an object's vertices, call this to enforce winding and
+ * recompute vertexCount + area.
  */
-function rebuildLinkedList(vertices: Vertex[], objectId: number): Vertex[] {
-    const objVerts = objectVertices(vertices, objectId);
-    const n = objVerts.length;
-    const linked = new Map<number, Vertex>();
-    for (let i = 0; i < n; i++) {
-        const v = objVerts[i]!;
-        linked.set(v.id, { ...v, nextVertexId: i < n - 1 ? objVerts[i + 1]!.id : null });
-    }
-    return vertices.map((v) => (v.objectId === objectId ? (linked.get(v.id) ?? v) : v));
-}
-
-function updateObjectStats(objects: Object[], vertices: Vertex[], objectId: number): Object[] {
-    const objVerts = objectVertices(vertices, objectId);
-    const n = objVerts.length;
-    const area = n >= 3 ? shoelaceArea(objVerts) : 0;
-    return objects.map((o) => (o.id === objectId ? { ...o, vertexCount: n, area } : o));
-}
-
-export function syncObject(
-    objects: Object[],
-    vertices: Vertex[],
-    objectId: number,
-): { objects: Object[]; vertices: Vertex[] } {
-    return {
-        vertices: rebuildLinkedList(vertices, objectId),
-        objects: updateObjectStats(objects, vertices, objectId),
-    };
+export function syncObject(objects: Object[], objectId: number): Object[] {
+    return objects.map((o) => o.id === objectId ? normalizeObject(o) : o);
 }
 
 // ---------------------------------------------------------------------------
@@ -48,9 +36,9 @@ export function sameObject(a: Object, b: Object): boolean {
     return a.id === b.id && a.environmentId === b.environmentId;
 }
 
-/** True when two vertices share the same compound primary key [objectId, environmentId, id]. */
-export function sameVertex(a: Vertex, b: Vertex): boolean {
-    return a.id === b.id && a.objectId === b.objectId && a.environmentId === b.environmentId;
+/** True when two VertexRefs refer to the same vertex position. */
+export function sameVertexRef(a: VertexRef, b: VertexRef): boolean {
+    return a.objectId === b.objectId && a.index === b.index;
 }
 
 // ---------------------------------------------------------------------------
@@ -76,40 +64,5 @@ export function markDeleted(
     return {
         dirty: dirty.filter((o) => o.id !== obj.id),
         deleted: [...deleted.filter((o) => o.id !== obj.id), obj],
-    };
-}
-
-// ---------------------------------------------------------------------------
-// Vertex-specific dirty tracking
-// ---------------------------------------------------------------------------
-
-/** Composite key matching the DB compound primary key [objectId+environmentId+id]. */
-export function vertexKey(objectId: number, environmentId: number, id: number): string {
-    return `${objectId}:${environmentId}:${id}`;
-}
-
-export function markVertexDirty(
-    dirty: Vertex[],
-    deleted: Vertex[],
-    vertex: Vertex,
-): { dirty: Vertex[]; deleted: Vertex[] } {
-    const key = vertexKey(vertex.objectId, vertex.environmentId, vertex.id);
-    const keep = (v: Vertex) => vertexKey(v.objectId, v.environmentId, v.id) !== key;
-    return {
-        dirty: [...dirty.filter(keep), vertex],
-        deleted: deleted.filter(keep),
-    };
-}
-
-export function markVertexDeleted(
-    dirty: Vertex[],
-    deleted: Vertex[],
-    vertex: Vertex,
-): { dirty: Vertex[]; deleted: Vertex[] } {
-    const key = vertexKey(vertex.objectId, vertex.environmentId, vertex.id);
-    const keep = (v: Vertex) => vertexKey(v.objectId, v.environmentId, v.id) !== key;
-    return {
-        dirty: dirty.filter(keep),
-        deleted: [...deleted.filter(keep), vertex],
     };
 }

@@ -5,7 +5,7 @@ import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvas
 export default function VertexSumField() {
   const selectedObjectId = useCanvasSelectionStore((s) => s.selectedObject?.id);
   const count = useCanvasObjectStore(
-    (s) => s.vertices.filter((v) => v.objectId === selectedObjectId).length,
+    (s) => s.objects.find((o) => o.id === selectedObjectId)?.vertexCount ?? 0,
   );
 
   return (

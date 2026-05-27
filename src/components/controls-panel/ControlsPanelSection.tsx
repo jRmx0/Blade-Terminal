@@ -14,7 +14,7 @@ export default function ControlsPanelSection({
   children,
 }: ControlsPanelSectionProps) {
   const isExpanded = useControlsPanelStore(
-    (state) => state.expandedSections[sectionId],
+    (state) => state.expandedSections[sectionId] ?? true,
   );
 
   return (

@@ -36,3 +36,18 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Agentic coding
 plans
 temp
+
+# workspace config
+*.code-workspace
+
+# Docs
+Metodinė-dalis
+
+# MCP
+.serena
+
+# copilot
+.VSCodeCounter
+
+# ignore BBD documentation
+bbd

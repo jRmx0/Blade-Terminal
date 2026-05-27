@@ -2,63 +2,50 @@ import { create } from "zustand";
 import { useSaveStatusStore } from "@/stores/saveStatusStore";
 import { saveCanvas } from "@/features/canvas-editing/data/canvasBridge";
 import { useSaveModeStore } from "@/stores/saveModeStore";
-import { useEnvStore } from "@/stores/envStore";
-import { useCanvasObjectStore } from "@/features/canvas-editing/stores/canvasObjectStore";
+import { useConfirmationModalStore } from "@/stores/confirmationModalStore";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 interface SaveModalState {
-    isOpen: boolean;
-    pendingAction: (() => Promise<void>) | null;
-
-    /**
-     * If there are unsaved changes, opens the SaveModal with the given action
-     * as the pending continuation. Otherwise runs the action immediately.
-     */
     requestWithSaveGuard: (action: () => Promise<void>) => void;
-
-    saveAndContinue: () => Promise<void>;
-    discardAndContinue: () => Promise<void>;
-    cancel: () => void;
 }
 
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
 
-export const useSaveModalStore = create<SaveModalState>()((set, get) => ({
-    isOpen: false,
-    pendingAction: null,
-
+export const useSaveModalStore = create<SaveModalState>()(() => ({
     requestWithSaveGuard: (action) => {
         const { status } = useSaveStatusStore.getState();
-        if (status === "unsaved") {
-            set({ isOpen: true, pendingAction: action });
-        } else {
+        if (status !== "unsaved") {
             action().catch(console.error);
+            return;
         }
+
+        useConfirmationModalStore.getState().requestConfirmation({
+            title: "Unsaved Changes",
+            message: "Your changes will be lost if you don't save them.",
+            tone: "warning",
+            confirmLabel: "Save",
+            secondaryLabel: "Don't Save",
+            cancelLabel: "Cancel",
+            confirmAction: async () => {
+                const saved = await saveCanvas();
+
+                if (saved) {
+                    const { mode, setMode, isAutoSaveEnabled } = useSaveModeStore.getState();
+                    if (mode === "session") {
+                        setMode(isAutoSaveEnabled ? "autosave" : "manual");
+                    }
+                }
+
+                await action();
+            },
+            secondaryAction: async () => {
+                await action();
+            },
+        });
     },
-
-    saveAndContinue: async () => {
-        await saveCanvas();
-        const { mode, setMode, isAutoSaveEnabled } = useSaveModeStore.getState();
-        if (mode === "session") setMode(isAutoSaveEnabled ? "autosave" : "manual");
-
-        const { pendingAction } = get();
-        set({ isOpen: false, pendingAction: null });
-        await pendingAction?.();
-    },
-
-    discardAndContinue: async () => {
-        useEnvStore.getState().clearDirty();
-        useCanvasObjectStore.getState().clearDirty();
-
-        const { pendingAction } = get();
-        set({ isOpen: false, pendingAction: null });
-        await pendingAction?.();
-    },
-
-    cancel: () => set({ isOpen: false, pendingAction: null }),
 }));

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { ActiveTool } from "@/features/canvas-editing/types/canvas";
+import { useCanvasSelectionStore } from "@/features/canvas-editing/stores/canvasSelectionStore";
 
 interface CanvasToolState {
     activeTool: ActiveTool | null;
@@ -8,5 +9,10 @@ interface CanvasToolState {
 
 export const useCanvasToolStore = create<CanvasToolState>((set) => ({
     activeTool: null,
-    setActiveTool: (tool) => set({ activeTool: tool }),
+    setActiveTool: (tool) => {
+        if (tool !== "select") {
+            useCanvasSelectionStore.getState().clearSelection();
+        }
+        set({ activeTool: tool });
+    },
 }));

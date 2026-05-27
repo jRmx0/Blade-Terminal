@@ -6,10 +6,15 @@ import MenuSeparator from "@/components/menu-bar/MenuBarSeparator";
 import UiInspectorButton from "@/features/ui-manager/components/menu-bar/UiInspectorButton";
 import UiControlsButton from "@/features/ui-manager/components/menu-bar/UiControlsButton";
 import UiStatusBarButton from "@/features/ui-manager/components/menu-bar/UiStatusBarButton";
+import CanvasModifierControlButton from "@/features/canvas-editing/components/menu-bar/CanvasModifierControlButton";
+import CanvasGeneratorControlButton from "@/features/canvas-editing/components/menu-bar/CanvasGeneratorControlButton";
+import GeoAnchorModalButton from "@/features/geo-anchor/components/menu-bar/GeoAnchorModalButton";
+import CanvasHeatMapScaleButton from "@/features/canvas-editing/components/menu-bar/CanvasHeatMapScaleButton";
+import MenuBarSubmenu from "@/components/menu-bar/MenuBarSubmenu";
 
 export default function MenuBarViewSubmenu() {
   return (
-    <div className="w-80 py-1 bg-gray-100">
+    <MenuBarSubmenu>
       <CanvasResetViewButton />
 
       <MenuSeparator />
@@ -26,6 +31,19 @@ export default function MenuBarViewSubmenu() {
       <UiInspectorButton />
       <UiControlsButton />
       <UiStatusBarButton />
-    </div>
+
+      <MenuSeparator />
+
+      <CanvasModifierControlButton />
+      <CanvasGeneratorControlButton />
+
+      <MenuSeparator />
+
+      <GeoAnchorModalButton />
+
+      <MenuSeparator />
+
+      <CanvasHeatMapScaleButton />
+    </MenuBarSubmenu>
   );
 }

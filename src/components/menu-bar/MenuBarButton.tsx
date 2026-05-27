@@ -4,7 +4,7 @@ import { useMenuStore } from "@/stores/menuStore";
 
 interface MenuBarButtonProps {
   menuId: MenuId;
-  label: string;
+  label: ReactNode;
   submenu: ReactNode;
   onClick?: () => void;
 }
@@ -49,7 +49,7 @@ export default function MenuBarButton({
         onClick={handleClick}
         onMouseEnter={handleMouseEnter}
         onKeyDown={handleKeyDown}
-        className="px-3 py-1 text-base text-gray-700 rounded hover:bg-gray-200 active:bg-gray-300 cursor-pointer select-none"
+        className={`flex items-center h-7 px-3 text-base text-gray-700 rounded hover:bg-gray-200 active:bg-gray-300 cursor-pointer select-none ${isOpen ? "bg-gray-200" : ""}`}
       >
         {label}
       </button>

@@ -9,9 +9,9 @@ export default function ControlsPanelSectionCheckbox({
   return (
     <label
       className={`flex items-center gap-3 mx-3 my-1 border rounded bg-white px-3 py-1.5 select-none transition-colors ${disabled
-          ? "opacity-50 cursor-not-allowed border-gray-300"
-          : "cursor-pointer border-gray-300 hover:border-gray-400"
-        } ${checked ? "border-teal-700" : ""}`}
+        ? "opacity-50 cursor-not-allowed border-gray-300"
+        : "cursor-pointer border-gray-300 hover:border-gray-400"
+        }`}
     >
       <span className={`text-sm flex-1 ${disabled ? "text-gray-400" : "text-gray-700"}`}>
         {label}

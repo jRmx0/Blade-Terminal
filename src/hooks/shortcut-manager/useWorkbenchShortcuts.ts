@@ -47,8 +47,8 @@ export function useWorkbenchShortcuts() {
     useShortcut("workspace.save", S["workspace.save"].keys, () => {
         const { mode, setMode, isAutoSaveEnabled } = useSaveModeStore.getState();
         saveCanvas()
-            .then(() => {
-                if (mode === "session") setMode(isAutoSaveEnabled ? "autosave" : "manual");
+            .then((saved) => {
+                if (saved && mode === "session") setMode(isAutoSaveEnabled ? "autosave" : "manual");
             })
             .catch(console.error);
     });
@@ -71,36 +71,30 @@ export function useWorkbenchShortcuts() {
 
     useShortcut("canvas.tool-select", S["canvas.tool-select"].keys, () => {
         const { activeTool, setActiveTool } = useCanvasToolStore.getState();
-        const { clearSelection } = useCanvasSelectionStore.getState();
         useCanvasDrawingStore.getState().cancelDrawing();
-        clearSelection();
         setActiveTool(activeTool === "select" ? null : "select");
     });
 
     useShortcut("canvas.tool-add-zone", S["canvas.tool-add-zone"].keys, () => {
         const { activeTool, setActiveTool } = useCanvasToolStore.getState();
-        const { clearSelection } = useCanvasSelectionStore.getState();
         useCanvasDrawingStore.getState().cancelDrawing();
-        clearSelection();
         setActiveTool(activeTool === "addZone" ? null : "addZone");
     });
 
     useShortcut("canvas.tool-add-obstacle", S["canvas.tool-add-obstacle"].keys, () => {
         const { activeTool, setActiveTool } = useCanvasToolStore.getState();
-        const { clearSelection } = useCanvasSelectionStore.getState();
         useCanvasDrawingStore.getState().cancelDrawing();
-        clearSelection();
         setActiveTool(activeTool === "addObstacle" ? null : "addObstacle");
     });
 
     useShortcut("canvas.tool-delete", S["canvas.tool-delete"].keys, () => {
         const { activeTool, setActiveTool } = useCanvasToolStore.getState();
-        const { selectedObject, selectedVertices, clearSelection, selectVertex } =
+        const { selectedObject, selectedVertexRefs, clearSelection, selectVertex } =
             useCanvasSelectionStore.getState();
         const { deleteObject, deleteVertices } = useCanvasObjectStore.getState();
         if (activeTool === "select" && selectedObject !== null) {
-            if (selectedVertices.length > 0) {
-                deleteVertices(selectedObject, selectedVertices);
+            if (selectedVertexRefs.length > 0) {
+                deleteVertices(selectedObject, selectedVertexRefs);
                 selectVertex(null);
             } else {
                 deleteObject(selectedObject);
@@ -109,7 +103,6 @@ export function useWorkbenchShortcuts() {
             return;
         }
         useCanvasDrawingStore.getState().cancelDrawing();
-        clearSelection();
         setActiveTool(activeTool === "delete" ? null : "delete");
     });
 
