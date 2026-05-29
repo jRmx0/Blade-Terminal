@@ -17,6 +17,7 @@ import ImportModal from "@/features/workspace-manager/components/import-modal/Im
 import PerformanceMonitorModal from "@/features/performance-monitor/PerformanceMonitorModal";
 import BenchmarkModal from "@/features/benchmark-manager/components/BenchmarkModal";
 import GeoAnchorModal from "@/features/geo-anchor/components/GeoAnchorModal";
+import CoverageReplayAnimationDriver from "@/features/coverage-replay/components/CoverageReplayAnimationDriver";
 
 export default function WorkbenchWindow() {
   useWorkbenchShortcuts();
@@ -46,6 +47,7 @@ export default function WorkbenchWindow() {
       <PerformanceMonitorModal />
       <BenchmarkModal />
       <GeoAnchorModal />
+      <CoverageReplayAnimationDriver />
     </div>
   );
 }

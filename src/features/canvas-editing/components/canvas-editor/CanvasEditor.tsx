@@ -31,6 +31,7 @@ import { CanvasEnvPointsLayer } from "@/features/canvas-editing/components/canva
 import { CanvasMapTileLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasMapTileLayer";
 import { CanvasSystemPolygonResultLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasSystemPolygonResultLayer";
 import { CppDebugResultLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CppDebugResultLayer";
+import { CanvasCoverageReplayLayer } from "@/features/canvas-editing/components/canvas-editor/layers/CanvasCoverageReplayLayer";
 import CanvasModifierFloatingControl from "@/features/canvas-editing/components/floating-control/CanvasModifierFloatingControl";
 import CanvasGeneratorFloatingControl from "@/features/canvas-editing/components/floating-control/CanvasGeneratorFloatingControl";
 import CanvasHeatMapScaleFloatingControl from "@/features/canvas-editing/components/floating-control/CanvasHeatMapScaleFloatingControl";
@@ -194,6 +195,7 @@ export default function CanvasEditor() {
   const obstacleZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.OBSTACLES, LAYER_PARAM_KEY.Z_INDEX) ?? "30", 10);
   const expandedObstaclesZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.EXPANDED_OBSTACLES, LAYER_PARAM_KEY.Z_INDEX) ?? "35", 10);
   const envPointsZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.ENV_POINTS, LAYER_PARAM_KEY.Z_INDEX) ?? "40", 10);
+  const coverageReplayZIndex = parseInt(getLayerParam(layerSettings, LAYER_ID.COVERAGE_REPLAY, LAYER_PARAM_KEY.Z_INDEX) ?? "100", 10);
 
   const headlandWidth = useMemo(() => parseHeadlandWidth(headlandWidthRaw), [headlandWidthRaw]);
 
@@ -237,6 +239,7 @@ export default function CanvasEditor() {
     { kind: "system" as const, id: "obstacles" as const, zIndex: obstacleZIndex },
     { kind: "system" as const, id: "expandedObstacles" as const, zIndex: expandedObstaclesZIndex },
     { kind: "system" as const, id: "envPoints" as const, zIndex: envPointsZIndex },
+    { kind: "system" as const, id: "coverageReplay" as const, zIndex: coverageReplayZIndex },
     ...dynamicEntries,
   ].sort((a, b) => a.zIndex - b.zIndex);
 
@@ -441,6 +444,9 @@ export default function CanvasEditor() {
           }
           if (entry.id === "envPoints") {
             return <CanvasEnvPointsLayer key="envPoints" onEnvPointHoverChange={setIsHoveringEnvPoint} />;
+          }
+          if (entry.id === "coverageReplay") {
+            return <CanvasCoverageReplayLayer key="coverageReplay" />;
           }
           return null;
         })}

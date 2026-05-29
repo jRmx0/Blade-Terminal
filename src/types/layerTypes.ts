@@ -34,7 +34,17 @@ export type InternalStyleAttributeKey =
     | "Start & End Point Color"
     | "Start & End Point Radius"
     | "Start & End Point Stroke Color"
-    | "Map Opacity";
+    | "Map Opacity"
+    | "Replay Brush Color"
+    | "Replay Brush Width"
+    | "Replay Start Marker Show"
+    | "Replay Start Marker Fill Color"
+    | "Replay Start Marker Border Color"
+    | "Replay Start Marker Size"
+    | "Replay End Marker Show"
+    | "Replay End Marker Fill Color"
+    | "Replay End Marker Border Color"
+    | "Replay End Marker Size";
 
 export interface LayerDefinition {
     id: LayerId;

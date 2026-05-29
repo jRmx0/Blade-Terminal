@@ -110,6 +110,32 @@ function buildSections(
     settings: LayerSettingView[],
     onParamChange: (name: string, value: string) => void,
 ): SettingsSectionData[] {
+    if (layer.id === LAYER_ID.COVERAGE_REPLAY && layer.algorithmId === 0 && layer.providerId === 0) {
+        const brushParams = settings.filter(
+            (p) => p.key === LAYER_PARAM_KEY.REPLAY_BRUSH_COLOR || p.key === LAYER_PARAM_KEY.REPLAY_BRUSH_WIDTH,
+        );
+        const startMarkerParams = settings.filter(
+            (p) =>
+                p.key === LAYER_PARAM_KEY.REPLAY_START_MARKER_SHOW ||
+                p.key === LAYER_PARAM_KEY.REPLAY_START_MARKER_FILL_COLOR ||
+                p.key === LAYER_PARAM_KEY.REPLAY_START_MARKER_BORDER_COLOR ||
+                p.key === LAYER_PARAM_KEY.REPLAY_START_MARKER_SIZE,
+        );
+        const endMarkerParams = settings.filter(
+            (p) =>
+                p.key === LAYER_PARAM_KEY.REPLAY_END_MARKER_SHOW ||
+                p.key === LAYER_PARAM_KEY.REPLAY_END_MARKER_FILL_COLOR ||
+                p.key === LAYER_PARAM_KEY.REPLAY_END_MARKER_BORDER_COLOR ||
+                p.key === LAYER_PARAM_KEY.REPLAY_END_MARKER_SIZE,
+        );
+
+        const sections: SettingsSectionData[] = [];
+        if (brushParams.length > 0) sections.push({ label: "Brush", settings: brushParams, onParamChange });
+        if (startMarkerParams.length > 0) sections.push({ label: "Start Marker", settings: startMarkerParams, onParamChange });
+        if (endMarkerParams.length > 0) sections.push({ label: "End Marker", settings: endMarkerParams, onParamChange });
+        return sections;
+    }
+
     if (layer.id === LAYER_ID.COVERAGE_GRID && layer.algorithmId === 0 && layer.providerId === 0) {
         const general = settings.filter((p) => p.styleGroup === "general");
         const style = settings.filter((p) => p.styleGroup !== "general" && p.key !== LAYER_PARAM_KEY.VISIBLE);

@@ -1,6 +1,5 @@
 import { useState } from "react";
-import type { LayerSettingView } from "@/types/layerTypes";
-import type { PointLabelColorEntry } from "@/types/serviceTypes";
+import type { PointLabelColorEntry, StyleAttributeGroup, StyleType } from "@/types/serviceTypes";
 import { LAYER_PARAM_KEY } from "@/config/layers/layerRegistry";
 import SettingsPanelRowInput from "@/components/settings-panel/SettingsPanelRowInput";
 import SettingsPanelRowColorInput from "@/components/settings-panel/SettingsPanelRowColorInput";
@@ -30,9 +29,22 @@ function parseEnumMapping(value: string): PointLabelColorEntry[] {
     return value.split(",").map((v) => ({ value: v.trim(), color: null })).filter((e) => e.value.length > 0);
 }
 
+// ─── Minimal setting shape accepted by the panel ─────────────────────────────
+/**
+ * Minimal setting shape accepted by LayerSettingsPanel.
+ * `LayerSettingView` satisfies this interface structurally.
+ * Use this for synthetic/ephemeral settings (e.g. replay inspector).
+ */
+export interface PlainSettingView {
+    key: string;
+    value: string;
+    styleType: StyleType;
+    styleGroup?: StyleAttributeGroup;
+}
+
 // ─── Point Label Enum Colors collapsible group ────────────────────────────────
 interface PointLabelEnumColorsGroupProps {
-    param: LayerSettingView;
+    param: PlainSettingView;
     disabled: boolean;
     onParamChange: (name: string, value: string) => void;
 }
@@ -81,7 +93,7 @@ function PointLabelEnumColorsGroup({ param, disabled, onParamChange }: PointLabe
 
 // ─── Individual setting field ─────────────────────────────────────────────────
 interface SettingFieldProps {
-    param: LayerSettingView;
+    param: PlainSettingView;
     disabled: boolean;
     onParamChange: (name: string, value: string) => void;
 }
@@ -216,7 +228,7 @@ function StyleSubgroupSection({ section, disabled }: StyleSubgroupSectionProps) 
 // ─── Section ──────────────────────────────────────────────────────────────────
 export interface SettingsSectionData {
     label: string;
-    settings: LayerSettingView[];
+    settings: PlainSettingView[];
     onParamChange: (name: string, value: string) => void;
     /** When false, renders the section flat without a collapsible header. Defaults to true. */
     showHeader?: boolean;

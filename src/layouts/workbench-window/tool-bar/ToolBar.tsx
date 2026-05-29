@@ -10,6 +10,7 @@ import ExecuteCppButton from "@/features/coverage-planning/components/tool-bar/E
 import ClearCppButton from "@/features/coverage-planning/components/tool-bar/ClearCppButton";
 import DebugCppButton from "@/features/coverage-planning/components/tool-bar/DebugCppButton";
 import OpenJobListButton from "@/features/job-runner/components/tool-bar/OpenJobListButton";
+import CoverageReplayToolBarButtons from "@/features/coverage-replay/components/tool-bar/CoverageReplayToolBarButtons";
 import UiInspectorButton from "@/features/ui-manager/components/tool-bar/UiInspectorButton";
 import ToolSeparator from "@/components/tool-bar/ToolBarSeparator";
 import SelectButton from "@/features/canvas-editing/components/tool-bar/SelectButton";
@@ -308,6 +309,33 @@ export default function ToolBar() {
           label: "Debug coverage path planning",
           isActive: isDebugMode,
           onClick: () => { if (!isDebugMode) startDebug(); },
+        },
+      ],
+    },
+    {
+      id: "coverage-replay",
+      buttonCount: 3,
+      buttons: <CoverageReplayToolBarButtons />,
+      trailingSeparator: "thin",
+      disabledInDebug: true,
+      overflowItems: [
+        {
+          id: "replay-stop",
+          icon: "stop",
+          label: "Stop replay",
+          onClick: () => { },
+        },
+        {
+          id: "replay-play",
+          icon: "play_arrow",
+          label: "Play / Pause replay",
+          onClick: () => { },
+        },
+        {
+          id: "replay-speed",
+          icon: "speed",
+          label: "Playback speed",
+          onClick: () => { },
         },
       ],
     },

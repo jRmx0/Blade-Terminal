@@ -9,6 +9,7 @@ export const LAYER_NAME = {
     EXPANDED_OBSTACLES: "Expanded Obstacles",
     ENV_POINTS: "Env Points",
     SATELLITE_MAP: "Satellite Map",
+    COVERAGE_REPLAY: "Coverage Replay",
 } as const;
 
 export type LayerName = (typeof LAYER_NAME)[keyof typeof LAYER_NAME];
@@ -22,6 +23,7 @@ export const LAYER_ID = {
     SATELLITE_MAP: 6,
     SHRUNKEN_ZONES: 7,
     EXPANDED_OBSTACLES: 8,
+    COVERAGE_REPLAY: 9,
 } as const;
 
 export const LAYER_REGISTRY: LayerDefinition[] = [
@@ -33,6 +35,7 @@ export const LAYER_REGISTRY: LayerDefinition[] = [
     { id: LAYER_ID.EXPANDED_OBSTACLES, name: LAYER_NAME.EXPANDED_OBSTACLES, type: "Polygon" },
     { id: LAYER_ID.ENV_POINTS, name: LAYER_NAME.ENV_POINTS, type: "EnvPoints" },
     { id: LAYER_ID.SATELLITE_MAP, name: LAYER_NAME.SATELLITE_MAP, type: "Map" },
+    { id: LAYER_ID.COVERAGE_REPLAY, name: LAYER_NAME.COVERAGE_REPLAY, type: "Grid" },
 ];
 
 export const POLYGON_EDGE_STYLE = {
@@ -75,6 +78,16 @@ export const LAYER_PARAM_KEY = {
     START_END_POINT_RADIUS: "Start & End Point Radius",
     START_END_POINT_STROKE_COLOR: "Start & End Point Stroke Color",
     MAP_OPACITY: "Map Opacity",
+    REPLAY_BRUSH_COLOR: "Replay Brush Color",
+    REPLAY_BRUSH_WIDTH: "Replay Brush Width",
+    REPLAY_START_MARKER_SHOW: "Replay Start Marker Show",
+    REPLAY_START_MARKER_FILL_COLOR: "Replay Start Marker Fill Color",
+    REPLAY_START_MARKER_BORDER_COLOR: "Replay Start Marker Border Color",
+    REPLAY_START_MARKER_SIZE: "Replay Start Marker Size",
+    REPLAY_END_MARKER_SHOW: "Replay End Marker Show",
+    REPLAY_END_MARKER_FILL_COLOR: "Replay End Marker Fill Color",
+    REPLAY_END_MARKER_BORDER_COLOR: "Replay End Marker Border Color",
+    REPLAY_END_MARKER_SIZE: "Replay End Marker Size",
 } as const;
 export type LayerParamKey = (typeof LAYER_PARAM_KEY)[keyof typeof LAYER_PARAM_KEY];
 
@@ -170,5 +183,19 @@ export const LAYER_SETTINGS_SETUP_DEFAULTS: LayerSettingsSetup[] = [
     { id: 1, layerId: LAYER_ID.SATELLITE_MAP, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "false" },
     { id: 5, layerId: LAYER_ID.SATELLITE_MAP, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "general", defaultValue: "1" },
     { id: 90, layerId: LAYER_ID.SATELLITE_MAP, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.MAP_OPACITY, styleType: "Pixels", styleGroup: "general", defaultValue: "100" },
+
+    // ── Coverage Replay (internal Grid type) ────────────────────────────────
+    { id: 1, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.VISIBLE, styleType: "Boolean", styleGroup: "general", defaultValue: "true" },
+    { id: 5, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.Z_INDEX, styleType: "Integer", styleGroup: "general", defaultValue: "100" },
+    { id: 30, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_BRUSH_COLOR, styleType: "Color", styleGroup: "general", defaultValue: "#22c55e99" },
+    { id: 31, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_BRUSH_WIDTH, styleType: "Integer", styleGroup: "general", defaultValue: "0" },
+    { id: 32, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_START_MARKER_SHOW, styleType: "Boolean", styleGroup: "general", defaultValue: "true" },
+    { id: 33, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_START_MARKER_FILL_COLOR, styleType: "Color", styleGroup: "general", defaultValue: "#22c55e" },
+    { id: 34, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_START_MARKER_BORDER_COLOR, styleType: "Color", styleGroup: "general", defaultValue: "#15803d" },
+    { id: 35, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_START_MARKER_SIZE, styleType: "Integer", styleGroup: "general", defaultValue: "2" },
+    { id: 36, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_END_MARKER_SHOW, styleType: "Boolean", styleGroup: "general", defaultValue: "true" },
+    { id: 37, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_END_MARKER_FILL_COLOR, styleType: "Color", styleGroup: "general", defaultValue: "#ef4444" },
+    { id: 38, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_END_MARKER_BORDER_COLOR, styleType: "Color", styleGroup: "general", defaultValue: "#b91c1c" },
+    { id: 39, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_END_MARKER_SIZE, styleType: "Integer", styleGroup: "general", defaultValue: "2" },
 ];
 
