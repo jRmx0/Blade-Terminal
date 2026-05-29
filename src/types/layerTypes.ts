@@ -44,7 +44,11 @@ export type InternalStyleAttributeKey =
     | "Replay End Marker Show"
     | "Replay End Marker Fill Color"
     | "Replay End Marker Border Color"
-    | "Replay End Marker Size";
+    | "Replay End Marker Size"
+    | "Replay Tracking Marker Show"
+    | "Replay Tracking Marker Fill Color"
+    | "Replay Tracking Marker Border Color"
+    | "Replay Tracking Marker Size";
 
 export interface LayerDefinition {
     id: LayerId;

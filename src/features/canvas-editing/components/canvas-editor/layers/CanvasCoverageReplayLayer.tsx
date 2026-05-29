@@ -50,6 +50,11 @@ function _CanvasCoverageReplayLayer() {
     const endMarkerBorder = getLayerParam(layerSettings, LAYER_ID.COVERAGE_REPLAY, LAYER_PARAM_KEY.REPLAY_END_MARKER_BORDER_COLOR) ?? "#b91c1c";
     const endMarkerSize = parseFloat(getLayerParam(layerSettings, LAYER_ID.COVERAGE_REPLAY, LAYER_PARAM_KEY.REPLAY_END_MARKER_SIZE) ?? "2");
 
+    const trackingMarkerShow = getLayerParam(layerSettings, LAYER_ID.COVERAGE_REPLAY, LAYER_PARAM_KEY.REPLAY_TRACKING_MARKER_SHOW) !== "false";
+    const trackingMarkerFill = getLayerParam(layerSettings, LAYER_ID.COVERAGE_REPLAY, LAYER_PARAM_KEY.REPLAY_TRACKING_MARKER_FILL_COLOR) ?? "#3b82f6";
+    const trackingMarkerBorder = getLayerParam(layerSettings, LAYER_ID.COVERAGE_REPLAY, LAYER_PARAM_KEY.REPLAY_TRACKING_MARKER_BORDER_COLOR) ?? "#1d4ed8";
+    const trackingMarkerSize = parseFloat(getLayerParam(layerSettings, LAYER_ID.COVERAGE_REPLAY, LAYER_PARAM_KEY.REPLAY_TRACKING_MARKER_SIZE) ?? "2");
+
     // ── Path geometry ─────────────────────────────────────────────────────────
     // Derive start point from first committed line or active line
     const firstCommitted = committedLines[0];
@@ -87,6 +92,21 @@ function _CanvasCoverageReplayLayer() {
         currentDistance > 0 &&
         endX !== null &&
         endY !== null;
+
+    // Tracking point: tip of the active line — visible while playing
+    const trackingX =
+        activeLinePoints.length >= 2
+            ? activeLinePoints[activeLinePoints.length - 2]!
+            : null;
+    const trackingY =
+        activeLinePoints.length >= 2
+            ? activeLinePoints[activeLinePoints.length - 1]!
+            : null;
+    const showTrackingMarker =
+        trackingMarkerShow &&
+        isPlaying &&
+        trackingX !== null &&
+        trackingY !== null;
 
     return (
         <Layer>
@@ -188,6 +208,20 @@ function _CanvasCoverageReplayLayer() {
                     fill={endMarkerFill}
                     stroke={endMarkerBorder}
                     strokeWidth={endMarkerSize * 0.2}
+                    listening={false}
+                    perfectDrawEnabled={false}
+                />
+            )}
+
+            {/* ── Tracking point — current position during animation ── */}
+            {showTrackingMarker && (
+                <Circle
+                    x={trackingX!}
+                    y={trackingY!}
+                    radius={trackingMarkerSize}
+                    fill={trackingMarkerFill}
+                    stroke={trackingMarkerBorder}
+                    strokeWidth={trackingMarkerSize * 0.2}
                     listening={false}
                     perfectDrawEnabled={false}
                 />

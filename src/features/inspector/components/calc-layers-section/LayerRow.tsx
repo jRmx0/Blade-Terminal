@@ -128,11 +128,19 @@ function buildSections(
                 p.key === LAYER_PARAM_KEY.REPLAY_END_MARKER_BORDER_COLOR ||
                 p.key === LAYER_PARAM_KEY.REPLAY_END_MARKER_SIZE,
         );
+        const trackingMarkerParams = settings.filter(
+            (p) =>
+                p.key === LAYER_PARAM_KEY.REPLAY_TRACKING_MARKER_SHOW ||
+                p.key === LAYER_PARAM_KEY.REPLAY_TRACKING_MARKER_FILL_COLOR ||
+                p.key === LAYER_PARAM_KEY.REPLAY_TRACKING_MARKER_BORDER_COLOR ||
+                p.key === LAYER_PARAM_KEY.REPLAY_TRACKING_MARKER_SIZE,
+        );
 
         const sections: SettingsSectionData[] = [];
         if (brushParams.length > 0) sections.push({ label: "Brush", settings: brushParams, onParamChange });
         if (startMarkerParams.length > 0) sections.push({ label: "Start Marker", settings: startMarkerParams, onParamChange });
         if (endMarkerParams.length > 0) sections.push({ label: "End Marker", settings: endMarkerParams, onParamChange });
+        if (trackingMarkerParams.length > 0) sections.push({ label: "Tracking Point", settings: trackingMarkerParams, onParamChange });
         return sections;
     }
 

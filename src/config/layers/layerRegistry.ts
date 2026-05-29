@@ -88,6 +88,10 @@ export const LAYER_PARAM_KEY = {
     REPLAY_END_MARKER_FILL_COLOR: "Replay End Marker Fill Color",
     REPLAY_END_MARKER_BORDER_COLOR: "Replay End Marker Border Color",
     REPLAY_END_MARKER_SIZE: "Replay End Marker Size",
+    REPLAY_TRACKING_MARKER_SHOW: "Replay Tracking Marker Show",
+    REPLAY_TRACKING_MARKER_FILL_COLOR: "Replay Tracking Marker Fill Color",
+    REPLAY_TRACKING_MARKER_BORDER_COLOR: "Replay Tracking Marker Border Color",
+    REPLAY_TRACKING_MARKER_SIZE: "Replay Tracking Marker Size",
 } as const;
 export type LayerParamKey = (typeof LAYER_PARAM_KEY)[keyof typeof LAYER_PARAM_KEY];
 
@@ -197,5 +201,9 @@ export const LAYER_SETTINGS_SETUP_DEFAULTS: LayerSettingsSetup[] = [
     { id: 37, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_END_MARKER_FILL_COLOR, styleType: "Color", styleGroup: "general", defaultValue: "#ef4444" },
     { id: 38, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_END_MARKER_BORDER_COLOR, styleType: "Color", styleGroup: "general", defaultValue: "#b91c1c" },
     { id: 39, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_END_MARKER_SIZE, styleType: "Integer", styleGroup: "general", defaultValue: "2" },
+    { id: 40, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_TRACKING_MARKER_SHOW, styleType: "Boolean", styleGroup: "general", defaultValue: "true" },
+    { id: 41, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_TRACKING_MARKER_FILL_COLOR, styleType: "Color", styleGroup: "general", defaultValue: "#3b82f6" },
+    { id: 42, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_TRACKING_MARKER_BORDER_COLOR, styleType: "Color", styleGroup: "general", defaultValue: "#1d4ed8" },
+    { id: 43, layerId: LAYER_ID.COVERAGE_REPLAY, algorithmId: 0, providerId: 0, key: LAYER_PARAM_KEY.REPLAY_TRACKING_MARKER_SIZE, styleType: "Integer", styleGroup: "general", defaultValue: "2" },
 ];
 
